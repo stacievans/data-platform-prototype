@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
@@ -6,7 +6,7 @@ import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import { Select } from '../../components/common/FormField'
-import { IconPlus, IconUpload, IconCopy, IconSearch, IconDownload } from '../../components/common/Icons'
+import { IconPlus, IconUpload, IconCopy, IconSearch, IconDownload, IconClose } from '../../components/common/Icons'
 import { PermButton, PermAction, PERM_DENIED_TIP } from '../../components/common/PermissionAction'
 import { useToast } from '../../components/common/Toast'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
@@ -26,6 +26,7 @@ import {
   QC_TYPE_OPTIONS,
   qcTypeColor,
   playLayouts as allLayouts,
+  buildDefaultPlayLayoutRow,
 } from '../../mock/plans'
 import { getAllDeviceTypes } from '../../mock/devices'
 import {
@@ -641,23 +642,114 @@ function SchemeTab({ projectId }) {
   )
 }
 
+const LAYOUT_FILE_MAX_BYTES = 10 * 1024 * 1024
+
+function LayoutFileUpload({ fileName, error, onSelect, onClear }) {
+  const fileRef = useRef(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  const acceptFile = (file) => {
+    if (!file) return
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (ext !== 'json') {
+      onSelect(null, '请上传 JSON 格式文件')
+      return
+    }
+    if (file.size > LAYOUT_FILE_MAX_BYTES) {
+      onSelect(null, '文件大小不能超过 10MB')
+      return
+    }
+    onSelect(file.name, '')
+  }
+
+  const onFileChange = (e) => {
+    acceptFile(e.target.files?.[0])
+    e.target.value = ''
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    acceptFile(e.dataTransfer.files?.[0])
+  }
+
+  if (fileName) {
+    return (
+      <div className={`flex items-center justify-between rounded-md border px-3 py-2 ${error ? 'border-red-400 bg-red-50/30' : 'border-gray-200 bg-gray-50'}`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <IconUpload className="h-4 w-4 shrink-0 text-blue-500" />
+          <span className="truncate text-sm text-gray-800">{fileName}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => { onClear(); if (fileRef.current) fileRef.current.value = '' }}
+          className="ml-2 flex shrink-0 cursor-pointer items-center gap-1 text-xs text-gray-500 hover:text-red-500"
+        >
+          <IconClose className="h-3.5 w-3.5" />
+          移除
+        </button>
+        <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={onFileChange} />
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
+          error
+            ? 'border-red-400 bg-red-50/30'
+            : dragOver
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+        }`}
+        onClick={() => fileRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click() }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+      >
+        <IconUpload className="mb-2 h-8 w-8 text-gray-400" />
+        <p className="text-sm text-gray-600">点击或拖拽文件到此区域上传</p>
+        <p className="mt-1 text-xs text-gray-400">支持 JSON 格式，文件大小不超过 10MB</p>
+        <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={onFileChange} />
+      </div>
+      {error && <p className="mt-1.5 text-xs text-red-500">{error}</p>}
+    </div>
+  )
+}
+
 /* ---------- 播放布局 ---------- */
 function LayoutTab({ projectId }) {
+  const { ToastNode, show: showToast } = useToast()
   const [layouts, setLayouts]     = useState(allLayouts.filter((l) => l.projectId === projectId))
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm]           = useState({ name: '', description: '' })
+  const [layoutFileName, setLayoutFileName] = useState('')
+  const [layoutFileError, setLayoutFileError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const displayLayouts = useMemo(
+    () => [buildDefaultPlayLayoutRow(projectId), ...layouts].map((item, idx) => ({ ...item, seq: idx + 1 })),
+    [projectId, layouts],
+  )
 
   const openCreate = () => {
     setEditTarget(null)
     setForm({ name: '', description: '' })
+    setLayoutFileName('')
+    setLayoutFileError('')
     setModalOpen(true)
   }
 
   const openEdit = (row) => {
     setEditTarget(row)
     setForm({ name: row.name ?? '', description: row.description ?? '' })
+    setLayoutFileName('')
+    setLayoutFileError('')
     setModalOpen(true)
   }
 
@@ -665,10 +757,18 @@ function LayoutTab({ projectId }) {
     setModalOpen(false)
     setEditTarget(null)
     setForm({ name: '', description: '' })
+    setLayoutFileName('')
+    setLayoutFileError('')
   }
 
   const handleSave = () => {
     if (!form.name.trim()) return
+    if (!editTarget) {
+      if (!layoutFileName) {
+        setLayoutFileError('请上传布局文件')
+        return
+      }
+    }
     if (editTarget) {
       setLayouts((list) =>
         list.map((l) => (l.id === editTarget.id
@@ -678,24 +778,47 @@ function LayoutTab({ projectId }) {
     } else {
       setLayouts([
         ...layouts,
-        { id: Date.now(), projectId, name: form.name.trim(), date: '2026-06-10', description: form.description.trim() },
+        {
+          id: Date.now(),
+          projectId,
+          name: form.name.trim(),
+          date: '2026-06-10',
+          description: form.description.trim(),
+          layoutFileName,
+        },
       ])
     }
     closeModal()
   }
 
   const columns = [
-    { title: '序号', key: 'seq', render: (_, row) => layouts.indexOf(row) + 1, width: 70 },
-    { title: '布局名称', dataIndex: 'name', render: (v) => <span className="font-medium">{v}</span> },
-    { title: '日期', dataIndex: 'date' },
+    { title: '序号', dataIndex: 'seq', width: 70 },
+    {
+      title: '布局名称',
+      dataIndex: 'name',
+      render: (v) => <span className="font-medium">{v}</span>,
+    },
+    {
+      title: '添加日期',
+      dataIndex: 'date',
+      render: (v, row) => (
+        row.isSystemBuiltIn
+          ? <Badge color="gray">系统内置</Badge>
+          : v
+      ),
+    },
     { title: '描述', dataIndex: 'description', render: (v) => <span className="text-gray-500">{v}</span> },
     {
       title: '操作', key: 'actions',
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <PermButton permission="collection.project.edit" mode="disable" variant="link" size="sm" onClick={() => openEdit(row)}>编辑</PermButton>
-          <Button variant="link" size="sm">下载</Button>
-          <PermButton permission="collection.project.delete" mode="disable" variant="linkDanger" size="sm" onClick={() => setDeleteTarget(row)}>删除</PermButton>
+          {!row.isSystemBuiltIn && (
+            <PermButton permission="collection.project.edit" mode="disable" variant="link" size="sm" onClick={() => openEdit(row)}>编辑</PermButton>
+          )}
+          <Button variant="link" size="sm" onClick={() => showToast('布局文件已导出')}>下载</Button>
+          {!row.isSystemBuiltIn && (
+            <PermButton permission="collection.project.delete" mode="disable" variant="linkDanger" size="sm" onClick={() => setDeleteTarget(row)}>删除</PermButton>
+          )}
         </div>
       ),
     },
@@ -703,11 +826,12 @@ function LayoutTab({ projectId }) {
 
   return (
     <div className="space-y-3">
+      {ToastNode}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">布局列表</h2>
         <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建布局</PermButton>
       </div>
-      <Table columns={columns} dataSource={layouts} />
+      <Table columns={columns} dataSource={displayLayouts} />
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -749,7 +873,9 @@ function LayoutTab({ projectId }) {
       >
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm text-gray-600">布局名称</label>
+            <label className="mb-1.5 block text-sm text-gray-600">
+              布局名称<span className="ml-0.5 text-red-500">*</span>
+            </label>
             <input
               placeholder="请输入布局名称"
               value={form.name}
@@ -757,6 +883,25 @@ function LayoutTab({ projectId }) {
               className="h-8 w-full rounded-md border border-gray-300 bg-white px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
+          {!editTarget && (
+            <div>
+              <label className="mb-1.5 block text-sm text-gray-600">
+                布局文件<span className="ml-0.5 text-red-500">*</span>
+              </label>
+              <LayoutFileUpload
+                fileName={layoutFileName}
+                error={layoutFileError}
+                onSelect={(name, err) => {
+                  setLayoutFileName(name ?? '')
+                  setLayoutFileError(err)
+                }}
+                onClear={() => {
+                  setLayoutFileName('')
+                  setLayoutFileError('')
+                }}
+              />
+            </div>
+          )}
           <div>
             <label className="mb-1.5 block text-sm text-gray-600">布局描述</label>
             <textarea

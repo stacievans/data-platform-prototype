@@ -127,17 +127,59 @@ export const allDashboard = {
 // ─────────────────────────────────────────────────
 
 // 排行榜固定数据（全部）
+// 采集员：completeHours=上传时长之和，reject*=审核驳回；标注员：completeHours=审核时长之和，reject*=验收驳回
+export function enrichRankingList(list, type) {
+  return (list || []).map((item, i) => {
+    const base = { ...item, rank: item.rank ?? i + 1 }
+    if (base.completeHours != null) return base
+    const c = base.count ?? 0
+    if (type === 'collectors') {
+      const rejectCount = Math.max(0, Math.floor(c * 0.023))
+      return {
+        ...base,
+        completeHours: Math.round(c * 0.018 * 10) / 10,
+        rejectCount,
+        rejectHours: Math.round(rejectCount * 0.022 * 10) / 10,
+      }
+    }
+    const rejectCount = Math.max(0, Math.floor(c * 0.012))
+    return {
+      ...base,
+      completeHours: Math.round(c * 0.016 * 10) / 10,
+      rejectCount,
+      rejectHours: Math.round(rejectCount * 0.019 * 10) / 10,
+    }
+  })
+}
+
 const allRanking = {
   collectors: [
-    { rank: 1, name: '刘伟', count: 1560, target: 1800 },
-    { rank: 2, name: '吴磊', count: 933, target: 1250 },
-    { rank: 3, name: '周杰', count: 724, target: 900 },
-    { rank: 4, name: '郑浩', count: 600, target: 800 },
+    { rank: 1, name: '刘伟', count: 33487, target: 38000, completeHours: 602.8, rejectCount: 768, rejectHours: 16.4 },
+    { rank: 2, name: '吴磊', count: 6574, target: 8200, completeHours: 118.3, rejectCount: 151, rejectHours: 3.2 },
+    { rank: 3, name: '周杰', count: 5420, target: 6000, completeHours: 97.6, rejectCount: 125, rejectHours: 2.7 },
+    { rank: 4, name: '郑浩', count: 4892, target: 5500, completeHours: 88.1, rejectCount: 112, rejectHours: 2.4 },
+    { rank: 5, name: '张华', count: 3200, target: 4000, completeHours: 57.6, rejectCount: 74, rejectHours: 1.6 },
+    { rank: 6, name: '李明', count: 2100, target: 3000, completeHours: 37.8, rejectCount: 48, rejectHours: 1.1 },
+    { rank: 7, name: '王芳', count: 1850, target: 2500, completeHours: 33.3, rejectCount: 43, rejectHours: 0.9 },
+    { rank: 8, name: '赵强', count: 1200, target: 2000, completeHours: 21.6, rejectCount: 28, rejectHours: 0.6 },
+    { rank: 9, name: '陈静', count: 980, target: 1500, completeHours: 17.6, rejectCount: 23, rejectHours: 0.5 },
+    { rank: 10, name: '刘洋', count: 650, target: 1000, completeHours: 11.7, rejectCount: 15, rejectHours: 0.3 },
+    { rank: 11, name: '黄磊', count: 420, target: 800, completeHours: 7.6, rejectCount: 10, rejectHours: 0.2 },
+    { rank: 12, name: '林峰', count: 280, target: 500, completeHours: 5.0, rejectCount: 6, rejectHours: 0.1 },
   ],
   reviewers: [
-    { rank: 1, name: '孙丽', count: 1052, target: 1500 },
-    { rank: 2, name: '钱琳', count: 844, target: 1050 },
-    { rank: 3, name: '何敏', count: 372, target: 450 },
+    { rank: 1, name: '孙丽', count: 4100, target: 4100, completeHours: 65.6, rejectCount: 49, rejectHours: 0.9 },
+    { rank: 2, name: '钱琳', count: 17468, target: 18000, completeHours: 279.5, rejectCount: 210, rejectHours: 4.0 },
+    { rank: 3, name: '何敏', count: 8920, target: 9500, completeHours: 142.7, rejectCount: 107, rejectHours: 2.0 },
+    { rank: 4, name: '胡铭阳', count: 6200, target: 7000, completeHours: 99.2, rejectCount: 74, rejectHours: 1.4 },
+    { rank: 5, name: '王小菲', count: 5100, target: 6000, completeHours: 81.6, rejectCount: 61, rejectHours: 1.2 },
+    { rank: 6, name: '孔祥宇', count: 3800, target: 4500, completeHours: 60.8, rejectCount: 46, rejectHours: 0.9 },
+    { rank: 7, name: '周星怡', count: 2900, target: 3500, completeHours: 46.4, rejectCount: 35, rejectHours: 0.7 },
+    { rank: 8, name: '严婷', count: 2100, target: 2800, completeHours: 33.6, rejectCount: 25, rejectHours: 0.5 },
+    { rank: 9, name: '余艺', count: 1500, target: 2000, completeHours: 24.0, rejectCount: 18, rejectHours: 0.3 },
+    { rank: 10, name: '冯磊', count: 980, target: 1200, completeHours: 15.7, rejectCount: 12, rejectHours: 0.2 },
+    { rank: 11, name: '韩雪', count: 560, target: 800, completeHours: 9.0, rejectCount: 7, rejectHours: 0.1 },
+    { rank: 12, name: '唐杰', count: 320, target: 500, completeHours: 5.1, rejectCount: 4, rejectHours: 0.1 },
   ],
   devices: [
     { rank: 1, name: 'DEV-C01', count: 902, target: 1050 },

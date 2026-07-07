@@ -426,9 +426,22 @@ export function updateQcItemInStore(id, patch) {
   return runtimeQcItems.find((q) => q.id === id) ?? null
 }
 
-// 播放布局（按项目）
+// 播放布局（按项目；列表首行「默认布局」为 UI 固定项，见 buildDefaultPlayLayoutRow）
+export const DEFAULT_PLAY_LAYOUT_ID = 'system-default'
+
+export function buildDefaultPlayLayoutRow(projectId) {
+  return {
+    id: DEFAULT_PLAY_LAYOUT_ID,
+    projectId,
+    name: '默认布局',
+    date: '—',
+    description: '头部/胸部/左右腕相机 + 左右臂关节·末端位姿·夹爪曲线',
+    isSystemBuiltIn: true,
+  }
+}
+
 export const playLayouts = [
-  { id: 1, projectId: 'P-1001', name: '默认四宫格布局', date: '2026-03-13', description: '主视角 + 双腕部相机 + 轨迹曲线' },
+  { id: 1, projectId: 'P-1001', name: '四宫格布局', date: '2026-03-13', description: '主视角 + 双腕部相机 + 轨迹曲线' },
   { id: 2, projectId: 'P-1001', name: '审核专用布局', date: '2026-03-25', description: '主视角大屏 + 质检项悬浮面板' },
   { id: 3, projectId: 'P-1002', name: '厨房双视角布局', date: '2026-03-21', description: '俯视 + 侧视双视角，附力控曲线' },
   { id: 4, projectId: 'P-1002', name: '动捕回放布局', date: '2026-04-01', description: '骨骼点云 + RGB 同步回放' },

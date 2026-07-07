@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import DonutChart from '../../../components/common/DonutChart'
 import BarChart from '../../../components/common/BarChart'
-import Progress from '../../../components/common/Progress'
+import Table from '../../../components/common/Table'
 import { Select } from '../../../components/common/FormField'
-import Tabs from '../../../components/common/Tabs'
-import { realDashboard } from '../../../mock/dashboard'
+import { realDashboard, enrichRankingList } from '../../../mock/dashboard'
 import { projects } from '../../../mock/projects'
-import { tasks, pct, formatCollectors, formatReviewer } from '../../../mock/tasks'
+import { tasks, pct, toPeopleArray, formatReviewer } from '../../../mock/tasks'
 
 // 紧凑卡片（支持双值：count+hours，或单值）
 function CCard({ title, count, hours, value, unit, icon, iconBg = 'bg-blue-50' }) {
@@ -47,7 +46,7 @@ function CCard({ title, count, hours, value, unit, icon, iconBg = 'bg-blue-50' }
 function SectionCard({ title, extra, children, className = '' }) {
   return (
     <div className={`rounded-lg border border-gray-100 bg-white p-4 shadow-sm ${className}`}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
         {extra}
       </div>
@@ -62,6 +61,7 @@ function Toggle({ value, onChange, options }) {
       {options.map((opt) => (
         <button
           key={opt.value}
+          type="button"
           onClick={() => onChange(opt.value)}
           className={`cursor-pointer px-2.5 py-1 transition-colors ${
             value === opt.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:text-blue-600'
@@ -74,118 +74,241 @@ function Toggle({ value, onChange, options }) {
   )
 }
 
-// 进行中任务（可滚动）
-function TaskProgressTable({ projectId }) {
-  const [activeTab, setActiveTab] = useState('collection')
-  const filtered = useMemo(
-    () =>
-      tasks.filter(
-        (t) =>
-          (projectId === 'all' || t.projectId === projectId) &&
-          (activeTab === 'collection'
-            ? t.status === '已发布' && t.collectDone < t.collectTotal
-            : t.status === '已发布' && t.reviewDone < t.collectTotal),
-      ),
-    [projectId, activeTab],
-  )
-
+function SegmentToggle({ value, onChange, options }) {
   return (
-    <>
-      <Tabs
-        items={[
-          { key: 'collection', label: '采集任务' },
-          { key: 'review', label: '标注任务' },
-        ]}
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        className="mb-3"
-      />
-      <div className="max-h-56 overflow-y-auto space-y-2 pr-0.5">
-        {filtered.length === 0 && (
-          <p className="py-6 text-center text-sm text-gray-400">暂无进行中任务</p>
-        )}
-        {filtered.map((t) => (
-          <div
-            key={t.id}
-            className="flex items-center gap-3 rounded-md border border-gray-100 px-3 py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="shrink-0 font-medium text-blue-600">{t.id}</span>
-                <span className="truncate text-gray-700">{t.name}</span>
-              </div>
-              <p className="mt-0.5 text-xs text-gray-400">
-                {activeTab === 'collection'
-                  ? `采集员：${formatCollectors(t.collector)}`
-                  : `标注员：${formatReviewer(t.reviewer)}`}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <Progress
-                percent={pct(
-                  activeTab === 'collection' ? t.collectDone : t.reviewDone,
-                  t.collectTotal,
-                )}
-              />
-              <span className="text-xs text-gray-400">
-                {activeTab === 'collection'
-                  ? `${t.collectDone}/${t.collectTotal}`
-                  : `${t.reviewDone}/${t.collectTotal}`}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
+    <div className="flex shrink-0 gap-1 rounded-lg bg-gray-100 p-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-all ${
+            value === opt.value ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
-// 绩效排行（可滚动，支持采集员/标注员/设备三个 tab）
-function RankingBoard({ ranking }) {
-  const [tab, setTab] = useState('collectors')
-  const list = ranking[tab] || []
-  const medal = ['🥇', '🥈', '🥉']
+function IconCheck({ className = 'h-3 w-3' }) {
+  return (
+    <svg className={className} viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function ProgressPercentCell({ done, total }) {
+  const percent = total === 0 ? 0 : Math.min(100, (done / total) * 100)
+  const complete = percent >= 100
+  const displayPct = complete ? 100 : percent
 
   return (
-    <>
-      <Tabs
-        items={[
-          { key: 'collectors', label: '采集员' },
-          { key: 'reviewers', label: '标注员' },
-          { key: 'devices', label: '设备' },
-        ]}
-        activeKey={tab}
-        onChange={setTab}
-        className="mb-3"
-      />
-      <div className="max-h-56 overflow-y-auto space-y-2.5 pr-0.5">
-        {list.length === 0 && (
-          <p className="py-6 text-center text-sm text-gray-400">暂无数据</p>
-        )}
-        {list.map((item, i) => (
-          <div key={item.name} className="flex items-center gap-2.5">
-            <span className="w-7 shrink-0 text-center text-sm">
-              {i < 3 ? medal[i] : (
-                <span className="text-xs font-medium text-gray-400">{i + 1}</span>
-              )}
-            </span>
-            <span className="w-20 shrink-0 truncate text-xs font-medium text-gray-700">
-              {item.name}
-            </span>
-            <div className="min-w-0 flex-1">
-              <Progress
-                percent={Math.round((item.count / item.target) * 100)}
-                color={i === 0 ? 'bg-amber-400' : 'bg-blue-500'}
-              />
-            </div>
-            <span className="shrink-0 text-xs text-gray-500">
-              {item.count.toLocaleString()}
-              <span className="text-gray-300">/{item.target.toLocaleString()}</span>
-            </span>
-          </div>
-        ))}
+    <div className="flex min-w-[160px] items-center gap-2">
+      <div className="h-2 min-w-[88px] flex-1 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className={`h-full rounded-full transition-all ${complete ? 'bg-emerald-500' : 'bg-blue-500'}`}
+          style={{ width: `${displayPct}%` }}
+        />
       </div>
-    </>
+      {complete ? (
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+          <IconCheck />
+        </span>
+      ) : (
+        <span className="w-14 shrink-0 text-right text-xs tabular-nums text-gray-600">
+          {displayPct.toFixed(2)}%
+        </span>
+      )}
+    </div>
+  )
+}
+
+function RankBadge({ rank }) {
+  if (rank === 1) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-white">
+        1
+      </span>
+    )
+  }
+  if (rank === 2) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-white">
+        2
+      </span>
+    )
+  }
+  if (rank === 3) {
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-400 text-xs font-bold text-white">
+        3
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-500">
+      NO.{rank}
+    </span>
+  )
+}
+
+function QuantityCell({ done, total }) {
+  return (
+    <span className="tabular-nums">
+      <span className="font-medium text-blue-600">{done.toLocaleString()}</span>
+      <span className="mx-0.5 text-gray-400">/</span>
+      <span className="text-gray-700">{total.toLocaleString()}</span>
+    </span>
+  )
+}
+
+function TaskNameCell({ id, name }) {
+  return (
+    <div className="min-w-[140px] text-left">
+      <p className="truncate font-semibold text-gray-900">{name}</p>
+      <p className="mt-0.5 text-xs text-gray-400">{id}</p>
+    </div>
+  )
+}
+
+function OngoingTaskSection({ projectId }) {
+  const [activeTab, setActiveTab] = useState('collection')
+
+  const rows = useMemo(() => {
+    const scoped = tasks.filter((t) => projectId === 'all' || t.projectId === projectId)
+    const filtered = scoped.filter((t) => {
+      if (t.status !== '已发布') return false
+      if (activeTab === 'collection') return t.collectDone < t.collectTotal
+      return t.collectDone > 0 && t.reviewDone < t.collectDone
+    })
+    return filtered.map((t) => {
+      const isCollection = activeTab === 'collection'
+      return {
+        id: t.id,
+        taskId: t.id,
+        name: t.name,
+        person: isCollection ? (toPeopleArray(t.collector)[0] ?? '—') : formatReviewer(t.reviewer),
+        done: isCollection ? t.collectDone : t.reviewDone,
+        total: isCollection ? t.collectTotal : t.collectDone,
+      }
+    })
+  }, [projectId, activeTab])
+
+  const columns = useMemo(() => {
+    const personTitle = activeTab === 'collection' ? '采集员' : '标注员'
+    const qtyTitle = activeTab === 'collection' ? '采集量 / 计划量' : '标注量 / 可标注量'
+    return [
+      {
+        title: '任务 ID / 名称',
+        key: 'task',
+        render: (_, row) => <TaskNameCell id={row.taskId} name={row.name} />,
+      },
+      { title: personTitle, dataIndex: 'person' },
+      {
+        title: qtyTitle,
+        key: 'quantity',
+        render: (_, row) => <QuantityCell done={row.done} total={row.total} />,
+      },
+      {
+        title: '进度百分比',
+        key: 'progress',
+        render: (_, row) => <ProgressPercentCell done={row.done} total={row.total} />,
+      },
+    ]
+  }, [activeTab])
+
+  return (
+    <SectionCard
+      title="进行中任务进度"
+      extra={(
+        <SegmentToggle
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: 'collection', label: '采集任务' },
+            { value: 'review', label: '标注任务' },
+          ]}
+        />
+      )}
+    >
+      <Table columns={columns} dataSource={rows} pageSize={10} scrollVisibleRows={5} bodyRowHeight={56} />
+    </SectionCard>
+  )
+}
+
+function formatHours(v) {
+  if (v == null) return '—'
+  return Number(v).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}
+
+function RankingSection({ ranking }) {
+  const [tab, setTab] = useState('collectors')
+
+  const rows = useMemo(() => {
+    const list = enrichRankingList(ranking[tab] || [], tab)
+    return list.map((item) => ({
+      ...item,
+      percent: pct(item.count, item.target),
+    }))
+  }, [ranking, tab])
+
+  const personTitle = tab === 'collectors' ? '采集员' : '标注员'
+
+  const columns = [
+    {
+      title: '排名',
+      key: 'rank',
+      width: 80,
+      render: (_, row) => <RankBadge rank={row.rank} />,
+    },
+    { title: personTitle, dataIndex: 'name', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
+    {
+      title: '完成数量',
+      dataIndex: 'count',
+      render: (v) => <span className="tabular-nums text-gray-800">{v.toLocaleString()}</span>,
+    },
+    {
+      title: '完成时长（小时）',
+      dataIndex: 'completeHours',
+      render: (v) => <span className="tabular-nums text-gray-700">{formatHours(v)}</span>,
+    },
+    {
+      title: '驳回数量',
+      dataIndex: 'rejectCount',
+      render: (v) => <span className="tabular-nums text-gray-700">{v?.toLocaleString() ?? '—'}</span>,
+    },
+    {
+      title: '驳回时长（小时）',
+      dataIndex: 'rejectHours',
+      render: (v) => <span className="tabular-nums text-gray-700">{formatHours(v)}</span>,
+    },
+    {
+      title: '完成进度',
+      key: 'progress',
+      render: (_, row) => <ProgressPercentCell done={row.count} total={row.target} />,
+    },
+  ]
+
+  return (
+    <SectionCard
+      title="绩效排行榜"
+      extra={(
+        <SegmentToggle
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'collectors', label: '采集员' },
+            { value: 'reviewers', label: '标注员' },
+          ]}
+        />
+      )}
+    >
+      <Table columns={columns} dataSource={rows} pageSize={10} scrollVisibleRows={6} />
+    </SectionCard>
   )
 }
 
@@ -212,7 +335,6 @@ export default function RealDataTab({ fixedProjectId = null }) {
 
   return (
     <div className="space-y-4">
-      {/* 项目筛选（仅总看板显示，项目详情页隐藏） */}
       {fixedProjectId === null && (
         <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white px-4 py-3 shadow-sm">
           <span className="shrink-0 text-sm text-gray-500">所属项目：</span>
@@ -225,6 +347,7 @@ export default function RealDataTab({ fixedProjectId = null }) {
           </div>
           {projectId !== 'all' && (
             <button
+              type="button"
               onClick={() => setProjectId('all')}
               className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
             >
@@ -234,7 +357,6 @@ export default function RealDataTab({ fixedProjectId = null }) {
         </div>
       )}
 
-      {/* 指标卡：4 列两行，共 8 个 */}
       <div className="grid grid-cols-4 gap-3">
         <CCard title="采集数据量" count={m.collectCount} hours={m.collectHours} icon="📥" iconBg="bg-sky-50" />
         <CCard title="审核通过量" count={m.reviewCount} hours={m.reviewHours} icon="✅" iconBg="bg-green-50" />
@@ -246,22 +368,16 @@ export default function RealDataTab({ fixedProjectId = null }) {
         <CCard title="总存储量"   value={m.storage}                           icon="💾" iconBg="bg-slate-50" />
       </div>
 
-      {/* 第一行：任务进度（55%）+ 绩效排行（45%） */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-11">
-        <SectionCard title="进行中任务" className="lg:col-span-6">
-          <TaskProgressTable projectId={projectId} />
-        </SectionCard>
-        <SectionCard title="绩效排行榜" className="lg:col-span-5">
-          <RankingBoard ranking={pData.ranking} />
-        </SectionCard>
+      <div className="space-y-4">
+        <OngoingTaskSection projectId={projectId} />
+        <RankingSection ranking={pData.ranking} />
       </div>
 
-      {/* 第二行：每日采集量（60%）+ 时长分布（40%） */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <SectionCard
           className="lg:col-span-3"
           title="每日采集量"
-          extra={
+          extra={(
             <div className="flex items-center gap-2">
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-gray-500">
                 <input
@@ -290,7 +406,7 @@ export default function RealDataTab({ fixedProjectId = null }) {
                 className="!h-6 !text-xs !w-20"
               />
             </div>
-          }
+          )}
         >
           <BarChart
             data={barData}
@@ -317,7 +433,6 @@ export default function RealDataTab({ fixedProjectId = null }) {
         </SectionCard>
       </div>
 
-      {/* 第三行：4 个环形图，每行两个 */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {[
           { title: '场景分布', data: pData.sceneDistribution },

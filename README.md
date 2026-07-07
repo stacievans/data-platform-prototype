@@ -236,7 +236,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | Tab | 主要内容 |
 |---|---|
 | 全部数据 | 6 张指标卡、数据资产构成 + 层级占比环形图、资产增长双线图、时长分布柱状图、场景分布环形图 + 操作技能英文词云 |
-| 真机数据 | 8 张指标卡（2 行 × 4 列）、进行中任务进度表（采集/标注 tab）、绩效排行榜（采集员/标注员/设备 tab）、每日采集量柱状图（近 7/30 日）、数据时长分布、4 个分布环形图 |
+| 真机数据 | 8 张指标卡、**进行中任务进度** / **绩效排行榜**（上下全宽表格，见下文）、每日采集量柱状图（近 7/30 日）、数据时长分布、4 个分布环形图 |
 | 开源数据 | 5 张指标卡、层级占比环形图、最新入库动态列表 |
 
 #### 真机数据 Tab 详情（`RealDataTab.jsx`）
@@ -259,11 +259,33 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 负责人员 | `metrics.members`（项目成员规模 mock） |
 | 总存储量 | `metrics.storage` |
 
-筛选切换时，除「采集项目数」按上表规则计算外，其余指标均读取 `dashboard.js` → `realDashboard` 中对应 key（`all` 或 `P-1001`~`P-1008`）的 mock 数据；下方排行榜、每日采集量、时长分布、4 个环形图同步切换。
+筛选切换时，除「采集项目数」按上表规则计算外，其余指标均读取 `dashboard.js` → `realDashboard` 中对应 key（`all` 或 `P-1001`~`P-1008`）的 mock 数据；下方任务进度、排行榜、每日采集量、时长分布、4 个环形图同步切换。
 
-**进行中任务**：按当前筛选项目过滤 `tasks.js`，分「采集任务 / 标注任务」两个子 Tab 展示采集中/审核中任务及进度条。
+**布局**：「进行中任务进度」与「绩效排行榜」**上下排列**，各占整行宽度（非左右并排）。
 
-**绩效排行榜**：采集员 / 标注员 / 设备三个子 Tab；单项目时使用该项目专属 `ranking` 数据。
+#### 进行中任务进度（`RealDataTab` → `OngoingTaskSection`）
+
+- **标题** + 右上角胶囊切换：**采集任务** / **标注任务**
+- 数据来源：按当前筛选项目过滤 `tasks.js` 中 **已发布** 任务
+  - **采集任务**：`collectDone < collectTotal`
+  - **标注任务**：`collectDone > 0` 且 `reviewDone < collectDone`（可标注量 = 已采集条数）
+- **表格列**：
+  - **采集任务**：任务 ID/名称（名称粗体、ID 小字在下）、采集员、采集量/计划量、进度百分比
+  - **标注任务**：任务 ID/名称、标注员、标注量/可标注量、进度百分比
+- **进度列**：蓝色进度条 + 两位小数百分比；**100%** 时变绿并显示对勾图标
+- **分页与滚动**：**10 条/页**，底部分页换页；表格区域固定可见 **5 行** 高度（表头 sticky），当前页超出部分在表格内滚动
+
+#### 绩效排行榜（`RealDataTab` → `RankingSection`）
+
+- **标题** + 右上角胶囊切换：**采集员** / **标注员**（已移除设备页签）
+- 数据来源：`realDashboard[projectId].ranking`；全局 `allRanking` 各 12 条，单项目为精简 `ranking`；缺省字段由 `enrichRankingList` 按口径推算
+- **表格列**：排名、人员、完成数量、**完成时长（小时）**、**驳回数量**、**驳回时长（小时）**、完成进度
+- **字段口径（mock）**：
+  - **采集员**：完成时长 = 上传条目时长之和；驳回数量/驳回时长 = **审核驳回**条目数/时长之和
+  - **标注员**：完成时长 = 审核条目时长之和；驳回数量/驳回时长 = **验收驳回**条目数/时长之和
+- **排名样式**：第 1~3 名金/银/铜圆形徽章；第 4 名起 `NO.N` 灰色标签
+- **完成进度**：进度条 + 百分比，100% 变绿带对勾
+- **分页与滚动**：**10 条/页**；表格区域固定可见 **6 行** 高度，当前页超出部分滚动
 
 ---
 
@@ -295,7 +317,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 |---|---|---|
 | 采集方案 | `CollectConfigTab` | 采集方案 CRUD、状态机、标注方案只读弹窗（见下文） |
 | 质检配置 | `QcTab` | 固定质检项列表，开关启停 + 规则说明编辑（见下文） |
-| 播放布局 | `LayoutTab` | 布局配置列表，新建/编辑/下载/删除 |
+| 播放布局 | `LayoutTab` | 系统默认布局 + 项目自建布局；新建/编辑/下载/删除 |
 
 > **标注方案**不再作为独立 Tab。标注配置由采集方案步骤自动生成，在采集方案列表操作栏通过「标注方案」按钮只读查看（`PlanAnnotationDetails`）。
 
@@ -356,11 +378,22 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 #### 播放布局子 Tab（`LayoutTab`）
 
-**列表字段**：序号、布局名称、日期、描述、操作（编辑/下载/删除）
+**列表**（每项目首行固定 **默认布局**，自建布局排在下方、序号顺延）：
 
-**新建弹窗**：布局名称、布局描述
+| 行类型 | 布局名称 | 添加日期 | 描述 | 操作 |
+|---|---|---|---|---|
+| 系统内置 | 默认布局 | 灰 badge「系统内置」 | 头部/胸部/左右腕相机 + 左右臂关节·末端位姿·夹爪曲线 | 仅 **下载** |
+| 自建 | 用户命名（如 P-1001「四宫格布局」） | 创建日期 | 用户填写 | 编辑 · 下载 · 删除 |
 
-**编辑弹窗**：可修改布局名称与描述（日期不变）
+- **默认布局**：UI 固定项（`plans.js` → `buildDefaultPlayLayoutRow`），不可编辑/删除
+- **下载**：Toast「布局文件已导出」（占位）
+
+**新建弹窗**（仅新建，非编辑）：
+- 布局名称（必填）
+- **布局文件**（必填）：虚线框拖拽/点击上传；文案「点击或拖拽文件到此区域上传」；副文案「支持 JSON 格式，文件大小不超过 10MB」；选中后显示文件名可移除；纯前端 mock，不解析文件
+- 布局描述（选填）
+
+**编辑弹窗**：可修改布局名称与描述（不含布局文件；日期不变）
 
 #### 项目人员 Tab
 - **成员列表**：姓名、角色（多 badge）、负责任务（多标签，过多截断 + tooltip）、**加入时间**（`YYYY-MM-DD HH:mm:ss`）、操作（编辑/移除，二次确认移除）
@@ -760,7 +793,7 @@ src/
 │   └── common/
 │       ├── Button.jsx         # 按钮（primary / link / linkDanger）
 │       ├── Modal.jsx          # 弹窗（支持 fitViewport 视口限高与内容滚动）
-│       ├── Table.jsx          # 表格（斑马纹、列级换行 wrap、全列居中、可选 pageSize 分页）
+│       ├── Table.jsx          # 表格（斑马纹、全列居中；pageSize 分页；scrollVisibleRows 固定可见行数+表内滚动，可与分页组合）
 │       ├── Badge.jsx          # 状态标签（多色、dot 模式）
 │       ├── Tabs.jsx           # Tab 切换（蓝色下划线）
 │       ├── Progress.jsx       # 进度条
@@ -866,19 +899,19 @@ src/
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-001 张华** |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`；刷新后恢复 preset |
 | 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；审核工作台提交后更新 `dataStatus` 与会话内持久 |
-| 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID 分 key |
+| 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
 | 删除确认 | 重要删除需输入名称完全匹配；标签/设备为 Modal 二次确认 |
 | Toast | `useToast` hook，2.5 秒自动消失 |
-| 表格对齐 | `Table` 表头与单元格默认水平居中 |
+| 表格对齐 | `Table` 表头与单元格默认水平居中；支持 `pageSize` 分页 + `scrollVisibleRows`/`bodyRowHeight` 组合（运营看板任务进度 5 行、排行榜 6 行可见，每页 10 条） |
 | 筛选交互 | 绝大多数列表页点击「查询」生效；**角色管理**页（`/system/role`）筛选为输入即过滤 |
 | 筛选布局惯例 | 筛选项左侧 `flex min-w-0 flex-1` + 各字段 `flex-1 basis-0`；「重置」「查询」固定右侧 `shrink-0` |
 | 弹窗限高 | `Modal` 的 `fitViewport`：限高 85vh、内容区滚动、底部按钮固定 |
 | 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset` |
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode` 等 |
-| 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore` |
+| 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
 ---
@@ -890,7 +923,7 @@ src/
 | 采集项目 | 8 条（含不同状态；mock 仍含 `type` 正式/测试，UI 不展示；`createdAt` 精确到秒） |
 | 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布**；含 `deviceTypeId`、场景路径、步骤、标注开关） |
 | 质检项 | 每项目固定 6 条（8 项目 × 6 = 48 条；`plans.js` → `getQcItemsByProjectId`） |
-| 播放布局 | 按项目配置（`playLayouts`）；支持新建/编辑名称与描述 |
+| 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
 | 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；采集员/标注员支持多人） |
 | 采集条目 | 每任务 5~10 条（伪随机生成）；**6 值** `dataStatus`；含 `actionSegments`、`regionFrames`、审核/验收字段 |
 | 上传记录 | 由 `entries` 派生，字段与条目列表对齐 |
@@ -906,7 +939,7 @@ src/
 | 内置角色 | 6 个：`管理员` / `平台运营` / `采集员` / `标注员` / `游客` / `工程师`（`rbac.js` R-001~R-006） |
 | 项目成员 | 按项目 ID 组织；`joinedAt` 精确到 `YYYY-MM-DD HH:mm:ss` |
 | 系统日志 | 15 条 |
-| 运营看板（真机） | `realDashboard.all` 汇总 8 项目；各 `P-1001`~`P-1008` 独立 metrics |
+| 运营看板（真机） | `realDashboard.all` 汇总 8 项目；各 `P-1001`~`P-1008` 独立 metrics + 精简 ranking；全局 ranking 采集员/标注员各 12 名 |
 
 ### Mock 用户（`misc.js` → `users`）
 
