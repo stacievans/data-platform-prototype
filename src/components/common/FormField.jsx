@@ -1,0 +1,72 @@
+import { useCurrentNickname } from '../../context/AuthContext'
+
+export function Input({ label, className = '', ...rest }) {
+  const input = (
+    <input
+      className={`h-8 w-full rounded-md border border-gray-300 bg-white px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${className}`}
+      {...rest}
+    />
+  )
+  if (!label) return input
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-gray-600">{label}</span>
+      {input}
+    </label>
+  )
+}
+
+export function TextArea({ label, className = '', ...rest }) {
+  const area = (
+    <textarea
+      rows={3}
+      className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${className}`}
+      {...rest}
+    />
+  )
+  if (!label) return area
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-gray-600">{label}</span>
+      {area}
+    </label>
+  )
+}
+
+import { nativeSelectChevronCls } from './SelectControl'
+
+export function Select({ label, options = [], className = '', ...rest }) {
+  const select = (
+    <select
+      className={`h-8 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${nativeSelectChevronCls} ${className}`}
+      {...rest}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  )
+  if (!label) return select
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-gray-600">{label}</span>
+      {select}
+    </label>
+  )
+}
+
+const creatorReadonlyCls =
+  'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
+
+/** 新建弹窗只读「创建人」，随演示身份切换实时更新 */
+export function CreatorReadonlyField({ label = '创建人', className = '' }) {
+  const creator = useCurrentNickname()
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-1.5 block text-sm font-medium text-gray-700">{label}</span>
+      <input readOnly value={creator} className={creatorReadonlyCls} />
+    </label>
+  )
+}
