@@ -14,15 +14,17 @@ export default function Modal({
   fitViewport = false,
   viewportMaxHeight = '85vh',
   bodyClassName = '',
+  zIndex = 50,
 }) {
   if (!open) return null
   return (
     <div
-      className={`fixed inset-0 z-50 bg-black/45 ${
+      className={`fixed inset-0 bg-black/45 ${
         fitViewport
           ? 'flex items-center justify-center p-4'
           : 'flex items-start justify-center overflow-y-auto p-4 pt-24'
       }`}
+      style={{ zIndex }}
     >
       <div
         className={`w-full rounded-lg bg-white shadow-xl ${fitViewport ? 'flex max-h-full flex-col' : ''}`}

@@ -4,6 +4,7 @@ import LoginPage from '../pages/Login/LoginPage'
 import Dashboard from '../pages/Dashboard'
 import ProjectList from '../pages/Project'
 import ProjectDetail from '../pages/Project/Detail'
+import ProjectSampling from '../pages/Project/Sampling'
 import TaskList from '../pages/Task'
 import TaskDetail from '../pages/Task/Detail'
 import UploadRecord from '../pages/UploadRecord'
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/login" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'collection/project', element: <ProjectList /> },
+      { path: 'collection/project/:id/sampling', element: <ProjectSampling /> },
       { path: 'collection/project/:id', element: <ProjectDetail /> },
       { path: 'collection/task', element: <TaskList /> },
       { path: 'collection/task/:id', element: <TaskDetail /> },

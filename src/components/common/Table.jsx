@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import ListPaginator from './ListPaginator'
 
 export default function Table({
   columns,
   dataSource,
   rowKey = 'id',
   pageSize,
+  pageResetKey,
   scrollVisibleRows,
   bodyRowHeight = 48,
 }) {
@@ -16,7 +18,7 @@ export default function Table({
 
   useEffect(() => {
     setPage(1)
-  }, [total, pageSize, scrollVisibleRows])
+  }, [total, pageSize, scrollVisibleRows, pageResetKey])
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
@@ -27,20 +29,6 @@ export default function Table({
     const start = (page - 1) * pageSize
     return dataSource.slice(start, start + pageSize)
   }, [dataSource, page, pageSize, paginated])
-
-  const pageBtnCls = (active) =>
-    `rounded border px-2.5 py-1 transition-colors ${
-      active
-        ? 'border-blue-500 bg-blue-50 text-blue-600'
-        : 'border-gray-200 hover:border-blue-400 hover:text-blue-600'
-    }`
-
-  const navBtnCls = (disabled) =>
-    `rounded border px-2 py-1 transition-colors ${
-      disabled
-        ? 'cursor-not-allowed border-gray-100 text-gray-300'
-        : 'cursor-pointer border-gray-200 hover:border-blue-400 hover:text-blue-600'
-    }`
 
   const theadHeight = 44
   const scrollMaxHeight = scrollable
@@ -103,51 +91,27 @@ export default function Table({
   )
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      {scrollable ? (
-        <div className="overflow-y-auto" style={{ maxHeight: scrollMaxHeight }}>
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto">
+        {scrollable ? (
+          <div className="overflow-y-auto" style={{ maxHeight: scrollMaxHeight }}>
+            <table className="w-full min-w-max text-sm">
+              {tableBody}
+            </table>
+          </div>
+        ) : (
           <table className="w-full min-w-max text-sm">
             {tableBody}
           </table>
-        </div>
-      ) : (
-        <table className="w-full min-w-max text-sm">
-          {tableBody}
-        </table>
-      )}
-      <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2.5 text-xs text-gray-500">
-        <span>共 {total} 条记录</span>
-        {paginated && (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className={navBtnCls(page <= 1)}
-            >
-              上一页
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setPage(n)}
-                className={pageBtnCls(page === n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className={navBtnCls(page >= totalPages)}
-            >
-              下一页
-            </button>
-          </div>
         )}
       </div>
+      {paginated ? (
+        <ListPaginator total={total} page={page} pageSize={pageSize} onPageChange={setPage} />
+      ) : (
+        <div className="border-t border-gray-100 px-4 py-2.5 text-xs text-gray-500">
+          共 {total} 条记录
+        </div>
+      )}
     </div>
   )
 }

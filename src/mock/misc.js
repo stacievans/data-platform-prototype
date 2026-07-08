@@ -49,6 +49,8 @@ export const users = [
   { id: 8, uid: 'U-008', username: 'qianlin',  nickname: '钱琳',   phone: '158****1196', role: '标注员',   status: '启用' },
   { id: 9, uid: 'U-009', username: 'zhaoyan',  nickname: '赵研',   phone: '133****8801', role: '游客',     status: '启用' },
   { id: 10, uid: 'U-010', username: 'chengong', nickname: '陈工',   phone: '132****5566', role: '工程师',   status: '启用' },
+  { id: 11, uid: 'U-011', username: 'wulei',    nickname: '吴磊',   phone: '134****7788', role: '采集员&标注员', status: '启用' },
+  { id: 12, uid: 'U-012', username: 'zhenghao', nickname: '郑浩',   phone: '159****3321', role: '采集员&标注员', status: '启用' },
 ]
 
 export const roleColor = {

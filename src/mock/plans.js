@@ -1,3 +1,7 @@
+import { projects } from './projects'
+import { sceneTypeTree } from './tags'
+import { getAllDeviceTypes } from './devices'
+
 // 采集方案
 export const plans = [
   {
@@ -199,7 +203,7 @@ export const plans = [
       { description: '压平折痕', atomicSkill: 'press', duration: 5, deviation: 1 },
       { description: '松开并整理', atomicSkill: 'open', duration: 4, deviation: 1 },
     ],
-    taskCount: 0, status: '已发布',
+    taskCount: 0, status: '已归档',
   },
   {
     id: 'PL-3013', projectId: 'P-1006', name: '餐具回收方案',
@@ -228,7 +232,7 @@ export const plans = [
       { description: '匀速横向擦拭全程', atomicSkill: 'move', duration: 12, deviation: 3 },
       { description: '归还清洁布', atomicSkill: 'open', duration: 4, deviation: 1 },
     ],
-    taskCount: 0, status: '已发布',
+    taskCount: 0, status: '已归档',
   },
   {
     id: 'PL-3015', projectId: 'P-1007', name: '箱体协同搬运方案',
@@ -298,20 +302,93 @@ export const plans = [
   },
 ]
 
-/** robotBody（方案字段）→ 设备类型 ID，用于实例级联 */
+/** robotBody（方案字段）→ 设备类型 ID，用于实例级联；兼容历史 mock 名称 */
 export const ROBOT_BODY_TO_DEVICE_TYPE = {
   'AlphaBot-1 双夹爪':         'DTY-001',
+  'AlphaBotX · 夹爪+夹爪':       'DTY-001',
   'AlphaBot-1 双灵巧手':        'DTY-002',
+  'AlphaBotX · 灵巧手+灵巧手':  'DTY-002',
   'AlphaBot-2 双灵巧手':        'DTY-003',
+  'AlphaBot2 · 灵巧手+灵巧手':  'DTY-003',
   'AlphaBot-2 左夹爪右灵巧手':  'DTY-004',
+  'AlphaBot2 · 夹爪+灵巧手':    'DTY-004',
   'AlphaBot-2 左灵巧手右夹爪':  'DTY-005',
+  'AlphaBot2 · 灵巧手+夹爪':    'DTY-005',
   'AlphaBot-2 双夹爪':         'DTY-001',
 }
 
-let runtimePlans = plans.map((p) => ({
-  ...p,
-  deviceTypeId: p.deviceTypeId ?? ROBOT_BODY_TO_DEVICE_TYPE[p.robotBody] ?? '',
-}))
+/** 各方案默认三级场景路径（与 sceneTypeTree 级联一致） */
+const PLAN_SCENE_PATH = {
+  'PL-3001': { sceneId: 'SC-001', subSceneId: 'SC-001-01', tagId: 'CT-201-01' },
+  'PL-3002': { sceneId: 'SC-001', subSceneId: 'SC-001-02', tagId: 'CT-201-03' },
+  'PL-3003': { sceneId: 'SC-001', subSceneId: 'SC-001-01', tagId: 'CT-201-01' },
+  'PL-3004': { sceneId: 'SC-003', subSceneId: 'SC-003-01', tagId: 'CT-203-01' },
+  'PL-3005': { sceneId: 'SC-003', subSceneId: 'SC-003-01', tagId: 'CT-203-01' },
+  'PL-3006': { sceneId: 'SC-002', subSceneId: 'SC-002-01', tagId: 'CT-202-01' },
+  'PL-3007': { sceneId: 'SC-002', subSceneId: 'SC-002-01', tagId: 'CT-202-02' },
+  'PL-3008': { sceneId: 'SC-002', subSceneId: 'SC-002-01', tagId: 'CT-202-01' },
+  'PL-3009': { sceneId: 'SC-002', subSceneId: 'SC-002-02', tagId: 'CT-202-03' },
+  'PL-3010': { sceneId: 'SC-003', subSceneId: 'SC-003-02', tagId: 'CT-203-02' },
+  'PL-3011': { sceneId: 'SC-001', subSceneId: 'SC-001-02', tagId: 'CT-201-03' },
+  'PL-3012': { sceneId: 'SC-001', subSceneId: 'SC-001-02', tagId: 'CT-201-03' },
+  'PL-3013': { sceneId: 'SC-003', subSceneId: 'SC-003-01', tagId: 'CT-203-01' },
+  'PL-3014': { sceneId: 'SC-001', subSceneId: 'SC-001-01', tagId: 'CT-201-02' },
+  'PL-3015': { sceneId: 'SC-002', subSceneId: 'SC-002-02', tagId: 'CT-202-03' },
+  'PL-3016': { sceneId: 'SC-002', subSceneId: 'SC-002-02', tagId: 'CT-202-03' },
+  'PL-3017': { sceneId: 'SC-002', subSceneId: 'SC-002-01', tagId: 'CT-202-02' },
+  'PL-3018': { sceneId: 'SC-003', subSceneId: 'SC-003-02', tagId: 'CT-203-03' },
+}
+
+function formatSceneLabelFromTree(sceneId, subSceneId, tagId) {
+  const scene = sceneTypeTree.find((s) => s.id === sceneId)
+  const sub = scene?.subScenes?.find((s) => s.id === subSceneId)
+  const tag = sub?.tags?.find((t) => t.id === tagId)
+  return [scene?.name, sub?.name, tag?.name].filter(Boolean).join(' / ')
+}
+
+function resolveDeviceTypeName(deviceTypeId) {
+  if (!deviceTypeId) return ''
+  return getAllDeviceTypes().find((t) => t.id === deviceTypeId)?.name ?? ''
+}
+
+function planDatetimeSeed(id, kind) {
+  const n = parseInt(String(id).replace(/^PL-/, ''), 10) || 3000
+  if (kind === 'created') {
+    const day = (n % 25) + 1
+    const hour = 9 + (n % 8)
+    return `2026-03-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:24:00`
+  }
+  const day = (n % 20) + 1
+  const hour = 10 + (n % 10)
+  return `2026-06-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:32:00`
+}
+
+function nowDatetime() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function enrichPlan(p) {
+  const project = projects.find((pr) => pr.id === p.projectId)
+  const deviceTypeId = p.deviceTypeId ?? ROBOT_BODY_TO_DEVICE_TYPE[p.robotBody] ?? ''
+  const scenePath = p.scenePath ?? PLAN_SCENE_PATH[p.id] ?? null
+  const sceneLabel = scenePath
+    ? formatSceneLabelFromTree(scenePath.sceneId, scenePath.subSceneId, scenePath.tagId)
+    : (p.sceneLabel ?? '—')
+  const robotBody = resolveDeviceTypeName(deviceTypeId) || p.robotBody || '—'
+  return {
+    ...p,
+    deviceTypeId,
+    robotBody,
+    scenePath,
+    sceneLabel,
+    creator: p.creator ?? project?.creator ?? '—',
+    createdAt: p.createdAt ?? planDatetimeSeed(p.id, 'created'),
+    updatedAt: p.updatedAt ?? planDatetimeSeed(p.id, 'updated'),
+    taskCount: p.taskCount ?? 0,
+  }
+}
+
+let runtimePlans = plans.map(enrichPlan)
 
 export function getAllPlans() {
   return runtimePlans
@@ -326,12 +403,13 @@ export function getPlanById(id) {
 }
 
 export function appendPlan(plan) {
-  runtimePlans = [{ ...plan }, ...runtimePlans]
-  return plan
+  const enriched = enrichPlan(plan)
+  runtimePlans = [{ ...enriched }, ...runtimePlans]
+  return enriched
 }
 
 export function updatePlanInStore(id, patch) {
-  runtimePlans = runtimePlans.map((p) => (p.id === id ? { ...p, ...patch } : p))
+  runtimePlans = runtimePlans.map((p) => (p.id === id ? enrichPlan({ ...p, ...patch }) : p))
   return getPlanById(id)
 }
 
@@ -340,19 +418,36 @@ export function deletePlanFromStore(id) {
 }
 
 export function publishPlanInStore(id) {
-  return updatePlanInStore(id, { status: '已发布' })
+  return updatePlanInStore(id, { status: '已发布', updatedAt: nowDatetime() })
+}
+
+export function archivePlanInStore(id) {
+  return updatePlanInStore(id, { status: '已归档', updatedAt: nowDatetime() })
+}
+
+export function incrementPlanTaskCount(id) {
+  const plan = getPlanById(id)
+  if (!plan) return null
+  return updatePlanInStore(id, {
+    taskCount: (plan.taskCount ?? 0) + 1,
+    updatedAt: nowDatetime(),
+  })
 }
 
 export function copyPlanInStore(sourceId) {
   const source = getPlanById(sourceId)
   if (!source) return null
   const newId = nextPlanId()
+  const now = nowDatetime()
   const copy = {
     ...source,
     id: newId,
     name: `${source.name}_副本${newId}`,
     taskCount: 0,
     status: '草稿',
+    creator: source.creator,
+    createdAt: now,
+    updatedAt: now,
     steps: (source.steps ?? []).map((s) => ({
       ...s,
       atomicSkills: Array.isArray(s.atomicSkills) ? [...s.atomicSkills] : undefined,
@@ -366,6 +461,7 @@ export function copyPlanInStore(sourceId) {
 export const planStatusColor = {
   草稿: 'gray',
   已发布: 'blue',
+  已归档: 'gray',
 }
 
 export function nextPlanId() {
@@ -382,6 +478,9 @@ export function resolvePlanDeviceTypeId(plan) {
 }
 
 export function deviceTypeIdToRobotBody(typeId) {
+  if (!typeId) return ''
+  const name = resolveDeviceTypeName(typeId)
+  if (name) return name
   const found = Object.entries(ROBOT_BODY_TO_DEVICE_TYPE).find(([, id]) => id === typeId)
   return found?.[0] ?? ''
 }

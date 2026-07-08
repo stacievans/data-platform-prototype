@@ -114,6 +114,14 @@ export const tasks = [
     creator: '孙丽', createdAt: '2026-05-11 18:00', updatedAt: '2026-06-06 20:10',
   },
   {
+    id: 'T-2016', planId: 'PL-3018', name: '双臂协作搬运-标准采集', purpose: '正式采集',
+    device: 'AlphaBot-2 双夹爪', robotBody: 'AlphaBot-2 双夹爪', method: 'VR遥操', scene: '工业装配',
+    projectId: 'P-1007', projectName: '双臂协作搬运采集',
+    collectTotal: 500, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
+    status: '草稿', collector: [], reviewer: '',
+    creator: '赵强', createdAt: '2026-05-18 10:30', updatedAt: '2026-05-18 10:30',
+  },
+  {
     id: 'T-2015', planId: 'PL-3017', name: '小物件精细抓取采集', purpose: '正式采集',
     device: 'AlphaBot-1 双灵巧手', robotBody: 'AlphaBot-1 双灵巧手', method: '外骨骼', scene: '办公整理',
     projectId: 'P-1008', projectName: '精细抓取操作采集',
@@ -153,4 +161,15 @@ export function nextTaskId(taskList) {
 
 export function nowDatetime() {
   return new Date().toISOString().slice(0, 16).replace('T', ' ')
+}
+
+/** 同步更新全局任务 mock（项目人员分配、任务列表等共用） */
+export function syncTasks(updater) {
+  const next = typeof updater === 'function' ? updater([...tasks]) : updater
+  tasks.splice(0, tasks.length, ...next)
+  return [...tasks]
+}
+
+export function getTaskById(id) {
+  return tasks.find((t) => t.id === id)
 }

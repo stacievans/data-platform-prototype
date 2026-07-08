@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
@@ -11,6 +11,8 @@ import { PermButton, PermAction, PERM_DENIED_TIP } from '../../components/common
 import { useToast } from '../../components/common/Toast'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import TaskList from '../Task/index'
+import CreateTaskModal from '../Task/CreateTaskModal'
+import MembersTab from './MembersTab'
 import { projects } from '../../mock/projects'
 import {
   getPlansByProjectId,
@@ -19,8 +21,11 @@ import {
   nextPlanId,
   deletePlanFromStore,
   publishPlanInStore,
+  archivePlanInStore,
+  incrementPlanTaskCount,
   copyPlanInStore,
   planStatusColor,
+  resolvePlanDeviceTypeId,
   getQcItemsByProjectId,
   updateQcItemInStore,
   QC_TYPE_OPTIONS,
@@ -42,9 +47,8 @@ import {
   PlanReadonlyDetails,
   PlanAnnotationDetails,
 } from '../../components/collect/CollectPlanForm'
-import { users, projectMembers as allProjectMembers } from '../../mock/misc'
-import { tasks as allTasks } from '../../mock/tasks'
-import { useAuth } from '../../context/AuthContext'
+import { tasks as taskStore, syncTasks, nowDatetime } from '../../mock/tasks'
+import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
 import RealDataTab from '../Dashboard/tabs/RealDataTab'
@@ -55,10 +59,6 @@ const TABS = [
   { key: 'members',   label: '项目人员' },
   { key: 'dashboard', label: '运营看板' },
 ]
-
-const MEMBER_ROLES = ['采集员', '标注员']
-const ROLE_COLORS  = { 采集员: 'cyan', 标注员: 'orange', 平台运营: 'blue' }
-const nowDatetime  = () => new Date().toISOString().slice(0, 19).replace('T', ' ')
 
 const QC_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
 const QC_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -110,6 +110,7 @@ function PlanLinkAction({ permission, onClick, children, danger = false }) {
 function PlanActionConfirmModal({ open, type, plan, onCancel, onConfirm }) {
   if (!open || !plan) return null
   const isPublish = type === 'publish'
+  const isArchive = type === 'archive'
   const isDelete = type === 'delete'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -117,15 +118,17 @@ function PlanActionConfirmModal({ open, type, plan, onCancel, onConfirm }) {
       <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
         <div className="p-6">
           <div className="mb-3 flex items-center gap-2">
-            <span className="text-lg">{isDelete ? '⚠️' : '📢'}</span>
+            <span className="text-lg">{isDelete ? '⚠️' : isArchive ? '📦' : '📢'}</span>
             <h2 className={`text-base font-semibold ${isDelete ? 'text-red-600' : 'text-gray-800'}`}>
-              {isPublish ? '发布采集方案' : '删除采集方案'}
+              {isPublish ? '发布采集方案' : isArchive ? '归档采集方案' : '删除采集方案'}
             </h2>
           </div>
           <p className="text-sm text-gray-500">
             {isPublish
               ? `确认发布方案「${plan.name}」？发布后将可用于创建采集任务。`
-              : `确认删除方案「${plan.name}」？此操作不可恢复。`}
+              : isArchive
+                ? `确认将方案「${plan.name}」归档？归档后不可再创建任务。`
+                : `确认删除方案「${plan.name}」？此操作不可恢复。`}
           </p>
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
@@ -173,7 +176,8 @@ function SubTabBar({ items, activeKey, onChange }) {
 }
 
 /* ---------- 采集方案 ---------- */
-function CollectConfigTab({ projectId }) {
+function CollectConfigTab({ projectId, onTasksChange }) {
+  const creatorName = useCurrentNickname()
   const [plans, setPlans]         = useState(() => getPlansByProjectId(projectId))
   const refreshPlans              = () => setPlans(getPlansByProjectId(projectId))
   const [modalOpen, setModalOpen] = useState(false)
@@ -182,6 +186,7 @@ function CollectConfigTab({ projectId }) {
   const [errors, setErrors]       = useState({})
   const [viewTarget, setViewTarget] = useState(null)
   const [annotTarget, setAnnotTarget] = useState(null)
+  const [createTaskPlan, setCreateTaskPlan] = useState(null)
   const [confirm, setConfirm] = useState({ open: false, type: null, plan: null })
 
   const deviceTypes = useMemo(() => getAllDeviceTypes(), [modalOpen, viewTarget])
@@ -218,6 +223,12 @@ function CollectConfigTab({ projectId }) {
     setConfirm({ open: false, type: null, plan: null })
   }
 
+  const handleArchive = (row) => {
+    archivePlanInStore(row.id)
+    refreshPlans()
+    setConfirm({ open: false, type: null, plan: null })
+  }
+
   const handleDelete = (row) => {
     deletePlanFromStore(row.id)
     refreshPlans()
@@ -230,30 +241,42 @@ function CollectConfigTab({ projectId }) {
     const { type, plan } = confirm
     if (!plan) return
     if (type === 'publish') handlePublish(plan)
+    if (type === 'archive') handleArchive(plan)
     if (type === 'delete') handleDelete(plan)
   }
 
   const renderPlanActions = (row) => {
-    const annotBtn = (
-      <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注方案</PlanLinkAction>
+    const deleteBtn = (
+      <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
     )
     if (row.status === '草稿') {
       return (
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
-          {annotBtn}
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'publish', plan: row })}>发布</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
+          {deleteBtn}
+        </div>
+      )
+    }
+    if (row.status === '已发布') {
+      return (
+        <div className={PLAN_ACTION_BAR_CLS}>
+          <PlanCopyBtn onClick={() => handleCopy(row)} />
+          <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'archive', plan: row })}>归档</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
+          {deleteBtn}
         </div>
       )
     }
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
         <PlanCopyBtn onClick={() => handleCopy(row)} />
-        {annotBtn}
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
-        <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
+        <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
+        {deleteBtn}
       </div>
     )
   }
@@ -282,8 +305,9 @@ function CollectConfigTab({ projectId }) {
     const errs = validatePlanForm(form)
     if (Object.keys(errs).length) { setErrors(errs); return }
     const payload = buildPlanPayloadFromForm(form, deviceTypes)
+    const now = nowDatetime()
     if (editTarget) {
-      updatePlanInStore(editTarget.id, payload)
+      updatePlanInStore(editTarget.id, { ...payload, updatedAt: now })
       refreshPlans()
     } else {
       storeAppendPlan({
@@ -291,7 +315,10 @@ function CollectConfigTab({ projectId }) {
         projectId,
         ...payload,
         taskCount: 0,
-        status: '已发布',
+        status: '草稿',
+        creator: creatorName,
+        createdAt: now,
+        updatedAt: now,
       })
       refreshPlans()
     }
@@ -301,9 +328,22 @@ function CollectConfigTab({ projectId }) {
   const columns = [
     { title: '方案ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
     { title: '方案名称', dataIndex: 'name' },
-    { title: '本体类型', dataIndex: 'robotBody' },
+    {
+      title: '本体类型',
+      key: 'robotBody',
+      render: (_, row) => {
+        const typeId = resolvePlanDeviceTypeId(row)
+        const type = deviceTypes.find((t) => t.id === typeId)
+        return type?.name ?? row.robotBody ?? '—'
+      },
+    },
+    { title: '所属场景', dataIndex: 'sceneLabel', render: (v) => v || '—' },
     { title: '采集方式', dataIndex: 'method' },
-    { title: '步骤数', dataIndex: 'steps', render: (v) => Array.isArray(v) ? v.length : v },
+    { title: '动作步骤数', dataIndex: 'steps', render: (v) => (Array.isArray(v) ? v.length : v ?? '—') },
+    { title: '关联任务数', dataIndex: 'taskCount', render: (v) => v ?? 0 },
+    { title: '创建人', dataIndex: 'creator', render: (v) => v || '—' },
+    { title: '创建时间', dataIndex: 'createdAt', render: (v) => v || '—' },
+    { title: '更新时间', dataIndex: 'updatedAt', render: (v) => v || '—' },
     {
       title: '状态', dataIndex: 'status',
       render: (v) => <Badge color={planStatusColor[v] ?? 'gray'} dot>{v}</Badge>,
@@ -386,7 +426,7 @@ function CollectConfigTab({ projectId }) {
 
       <Modal
         open={!!annotTarget}
-        title="标注方案"
+        title="标注配置"
         onCancel={() => setAnnotTarget(null)}
         footer={
           <div className="flex justify-end">
@@ -405,6 +445,23 @@ function CollectConfigTab({ projectId }) {
           </div>
         )}
       </Modal>
+
+      <CreateTaskModal
+        open={!!createTaskPlan}
+        projectId={projectId}
+        initialPlan={createTaskPlan}
+        onClose={(task) => {
+          setCreateTaskPlan(null)
+          if (!task) return
+          if (onTasksChange) {
+            onTasksChange((prev) => [task, ...prev])
+          } else {
+            syncTasks((prev) => [task, ...prev])
+          }
+          incrementPlanTaskCount(task.planId)
+          refreshPlans()
+        }}
+      />
     </div>
   )
 }
@@ -632,12 +689,12 @@ const SCHEME_SUB_TABS = [
   { key: 'layout',   label: '播放布局' },
 ]
 
-function SchemeTab({ projectId }) {
+function SchemeTab({ projectId, onTasksChange }) {
   const [sub, setSub] = useState('collect')
   return (
     <div>
       <SubTabBar items={SCHEME_SUB_TABS} activeKey={sub} onChange={setSub} />
-      {sub === 'collect'  && <CollectConfigTab projectId={projectId} />}
+      {sub === 'collect'  && <CollectConfigTab projectId={projectId} onTasksChange={onTasksChange} />}
       {sub === 'qc'       && <QcTab projectId={projectId} />}
       {sub === 'layout'   && <LayoutTab projectId={projectId} />}
     </div>
@@ -920,384 +977,35 @@ function LayoutTab({ projectId }) {
   )
 }
 
-/* ---------- 项目人员 ---------- */
-function MembersTab({ projectId }) {
-  const project = projects.find((p) => p.id === projectId)
-
-  // 普通成员（不含平台运营，平台运营由创建人合成）
-  const [members, setMembers]       = useState(
-    (allProjectMembers[projectId] ?? []).filter((m) => !m.roles.includes('平台运营')),
-  )
-  const [modalOpen, setModalOpen]   = useState(false)
-  const [editTarget, setEditTarget] = useState(null)
-  const [form, setForm]             = useState({ name: '', roles: [], taskIds: [] })
-  const [errors, setErrors]         = useState({})
-  const [removeTarget, setRemoveTarget] = useState(null)
-  const [replaceConfirm, setReplaceConfirm] = useState(null)
-
-  // 平台运营（创建人）合成行，固定置顶
-  const creatorRow = {
-    id:       `__creator__${projectId}`,
-    name:     project?.creator ?? '—',
-    roles:    ['平台运营'],
-    taskIds:  [],
-    joinedAt: project?.createdAt ?? '—',
-    isCreator: true,
-  }
-
-  const projectTasks = useMemo(() => allTasks.filter((t) => t.projectId === projectId), [projectId])
-  const taskNameMap  = useMemo(() => Object.fromEntries(allTasks.map((t) => [t.id, t.name])), [])
-
-  const openAdd = () => {
-    setEditTarget(null)
-    setForm({ name: '', roles: [], taskIds: [] })
-    setErrors({})
-    setModalOpen(true)
-  }
-
-  const openEdit = (row) => {
-    setEditTarget(row)
-    setForm({ name: row.name, roles: [...row.roles], taskIds: [...row.taskIds] })
-    setErrors({})
-    setModalOpen(true)
-  }
-
-  const toggleRole = (role) => {
-    setForm((f) => ({
-      ...f,
-      roles: f.roles.includes(role) ? f.roles.filter((r) => r !== role) : [...f.roles, role],
-    }))
-    setErrors((e) => ({ ...e, roles: false }))
-  }
-
-  const findAnnotatorForTask = (taskId, excludeMemberId = null) =>
-    members.find(
-      (m) =>
-        m.id !== excludeMemberId &&
-        m.roles.includes('标注员') &&
-        m.taskIds.includes(taskId),
-    )
-
-  const stripAnnotatorTask = (list, taskId, excludeMemberId = null) =>
-    list.map((m) => {
-      if (m.id === excludeMemberId) return m
-      if (m.roles.includes('标注员') && m.taskIds.includes(taskId)) {
-        return { ...m, taskIds: m.taskIds.filter((t) => t !== taskId) }
-      }
-      return m
-    })
-
-  const toggleTask = (id) => {
-    const isAdding = !form.taskIds.includes(id)
-    if (isAdding && form.roles.includes('标注员')) {
-      const owner = findAnnotatorForTask(id, editTarget?.id)
-      if (owner) {
-        setReplaceConfirm({ taskId: id, existingName: owner.name })
-        return
-      }
-    }
-    setForm((f) => ({
-      ...f,
-      taskIds: isAdding ? [...f.taskIds, id] : f.taskIds.filter((t) => t !== id),
-    }))
-  }
-
-  const confirmReplaceTask = () => {
-    const { taskId } = replaceConfirm
-    setMembers((list) => stripAnnotatorTask(list, taskId, editTarget?.id))
-    setForm((f) => ({
-      ...f,
-      taskIds: f.taskIds.includes(taskId) ? f.taskIds : [...f.taskIds, taskId],
-    }))
-    setReplaceConfirm(null)
-  }
-
-  const handleSave = () => {
-    const errs = {}
-    if (!form.name)         errs.name  = true
-    if (!form.roles.length) errs.roles = true
-    if (Object.keys(errs).length) { setErrors(errs); return }
-
-    let nextMembers = [...members]
-    if (form.roles.includes('标注员') && form.taskIds.length) {
-      for (const taskId of form.taskIds) {
-        nextMembers = stripAnnotatorTask(nextMembers, taskId, editTarget?.id)
-      }
-    }
-
-    if (editTarget) {
-      nextMembers = nextMembers.map((m) =>
-        m.id === editTarget.id ? { ...m, roles: form.roles, taskIds: form.taskIds } : m,
-      )
-    } else {
-      nextMembers = [
-        ...nextMembers,
-        {
-          id:       `PM-${projectId}-${Date.now()}`,
-          name:     form.name,
-          roles:    form.roles,
-          taskIds:  form.taskIds,
-          joinedAt: nowDatetime(),
-        },
-      ]
-    }
-    setMembers(nextMembers)
-    setModalOpen(false)
-  }
-
-  // 候选用户：排除创建人和已在项目中的（编辑时保留自身）
-  const availableUsers = useMemo(
-    () =>
-      users.filter(
-        (u) =>
-          u.status === '启用' &&
-          u.nickname !== creatorRow.name &&
-          !members.some((m) => m.name === u.nickname && m.id !== editTarget?.id),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [members, editTarget],
-  )
-
-  const columns = [
-    {
-      title: '姓名', dataIndex: 'name',
-      render: (v) => <span className="font-medium text-gray-800">{v}</span>,
-    },
-    {
-      title: '角色', dataIndex: 'roles',
-      render: (roles) => (
-        <div className="flex flex-wrap gap-1">
-          {roles.map((r) => (
-            <Badge key={r} color={ROLE_COLORS[r] || 'gray'}>{r}</Badge>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: '负责任务', dataIndex: 'taskIds',
-      render: (ids, row) => {
-        if (row.isCreator || !ids.length) return <span className="text-gray-400">—</span>
-        const MAX = 2
-        const shown = ids.slice(0, MAX)
-        const rest  = ids.length - MAX
-        return (
-          <div className="flex flex-wrap items-center gap-1">
-            {shown.map((id) => {
-              const name = taskNameMap[id] ?? id
-              return (
-                <span
-                  key={id}
-                  title={name}
-                  className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600"
-                >
-                  {name.length > 10 ? name.slice(0, 10) + '…' : name}
-                </span>
-              )
-            })}
-            {rest > 0 && <span className="text-xs text-gray-400">+{rest}</span>}
-          </div>
-        )
-      },
-    },
-    { title: '加入时间', dataIndex: 'joinedAt' },
-    {
-      title: '操作', key: 'actions',
-      render: (_, row) => {
-        if (row.isCreator) return null
-        return (
-          <div className="flex items-center gap-1">
-            <PermButton permission="collection.project.edit" mode="disable" variant="link" size="sm" onClick={() => openEdit(row)}>编辑</PermButton>
-            <PermButton permission="collection.project.delete" mode="disable" variant="linkDanger" size="sm" onClick={() => setRemoveTarget(row)}>移除</PermButton>
-          </div>
-        )
-      },
-    },
-  ]
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-800">项目成员</h2>
-        <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openAdd}>添加成员</PermButton>
-      </div>
-      <Table columns={columns} dataSource={[creatorRow, ...members]} />
-
-      {/* 移除二次确认 */}
-      {removeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setRemoveTarget(null)} />
-          <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
-            <div className="p-6">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <h2 className="text-base font-semibold text-red-600">移除成员</h2>
-              </div>
-              <p className="text-sm text-gray-500">
-                确认将「<strong className="text-gray-800">{removeTarget.name}</strong>」从本项目移除？
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-              <button
-                onClick={() => setRemoveTarget(null)}
-                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={() => { setMembers((l) => l.filter((m) => m.id !== removeTarget.id)); setRemoveTarget(null) }}
-                className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
-              >
-                确认移除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 标注员任务替换确认 */}
-      {replaceConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setReplaceConfirm(null)} />
-          <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
-            <div className="p-6">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-lg">ℹ️</span>
-                <h2 className="text-base font-semibold text-gray-800">替换标注员</h2>
-              </div>
-              <p className="text-sm text-gray-500">
-                该任务已有标注员「<strong className="text-gray-800">{replaceConfirm.existingName}</strong>」，是否替换为当前成员？
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-              <button
-                onClick={() => setReplaceConfirm(null)}
-                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmReplaceTask}
-                className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                确认替换
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 添加/编辑弹窗 */}
-      <Modal
-        open={modalOpen}
-        title={editTarget ? '编辑成员' : '添加成员'}
-        onCancel={() => setModalOpen(false)}
-        onOk={handleSave}
-        okText={editTarget ? '保存' : '添加'}
-      >
-        <div className="space-y-4">
-          {/* 角色多选 */}
-          <div>
-            <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
-              角色<span className="text-red-500">*</span>
-              <span className="text-xs font-normal text-gray-400">（可多选）</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {MEMBER_ROLES.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => toggleRole(role)}
-                  className={`cursor-pointer rounded-full border px-3 py-1 text-sm font-medium transition-all ${
-                    form.roles.includes(role)
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-gray-300 bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600'
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-            {errors.roles && <p className="mt-1 text-xs text-red-500">请至少选择一个角色</p>}
-          </div>
-
-          {/* 选择用户 */}
-          <div>
-            <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
-              选择用户<span className="text-red-500">*</span>
-            </label>
-            {editTarget ? (
-              <input
-                readOnly
-                value={form.name}
-                className="h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
-              />
-            ) : (
-              <select
-                value={form.name}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                  setErrors((er) => ({ ...er, name: false }))
-                }}
-                className={`h-8 w-full cursor-pointer rounded-md border px-2.5 text-sm text-gray-700 outline-none transition-colors focus:ring-2 ${
-                  errors.name
-                    ? 'border-red-400 focus:ring-red-100'
-                    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
-                }`}
-              >
-                <option value="" disabled hidden>请选择用户</option>
-                {availableUsers.map((u) => (
-                  <option key={u.uid} value={u.nickname}>
-                    {u.nickname}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.name && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
-          </div>
-
-          {/* 分配任务多选 */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">分配任务</label>
-            {projectTasks.length === 0 ? (
-              <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">
-                暂无任务
-              </p>
-            ) : (
-              <div className="max-h-36 overflow-y-auto rounded-md border border-gray-300 bg-white p-2">
-                {projectTasks.map((task) => (
-                  <label
-                    key={task.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.taskIds.includes(task.id)}
-                      onChange={() => toggleTask(task.id)}
-                      className="h-4 w-4 cursor-pointer accent-blue-600"
-                    />
-                    <span className="flex-1 text-sm text-gray-700">{task.name}</span>
-                    <span className="text-xs text-gray-400">{task.id}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </Modal>
-    </div>
-  )
-}
-
 /* ---------- 详情页 ---------- */
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
-  const [tab, setTab] = useState('task')
+  const tabFromUrl = searchParams.get('tab')
+  const initialTab = TABS.some((t) => t.key === tabFromUrl) ? tabFromUrl : 'task'
+  const [tab, setTab] = useState(initialTab)
+
+  useEffect(() => {
+    const next = searchParams.get('tab')
+    if (next && TABS.some((t) => t.key === next)) setTab(next)
+  }, [searchParams])
+  const [tasks, setTasksState] = useState(() => [...taskStore])
+  const [taskMemberFilter, setTaskMemberFilter] = useState(null)
+
+  const setTasks = useCallback((updater) => {
+    setTasksState(syncTasks(updater))
+  }, [])
 
   const project = projects.find((p) => p.id === id)
+  const projectTasks = useMemo(
+    () => tasks.filter((t) => t.projectId === id),
+    [tasks, id],
+  )
   const taskCount = useMemo(
-    () => allTasks.filter((t) => t.projectId === id).length,
-    [id],
+    () => projectTasks.length,
+    [projectTasks],
   )
   if (!project) {
     return (
@@ -1357,9 +1065,27 @@ export default function ProjectDetail() {
         <Tabs items={TABS} activeKey={tab} onChange={setTab} className="mt-4" />
       </div>
 
-      {tab === 'task'      && <TaskList fixedProjectId={id} />}
-      {tab === 'scheme'    && <SchemeTab projectId={id} />}
-      {tab === 'members'   && <MembersTab projectId={id} />}
+      {tab === 'task' && (
+        <TaskList
+          fixedProjectId={id}
+          tasks={tasks}
+          onTasksChange={setTasks}
+          initialMemberFilter={taskMemberFilter}
+          onMemberFilterApplied={() => setTaskMemberFilter(null)}
+        />
+      )}
+      {tab === 'scheme'    && <SchemeTab projectId={id} onTasksChange={setTasks} />}
+      {tab === 'members' && (
+        <MembersTab
+          projectId={id}
+          projectTasks={projectTasks}
+          onTasksChange={setTasks}
+          onViewMemberTasks={(name, role) => {
+            setTaskMemberFilter({ name, role })
+            setTab('task')
+          }}
+        />
+      )}
       {tab === 'dashboard' && <RealDataTab fixedProjectId={id} />}
     </div>
   )

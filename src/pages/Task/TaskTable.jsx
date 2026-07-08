@@ -9,13 +9,13 @@ import { useToast } from '../../components/common/Toast'
 import { useAuth } from '../../context/AuthContext'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import { IconCopy } from '../../components/common/Icons'
-import CreateTaskModal from './CreateTaskModal'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
 
 function PeopleCell({ value, multi = true }) {
-  const people = toPeopleArray(value)
-  if (!people.length) return <span className="text-gray-400">—</span>
+  const people = toPeopleArray(value).filter(Boolean)
+  if (!people.length) return <span className="text-red-500">未分配</span>
   if (!multi) return <span className="text-gray-700">{people[0]}</span>
   const extra = people.length - 1
   return (
@@ -183,6 +183,8 @@ function openWorkbench(entryId, mode) {
 ══════════════════════════════════════════ */
 export default function TaskTable({
   data,
+  showProjectColumn = false,
+  pageResetKey,
   onDeleteClick,
   onStatusChange,
   onEditSave,
@@ -288,13 +290,16 @@ export default function TaskTable({
         </button>
       ),
     },
+    ...(showProjectColumn ? [{
+      title: '所属项目名称',
+      dataIndex: 'projectName',
+      render: (v) => <span className="text-gray-700">{v ?? '—'}</span>,
+    }] : []),
     { title: '任务用途', dataIndex: 'purpose', render: (v) => v ?? '—' },
     { title: '采集设备', dataIndex: 'device', render: (v, row) => v ?? row.robotBody ?? '—' },
     { title: '采集方案ID', dataIndex: 'planId' },
     { title: '所属场景', dataIndex: 'scene', render: (v) => v ?? '—' },
     { title: '采集方式', dataIndex: 'method' },
-    { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi /> },
-    { title: '标注员', dataIndex: 'reviewer', render: (v) => <PeopleCell value={v} multi={false} /> },
     {
       title: '状态',
       dataIndex: 'status',
@@ -304,6 +309,7 @@ export default function TaskTable({
         </Badge>
       ),
     },
+    { title: '总数据量', dataIndex: 'dataTotal', render: (v) => v ?? 0 },
     {
       title: '采集进度',
       dataIndex: 'collectDone',
@@ -319,7 +325,8 @@ export default function TaskTable({
       dataIndex: 'acceptDone',
       render: (v, row) => progressCell(row.acceptDone ?? 0, row.collectTotal, 'bg-emerald-500'),
     },
-    { title: '总数据量', dataIndex: 'dataTotal', render: (v) => v ?? 0 },
+    { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi /> },
+    { title: '标注员', dataIndex: 'reviewer', render: (v) => <PeopleCell value={v} multi={false} /> },
     { title: '创建人', dataIndex: 'creator', render: (v) => v ?? '—' },
     { title: '创建时间', dataIndex: 'createdAt' },
     { title: '更新时间', dataIndex: 'updatedAt', render: (v, row) => v ?? row.createdAt ?? '—' },
@@ -333,7 +340,12 @@ export default function TaskTable({
 
   return (
     <>
-      <Table columns={columns} dataSource={data} />
+      <Table
+        columns={columns}
+        dataSource={data}
+        pageSize={LIST_PAGE_SIZE}
+        pageResetKey={pageResetKey}
+      />
 
       <ActionConfirmModal
         open={confirm.open}

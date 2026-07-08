@@ -3,6 +3,10 @@ import { Link, useLocation } from 'react-router-dom'
 const routes = [
   { match: /^\/dashboard/, crumbs: [['运营看板']] },
   {
+    match: /^\/collection\/project\/[^/]+\/sampling$/,
+    crumbs: [['数据采集'], ['采集项目', '/collection/project'], ['抽样验收']],
+  },
+  {
     match: /^\/collection\/project\/.+/,
     crumbs: [['数据采集'], ['采集项目', '/collection/project'], ['项目详情']],
   },
@@ -12,7 +16,7 @@ const routes = [
     crumbs: [['数据采集'], ['采集任务', '/collection/task'], ['任务详情']],
   },
   { match: /^\/collection\/task/, crumbs: [['数据采集'], ['采集任务']] },
-  { match: /^\/collection\/upload/, crumbs: [['数据采集'], ['上传记录']] },
+  { match: /^\/collection\/upload/, crumbs: [['数据采集'], ['采集条目']] },
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
   { match: /^\/dataset\/self\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情']] },
   { match: /^\/dataset\/self/, crumbs: [['数据集管理'], ['真机数据集']] },

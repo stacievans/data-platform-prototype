@@ -372,7 +372,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
                   ))}
                 </select>
               </Field>
-              <Field label="采集条数" required error={errors.target}>
+              <Field label="目标条数" required error={errors.target}>
                 <input
                   type="number"
                   min="1"

@@ -89,6 +89,7 @@ export const entries = tasks.flatMap((task, ti) => {
       : collectors[Math.floor(rand() * collectors.length)]
     return {
       id: `E-${task.id.slice(2)}${pad(i + 1)}`,
+      fileId: `F-${task.id.slice(2)}${pad(i + 1, 3)}`,
       taskId: task.id,
       fileName: `${task.id.toLowerCase()}_episode_${pad(i + 1, 3)}`,
       size: sizeMB >= 1024 ? `${(sizeMB / 1024).toFixed(2)} GB` : `${sizeMB} MB`,
@@ -118,6 +119,13 @@ const DEMO_OVERRIDES = {
   },
   'E-200102': {
     dataStatus: '审核不通过',
+    qcTime: '2026-05-16 09:12',
+    reviewOperator: { nickname: '孙丽', id: 'U-2001' },
+    flowHistory: [
+      { label: '审核驳回（第2轮）', time: '2026-05-18 14:20', operator: '孙丽(U-2001)' },
+      { label: '审核驳回（第1轮）', time: '2026-05-17 10:05', operator: '孙丽(U-2001)' },
+      { label: '质检通过', time: '2026-05-16 09:12', operator: '系统自动' },
+    ],
     auditScore: 2,
     auditResult: '不通过',
     auditQuality: '差',
@@ -155,6 +163,14 @@ const DEMO_OVERRIDES = {
   },
   'E-200106': {
     dataStatus: '验收不通过',
+    qcTime: '2026-05-10 08:30',
+    reviewOperator: { nickname: '何敏', id: 'U-2003' },
+    acceptOperator: { nickname: '陈静', id: 'U-2002' },
+    flowHistory: [
+      { label: '验收驳回（第1轮）', time: '2026-05-14 16:45', operator: '陈静(U-2002)' },
+      { label: '审核通过（第1轮）', time: '2026-05-12 11:20', operator: '何敏(U-2003)' },
+      { label: '质检通过', time: '2026-05-10 08:30', operator: '系统自动' },
+    ],
     auditScore: 4,
     auditResult: '通过',
     auditQuality: '可接受',
@@ -185,6 +201,15 @@ const DEMO_OVERRIDES = {
   },
   'E-200703': {
     dataStatus: '验收不通过',
+    qcTime: '2026-05-22 09:15',
+    reviewOperator: { nickname: '钱琳', id: 'U-2004' },
+    acceptOperator: { nickname: '陈静', id: 'U-2002' },
+    flowHistory: [
+      { label: '验收驳回（第2轮）', time: '2026-05-26 17:10', operator: '陈静(U-2002)' },
+      { label: '验收驳回（第1轮）', time: '2026-05-24 14:30', operator: '陈静(U-2002)' },
+      { label: '审核通过（第1轮）', time: '2026-05-23 10:00', operator: '钱琳(U-2004)' },
+      { label: '质检通过', time: '2026-05-22 09:15', operator: '系统自动' },
+    ],
     auditScore: 3,
     auditResult: '通过',
     auditQuality: '可接受',

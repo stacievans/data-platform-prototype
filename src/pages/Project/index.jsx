@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
 import Table from '../../components/common/Table'
+import ListPaginator from '../../components/common/ListPaginator'
 import Modal from '../../components/common/Modal'
 import { Input, Select, TextArea, CreatorReadonlyField } from '../../components/common/FormField'
 import { IconPlus, IconSearch, IconGrid, IconList } from '../../components/common/Icons'
@@ -10,6 +11,7 @@ import { projects as initialProjects } from '../../mock/projects'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { filterProjectsByDataScope } from '../../mock/permissions'
 import { PermButton, PermAction, PermMenuItem } from '../../components/common/PermissionAction'
+import { LIST_PAGE_SIZE, usePagination } from '../../hooks/usePagination'
 
 /* ── status helpers ── */
 const STATUS_MAP = {
@@ -45,7 +47,7 @@ function MiniProgress({ collected, target }) {
 }
 
 /* ── three-dot menu (card view) ── */
-function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetail }) {
+function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetail, onAccept }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -58,6 +60,7 @@ function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetai
 
   const close = (fn) => () => { setOpen(false); fn() }
   const isArchived = project.status === 'archived'
+  const showAccept = canAcceptProject(project.status)
 
   return (
     <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
@@ -72,6 +75,7 @@ function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetai
       {open && (
         <div className="absolute right-0 top-7 z-20 w-32 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-xl">
           <CardMenuItem label="查看详情" onClick={close(onViewDetail)} />
+          {showAccept && <CardMenuItem label="验收" onClick={close(onAccept)} />}
           <PermMenuItem permission="collection.project.edit" label="编辑" onClick={close(onEdit)} />
           <PermMenuItem
             permission="collection.project.archive"
@@ -185,6 +189,37 @@ const STATUS_OPTIONS = [
   { value: 'archived',     label: '已归档' },
 ]
 
+const canAcceptProject = (status) => status === 'in_progress' || status === 'completed'
+
+function AcceptChoiceModal({ project, open, onCancel, onFullAccept, onSampleAccept }) {
+  if (!open || !project) return null
+  return (
+    <Modal open={open} title="项目验收" onCancel={onCancel} footer={null}>
+      <p className="mb-4 text-sm text-gray-500">
+        为项目 <span className="font-medium text-gray-800">{project.name}</span> 选择验收方式
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={onFullAccept}
+          className="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/40"
+        >
+          <div className="text-sm font-semibold text-gray-800">全量验收</div>
+          <div className="mt-1 text-xs text-gray-500">进入项目详情，在采集任务中逐条验收</div>
+        </button>
+        <button
+          type="button"
+          onClick={onSampleAccept}
+          className="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/40"
+        >
+          <div className="text-sm font-semibold text-gray-800">抽样验收</div>
+          <div className="mt-1 text-xs text-gray-500">创建抽检批次，按抽样规则验收条目</div>
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 /* ── date input (shared style) ── */
 const dateInputCls = 'h-9 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-600 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 
@@ -214,6 +249,7 @@ export default function ProjectList() {
 
   /* delete confirm */
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [acceptTarget, setAcceptTarget] = useState(null)
 
   /* auto-generate next project ID */
   const nextProjectId = useMemo(() => {
@@ -236,6 +272,15 @@ export default function ProjectList() {
     if (filters.dateTo      && p.createdAt > filters.dateTo + ' 23:59')                return false
     return true
   }), [scopedProjects, filters])
+
+  const paginationResetKey = useMemo(
+    () => `${view}:${JSON.stringify(filters)}`,
+    [view, filters],
+  )
+  const { page, setPage, pageItems: pagedFiltered } = usePagination(filtered, {
+    pageSize: LIST_PAGE_SIZE,
+    resetKey: paginationResetKey,
+  })
 
   const applyFilters = () => setFilters({ id: queryId, name: queryName, status: queryStatus, creator: queryCreator, dateFrom: queryDateFrom, dateTo: queryDateTo })
   const resetFilters = () => { setQueryId(''); setQueryName(''); setQueryStatus(''); setQueryCreator(''); setQueryDateFrom(''); setQueryDateTo(''); setFilters({}) }
@@ -280,6 +325,18 @@ export default function ProjectList() {
 
   const goToDetail = (id) => navigate(`/collection/project/${id}`)
 
+  const openAcceptChoice = (project) => setAcceptTarget(project)
+  const handleFullAccept = () => {
+    if (!acceptTarget) return
+    navigate(`/collection/project/${acceptTarget.id}?tab=task`)
+    setAcceptTarget(null)
+  }
+  const handleSampleAccept = () => {
+    if (!acceptTarget) return
+    navigate(`/collection/project/${acceptTarget.id}/sampling`)
+    setAcceptTarget(null)
+  }
+
   /* ── shared project form (edit modal) ── */
   const ProjectForm = () => (
     <div className="space-y-4">
@@ -306,6 +363,7 @@ export default function ProjectList() {
       title: '操作', dataIndex: 'id',
       render: (id, row) => {
         const isArchived = row.status === 'archived'
+        const showAccept = canAcceptProject(row.status)
         return (
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1">
@@ -315,6 +373,14 @@ export default function ProjectList() {
               >
                 查看详情
               </button>
+              {showAccept && (
+                <button
+                  onClick={() => openAcceptChoice(row)}
+                  className="cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500"
+                >
+                  验收
+                </button>
+              )}
               <PermAction
                 permission="collection.project.edit"
                 className="cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500"
@@ -397,8 +463,9 @@ export default function ProjectList() {
 
       {/* ── content ── */}
       {view === 'card' ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p) => {
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {pagedFiltered.map((p) => {
             const isArchived = p.status === 'archived'
             const progress = p.target > 0 ? Math.min(Math.round((p.collected / p.target) * 100), 100) : 0
             const done = progress >= 100
@@ -425,6 +492,7 @@ export default function ProjectList() {
                       onToggleArchive={() => handleToggleArchive(p.id)}
                       onDeleteClick={() => setDeleteTarget(p)}
                       onViewDetail={() => goToDetail(p.id)}
+                      onAccept={() => openAcceptChoice(p)}
                     />
                   </div>
                 </div>
@@ -456,13 +524,27 @@ export default function ProjectList() {
                 </div>
               </div>
             )
-          })}
-          {filtered.length === 0 && (
-            <div className="col-span-full rounded-lg border border-gray-100 bg-white py-16 text-center text-gray-400">暂无符合条件的项目</div>
+            })}
+            {filtered.length === 0 && (
+              <div className="col-span-full rounded-lg border border-gray-100 bg-white py-16 text-center text-gray-400">暂无符合条件的项目</div>
+            )}
+          </div>
+          {filtered.length > 0 && (
+            <ListPaginator
+              total={filtered.length}
+              page={page}
+              pageSize={LIST_PAGE_SIZE}
+              onPageChange={setPage}
+            />
           )}
         </div>
       ) : (
-        <Table columns={columns} dataSource={filtered} />
+        <Table
+          columns={columns}
+          dataSource={filtered}
+          pageSize={LIST_PAGE_SIZE}
+          pageResetKey={paginationResetKey}
+        />
       )}
 
       {/* 新建弹窗 */}
@@ -519,6 +601,14 @@ export default function ProjectList() {
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+
+      <AcceptChoiceModal
+        project={acceptTarget}
+        open={!!acceptTarget}
+        onCancel={() => setAcceptTarget(null)}
+        onFullAccept={handleFullAccept}
+        onSampleAccept={handleSampleAccept}
       />
     </div>
   )

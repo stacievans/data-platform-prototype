@@ -682,7 +682,7 @@ export default function Workbench() {
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-white text-gray-400">
         条目不存在
         <div className="mt-4">
-          <Button onClick={() => navigate('/collection/upload')}>返回上传记录</Button>
+          <Button onClick={() => navigate('/collection/upload')}>返回采集条目</Button>
         </div>
       </div>
     )

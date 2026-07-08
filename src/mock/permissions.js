@@ -26,7 +26,7 @@ export const permissionCatalog = [
     children: [
       { id: 'collection.project', name: '采集项目', actions: ['view', 'create', 'edit', 'delete', 'archive'] },
       { id: 'collection.task', name: '采集任务', actions: ['view', 'create', 'edit', 'delete'] },
-      { id: 'collection.upload', name: '上传记录', actions: ['view', 'download', 'delete'] },
+      { id: 'collection.upload', name: '采集条目', actions: ['view', 'download', 'delete'] },
     ],
   },
   {

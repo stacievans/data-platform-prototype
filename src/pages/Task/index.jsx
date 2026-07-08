@@ -1,10 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
-import { tasks as initialTasks, collectors, reviewers, nextTaskId, nowDatetime, toPeopleArray, formatReviewer } from '../../mock/tasks'
-import { projects } from '../../mock/projects'
-import { IconSearch } from '../../components/common/Icons'
+import {
+  tasks as taskStore,
+  syncTasks,
+  nextTaskId,
+  nowDatetime,
+  toPeopleArray,
+  formatReviewer,
+} from '../../mock/tasks'
+import { IconSearch, IconChevronDown } from '../../components/common/Icons'
 import { filterTasksByDataScope } from '../../mock/permissions'
 import { useAuth } from '../../context/AuthContext'
 import { PermButton } from '../../components/common/PermissionAction'
@@ -15,6 +22,9 @@ const STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 const LBL = 'mb-1 block text-xs text-gray-500'
 /* 筛选区 input / select 统一样式 */
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const FILTER_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+const FILTER_FIELD = 'min-w-0'
+const FILTER_ACTIONS = 'flex flex-wrap items-center justify-end gap-2'
 
 /* ── 删除确认弹窗 ── */
 function DeleteConfirmModal({ task, open, onCancel, onConfirm }) {
@@ -70,55 +80,134 @@ function DeleteConfirmModal({ task, open, onCancel, onConfirm }) {
 /* ── 主组件
    fixedProjectId: 传入时锁定项目、隐藏项目筛选下拉，用于项目详情页
 ── */
-export default function TaskList({ fixedProjectId = null }) {
+export default function TaskList({
+  fixedProjectId = null,
+  tasks: externalTasks,
+  onTasksChange,
+  initialMemberFilter = null,
+  onMemberFilterApplied,
+}) {
   const { user } = useAuth()
-  const [tasks, setTasks]         = useState(initialTasks)
+  const location = useLocation()
+  const [internalTasks, setInternalTasks] = useState(() => [...taskStore])
+  const tasks = externalTasks ?? internalTasks
+
+  const setTasks = useCallback((updater) => {
+    if (onTasksChange) {
+      onTasksChange(updater)
+    } else {
+      setInternalTasks(syncTasks(updater))
+    }
+  }, [onTasksChange])
+
+  useEffect(() => {
+    if (!onTasksChange) {
+      setInternalTasks([...taskStore])
+    }
+  }, [location.pathname, onTasksChange])
+
   const [createOpen, setCreateOpen] = useState(false)
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
+
   /* ── 筛选输入暂存（未提交） ── */
-  const [qTaskId,   setQTaskId]   = useState('')
+  const [qTaskId, setQTaskId] = useState('')
   const [qTaskName, setQTaskName] = useState('')
-  const [qStatus,   setQStatus]   = useState('全部')
-  const [qCollector,setQCollector]= useState('全部')
-  const [qReviewer, setQReviewer] = useState('全部')
-  const [qProject,  setQProject]  = useState('全部')   // 全局任务页专用
+  const [qProjectName, setQProjectName] = useState('')
+  const [qPlanId, setQPlanId] = useState('')
+  const [qCollector, setQCollector] = useState('')
+  const [qReviewer, setQReviewer] = useState('')
+  const [qPurpose, setQPurpose] = useState('全部')
+  const [qDevice, setQDevice] = useState('全部')
+  const [qScene, setQScene] = useState('全部')
+  const [qMethod, setQMethod] = useState('全部')
+  const [qStatus, setQStatus] = useState('全部')
 
   /* ── 已提交的筛选条件（点查询后才生效） ── */
   const [filters, setFilters] = useState({})
 
   const [deleteTarget, setDeleteTarget] = useState(null)
 
+  useEffect(() => {
+    if (!initialMemberFilter) return
+    const { name, role } = initialMemberFilter
+    if (role === '采集员') {
+      setQCollector(name)
+      setQReviewer('')
+      setFilters({ collector: name })
+    } else {
+      setQReviewer(name)
+      setQCollector('')
+      setFilters({ reviewer: name })
+    }
+    onMemberFilterApplied?.()
+  }, [initialMemberFilter, onMemberFilterApplied])
+
   const scopedTasks = useMemo(
     () => filterTasksByDataScope(tasks, user.nickname, user.role),
     [tasks, user.nickname, user.role],
   )
 
+  const poolTasks = useMemo(
+    () => (fixedProjectId ? scopedTasks.filter((t) => t.projectId === fixedProjectId) : scopedTasks),
+    [scopedTasks, fixedProjectId],
+  )
+
+  const filterOptions = useMemo(() => ({
+    purposes: ['全部', ...new Set(poolTasks.map((t) => t.purpose).filter(Boolean))],
+    devices: ['全部', ...new Set(poolTasks.map((t) => t.device ?? t.robotBody).filter(Boolean))],
+    scenes: ['全部', ...new Set(poolTasks.map((t) => t.scene).filter(Boolean))],
+    methods: ['全部', ...new Set(poolTasks.map((t) => t.method).filter(Boolean))],
+  }), [poolTasks])
+
   const filtered = useMemo(() => {
-    const { taskId, taskName, status, collector, reviewer, project } = filters
-    return scopedTasks.filter((t) => {
-      if (fixedProjectId) {
-        if (t.projectId !== fixedProjectId) return false
-      } else {
-        if (project && project !== '全部' && t.projectName !== project) return false
-      }
-      if (taskId   && !t.id.toLowerCase().includes(taskId.toLowerCase()))   return false
+    const {
+      taskId, taskName, projectName, planId, collector, reviewer,
+      purpose, device, scene, method, status,
+    } = filters
+    return poolTasks.filter((t) => {
+      if (taskId && !t.id.toLowerCase().includes(taskId.toLowerCase())) return false
       if (taskName && !t.name.toLowerCase().includes(taskName.toLowerCase())) return false
-      if (status   && status !== '全部' && t.status    !== status)    return false
-      if (collector && collector !== '全部' && !toPeopleArray(t.collector).includes(collector)) return false
-      if (reviewer  && reviewer  !== '全部' && formatReviewer(t.reviewer) !== reviewer)  return false
+      if (projectName && !(t.projectName ?? '').toLowerCase().includes(projectName.toLowerCase())) return false
+      if (planId && !String(t.planId ?? '').toLowerCase().includes(planId.toLowerCase())) return false
+      if (collector && !toPeopleArray(t.collector).some((c) => c.toLowerCase().includes(collector.toLowerCase()))) return false
+      if (reviewer && !formatReviewer(t.reviewer).toLowerCase().includes(reviewer.toLowerCase())) return false
+      if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
+      if (device && device !== '全部' && (t.device ?? t.robotBody) !== device) return false
+      if (scene && scene !== '全部' && t.scene !== scene) return false
+      if (method && method !== '全部' && t.method !== method) return false
+      if (status && status !== '全部' && t.status !== status) return false
       return true
     })
-  }, [scopedTasks, fixedProjectId, filters])
+  }, [poolTasks, filters])
+
+  const taskPageResetKey = useMemo(() => JSON.stringify(filters), [filters])
 
   const applyFilters = () => setFilters({
-    taskId: qTaskId, taskName: qTaskName,
-    status: qStatus, collector: qCollector, reviewer: qReviewer,
-    project: qProject,
+    taskId: qTaskId,
+    taskName: qTaskName,
+    projectName: fixedProjectId ? '' : qProjectName,
+    planId: qPlanId,
+    collector: qCollector,
+    reviewer: qReviewer,
+    purpose: qPurpose,
+    device: qDevice,
+    scene: qScene,
+    method: qMethod,
+    status: qStatus,
   })
 
   const resetFilters = () => {
-    setQTaskId(''); setQTaskName('')
-    setQStatus('全部'); setQCollector('全部'); setQReviewer('全部')
-    if (!fixedProjectId) setQProject('全部')
+    setQTaskId('')
+    setQTaskName('')
+    setQProjectName('')
+    setQPlanId('')
+    setQCollector('')
+    setQReviewer('')
+    setQPurpose('全部')
+    setQDevice('全部')
+    setQScene('全部')
+    setQMethod('全部')
+    setQStatus('全部')
     setFilters({})
   }
 
@@ -158,46 +247,88 @@ export default function TaskList({ fixedProjectId = null }) {
     <div className="space-y-4">
       {/* 筛选区 */}
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-0 flex-1 items-end gap-3">
+        <div className="space-y-3">
+          <div className={FILTER_GRID}>
+            <div className={FILTER_FIELD}>
+              <label className={LBL}>任务ID</label>
+              <input value={qTaskId} onChange={(e) => setQTaskId(e.target.value)} placeholder="请输入任务ID" className={INPUT_CLS} />
+            </div>
+            <div className={FILTER_FIELD}>
+              <label className={LBL}>任务名称</label>
+              <input value={qTaskName} onChange={(e) => setQTaskName(e.target.value)} placeholder="请输入任务名称" className={INPUT_CLS} />
+            </div>
             {!fixedProjectId && (
-              <div className="min-w-0 flex-1 basis-0">
-                <label className={LBL}>所属项目</label>
-                <select value={qProject} onChange={(e) => setQProject(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {['全部', ...projects.map((p) => p.name)].map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>所属项目名称</label>
+                <input value={qProjectName} onChange={(e) => setQProjectName(e.target.value)} placeholder="请输入项目名称" className={INPUT_CLS} />
               </div>
             )}
-            <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>任务ID</label>
-              <input value={qTaskId} onChange={(e) => setQTaskId(e.target.value)} placeholder="请输入" className={INPUT_CLS} />
+            <div className={FILTER_FIELD}>
+              <label className={LBL}>采集方案ID</label>
+              <input value={qPlanId} onChange={(e) => setQPlanId(e.target.value)} placeholder="请输入方案ID" className={INPUT_CLS} />
             </div>
-            <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>任务名称</label>
-              <input value={qTaskName} onChange={(e) => setQTaskName(e.target.value)} placeholder="请输入" className={INPUT_CLS} />
-            </div>
-            <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>任务状态</label>
-              <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                {STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div className="min-w-0 flex-1 basis-0">
+            <div className={FILTER_FIELD}>
               <label className={LBL}>采集员</label>
-              <select value={qCollector} onChange={(e) => setQCollector(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                {['全部', ...collectors].map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
+              <input value={qCollector} onChange={(e) => setQCollector(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
             </div>
-            <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>标注员</label>
-              <select value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                {['全部', ...reviewers].map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
+            {fixedProjectId && (
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>标注员</label>
+                <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
+              </div>
+            )}
           </div>
-          <div className="flex shrink-0 gap-2">
+
+          {filtersExpanded && (
+            <div className={FILTER_GRID}>
+              {!fixedProjectId && (
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>标注员</label>
+                  <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
+                </div>
+              )}
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>任务用途</label>
+                <select value={qPurpose} onChange={(e) => setQPurpose(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {filterOptions.purposes.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>采集设备</label>
+                <select value={qDevice} onChange={(e) => setQDevice(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {filterOptions.devices.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>所属场景</label>
+                <select value={qScene} onChange={(e) => setQScene(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {filterOptions.scenes.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>采集方式</label>
+                <select value={qMethod} onChange={(e) => setQMethod(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {filterOptions.methods.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>任务状态</label>
+                <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className={FILTER_ACTIONS}>
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((v) => !v)}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+            >
+              {filtersExpanded ? '收起筛选' : '展开筛选'}
+              <IconChevronDown className={`transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+            </button>
             <Button onClick={resetFilters}>重置</Button>
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
@@ -216,6 +347,8 @@ export default function TaskList({ fixedProjectId = null }) {
 
       <TaskTable
         data={filtered}
+        showProjectColumn={!fixedProjectId}
+        pageResetKey={taskPageResetKey}
         onDeleteClick={setDeleteTarget}
         onStatusChange={handleStatusChange}
         onEditSave={handleEditSave}

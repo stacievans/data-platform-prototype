@@ -21,7 +21,7 @@ const menu = [
     children: [
       { key: '/collection/project', label: '采集项目', permission: 'collection.project.view' },
       { key: '/collection/task', label: '采集任务', permission: 'collection.task.view' },
-      { key: '/collection/upload', label: '上传记录', permission: 'collection.upload.view' },
+      { key: '/collection/upload', label: '采集条目', permission: 'collection.upload.view' },
     ],
   },
   {
