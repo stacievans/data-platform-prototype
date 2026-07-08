@@ -11,10 +11,9 @@ import { tasks } from '../../mock/tasks'
 import { plans } from '../../mock/plans'
 import { useAuth } from '../../context/AuthContext'
 import NoPermission from '../System/NoPermission'
-import PlayheadOverlay from './components/PlayheadOverlay'
-import CameraMock from './components/CameraMock'
-import UrdfTrajectoryMock from './components/UrdfTrajectoryMock'
-import SignalChartMock from './components/SignalChartMock'
+import WorkbenchLayoutA from './components/WorkbenchLayoutA'
+import WorkbenchLayoutB from './components/WorkbenchLayoutB'
+import LayoutToggle from './components/LayoutToggle'
 import { generateSignalSeries } from './mock/signalData'
 
 const SPEEDS = [0.5, 1, 1.5, 2]
@@ -555,6 +554,7 @@ export default function Workbench() {
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [panelCollapsed, setPanelCollapsed] = useState(false)
+  const [mainLayout, setMainLayout] = useState('A')
 
   const [form, setForm] = useState({
     auditResult: null,
@@ -741,6 +741,7 @@ export default function Workbench() {
           >
             <IconLayoutSidebarRight className="ti-layout-sidebar-right h-[18px] w-[18px]" />
           </button>
+          <LayoutToggle value={mainLayout} onChange={setMainLayout} />
           <button
             type="button"
             title="布局设置"
@@ -757,40 +758,19 @@ export default function Workbench() {
 
       <div className="relative flex min-h-0 flex-1 p-2.5">
         <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${panelCollapsed ? '' : 'mr-2.5'}`}>
-          {/* 可视化区：相机 + 信号图按比例撑满剩余高度（3:1） */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <div className="flex min-h-0 flex-[3] gap-2">
-              <PlayheadOverlay playPct={playPct} label="头部 · 主视角" showPlayhead={false} className="h-full min-h-0 min-w-0 flex-[2]">
-                <CameraMock view="head" />
-              </PlayheadOverlay>
-              <div className="flex h-full min-h-0 min-w-0 flex-[1] flex-col gap-1">
-                <PlayheadOverlay playPct={playPct} label="胸部" showPlayhead={false} className="min-h-0 flex-1">
-                  <CameraMock view="chest" />
-                </PlayheadOverlay>
-                <PlayheadOverlay playPct={playPct} label="左腕" showPlayhead={false} className="min-h-0 flex-1">
-                  <CameraMock view="leftWrist" />
-                </PlayheadOverlay>
-                <PlayheadOverlay playPct={playPct} label="右腕" showPlayhead={false} className="min-h-0 flex-1">
-                  <CameraMock view="rightWrist" />
-                </PlayheadOverlay>
-              </div>
-              <PlayheadOverlay playPct={playPct} label="URDF 3D 轨迹" showPlayhead={false} className="h-full min-h-0 min-w-0 flex-[1]">
-                <UrdfTrajectoryMock />
-              </PlayheadOverlay>
-            </div>
-
-            <div className="flex min-h-0 flex-1 gap-2">
-              <PlayheadOverlay playPct={playPct} label="关节 (左+右)" className="h-full min-h-0 min-w-0 flex-1">
-                <SignalChartMock type="joint" data={signalSeries.joint} totalFrames={totalFrames} />
-              </PlayheadOverlay>
-              <PlayheadOverlay playPct={playPct} label="末端位姿 (左+右)" className="h-full min-h-0 min-w-0 flex-1">
-                <SignalChartMock type="pose" data={signalSeries.pose} totalFrames={totalFrames} />
-              </PlayheadOverlay>
-              <PlayheadOverlay playPct={playPct} label="夹爪 (左+右)" className="h-full min-h-0 min-w-0 flex-1">
-                <SignalChartMock type="gripper" data={signalSeries.gripper} totalFrames={totalFrames} />
-              </PlayheadOverlay>
-            </div>
-          </div>
+          {mainLayout === 'A' ? (
+            <WorkbenchLayoutA
+              playPct={playPct}
+              signalSeries={signalSeries}
+              totalFrames={totalFrames}
+            />
+          ) : (
+            <WorkbenchLayoutB
+              playPct={playPct}
+              signalSeries={signalSeries}
+              totalFrames={totalFrames}
+            />
+          )}
 
           <TimelinePanel
             totalFrames={totalFrames}
