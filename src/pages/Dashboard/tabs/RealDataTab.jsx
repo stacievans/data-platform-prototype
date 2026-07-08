@@ -312,15 +312,31 @@ function RankingSection({ ranking }) {
   )
 }
 
+function DashboardEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-gray-100 bg-white py-24 text-center shadow-sm">
+      <p className="text-sm text-gray-400">暂无统计数据</p>
+    </div>
+  )
+}
+
 export default function RealDataTab({ fixedProjectId = null }) {
   const [projectId, setProjectId] = useState(fixedProjectId ?? 'all')
   const [period, setPeriod] = useState('7')
   const [unit, setUnit] = useState('count')
   const [showValues, setShowValues] = useState(false)
 
-  const pData = realDashboard[projectId] || realDashboard['all']
+  const scopedProjectId = fixedProjectId ?? projectId
+  const pData = fixedProjectId
+    ? realDashboard[fixedProjectId]
+    : (realDashboard[projectId] || realDashboard.all)
+
+  if (fixedProjectId && !pData) {
+    return <DashboardEmptyState />
+  }
+
   const m = pData.metrics
-  const projectCount = projectId === 'all' ? projects.length : 1
+  const projectCount = scopedProjectId === 'all' ? projects.length : 1
 
   const dailyRaw = period === '7' ? pData.daily7 : pData.daily30
   const barData = dailyRaw.map((d) => ({
@@ -369,7 +385,7 @@ export default function RealDataTab({ fixedProjectId = null }) {
       </div>
 
       <div className="space-y-4">
-        <OngoingTaskSection projectId={projectId} />
+        <OngoingTaskSection projectId={scopedProjectId} />
         <RankingSection ranking={pData.ranking} />
       </div>
 

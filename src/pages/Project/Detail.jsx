@@ -47,11 +47,13 @@ import { tasks as allTasks } from '../../mock/tasks'
 import { useAuth } from '../../context/AuthContext'
 import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
+import RealDataTab from '../Dashboard/tabs/RealDataTab'
 
 const TABS = [
-  { key: 'task',    label: '采集任务' },
-  { key: 'scheme',  label: '采标方案' },
-  { key: 'members', label: '项目人员' },
+  { key: 'task',      label: '采集任务' },
+  { key: 'scheme',    label: '采标方案' },
+  { key: 'members',   label: '项目人员' },
+  { key: 'dashboard', label: '运营看板' },
 ]
 
 const MEMBER_ROLES = ['采集员', '标注员']
@@ -1355,9 +1357,10 @@ export default function ProjectDetail() {
         <Tabs items={TABS} activeKey={tab} onChange={setTab} className="mt-4" />
       </div>
 
-      {tab === 'task'    && <TaskList fixedProjectId={id} />}
-      {tab === 'scheme'  && <SchemeTab projectId={id} />}
-      {tab === 'members' && <MembersTab projectId={id} />}
+      {tab === 'task'      && <TaskList fixedProjectId={id} />}
+      {tab === 'scheme'    && <SchemeTab projectId={id} />}
+      {tab === 'members'   && <MembersTab projectId={id} />}
+      {tab === 'dashboard' && <RealDataTab fixedProjectId={id} />}
     </div>
   )
 }

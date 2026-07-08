@@ -13,11 +13,10 @@ const VIEW_LABELS = {
 
 const SIGNAL_PANELS = [
   { type: 'joint', side: 'left', label: '左臂关节' },
-  { type: 'pose', side: 'left', label: '左末端位姿' },
-  { type: 'gripper', side: 'left', label: '左夹爪' },
   { type: 'joint', side: 'right', label: '右臂关节' },
+  { type: 'pose', side: 'left', label: '左末端位姿' },
   { type: 'pose', side: 'right', label: '右末端位姿' },
-  { type: 'gripper', side: 'right', label: '右夹爪' },
+  { type: 'gripper', side: 'both', label: '夹爪 (左+右)' },
 ]
 
 function CameraSwapArea({ playPct }) {
@@ -63,11 +62,11 @@ function CameraSwapArea({ playPct }) {
   )
 }
 
-/** 布局 B：左 6 列信号图 · 中图像互换 · 右 URDF */
+/** 布局 B：左 5 张信号图 · 中图像互换 · 右 URDF */
 export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames }) {
   return (
     <div className="flex min-h-0 flex-1 gap-2">
-      <div className="flex h-full w-[168px] shrink-0 flex-col gap-1">
+      <div className="flex h-full w-[184px] shrink-0 flex-col gap-1">
         {SIGNAL_PANELS.map(({ type, side, label }) => (
           <PlayheadOverlay
             key={`${side}-${type}`}
@@ -79,6 +78,7 @@ export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames })
               type={type}
               side={side}
               compact
+              showAxes
               data={signalSeries[type]}
               totalFrames={totalFrames}
             />
