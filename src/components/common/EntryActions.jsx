@@ -21,21 +21,21 @@ function MiddleSlot({ entry, onOpen }) {
 
   if (dataStatus === '已上传') {
     return (
-      <button type="button" disabled className={LINK_DISABLED} title="解析中，暂不可审核">
-        审核
+      <button type="button" disabled className={LINK_DISABLED} title="解析中，暂不可标注">
+        标注
       </button>
     )
   }
 
-  if (dataStatus === '已解析' || dataStatus === '审核不通过') {
+  if (dataStatus === '已解析' || dataStatus === '标注不通过') {
     return (
       <Button variant="link" size="sm" onClick={() => onOpen('review')} className="justify-center">
-        审核
+        标注
       </Button>
     )
   }
 
-  if (dataStatus === '已审核' || dataStatus === '验收不通过') {
+  if (dataStatus === '已标注' || dataStatus === '验收不通过') {
     return (
       <Button variant="link" size="sm" onClick={() => onOpen('accept')} className="justify-center">
         验收
@@ -52,7 +52,7 @@ function MiddleSlot({ entry, onOpen }) {
 
 /**
  * 采集条目统一操作栏：固定 4 列 [ 播放 | 中间按钮 | 下载 | 删除 ]
- * TODO: 中间按钮角色校验（审核=标注员、验收=平台运营）
+ * TODO: 中间按钮角色校验（标注=标注员、验收=平台运营）
  */
 export default function EntryActions({
   entry,

@@ -11,6 +11,7 @@ import { PermButton, PermAction } from '../../components/common/PermissionAction
 import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
+import CreateTaskModal from './CreateTaskModal'
 
 const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
 
@@ -145,7 +146,7 @@ function ActionConfirmModal({ open, type, task, onCancel, onConfirm }) {
           </div>
           <p className="text-sm text-gray-500">
             {isPublish
-              ? `确认发布任务「${task.name}」？发布后将进入采集与审核流程。`
+              ? `确认发布任务「${task.name}」？发布后将进入采集与标注流程。`
               : `确认归档任务「${task.name}」？归档后不可再编辑或继续采集。`}
           </p>
         </div>
@@ -209,7 +210,7 @@ export default function TaskTable({
   const goAudit = (taskId, mode) => {
     const entry = findLatestPendingEntry(taskId, mode)
     if (!entry) {
-      showToast(mode === 'review' ? '暂无待审核条目' : '暂无待验收条目')
+      showToast(mode === 'review' ? '暂无待标注条目' : '暂无待验收条目')
       return
     }
     openWorkbench(entry.id, mode)
@@ -243,7 +244,7 @@ export default function TaskTable({
         <ActionBar>
           <DuplicateBtn onClick={() => onCopy?.(row)} />
           <ViewBtn onClick={goView} />
-          <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'review')}>审核</LinkAction>
+          <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'review')}>标注</LinkAction>
           <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'accept')}>验收</LinkAction>
           <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
           <LinkAction permission="collection.task.edit" onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
@@ -270,21 +271,15 @@ export default function TaskTable({
     {
       title: '任务ID',
       dataIndex: 'id',
-      render: (v, row) => (
-        <button
-          className="cursor-pointer font-medium text-blue-600 hover:text-blue-500"
-          onClick={() => navigate(`/collection/task/${row.id}`)}
-        >
-          {v}
-        </button>
-      ),
+      render: (v) => <span className="font-medium text-gray-700">{v}</span>,
     },
     {
       title: '任务名称',
       dataIndex: 'name',
       render: (v, row) => (
         <button
-          className="cursor-pointer text-gray-700 hover:text-blue-600"
+          type="button"
+          className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
           onClick={() => navigate(`/collection/task/${row.id}`)}
         >
           {v}
@@ -297,7 +292,8 @@ export default function TaskTable({
       render: (v) => <span className="text-gray-700">{v ?? '—'}</span>,
     }] : []),
     { title: '任务用途', dataIndex: 'purpose', render: (v) => v ?? '—' },
-    { title: '采集设备', dataIndex: 'device', render: (v, row) => v ?? row.robotBody ?? '—' },
+    { title: '本体类型', dataIndex: 'robotBody', render: (v) => v ?? '—' },
+    { title: '采集设备', dataIndex: 'device', render: (v) => v ?? '—' },
     { title: '采集方案ID', dataIndex: 'planId' },
     { title: '所属场景', dataIndex: 'scene', render: (v) => v ?? '—' },
     { title: '采集方式', dataIndex: 'method' },
@@ -317,7 +313,7 @@ export default function TaskTable({
       render: (v, row) => progressCell(row.collectDone, row.collectTotal),
     },
     {
-      title: '审核进度',
+      title: '标注进度',
       dataIndex: 'reviewDone',
       render: (v, row) => progressCell(row.reviewDone, row.collectTotal, 'bg-purple-500'),
     },

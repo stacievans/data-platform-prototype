@@ -127,7 +127,7 @@ export const allDashboard = {
 // ─────────────────────────────────────────────────
 
 // 排行榜固定数据（全部）
-// 采集员：completeHours=上传时长之和，reject*=审核驳回；标注员：completeHours=审核时长之和，reject*=验收驳回
+// 采集员：completeHours=上传时长之和，reject*=标注驳回；标注员：completeHours=标注时长之和，reject*=验收驳回
 export function enrichRankingList(list, type) {
   return (list || []).map((item, i) => {
     const base = { ...item, rank: item.rank ?? i + 1 }

@@ -140,6 +140,14 @@ export function countInstancesByTypeId(typeId) {
   return runtimeInstances.filter((i) => i.typeId === typeId).length
 }
 
+export function isDeviceSnTaken(sn, excludeId = null) {
+  const normalized = sn.trim().toLowerCase()
+  if (!normalized) return false
+  return runtimeInstances.some(
+    (i) => i.sn?.trim().toLowerCase() === normalized && i.id !== excludeId,
+  )
+}
+
 /** 新实例编号：DEV- + 全局三位递增（仅统计 DEV-NNN 格式，历史字母编号不参与） */
 export function getNextInstanceCode() {
   const nums = runtimeInstances

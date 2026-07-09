@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Modal from '../../components/common/Modal'
+import {
+  CHECKBOX_LIST_CLS,
+  CheckboxListSelectAllRow,
+  CheckboxListShell,
+} from '../../components/common/CheckboxList'
 import { tasks } from '../../mock/tasks'
 import {
   diffInclusion,
@@ -9,7 +14,7 @@ import {
 import { nowDateTime } from '../../utils/formatDateTime'
 
 // TODO: 真机数据集「纳入数据状态」筛选项与条目新状态枚举联动（下一版）
-const DATA_STATUSES = ['已上传', '已解析', '已审核']
+const DATA_STATUSES = ['已上传', '已解析', '已标注']
 const DATA_FORMATS = ['h5', 'LeRobot']
 
 function SectionTitle({ children }) {
@@ -91,6 +96,8 @@ export default function UpdateDatasetModal({ open, dataset, onClose }) {
 
   const allTasksSelected = projectTasks.length > 0
     && projectTasks.every((t) => form.taskIds.includes(t.id))
+  const selectedTaskCount = projectTasks.filter((t) => form.taskIds.includes(t.id)).length
+  const someTasksSelected = selectedTaskCount > 0 && !allTasksSelected
 
   const hasChange = previewDiff.added.length > 0 || previewDiff.removed.length > 0
 
@@ -158,39 +165,40 @@ export default function UpdateDatasetModal({ open, dataset, onClose }) {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">纳入任务</label>
-              <div className="rounded-md border border-gray-200 p-3">
-                <label className="mb-2 flex cursor-pointer items-center gap-2 border-b border-gray-100 pb-2">
-                  <input
-                    type="checkbox"
+              <CheckboxListShell className="max-h-40">
+                {projectTasks.length > 0 && (
+                  <CheckboxListSelectAllRow
                     checked={allTasksSelected}
-                    onChange={toggleAllTasks}
-                    className="cursor-pointer"
+                    indeterminate={someTasksSelected}
+                    onToggle={toggleAllTasks}
+                    selectedCount={selectedTaskCount}
+                    totalCount={projectTasks.length}
                   />
-                  <span className="text-sm font-medium text-gray-700">全选</span>
-                </label>
-                <div className="max-h-40 space-y-1 overflow-y-auto">
-                  {projectTasks.map((t) => {
-                    const isBound = boundTaskIds.includes(t.id)
-                    return (
-                      <label key={t.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          checked={form.taskIds.includes(t.id)}
-                          onChange={() => toggleTask(t.id)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm text-gray-700">{t.name}</span>
-                        {isBound && (
-                          <span className="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-600">
-                            已纳入
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-400">{t.id}</span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </div>
+                )}
+                {projectTasks.map((t) => {
+                  const isBound = boundTaskIds.includes(t.id)
+                  return (
+                    <label
+                      key={t.id}
+                      className="flex cursor-pointer items-center gap-2 border-b border-gray-50 px-3 py-2 last:border-0 hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.taskIds.includes(t.id)}
+                        onChange={() => toggleTask(t.id)}
+                        className={CHECKBOX_LIST_CLS}
+                      />
+                      <span className="text-sm text-gray-700">{t.name}</span>
+                      {isBound && (
+                        <span className="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-600">
+                          已纳入
+                        </span>
+                      )}
+                      <span className="ml-auto text-xs text-gray-400">{t.id}</span>
+                    </label>
+                  )
+                })}
+              </CheckboxListShell>
               <p className="mt-1.5 text-xs text-gray-400">
                 取消勾选将移除该任务下已纳入数据；新勾选将按下方状态/格式条件追加数据。
               </p>

@@ -49,6 +49,13 @@ function StatusIcon({ status }) {
       </span>
     )
   }
+  if (status === 'processing') {
+    return (
+      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-600">
+        ·
+      </span>
+    )
+  }
   if (status === 'pending') {
     return <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-gray-300" />
   }
@@ -114,7 +121,7 @@ function ColumnTitleHint({ label, hint }) {
 }
 
 function OperatorTooltipWrap({ operator, status, children }) {
-  const showTip = (status === 'passed' || status === 'rejected') && operator
+  const showTip = (status === 'passed' || status === 'rejected' || status === 'processing') && operator
   const tip = formatOperatorTooltip(operator)
   if (!showTip || !tip) return children
   return (
@@ -129,11 +136,20 @@ function OperatorTooltipWrap({ operator, status, children }) {
 
 function ProcessStatusCell({ status, operator, onClick, clickable = false }) {
   const label = PROCESS_STATUS_LABEL[status] ?? '—'
+  const colorCls = status === 'rejected'
+    ? 'text-red-600'
+    : status === 'passed'
+      ? 'text-emerald-700'
+      : status === 'processing'
+        ? 'text-blue-600'
+        : status === 'pending'
+          ? 'text-gray-500'
+          : 'text-gray-300'
   const inner = (
     <span
       className={`inline-flex items-center gap-1.5 text-sm ${
         clickable && status === 'passed' ? 'cursor-pointer hover:text-blue-600' : ''
-      } ${status === 'rejected' ? 'text-red-600' : status === 'passed' ? 'text-emerald-700' : status === 'pending' ? 'text-gray-500' : 'text-gray-300'}`}
+      } ${colorCls}`}
       onClick={clickable && status === 'passed' ? onClick : undefined}
       onKeyDown={clickable && status === 'passed' ? (e) => e.key === 'Enter' && onClick?.() : undefined}
       role={clickable && status === 'passed' ? 'button' : undefined}
@@ -143,7 +159,7 @@ function ProcessStatusCell({ status, operator, onClick, clickable = false }) {
       <span>{label}</span>
     </span>
   )
-  if (operator && (status === 'passed' || status === 'rejected')) {
+  if (operator && (status === 'passed' || status === 'rejected' || status === 'processing')) {
     return <OperatorTooltipWrap operator={operator} status={status}>{inner}</OperatorTooltipWrap>
   }
   return inner
@@ -185,14 +201,10 @@ function ProcessTabBar({ activeKey, onChange }) {
   )
 }
 
-function ProcessSubFilterBar({ counts, activeKey, onChange, processTab }) {
-  const options = processTab === 'all'
-    ? PROCESS_SUB_STATUS_OPTIONS.filter((opt) => opt.key === 'all')
-    : PROCESS_SUB_STATUS_OPTIONS
-
+function ProcessSubFilterBar({ counts, activeKey, onChange }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {options.map((opt) => {
+      {PROCESS_SUB_STATUS_OPTIONS.map((opt) => {
         const count = counts[opt.key] ?? 0
         const active = activeKey === opt.key
         return (
@@ -268,8 +280,11 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
               <span className="relative z-10 mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-blue-500 bg-white" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-gray-800">{node.label}</div>
-                <div className="mt-0.5 text-xs text-gray-400">{formatDateTime(node.time)}</div>
-                <div className="mt-0.5 text-xs text-gray-500">操作人：{node.operator ?? '—'}</div>
+                <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+                  <div>轮次：第 {node.round ?? 1} 轮</div>
+                  <div>操作人：{node.operator ?? '—'}</div>
+                  <div className="text-gray-400">时间：{formatDateTime(node.time)}</div>
+                </div>
               </div>
             </div>
           ))}
@@ -337,7 +352,7 @@ export default function EntryDataTable({
 }) {
   const { ToastNode, show: showToast } = useToast()
 
-  const [processTab, setProcessTab] = useState('all')
+  const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
   const [qEntryId, setQEntryId] = useState('')
   const [qProjectName, setQProjectName] = useState('')
@@ -368,7 +383,9 @@ export default function EntryDataTable({
   )
 
   const subCounts = useMemo(
-    () => (hideProcessTabs ? { all: formFiltered.length, pending: 0, passed: 0, rejected: 0 } : countProcessSubStatuses(formFiltered, processTab)),
+    () => (hideProcessTabs
+      ? { all: formFiltered.length, pending: 0, processing: 0, passed: 0, rejected: 0 }
+      : countProcessSubStatuses(formFiltered, processTab)),
     [formFiltered, processTab, hideProcessTabs],
   )
 
@@ -487,19 +504,21 @@ export default function EntryDataTable({
       title: <ColumnTitleHint label="质检状态" hint="点击查看质检详情" />,
       key: 'qcStatus',
       render: (_, row) => {
-        const ps = deriveProcessStatuses(row.dataStatus)
+        const ps = deriveProcessStatuses(row)
         return (
           <ProcessStatusCell status={ps.qc} clickable={ps.qc === 'passed'} onClick={() => setQcTarget(row)} />
         )
       },
     },
     {
-      title: <ColumnTitleHint label="审核状态" hint="悬停查看操作人信息" />,
+      title: <ColumnTitleHint label="标注状态" hint="悬停查看操作人信息" />,
       key: 'reviewStatus',
       render: (_, row) => {
-        const ps = deriveProcessStatuses(row.dataStatus)
+        const ps = deriveProcessStatuses(row)
         const task = getTask?.(row)
-        const operator = (ps.review === 'passed' || ps.review === 'rejected') ? resolveReviewOperator(row, task) : null
+        const operator = ps.review === 'processing'
+          ? row.reviewClaimedBy
+          : (ps.review === 'passed' || ps.review === 'rejected') ? resolveReviewOperator(row, task) : null
         return <ProcessStatusCell status={ps.review} operator={operator} />
       },
     },
@@ -507,8 +526,10 @@ export default function EntryDataTable({
       title: <ColumnTitleHint label="验收状态" hint="悬停查看操作人信息" />,
       key: 'acceptStatus',
       render: (_, row) => {
-        const ps = deriveProcessStatuses(row.dataStatus)
-        const operator = (ps.accept === 'passed' || ps.accept === 'rejected') ? resolveAcceptOperator(row) : null
+        const ps = deriveProcessStatuses(row)
+        const operator = ps.accept === 'processing'
+          ? row.acceptClaimedBy
+          : (ps.accept === 'passed' || ps.accept === 'rejected') ? resolveAcceptOperator(row) : null
         return <ProcessStatusCell status={ps.accept} operator={operator} />
       },
     },
@@ -517,7 +538,7 @@ export default function EntryDataTable({
       key: 'flow',
       render: (_, row) => <FlowRecordButton onClick={() => setFlowTarget(row)} />,
     },
-    { title: '上传人', dataIndex: 'uploader' },
+    { title: '采集员', dataIndex: 'uploader' },
     { title: '采集时间', key: 'collectTime', render: (_, row) => getEntryCollectTime(row) },
     {
       title: '操作',
@@ -540,7 +561,7 @@ export default function EntryDataTable({
             </div>
             <div className="flex items-center gap-3">
               <span className={ROW_LABEL_CLS}>状态</span>
-              <ProcessSubFilterBar counts={subCounts} activeKey={subStatus} onChange={setSubStatus} processTab={processTab} />
+              <ProcessSubFilterBar counts={subCounts} activeKey={subStatus} onChange={setSubStatus} />
             </div>
           </div>
         </div>
@@ -586,7 +607,7 @@ export default function EntryDataTable({
                 </select>
               </div>
               <div className={FILTER_FIELD}>
-                <label className={LBL}>审核状态</label>
+                <label className={LBL}>标注状态</label>
                 <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
                   {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>

@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目/任务/条目 · 抽样验收 · 审核工作台（播放/审核/验收）· 真机/开源数据集 · 标签与设备管理 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
+**核心能力**：运营看板 · 采集项目/任务/条目 · 抽样验收 · 审核工作台（播放/标注/验收）· 真机数据集（含转换记录/转换数据集）· 五类标签管理 · 设备管理 · 全平台统一时间格式 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
 
 ---
 
@@ -50,12 +50,12 @@ npm run preview
 |---|---|
 | 顶栏 `Header` | 左侧 Logo + 侧边栏折叠按钮；右侧显示当前角色 + 用户头像下拉 |
 | 侧边栏 `Sidebar` | 深色导航，支持折叠；按 RBAC **view** 权限过滤菜单项与子菜单 |
-| 面包屑 `Breadcrumb` | 内容区顶部路径导航；系统管理下按路由分别显示「用户管理 / 角色管理 / 系统日志」 |
+| 面包屑 `Breadcrumb` | 内容区顶部路径导航；系统管理下按路由分别显示「用户管理 / 角色管理」 |
 | 内容区 | 各业务页面；无路由 **view** 权限时渲染 `NoPermission`（非独立路由） |
 
 **顶栏用户下拉**：
 - **默认身份**：管理员 · **张华**（`zhanghua@ai2robotics.com`，U-001），拥有全部权限
-- **演示身份切换**：展开后可切换 5 个预设身份（见 [RBAC → 演示身份](#演示身份切换)）；切换后 Toast 提示，侧边栏与按钮即时更新
+- **演示身份切换**：展开后可切换 6 个预设身份（见 [RBAC → 演示身份](#演示身份切换)）；切换后 Toast 提示，侧边栏与按钮即时更新
 - **退出登录**：跳转 `/login`（不清理 mock 运行时数据）
 
 **审核工作台**（`/review/:entryId`）为**独立全屏页面**，不包含侧边栏与面包屑，在新标签页打开。
@@ -128,9 +128,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 开源数据集 | `dataset.open` | view, import, download |
 | 标签管理 | `tag` | view, create, edit, delete |
 | 设备管理 | `device` | view, create, edit, delete |
-| 用户管理 | `system.user` | view, create, edit |
+| 用户管理 | `system.user` | view, create, edit, delete |
 | 角色管理 | `system.role` | view, create, assignPerm |
-| 系统日志 | `system.log` | view, export |
 
 `RolePermissionModal` 编辑权限时：若勾选某模块非 view 操作，保存会自动补全该模块的 **view**。
 
@@ -143,7 +142,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | R-001 | 管理员 | 平台最高权限 |
 | R-002 | 平台运营 | 管理采集项目/任务，查看数据集与报表 |
 | R-003 | 采集员 | 执行采集任务，上传数据 |
-| R-004 | 标注员 | 审核采集数据，质检标注 |
+| R-004 | 标注员 | 标注采集数据，进行质检标注 |
 | R-005 | **游客** | 查看数据集、标签与设备（无采集模块、无下载） |
 | R-006 | **工程师** | 查看并下载数据集、标签与设备（无采集模块） |
 
@@ -174,16 +173,13 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 |---|---|
 | 采集项目 | 新建项目；卡片/列表：创建任务、**验收**、编辑、归档、删除 |
 | 项目详情 | 采标方案（采集/质检/布局）、采集任务、项目人员各 Tab 操作 |
-| 采集任务 | 新建任务；行内：复制、编辑、发布、审核、验收、导出、归档、删除 |
+| 采集任务 | 新建任务；行内：复制、编辑、发布、标注、验收、导出、归档、删除 |
 | 采集条目 | 下载、删除 |
-| 真机数据集 | 新建、编辑、删除、下载；卡片菜单编辑/删除 |
-| 真机数据集详情 | 更新数据集 |
-| 开源数据集 | 导入、下载 |
+| 真机数据集 | 新建、删除、下载说明；详情数据条目 Tab：批量下载、删除（`dataset.self.update`）；卡片菜单删除 |
 | 标签管理 | 各 Tab 新建；行内编辑、删除 |
 | 设备管理 | 新建类型/实例；行内编辑、删除 |
-| 用户管理 | 新增用户、编辑用户 |
+| 用户管理 | 新增用户、编辑用户、删除用户（管理员；不可删当前登录用户） |
 | 角色管理 | 新建角色、编辑权限 |
-| 系统日志 | 导出日志（占位 Toast，未接 `system.log.export` 权限校验） |
 
 > **运营看板**：当前仍为全量 mock 数据，不随项目成员数据范围收缩（已知临时差异）。
 
@@ -213,11 +209,10 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 |---|---|
 | 采集项目 · 新建项目 | `Project/index.jsx` |
 | 真机数据集 · 新建数据集 | `CreateDatasetModal.jsx` |
-| 标签管理 · 平铺标签新建 | `Tag/index.jsx` → `TagModal` |
-| 标签管理 · 场景类型新建 | `SceneTypeModal.jsx` |
-| 设备管理 · 新建类型 | `Device/TypeList.jsx` |
+| 标签管理 · 平铺标签新建 | `Tag/index.jsx` → `FlatTagModal` |
+| 标签管理 · 审核/场景标签新建 | `AuditReviewTagModal.jsx` / `SceneTypeModal.jsx` |
 
-> 标签/设备新建弹窗内展示 `CreatorReadonlyField`；编辑模式不展示。历史 mock 数据中的 `creator` 字段不受演示切换影响，仅本次会话新建记录使用当前身份。
+> 上表页面新建弹窗内展示 `CreatorReadonlyField`；**设备类型新建弹窗已移除创建人字段**（后台仍写入 `creator`）。编辑模式不展示创建人。历史 mock 数据中的 `creator` 字段不受演示切换影响，仅本次会话新建记录使用当前身份。
 
 ---
 
@@ -251,7 +246,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 指标 | 数据来源 / 联动规则 |
 |---|---|
 | 采集数据量 | `realDashboard[projectId].metrics.collectCount` + `collectHours` |
-| 审核通过量 | `reviewCount` + `reviewHours` |
+| 标注通过量 | `reviewCount` + `reviewHours` |
 | 采集项目数 | 全部项目 → `projects.length`（8）；单项目 → `1` |
 | 采集任务量 | `metrics.tasks`（如全部 15、P-1003 为 3） |
 | 操作技能 | `metrics.skills` |
@@ -281,8 +276,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 数据来源：`realDashboard[projectId].ranking`；全局 `allRanking` 各 12 条，单项目为精简 `ranking`；缺省字段由 `enrichRankingList` 按口径推算
 - **表格列**：排名、人员、完成数量、**完成时长（小时）**、**驳回数量**、**驳回时长（小时）**、完成进度
 - **字段口径（mock）**：
-  - **采集员**：完成时长 = 上传条目时长之和；驳回数量/驳回时长 = **审核驳回**条目数/时长之和
-  - **标注员**：完成时长 = 审核条目时长之和；驳回数量/驳回时长 = **验收驳回**条目数/时长之和
+  - **采集员**：完成时长 = 上传条目时长之和；驳回数量/驳回时长 = **标注驳回**条目数/时长之和
+  - **标注员**：完成时长 = 标注条目时长之和；驳回数量/驳回时长 = **验收驳回**条目数/时长之和
 - **排名样式**：第 1~3 名金/银/铜圆形徽章；第 4 名起 `NO.N` 灰色标签
 - **完成进度**：进度条 + 百分比，100% 变绿带对勾
 - **分页与滚动**：**10 条/页**；表格区域固定可见 **6 行** 高度，当前页超出部分滚动
@@ -294,7 +289,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **筛选区**（点击「查询」生效）：项目 ID、项目名称、项目状态、创建人、创建时间范围；筛选项单行铺满，「重置」「查询」次行右对齐
 - **标题栏**：「项目列表」+ 视图切换按钮 + 「+ 新建项目」
 - **新建项目弹窗**：自动生成项目 ID（只读）、项目名称（必填）、**创建人**（只读，随演示身份）、项目描述
-- **卡片/列表字段**：项目 ID、名称、场景、任务数、创建人、描述、采集进度条（蓝色/绿色，100% 变绿）、状态 badge、创建/更新时间
+- **卡片/列表字段**：项目 ID（黑色不可点）、**项目名称**（蓝色可点击跳转详情）、场景、任务数、创建人、描述、采集进度条（蓝色/绿色，100% 变绿）、状态 badge、创建/更新时间
 - **操作**：查看详情、创建任务、编辑、归档/取消归档、删除（需二次确认输入项目名）；**进行中 / 已完成** 项目卡片/列表额外显示 **验收**（`AcceptChoiceModal`：全量验收 → 项目详情采集任务 Tab；抽样验收 → 抽样验收页）
 - **状态**：未开始（灰）/ 进行中（蓝）/ 已完成（绿）/ 已归档（灰）
 - **分页**：卡片视图与列表视图均为 **10 条/页**（`usePagination` + `ListPaginator` / `Table`）；筛选条件变更时重置至第 1 页
@@ -346,7 +341,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 方案名称（必填）；编辑态方案 ID 只读
 - 所属场景（三级级联，必填）
 - 本体类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端（未选显示「—」）
-- 采集方式（下拉，必填；选项来自 `collectionMethodTags`）
+- 采集方式（下拉，必填；选项来自 `getCollectionMethodTags()`）
 - 原始场景状态（文本域 0/500）
 - 采集步骤：默认 1 步；每步含步骤描述、原子技能（多选 portal 下拉）、时长(秒)；≥2 步才可删；步骤可留空
 - 总时长（自动累加）· 总偏差 · 目标时间范围（总时长 ± 总偏差）
@@ -402,8 +397,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 项目创建人固定显示为「平台运营」，置于首行，不可编辑/移除；加入时间取项目 `createdAt`
 - **添加成员弹窗**（字段顺序）：
   1. **角色**（必选，可多选）：采集员 / 标注员
-  2. **选择用户**（必选）：下拉选人，**仅显示姓名**（不含角色后缀）；列出启用用户，排除创建人与已在项目中的成员；本版不做按角色严格过滤
-  3. **分配任务**：项目任务多选勾选列表
+  2. **选择用户**（必选，单选）：`PersonDropdownSelect` 支持 **模糊搜索** + 下拉单选；仅显示姓名（不含角色后缀）；列出启用用户，排除创建人与已在项目中的成员
+  3. **分配任务**：`TaskCheckboxList`（项目任务多选；列表首行统一 **全选** 行：浅灰底 + 「已选 x / 共 y」+ 半选态）
 - **编辑弹窗**：同上顺序；用户字段只读，角色与任务可改
 
 ---
@@ -413,13 +408,13 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 **页头**：与项目详情一致的紧凑项目信息卡（ID、任务数、创建人、创建时间）。
 
-**筛选区**（单行，点击「查询」生效）：批次名称（模糊）、抽样依据（全部 / 任务名称 / 采集员 / 审核员 / 审核结果 / 验收状态）；「重置」「查询」同行右对齐。
+**筛选区**（单行，点击「查询」生效）：批次名称（模糊）、抽样依据（全部 / 任务名称 / 采集员 / 标注员 / 标注结果）；「重置」「查询」同行右对齐。
 
 **抽检批次列表**（10 条/页）：
 - **列**：勾选、批次 ID、批次名称、抽样依据、总条目、抽检条目、通过率（色阶：≥90% 绿 / ≥70% 橙 / 否则红）、验收进度（迷你进度条）、创建人、创建时间、操作
 - **操作**：**验收**（未完成批次；打开该批次最新待验收条目的验收工作台 `mode=accept`）· **详情**（`SamplingBatchDetailModal` 抽检明细）· **处理**（`BatchAcceptProcessModal` 按选项批量通过/驳回）
 - **批量处理**（`BulkAcceptProcessModal`）：已选批次批量处理，或 **项目整体验收**（处理全部待验收条目）
-- **新建抽检批次**（`CreateSamplingBatchModal`）：批次名称 + 抽样依据 + 配置项（比例/条目数）；保存时 `pickSampleEntryIds` 抽样并写入 `samplingBatches.js` runtime store
+- **+ 新建**（`CreateSamplingBatchModal`，弹窗标题「新建」）：批次名称 + 抽样依据（四选一）+ 选择范围（`CheckboxList` 全选行 + 模糊筛选）+ 配置项比例；保存时 `pickSampleEntryIds` 抽样并写入 runtime store
 
 **运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、`appendSamplingBatch`、`updateSamplingBatch`、`getProjectProcessStats`
 
@@ -427,7 +422,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 ### 新建/编辑任务弹窗（`CreateTaskModal`，项目任务 Tab 共用）
 
-**布局**：`fitViewport` 宽弹窗（960px），左右双栏 — 左「基础信息 + 审核布局」，右「采集方案」。
+**布局**：`fitViewport` 宽弹窗（960px），左右双栏 — 左「基础信息 + 标注布局」，右「采集方案」。
 
 **模式**：
 - **新建**：右侧可在「创建新方案 / 选择已有方案」间切换（`ModeToggle`）
@@ -435,17 +430,17 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 **左侧 · 基础信息**：
 - 任务名称（必填；前缀只读任务 ID）
-- 任务用途（必填；正式采集 / 试采集，来自 `taskTypeTags`）
+- 任务用途（必填；正式采集 / 试采集，来自 `getTaskPurposeTags()`）
 - 采集条数（必填，≥1）
 - 指定采集设备（必填；按当前方案本体类型 `deviceTypeId` 过滤在库实例 SN；未配置本体类型时禁用并提示「请先配置采集方案的本体类型」）
 
-**左侧 · 审核布局**：布局配置（选填，默认布局；选项来自当前项目 `playLayouts`）
+**左侧 · 标注布局**：布局配置（选填，默认布局；选项来自当前项目 `playLayouts`）
 
 **右侧 · 采集方案**（新建时必选）：
 - **选择已有方案**：可搜索下拉（方案 ID · 名称）；选中后下方 `PlanReadonlySection` 摘要
 - **创建新方案**：嵌入 `CollectPlanFormFields`（与项目详情采集方案弹窗字段一致）；保存时 `appendPlan`，新方案状态 **已发布**
 
-**保存**：新建任务默认状态 **草稿**；校验任务字段 + 方案来源（创建新方案走 `validatePlanForm`）。
+**保存**：新建任务默认状态 **草稿**；校验任务字段 + 方案来源（创建新方案走 `validatePlanForm`）；写入 `deviceTypeName` 快照供历史展示。
 
 ---
 
@@ -456,17 +451,17 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
   - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、采集设备、所属场景、采集方式、任务状态
   - 各字段 placeholder 为具体提示（如「请输入任务ID」「请输入项目名称」「请输入姓名」）；「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务 ID、任务名称、所属项目名称（全局列表）、任务用途、采集设备、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/审核/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
+- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、本体类型、采集设备、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
 - **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」）：
 
 | 状态 | 操作 |
 |---|---|
 | 草稿 | 复制 · 编辑（`CreateTaskModal`）· 发布（二次确认）· 删除 |
-| 已发布 | 复制 · 查看详情 · 审核 · 验收 · 导出（标签/质检报告 Toast）· 归档（二次确认）· 删除 |
+| 已发布 | 复制 · 查看详情 · 标注 · 验收 · 导出（标签/质检报告 Toast）· 归档（二次确认）· 删除 |
 | 已归档 | 复制 · 查看详情 · 删除 |
 
-- **编辑弹窗**：可改任务名称、用途、采集条数、设备实例、审核布局；关联采标方案只读
+- **编辑弹窗**：可改任务名称、用途、采集条数、设备实例、标注布局；关联采标方案只读
 - **删除**：需输入任务名二次确认
 
 ---
@@ -474,39 +469,41 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 ### 任务详情 `/collection/task/:id`
 进入前校验 `canAccessTask`：采集员/标注员访问非本人任务时显示 `NoPermission`（与路由 view 权限独立）。
 
-顶部展示任务名称、状态、采集/审核/验收进度、采集员/标注员（多人逗号分隔）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
+顶部展示任务名称、状态、采集/标注/验收进度、采集员/标注员（多人逗号分隔）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
 
 ---
 
 ### 采集条目列表（`EntryDataTable`，任务详情 / 采集条目页共用）
+
+**默认列表标题**：`listTitle="条目列表"`（任务详情内由 `EntryListPanel` 传入时可覆盖）
 
 **使用场景**：
 - **任务详情**：`EntryListPanel` 按 `taskId` 过滤 + 数据范围；显示工序 Tab、批量操作
 - **采集条目页** `/collection/upload`：`hideProcessTabs` + `showScopeColumns`（所属项目/任务名称列与筛选）
 
 #### 工序 Tab 栏（任务详情 / 项目任务 Tab 内；采集条目页隐藏）
-- **工序**：全部 / 质检 / 审核 / 验收（胶囊 Tab）
+- **工序**：全部 / 质检 / 标注 / 验收（胶囊 Tab）
 - **状态**：待处理 / 已通过 / 已驳回 / 全部；各选项旁显示当前计数
-- 工序为 **全部** 时，状态行仅显示「全部」；选中质检/审核/验收后才展示完整子状态筛选
+- 工序为 **全部** 时，状态行仅显示「全部」；选中质检/标注/验收后才展示完整子状态筛选
 
 #### 筛选区（5 列网格 + 展开行，点击「查询」生效）
 - **首行**：条目 ID、文件名称、数据格式（全部/h5/LeRobot）；采集条目页额外：所属项目名称、所属任务名称
-- **展开行**：质检状态、审核状态、验收状态（全部/待处理/已通过/已驳回）
+- **展开行**：质检状态、标注状态、验收状态（全部/待处理/已通过/已驳回）
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、采集设备、**质检状态**（已通过可点击查看 `QcDetailModal`）、**审核状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、上传人、采集时间、操作（`EntryActions`）
+勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、采集设备、**质检状态**（已通过可点击查看 `QcDetailModal`）、**标注状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
 
-工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传/已解析 → 质检已通过、审核待处理；已审核 → 验收待处理；等。
+工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传/已解析 → 质检已通过、标注待处理；已标注 → 验收待处理；等。
 
 **数据状态**（6 值，`entries.js` → `DATA_STATUSES`，驱动 `EntryActions` 中间按钮）：
 
 | 状态 | badge 颜色 | 说明 |
 |---|---|---|
 | 已上传 | gray | 刚上传，解析中 |
-| 已解析 | blue | 可进入审核 |
-| 审核不通过 | red | 审核驳回，可重新审核 |
-| 已审核 | purple | 审核通过，可进入验收 |
+| 已解析 | blue | 可进入标注 |
+| 标注不通过 | red | 标注驳回，可重新标注 |
+| 已标注 | purple | 标注通过，可进入验收 |
 | 验收不通过 | orange | 验收驳回，可重新验收 |
 | 已验收 | cyan | 流程结束 |
 
@@ -518,14 +515,14 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 | 数据状态 | 播放 | 中间按钮 | 下载 | 删除 |
 |---|---|---|---|---|
-| 已上传 | 打开工作台 `mode=play` | 审核（置灰，解析中） | 占位 | 二次确认 |
-| 已解析 / 审核不通过 | 播放 | **审核** → `mode=review` | 占位 | 二次确认 |
-| 已审核 / 验收不通过 | 播放 | **验收** → `mode=accept` | 占位 | 二次确认 |
+| 已上传 | 打开工作台 `mode=play` | 标注（置灰，解析中） | 占位 | 二次确认 |
+| 已解析 / 标注不通过 | 播放 | **标注** → `mode=review` | 占位 | 二次确认 |
+| 已标注 / 验收不通过 | 播放 | **验收** → `mode=accept` | 占位 | 二次确认 |
 | 已验收 | 播放 | 占位 | 占位 | 二次确认 |
 
-播放/审核/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除需输入文件名二次确认。
+播放/标注/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除需输入文件名二次确认。
 
-> **TODO**：中间按钮角色校验（审核=标注员、验收=平台运营）尚未接入。
+> **TODO**：中间按钮角色校验（标注=标注员、验收=平台运营）尚未接入。
 
 ---
 
@@ -536,8 +533,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 | mode | 右侧面板标题 | 可编辑内容 |
 |---|---|---|
-| `play` | 播放 | 只读；审核/验收区显示「待审核/待验收」占位 |
-| `review` | 审核标注 | 审核结论（通过/不通过）、审核标签（多选）、审核意见；时间轴动作段可编辑 |
+| `play` | 播放 | 只读；标注/验收区显示「待标注/待验收」占位 |
+| `review` | 标注 | 标注结论（通过/不通过）、标注标签（分组多选，数据来自 `getAuditReviewTagGroups()`）、标注意见；时间轴动作段可编辑 |
 | `accept` | 验收 | 验收结论（通过/不通过）、验收意见 |
 
 **布局**：
@@ -545,8 +542,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **左侧主区**（撑满高度）：
   - 上区（约 3:1 高度比）：相机行（头部 2 份 + 胸/左腕/右腕 1 份 + URDF 1 份）+ 信号图行（关节 / 末端位姿 / 夹爪，recharts 折线图）
   - 下区：时间轴（播放/暂停、倍速、帧 scrubber、动作段与区域段；`review` 模式可编辑动作段）
-- **右侧面板**（340px，可折叠）：基本信息 / 审核结论 / 验收结论 / 可展开「采集方案详情」
-- **提交**：审核提交 → 更新 `dataStatus` 为「已审核」或「审核不通过」；验收提交 → 「已验收」或「验收不通过」；提交后自动跳转同任务下一条，末条则回任务详情
+- **右侧面板**（340px，可折叠）：基本信息 / 标注结论 / 验收结论 / 可展开「采集方案详情」
+- **提交**：标注提交 → 更新 `dataStatus` 为「已标注」或「标注不通过」；验收提交 → 「已验收」或「验收不通过」；提交后自动跳转同任务下一条，末条则回任务详情
 - **返回**：条目不存在时显示「返回采集条目」，跳转 `/collection/upload`
 
 **可视化 mock**：`src/assets/review/` 真实占位图（头/胸/腕相机、URDF）；信号数据由 `mock/signalData.js` 生成；播放头仅驱动信号图与时间轴。
@@ -560,23 +557,23 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 - **数据范围**：采集员见本人上传；标注员见 `reviewer` 含本人的任务关联条目；管理员/平台运营/工程师见全部
 - **SDK 说明折叠区块**（筛选区上方）：默认折叠，点击展开 Python SDK 上传代码示例
-- **条目列表**：复用 `EntryDataTable`（`listTitle="采集条目"`、`hideProcessTabs`、`showScopeColumns`）；**无工序 Tab**，展示所属项目/任务名称列与筛选
+- **条目列表**：复用 `EntryDataTable`（`listTitle="条目列表"`、`hideProcessTabs`、`showScopeColumns`）；**无工序 Tab**，展示所属项目/任务名称列与筛选
 - 数据与 `entries.js` mock 对齐；展示文件名为 `{fileName}.{h5|lerobot}`，格式在「数据格式」列展示
 
 ---
 
 ### 真机数据集 `/dataset/self`
-侧边栏显示为「真机数据集」（路由不变）。
+侧边栏「数据集管理」下**仅保留**「真机数据集」入口（路由不变）。开源数据集相关路由已重定向至本页（见 [开源数据集（侧栏已下线）](#开源数据集侧栏已下线)）。
 
 #### 列表页
 - **默认视图**：卡片视图（4 列，紧凑字号）；可切换列表视图
-- **筛选区**（点击「查询」生效，单行布局）：数据集名称、最后更新人、最后更新时间范围在左侧 `flex-1 basis-0` 均匀拉伸；「重置」「查询」固定右侧；「重置」清空
+- **筛选区**（点击「查询」生效，单行布局）：数据集名称、项目名称、任务名称在左侧 `flex-1 basis-0` 均匀拉伸；「重置」「查询」固定右侧
 - **标题栏**：
-  - 左侧：「数据集列表」+ **下载数据集**（跳转下载说明页，与右侧按钮分开）
+  - 左侧：「真机数据集列表」+ **下载说明**（跳转下载说明页，需 `dataset.self.download`）
   - 右侧：视图切换 + 「+ 新建数据集」
-- **列表/卡片字段**：数据集 ID、名称、轨迹数量、总数据量、最后更新人、最后更新时间
-- **操作**：查看详情、编辑（仅改名称）、删除（输入名称二次确认）
-- **卡片**：右上角三点菜单（查看详情/编辑/删除），点击卡片主体跳转详情
+- **列表字段**：ID（黑色不可点）、**数据集名称**（蓝色可点击跳转详情）、关联项目数、关联任务数、条目数量、总数据量、总时长、创建人、创建时间
+- **操作**：详情、删除（输入名称二次确认）；**无列表页编辑**
+- **卡片**：右上角三点菜单（查看详情/删除）；点击卡片主体跳转详情；展示条目数、总数据量、关联项目/任务数、创建人、创建时间
 
 #### 数据集下载说明 `/dataset/self/download`
 - **面包屑**：数据集管理 / 真机数据集 / 下载数据集
@@ -584,140 +581,89 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **示例代码区**：顶部标注「示例代码，以实际 SDK 为准」；CLI、SDK 两栏并排，各带复制按钮与深色代码块
 
 #### 新建数据集弹窗（`CreateDatasetModal`）
-单弹窗、三个区块（非分步向导），启用 `fitViewport`（限高 85vh、垂直居中、内容区滚动、底部按钮固定）：
+单弹窗、三个区块，启用 `fitViewport`（限高 85vh、垂直居中、内容区滚动、底部按钮固定）：
 
 | 区块 | 内容 |
 |---|---|
 | 基本信息 | **创建人**（只读，随演示身份）、数据集名称（必填）、描述（选填） |
-| 选择数据来源 | 来源项目（单选，不跨项目）、纳入任务（多选 + 全选，默认不勾选）、纳入数据状态（多选，默认不勾选）、数据格式（h5/LeRobot 多选，默认不勾选，必填） |
-| 预览 | 按「任务 + 数据状态 + 数据格式」实时计算符合条件的条目数与预计总数据量 |
+| 选择数据来源 | **纳入任务**（`TreeTransfer`：按项目分组勾选多个任务，必填）、**数据格式**（h5/LeRobot 多选，必填） |
+| 预览 | 实时计算符合条件的条目数、预计总数据量、预计总时长 |
 
-- 纳入数据状态选项：**已上传 / 已解析 / 已审核**（与当前条目主流程对齐）
-- 创建为**快照式**：按当前条件固定纳入条目，后续项目新增数据不自动加入
-- 创建后写入：`taskIds`、`statuses`、`formats`、`entryIds`、`trajCount`、`totalSize`、`totalDuration`、创建人/时间、最后更新人/时间、首条「创建」更新记录
+- **数据纳入规则**：仅纳入 **验收通过**（`已验收`）的条目；可跨多个采集项目勾选任务
+- **自动同步**：创建时 `autoSync: true`；说明文案提示——后续新增验收通过数据自动纳入，平台删除的数据自动移除
+- 创建后写入：`projectIds` / `projectNames`、`taskIds`、`statuses`（固定验收通过）、`formats`、`entryIds`、`trajCount`、`totalSize`、`totalDuration`、创建人/时间、首条「创建」更新记录
 
 #### 详情页 `/dataset/self/:id`
 参考项目详情页的紧凑头部 + Tab 布局（默认 Tab：**数据概览**）：
 
 **头部**（非表格，紧凑横排）：
 - 大标题：数据集名称；副文字：描述（无则显示「暂无描述」）
-- 元信息一行平铺（label 小字在上、值在下）：数据集 ID、轨迹数量、总数据量、轨迹总时长、创建人、创建时间、最后更新人、最后更新时间
-- Tab 栏接在头部下方（数据概览 / 数据条目 / 更新记录）
+- 元信息一行平铺（label 小字在上、值在下）：数据集 ID、**关联项目数**、**关联任务数**、条目数量、总数据量、总时长、创建人、创建时间
+- Tab 栏接在头部下方（数据概览 / 数据条目 / 转换记录 / 转换数据集）
 
 | Tab | 内容 |
 |---|---|
-| 数据概览 | 来源项目、已绑定任务数与总纳入条数；各任务纳入条目表格；数据状态/格式**横向堆叠占比条**（分段颜色 + 数量 + 百分比） |
-| 数据条目 | 数据集 `entryIds` 关联的全部条目列表；筛选（所属任务/数据状态/格式，点查询）；操作：播放、下载、导出（占位）；**分页每页 10 条** |
-| 更新记录 | 更新记录表格 + 「更新数据集」按钮；字段：更新时间、更新人、操作类型、客观变更、更新说明 |
+| 数据概览 | **各项目纳入条目** 表格（列表标题样式）；**来源项目分布**与**数据格式分布**横向堆叠占比条（分段颜色 + 数量 + 百分比） |
+| 数据条目 | 标题「**条目列表**」；数据集 `entryIds` 关联的全部条目；筛选（所属项目/任务/格式，点查询）；勾选后批量 **转图片 / 转视频 / 批量下载**（mock）；行内播放/下载/导出/**删除**（`RemoveDatasetEntryModal` 简单确认，仅从数据集移除，需 `dataset.self.update`）；**分页每页 10 条** |
+| 转换记录 | 标题「**记录列表**」；本数据集发起的转换任务列表（`datasetConversions.js`）；筛选：任务 ID、任务类型、任务状态；列含进度条、操作人、操作时间 |
+| 转换数据集 | 标题「**数据集列表**」；转换产出的数据集列表；筛选：转换数据集 ID、名称、类型；mock 约 2.5s 后自动完成转换任务 |
 
-#### 更新数据集弹窗（`UpdateDatasetModal`）
-与新建弹窗同源 `fitViewport` 限高处理：
-
-- 来源项目只读
-- **纳入任务**：已绑定任务默认勾选，名称旁显示「已纳入」标签；取消勾选移除该任务数据，新勾选按条件追加
-- 纳入数据状态、数据格式（多选，打开时预填当前数据集条件，必填）
-- **预览**：实时对比当前与目标集合，分开展示新增/移除条目数与数据量，以及更新后预计总量
-- **更新说明**（必填）；无数据变更时拦截提交
-- 确认后：重写 `entryIds` 与绑定条件，更新指标与最后更新人/时间，写入「更新数据」记录（客观变更含追加/移除条数与容量）
+> `UpdateDatasetModal.jsx` 仍保留于代码库，当前 UI **未接入**更新数据集入口。
 
 ---
 
-### 开源数据集 `/dataset/open`
-侧边栏显示为「开源数据集」。数据集导入后即视为可用，**无入库状态**字段或中间态。
+### 开源数据集（侧栏已下线）
 
-#### 列表页
-- **默认视图**：卡片视图（4 列）；可切换列表视图
-- **筛选区**（点击「查询」生效，单行布局）：数据集名称、发布方、层级（L1~L4）在左侧均匀拉伸；「重置」「查询」固定右侧
-- **标题栏**：
-  - 左侧：「开源数据集列表」+ **下载数据集**（跳转 `/dataset/open/download`，需 `dataset.open.download`）
-  - 右侧：视图切换 + **导入数据集**（需 `dataset.open.import`）
-- **列表/卡片展示字段**：ID、数据集名称、发布方、层级（badge：L1 紫 / L2 蓝 / L3 青 / L4 橙）、数据量、轨迹数量  
-  - **不展示** `description`（描述仅在详情页显示）
-- **表格视图交互**：
-  - **ID**：纯文本，不可点击
-  - **数据集名称**：蓝色加粗可点击，跳转详情页 `/dataset/open/:id/usage`
-  - 名称右侧 **chain-link 外链图标**（蓝色 `text-blue-600`，悬浮加深/下划线）：点击 `stopPropagation`，新标签页打开 `externalLink`；无操作列
-- **卡片视图交互**：
-  - 整张卡片可点击跳转详情（hover 上浮，参考真机数据集卡片）
-  - 标题右侧外链图标：点击阻止冒泡，单独打开原始链接
-  - 卡片字段：名称 + 层级 badge（右上）、ID、发布方、数据量/轨迹数量双列数据块
+侧边栏**已移除**「开源数据集」入口；`/dataset/open`、`/dataset/open/download`、`/dataset/open/:id/usage` 等路由均 **重定向至** `/dataset/self`。`dataset.open.*` 权限仍保留于 RBAC catalog，供运营看板「开源数据」Tab 等场景参考。
 
-#### 导入数据集弹窗（`ImportOpenDatasetModal`）
-三步流程，启用 `fitViewport`：
+源码仍保留 `Open.jsx`、`OpenDownload.jsx`、`OpenUsage.jsx`、`ImportOpenDatasetModal.jsx` 与 Excel 导入逻辑（SheetJS），便于后续恢复独立入口。
 
-| 步骤 | 内容 |
-|---|---|
-| 1. 下载模板 | 「下载导入模板」生成 Excel（列：数据集名称、发布方、层级、外部链接、数据量、轨迹数量、描述） |
-| 2. 上传解析 | 拖拽/点击上传 `.xlsx` / `.xls`，使用 **SheetJS（`xlsx`）** 真实解析，非假动作 |
-| 3. 预览确认 | 表格预览解析结果；必填项（名称/发布方/层级/数据量）或层级非法（非 L1~L4）标红；无效行默认不勾选；顶部「共解析 X 条，有效 Y 条」 |
+**运营看板** `/dashboard` → 「开源数据」Tab 仍展示开源数据集 mock 指标（`OpenDataTab.jsx`），与侧栏导航无关。
 
-- **确认导入**：仅导入已勾选且校验通过的行；ID 从现有最大 `ODS-0XX` 续号；记录插入列表最前；Toast「成功导入 Y 条数据集」
-- 导入记录字段：`name`、`publisher`、`level`、`dataSize`、`trajCount`、`size`（合并展示串）、`externalLink`、`description`、`createdAt`
+<details>
+<summary>历史页面说明（组件仍存在，当前路由不可达）</summary>
 
-#### 数据集下载说明 `/dataset/open/download`
-- **面包屑**：数据集管理 / 开源数据集 / 下载数据集
-- **顶部**：标题「开源数据集下载说明」+ 下载 SDK / 查看访问密钥（Toast 占位）
-- **示例代码区**：CLI、SDK 两栏并排，各带复制按钮与深色代码块（示例针对开源数据集 CLI/SDK）
+#### 列表页 `/dataset/open`
+- 卡片/列表双视图；筛选：数据集名称、发布方、层级（L1~L4）
+- 导入数据集（Excel 三步向导）、下载说明页、详情页含 CLI/SDK 示例代码
+- 10 条初始 mock（ODS-001~010），支持 Excel 导入追加
 
-#### 数据集详情 `/dataset/open/:id/usage`
-- **面包屑**：数据集管理 / 开源数据集 / **数据集详情**
-- **头部卡片**（元素顺序）：
-  1. 数据集名称（大标题）+ 右侧「下载 SDK」（Toast 占位）
-  2. `ID · 发布方`（灰色副标题小字）
-  3. 描述（`description`，无则「暂无描述」）
-  4. 元信息横排（label 小字在上、值在下）：层级 badge、数据量、轨迹数量、原始数据集链接（可点击，新标签页）
-  5. 「示例代码，以实际 SDK 为准」（琥珀色提示）
-- **下方代码区**：CLI、SDK **对称两栏**并排（等宽、顶对齐），各带复制按钮与深色代码块；示例代码按当前数据集 ID/层级动态生成
+</details>
 
 ---
 
 ### 标签管理 `/tag`
-页面标题「标签管理」，**两个一级 Tab**（蓝色下划线）+ 若干二级 Tab（圆角药丸样式）。
+页面标题「标签管理」，**五个一级 Tab**（蓝色下划线）：审核标签、场景标签、原子技能标签、采集方式标签、任务用途标签。
 
 > **标注模板**（`misc.js` → `annotationTemplates`）为历史 mock，**当前 UI 不再使用独立标注方案 Tab**。标注配置由采集方案步骤自动生成，在项目详情 → 采标方案 → 采集方案列表通过「标注方案」只读弹窗查看（`CollectPlanForm` → `PlanAnnotationDetails`）。
 
-#### 采集标签（4 个二级 Tab）
+**运行时 store**（`tags.js`）：各 Tab 通过 getter/setter 读写会话内状态，刷新页面恢复 seed。下游消费方包括 `CollectPlanForm`、`CreateTaskModal`、`Workbench`（审核标签分组下拉）、`plans.js`（场景树）等。
 
-| 二级 Tab | 组件 | 数据 |
-|---|---|---|
-| 任务类型 | `TagSubPanel` | `tags.js` → `taskTypeTags`（正式/试采） |
-| 场景类型 | `SceneTypePanel` | `tags.js` → `sceneTypeTree`（三层树，见下文） |
-| 采集方案 | `TagSubPanel` | `tags.js` → `collectionMethodTags`（**VR遥操 / 外骨骼**，与采标方案采集方式措辞一致） |
-| 原子技能 | `TagSubPanel` | `tags.js` → `atomicSkillTags`（close/open/press/grasp/push/pull/move） |
+#### 审核标签 Tab（`AuditReviewTagPanel` + `AuditReviewTagModal`）
 
-#### 设备标签（4 个二级 Tab）
+- **数据结构**：两级树——一级分组（质量评分 / 问题标签）→ 二级叶子标签（共 11 个）
+- **列表展示**：默认展开一级；`+/−` 展开/收起；缩进区分层级
+- **操作**：一级分组可编辑/删除（编辑打开 `AuditReviewTagModal`，可改分组信息与全部子标签）；二级叶子只读展示
+- **删除**：级联提示子标签数量
+- **审核工作台**：`getAuditReviewTagGroups()` 供分组多选下拉
 
-| 二级 Tab | 数据 key | 初始条目（`tags.js`） |
-|---|---|---|
-| 本体类型 | `deviceTagGroups.bodyType` | AlphaBot2、AlphaBotX |
-| 末端类型 | `deviceTagGroups.endType` | 因时·RH56DFX 灵巧手、因时·RH56BFX 灵巧手、因时·EG2-4B 夹爪、因时·EG2-4C 夹爪 |
-| 相机类型 | `deviceTagGroups.cameraType` | RGB相机、深度相机 |
-| 雷达类型 | `deviceTagGroups.lidarType` | 激光雷达 |
+#### 场景标签 Tab（`SceneTypePanel` + `SceneTypeModal`）
 
-> 设备类型新建弹窗的本体/末端下拉选项**直接读取** `bodyTypeTags` / `endTypeTags` 的 `name` 字段，与设备标签 Tab 保持同名；但两侧 CRUD 状态独立（标签页修改不会自动同步到 `devices.js` 已有类型记录）。
-
-#### 平铺标签子 Tab 通用交互（`TagSubPanel` + `TagModal` + `TagTableActions`）
-- **筛选**：名称搜索 + 重置/查询，点击「查询」生效
-- **列表字段**：标签名称、描述、创建人、创建时间、最后更新、操作（编辑/删除，`text-sm` 与表格其他列一致）
-- **新建/编辑弹窗**（`TagModal`）：
-  - 标题：新建标签 / 编辑标签
-  - 字段：标签名称（必填）、描述（选填）
-  - **新建时展示只读「创建人」**（`CreatorReadonlyField`，随演示身份）；编辑时不展示
-  - 编辑保存：创建人、创建时间不变，仅更新「最后更新」
-- **删除**：`useTagRowActions` 统一二次确认弹窗——「确定删除该标签吗？删除后不可恢复」
-
-#### 场景类型子 Tab（`SceneTypePanel` + `SceneTypeModal`）
-独立实现，不走 `TagSubPanel`。
-
-- **数据结构**：三层树——一级场景 → 二级子场景 → 三级标签（`sceneTypeTree`）
-- **列表展示**：默认仅展开一级；`+/−` 按钮展开/收起子级；缩进区分层级
+- **数据结构**：三层树——一级场景 → 二级子场景 → 三级标签（`getSceneTypeTree()`）
+- **列表展示**：默认仅展开一级；`+/−` 展开/收起；缩进区分层级
 - **描述列**：仅一级场景显示描述，二/三级显示「—」
-- **操作列**：仅一级场景有编辑/删除（红色删除文字）；二/三级无操作
-- **新建/编辑弹窗**（`SceneTypeModal`）：
-  - 一级：场景名称 + 描述
-  - 嵌套编辑子场景与三级标签；确定时强校验非空
-  - **新建时展示只读「创建人」**；保存时仅新增或**名称变更**的二/三级更新 `updatedAt`
-- **删除**：级联提示——同时删除 N 个子场景和 M 个标签
+- **操作列**：仅一级场景有编辑/删除；编辑弹窗可嵌套维护全部子场景与三级标签
+- **删除**：级联提示子场景与标签数量
+
+#### 平铺标签 Tab（原子技能 / 采集方式 / 任务用途，`FlatTagPanel` + `FlatTagModal`）
+
+三个 Tab 共用同一套交互：
+
+- **筛选**：标签名称 + 标签值（点击「查询」生效）
+- **列表字段**：标签名称、**标签值**、描述、创建人、创建时间、最后更新、操作
+- **新建/编辑弹窗**：标签名称（必填）、标签值（必填）、描述（选填）；新建展示只读「创建人」
+- **分页**：10 条/页
+- **初始 seed**：原子技能 9 条（close/open/press/grasp/push/pull/move/place/pick）；采集方式 5 条（算法采集/便携设备遥操/VR遥操/同构外骨骼/自定义采集）；任务用途 2 条（正式采集/试采集）
 
 ---
 
@@ -732,24 +678,20 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 **筛选区**（点击「查询」生效）：所属类型、状态、实例编号、SN；左侧四列均匀拉伸，「重置」「查询」固定右侧
 
-**列表字段**：实例编号、SN、所属类型、在线状态（圆点 badge）、电量（电池图标 + 百分比；&lt;20% 红色，无「低电」文字）、创建时间、更新时间、操作
+**列表字段**：SN、**设备类型**、**描述**、在线状态（圆点 badge）、电量（电池图标 + 百分比；&lt;20% 红色，无「低电」文字）、创建时间、更新时间、操作
 
-**操作**：查看详情、编辑、删除
+**操作**：编辑、删除（**无「查看详情」**）
 
 ##### 新建/编辑实例弹窗
 | 字段 | 新建 | 编辑 |
 |---|---|---|
-| 所属类型 | 下拉选择（必选） | 只读 |
-| 实例编号 | 只读自动生成 | 只读 |
-| SN | 必填 | 必填 |
-| 设备描述 | 选填 | 选填 |
+| SN | 必填手动录入；`isDeviceSnTaken` 唯一校验，重复提示「该 SN 已存在」 | **只读** |
+| 设备类型 | 下拉选择（必选） | **可编辑下拉**；下方灰色提示「变更类型不影响历史任务和条目中已记录的本体类型」 |
+| 描述 | 选填 | 选填 |
 
+- 弹窗字段顺序：**SN → 设备类型 → 描述**；**不展示**实例编号（后台仍自动生成 `code`）
 - **实例编号规则**：新建 `DEV-` + 全局三位递增（`DEV-001` 起）；历史字母编号（`DEV-A01` 等）不参与递增
 - 新建默认：状态「离线」、电量 100%；写入 `createdAt` / `updatedAt` 到秒
-- **列表不展示**设备描述；详情弹窗展示
-
-##### 查看详情弹窗
-展示：实例编号、SN、所属类型、在线状态、电量、设备描述、创建时间、更新时间
 
 #### 设备类型 Tab（`TypeList.jsx`）
 
@@ -757,33 +699,38 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 **下拉选项来源**：本体 ← `bodyTypeTags`；左/右末端 ← `endTypeTags`
 
-**列表字段**：类型名称、本体、左末端类型、右末端类型、URDF、实例数量、**类型描述**、创建人、创建时间、更新时间、操作
+**列表字段**：类型名称、本体、左末端类型、右末端类型、URDF、实例数量、**描述**、创建时间、更新时间、操作
 
 **操作**：编辑、删除（**无「查看实例」**，**类型名称不可点击跳转**）
 
 **新建/编辑类型弹窗**：
 - **类型名称**：必填手动输入；提交时校验重名（`isDeviceTypeNameTaken`）
 - 名称下方灰色参考预览：`参考：{本体}·{左末端}+{右末端}`（`buildTypeNameReference`）
-- **新建**：本体 / 左末端 / 右末端 / URDF 可填（URDF 选填）；展示只读「创建人」
+- **新建**：本体 / 左末端 / 右末端 / URDF 可填（URDF 选填）；**不展示创建人**
 - **编辑**：本体、左末端、右末端、URDF **只读锁定**；仅类型名称、描述可改
 - 创建时间、更新时间精确到 `YYYY-MM-DD HH:mm:ss`
 
-**删除类型**：二次确认；若该类型下有实例，提示级联删除的实例数量
+**删除类型**：
+- 若该类型下仍有实例（`instanceCount > 0`）：删除按钮 **置灰**；hover 时通过 **Portal 渲染至 `document.body`** 的 Tooltip 提示「该类型下仍有 N 个实例，请先变更实例类型或删除实例」（位置跟随按钮，宽度自适应，靠左展开避免超出屏幕右边界）
+- 无实例时：二次确认弹窗；**仅移除类型选项，不级联删除实例**；文案说明不影响历史任务和条目中已记录的类型信息
+
+**本体类型快照**（任务/方案/条目）：新建任务时写入 `deviceTypeName` 快照（`tasks.js`）；采集方案 `plans.js`、条目 `entries.js` 同样优先读快照。变更设备实例/类型的当前绑定 **不回写** 历史任务与条目中的本体类型展示。
 
 #### 与标签管理的数据关系
 
-| 维度 | 设备管理 `devices.js` | 标签管理 `tags.js` |
+设备本体/末端下拉选项来自 `tags.js` → `bodyTypeTags` / `endTypeTags`（**不在标签管理 Tab 中维护**，为静态 seed）：
+
+| 维度 | 设备管理 `devices.js` | `tags.js` |
 |---|---|---|
-| 本体选项 | 新建类型下拉读 `bodyTypeTags.name` | `bodyTypeTags` CRUD |
-| 末端选项 | 新建类型下拉读 `endTypeTags.name` | `endTypeTags` CRUD |
-| 实体数据 | 设备类型 + 实例的运行时 store | 标签字典（各 Tab 独立 `useState`） |
-| 关联 | 无互相 import；选项名称约定保持一致 | 无互相 import |
+| 本体选项 | 新建类型下拉读 `bodyTypeTags.name` | 静态 seed（无标签页 CRUD） |
+| 末端选项 | 新建类型下拉读 `endTypeTags.name` | 静态 seed（无标签页 CRUD） |
+| 实体数据 | 设备类型 + 实例的运行时 store | 与设备管理独立，无互相 import |
 
 ---
 
 ### 系统管理（二级导航）
 
-侧边栏「系统管理」下为三个平级子菜单：**用户管理**、**角色管理**、**系统日志**（`/system` 重定向至 `/system/user`）。
+侧边栏「系统管理」下为两个平级子菜单：**用户管理**、**角色管理**（`/system` 重定向至 `/system/user`）。历史路由 `/system/log` 重定向至 `/system/user`。
 
 #### 用户管理 `/system/user`
 独立页面（`UserManage.jsx`），**无页内 Tab**；页面标题卡片显示「用户管理」，下方为原「用户列表」整块内容（RBAC 详见 [RBAC 权限体系](#rbac-权限体系)）。
@@ -792,7 +739,8 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 标题栏：「用户列表」+ 「+ 新增用户」（需 `system.user.create`）
 - 新增用户弹窗：用户名、昵称、手机号、角色（管理员/平台运营/采集员/标注员/游客/工程师）、状态（默认启用）
 - 用户 ID 格式 `U-001`，按当前列表最大 id 递增自动生成
-- 操作：编辑（需 `system.user.edit`；可改昵称、角色、状态）
+- **列表字段**：用户 ID、用户名、昵称、手机号、角色、状态、**创建时间**（`YYYY-MM-DD HH:mm:ss`）、**最后登录**（相对时间，如「3 小时前」）
+- 操作：编辑（需 `system.user.edit`；可改昵称、角色、状态）；**删除**（需 `system.user.delete`，仅管理员 preset 含此权限；**当前登录用户行不显示删除**；二次确认弹窗）
 - **面包屑**：系统管理 / 用户管理
 
 #### 角色管理 `/system/role`
@@ -804,15 +752,6 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 列：角色 ID、名称、描述、**权限模块数**、**成员数**（按 `misc.js` users 统计）、创建时间、类型 badge
 - **编辑权限**（需 `system.role.assignPerm`）：打开 `RolePermissionModal`（树形模块 + 操作矩阵）
 - **面包屑**：系统管理 / 角色管理
-
-#### 系统日志 `/system/log`
-- **面包屑**：系统管理 / 系统日志
-- **筛选区**（点击「查询」生效，单行布局）：
-  - 左侧四列均匀拉伸：搜索操作人/详情（关键字）、操作模块、操作类型、操作时间范围（起止 date）
-  - 右侧固定「重置」「查询」（带搜索图标）
-- **标题栏**：左侧「系统日志」+ 右侧「导出日志」（蓝色主按钮，Toast 占位；未接 `system.log.export` 权限校验）
-- **列**：操作时间、操作人、操作模块、操作类型（badge，`logActionColor` 着色）、操作详情（截断 + tooltip）、IP
-- **表格**：全部列内容居中（`Table` 组件统一行为）
 
 ---
 
@@ -846,11 +785,13 @@ src/
 │       ├── Progress.jsx       # 进度条
 │       ├── StatCard.jsx       # 统计指标卡片
 │       ├── FormField.jsx      # Input / TextArea / Select；CreatorReadonlyField（创建人只读）
+│       ├── CheckboxList.jsx   # 统一多选列表：IndeterminateCheckbox、CheckboxListSelectAllRow（首行全选+已选计数）、CheckboxListShell、CheckboxListSearchInput
 │       ├── PermissionAction.jsx # IfPerm / PermButton / PermAction / PermMenuItem
-│       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/审核/验收/下载/删除）
+│       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
 │       ├── Icons.jsx          # 内联 SVG 图标集（含 IconDownload）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
 │       ├── Toast.jsx          # useToast hook — 轻量 Toast 提示
+│       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
 │       ├── BarChart.jsx       # 柱状图（ResizeObserver 自适应宽度）
 │       ├── LineChart.jsx      # 单折线图
 │       ├── MultiLineChart.jsx # 多折线图（可见/隐藏切换）
@@ -891,16 +832,18 @@ src/
 │   ├── UploadRecord/index.jsx     # 采集条目页（含 SDK 折叠说明；路由仍为 /collection/upload）
 │   ├── Dataset/
 │   │   ├── Self.jsx               # 真机数据集列表
-│   │   ├── SelfDetail.jsx         # 真机数据集详情（3 Tab）
+│   │   ├── SelfDetail.jsx         # 真机数据集详情（4 Tab：概览/条目/转换记录/转换数据集）
 │   │   ├── SelfDownload.jsx       # 数据集下载说明
 │   │   ├── CreateDatasetModal.jsx
-│   │   ├── UpdateDatasetModal.jsx
-│   │   ├── Open.jsx               # 开源数据集列表
+│   │   ├── UpdateDatasetModal.jsx # 未接入 UI
+│   │   ├── Open.jsx               # 开源数据集（路由已重定向，组件保留）
 │   │   ├── OpenDownload.jsx
 │   │   ├── OpenUsage.jsx
 │   │   └── ImportOpenDatasetModal.jsx
 │   ├── Tag/
-│   │   ├── index.jsx              # 标签管理（采集标签 / 设备标签）
+│   │   ├── index.jsx              # 标签管理（5 个一级 Tab）
+│   │   ├── AuditReviewTagPanel.jsx
+│   │   ├── AuditReviewTagModal.jsx
 │   │   ├── TagTableActions.jsx
 │   │   ├── SceneTypePanel.jsx
 │   │   └── SceneTypeModal.jsx
@@ -913,7 +856,6 @@ src/
 │       ├── RoleManage.jsx         # 角色管理（原角色权限 Tab）
 │       ├── RolePermissionModal.jsx
 │       ├── NoPermission.jsx
-│       ├── LogPage.jsx
 │       └── index.jsx
 ├── context/
 │   └── AuthContext.jsx            # AuthProvider
@@ -923,6 +865,7 @@ src/
 │   └── usePagination.js           # 卡片列表分页 hook；LIST_PAGE_SIZE = 10
 ├── utils/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
+│   ├── formatDateTime.js          # 全平台时间格式：formatDateTime / dtCol / formatRelativeTime
 │   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录
 │   ├── samplingHelpers.js         # 抽样验收：抽样算法、批次/项目批量处理、工作台打开
 │   ├── openDatasetMetrics.js      # 开源数据集：dataSize/trajCount 解析
@@ -935,13 +878,17 @@ src/
 │   ├── uploads.js                 # 采集条目列表数据源（由 entries 派生）
 │   ├── samplingBatches.js         # 抽样验收批次（6 条初始 + runtime store）
 │   ├── datasets.js                # 真机/开源数据集 mock + runtime API
-│   ├── tags.js                    # 采集/设备标签、sceneTypeTree、auditReviewTags
+│   ├── datasetConversions.js      # 真机数据集转换任务/转换数据集 mock + runtime
+│   ├── tags.js                    # 标签 runtime store + 设备形态选项 seed
 │   ├── devices.js                 # 设备类型 + 实例运行时 store
 │   ├── permissions.js             # RBAC 权限目录、preset、数据范围 helper
 │   ├── rbac.js                    # 角色 runtime + 演示身份列表
 │   ├── dashboard.js               # 运营看板 mock
-│   └── misc.js                    # 用户、项目成员、robotBodies、annotationTemplates
+│   └── misc.js                    # 用户、项目成员、annotationTemplates
 └── router/index.jsx
+
+scripts/
+└── normalize-mock-datetimes.mjs   # 批量规范化 mock 时间为 YYYY-MM-DD HH:mm:ss
 ```
 
 ---
@@ -952,7 +899,8 @@ src/
 |---|---|
 | 图表库 | 运营看板为手写 SVG（`BarChart`、`DonutChart` 等）；审核工作台信号图使用 **recharts** |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
-| 路由 | `createBrowserRouter`；`/` → `/login`；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId` → 重定向 `/device` |
+| 路由 | `createBrowserRouter`；`/` → `/login`；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId` → 重定向 `/device`；`/dataset/open*`、`/system/log` → 重定向 |
+| 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
 | 依赖 | React 19、Vite 8、Tailwind CSS 4、react-router-dom 7、recharts、xlsx（SheetJS，开源数据集 Excel 导入） |
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-001 张华** |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`；刷新后恢复 preset |
@@ -968,9 +916,15 @@ src/
 | 筛选交互 | 绝大多数列表页点击「查询」生效；**角色管理**页（`/system/role`）筛选为输入即过滤 |
 | 筛选布局惯例 | 任务/条目列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮（展开/重置/查询）末行右对齐。其余列表仍可用 `flex` 单行 + 右侧固定按钮 |
 | 弹窗限高 | `Modal` 的 `fitViewport`：限高 85vh、内容区滚动、底部按钮固定 |
-| 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset` |
+| 多选列表 UI | `CheckboxList.jsx`：成员分配任务、抽样批次选择范围、`TreeTransfer` / `UpdateDatasetModal` 等共用首行 **全选** 行（浅灰底 + 分隔线 + 「已选 x / 共 y」+ indeterminate） |
+| 列表名称列跳转 | 采集项目/任务、真机数据集：**名称列蓝色可点击**进详情；**ID 列黑色不可点击** |
+| 条目采集员列 | 全平台条目列表列标题为「**采集员**」，数据字段仍为 `uploader` |
+| 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset`；详情条目删除仅更新 `entryIds` 并重算指标 |
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
-| 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode` 等 |
+| 标签 runtime | `tags.js` getter/setter：`getAuditReviewTagTree`、`getSceneTypeTree`、`getAtomicSkillTags`、`getCollectionMethodTags`、`getTaskPurposeTags`；审核工作台读 `getAuditReviewTagGroups()` |
+| 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob`；详情页 mock 约 2.5s 自动完成 |
+| 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
+| 本体类型快照 | 任务 `deviceTypeName`（`CreateTaskModal` 创建时写入）；方案/条目展示优先读快照，不随设备类型库变更而改写历史记录 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
@@ -985,21 +939,25 @@ src/
 | 质检项 | 每项目固定 6 条（8 项目 × 6 = 48 条；`plans.js` → `getQcItemsByProjectId`） |
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
 | 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；采集员/标注员支持多人） |
-| 采集条目 | 每任务 5~10 条（伪随机生成）；**6 值** `dataStatus`；含 `actionSegments`、`regionFrames`、审核/验收字段 |
+| 采集条目 | 每任务 5~10 条（伪随机生成）；**6 值** `dataStatus`；含 `actionSegments`、`regionFrames`、标注/验收字段 |
 | 采集条目页数据 | 由 `entries` 派生（`uploads.js`），字段与 `EntryDataTable` 对齐 |
 | 抽样验收批次 | 6 条初始（P-1001 × 3、P-1002 × 3）；含 `configItems`、`detailItems`、`entryIds`；会话内可新建 |
-| 真机数据集 | 5 条；绑定 `projectId`、`taskIds`、`statuses`、`formats`、`entryIds` |
-| 开源数据集 | 10 条（ODS-001~010）；支持 Excel 导入追加 |
-| 采集标签 | 任务类型 2、采集方案 2、原子技能 7；场景类型三层树（3 个一级场景） |
-| 设备标签 | 本体 2、末端 4、相机 2、雷达 1 |
-| 设备类型 | 5 条（`DTY-001`~`005`）；时间戳精确到秒 |
-| 设备实例 | 10 条；含 `status`（在线/离线）、`battery`（0~100）、`description`、`createdAt`、`updatedAt` |
-| 整机配置 | `robotBodies` 6 条（采标方案本体类型解析，与设备管理独立） |
+| 真机数据集 | 5 条；支持跨项目 `projectIds`、多 `taskIds`、验收通过条目、`autoSync` |
+| 开源数据集 | 10 条（ODS-001~010）；侧栏已下线，看板 Tab 仍引用；组件支持 Excel 导入追加 |
+| 审核标签 | 2 个一级分组、11 个叶子（质量评分 3 + 问题标签 8） |
+| 场景标签 | 三层树（3 个一级场景） |
+| 原子技能标签 | 9 条（含 place、pick） |
+| 采集方式标签 | 5 条 |
+| 任务用途标签 | 2 条（正式采集/试采集） |
+| 设备形态选项 | 本体 2、末端 4（`bodyTypeTags` / `endTypeTags`，非标签页 CRUD） |
+| 设备类型 | 5 条（`DTY-001`~`005`）；列表 **不展示创建人**；时间戳精确到秒 |
+| 设备实例 | 10 条；含 `status`（在线/离线）、`battery`（0~100）、`description`、`createdAt`、`updatedAt`；列表展示 SN / 设备类型 / 描述（**不展示实例编号**） |
+| 本体类型数据源 | 采集方案/任务「本体类型」创建时快照 `deviceTypeName`；运行时 `enrichTask` / `enrichPlan` / 条目 extras 优先读快照；`deviceTypeId` 仍用于设备实例解析 |
 | 标注模板 | 3 条（`misc.js` → `annotationTemplates`，**当前 UI 未接入**；标注由采集方案步骤生成） |
-| 用户 | 9 人（见下表；默认演示 U-001 张华） |
+| 用户 | 12 人（见下表；含 `createdAt`、`lastLoginAt`；默认演示 U-001 张华） |
 | 内置角色 | 6 个：`管理员` / `平台运营` / `采集员` / `标注员` / `游客` / `工程师`（`rbac.js` R-001~R-006） |
 | 项目成员 | 按项目 ID 组织；`joinedAt` 精确到 `YYYY-MM-DD HH:mm:ss` |
-| 系统日志 | 15 条 |
+| 系统日志 mock | 15 条（`misc.js` → `systemLogs`，**UI 已移除**） |
 | 运营看板（真机） | `realDashboard.all` 汇总 8 项目；各 `P-1001`~`P-1008` 独立 metrics + 精简 ranking；全局 ranking 采集员/标注员各 12 名 |
 
 ### Mock 用户（`misc.js` → `users`）
@@ -1016,8 +974,10 @@ src/
 | U-008 | qianlin | 钱琳 | 标注员 | 启用 | qianlin@ai2robotics.com |
 | U-009 | zhaoyan | 赵研 | 游客 | 启用 | zhao.yan@ai2robotics.com |
 | U-010 | chengong | 陈工 | 工程师 | 启用 | cheng.gong@ai2robotics.com |
+| U-011 | wulei | 吴磊 | 采集员&标注员 | 启用 | — |
+| U-012 | zhenghao | 郑浩 | 采集员&标注员 | 启用 | — |
 
-> 停用用户（何敏）不会出现在演示身份切换列表与项目成员添加候选列表。演示切换含 **游客（赵研 / U-009）** 与 **工程师（陈工 / U-010）**，用于验证只读/下载权限差异。
+> 停用用户（何敏）不会出现在演示身份切换列表与项目成员添加候选列表。演示切换含 **游客（赵研 / U-009）** 与 **工程师（陈工 / U-010）**，用于验证只读/下载权限差异。U-011、U-012 为双角色用户，仅出现在用户管理列表。
 
 ### 采集条目数据状态色值（`entries.js` → `dataStatusColor`）
 
@@ -1025,13 +985,13 @@ src/
 |---|---|
 | 已上传 | gray |
 | 已解析 | blue |
-| 审核不通过 | red |
-| 已审核 | purple |
+| 标注不通过 | red |
+| 已标注 | purple |
 | 验收不通过 | orange |
 | 已验收 | cyan |
 
 ### 设备类型单条字段（`devices.js`）
-`id`, `name`, `body`, `leftEnd`, `rightEnd`, `urdf`, `description`, `creator`, `createdAt`, `updatedAt`（列表附加 `instanceCount`）
+`id`, `name`, `body`, `leftEnd`, `rightEnd`, `urdf`, `description`, `creator`（列表/UI 不展示）, `createdAt`, `updatedAt`（列表附加 `instanceCount`）
 
 ### 设备实例单条字段
 `id`, `typeId`, `code`, `sn`, `status`（在线/离线）, `battery`（0~100）, `description`（选填）, `createdAt`, `updatedAt`, `registeredAt`（兼容字段）
@@ -1064,15 +1024,15 @@ src/
 | `/review/:entryId` | 审核工作台（独立全屏，无侧边栏） | `collection.task.view` |
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
 | `/dataset/self/download` | 数据集下载说明 | 同上 |
-| `/dataset/self/:id` | 真机数据集详情 | 同上 |
-| `/dataset/open` | 开源数据集列表 | `dataset.open.view` |
-| `/dataset/open/download` | 开源数据集下载说明 | 同上 |
-| `/dataset/open/:id/usage` | 开源数据集详情 | 同上 |
+| `/dataset/self/:id` | 真机数据集详情（4 Tab） | 同上 |
+| `/dataset/open` | 重定向 → `/dataset/self` | — |
+| `/dataset/open/download` | 重定向 → `/dataset/self` | — |
+| `/dataset/open/:id/usage` | 重定向 → `/dataset/self` | — |
 | `/tag` | 标签管理 | `tag.view` |
 | `/device` | 设备管理（实例 Tab 默认） | `device.view` |
 | `/device/:typeId` | 重定向 → `/device` | — |
 | `/system` | 重定向 → `/system/user` | `system.user.view` 或 `system.role.view` |
 | `/system/user` | 用户管理（用户列表） | `system.user.view` |
 | `/system/role` | 角色管理（角色列表 + 权限配置） | `system.role.view` |
-| `/system/log` | 系统日志 | `system.log.view` |
+| `/system/log` | 重定向 → `/system/user` | — |
 | `*` | 未知路径 → `/dashboard` | 由目标页决定 |

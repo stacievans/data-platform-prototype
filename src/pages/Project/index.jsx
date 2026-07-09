@@ -348,8 +348,16 @@ export default function ProjectList() {
 
   /* ── table columns ── */
   const columns = [
-    { title: '项目ID', dataIndex: 'id', render: (v, row) => <button className="cursor-pointer font-medium text-blue-600 hover:text-blue-500" onClick={() => navigate(`/collection/project/${row.id}`)}>{v}</button> },
-    { title: '项目名称', dataIndex: 'name', render: (v, row) => <button className="cursor-pointer text-gray-700 hover:text-blue-600" onClick={() => navigate(`/collection/project/${row.id}`)}>{v}</button> },
+    { title: '项目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    { title: '项目名称', dataIndex: 'name', render: (v, row) => (
+      <button
+        type="button"
+        onClick={() => navigate(`/collection/project/${row.id}`)}
+        className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
+      >
+        {v}
+      </button>
+    ) },
     { title: '任务数',   dataIndex: 'taskCount' },
     { title: '创建人',   dataIndex: 'creator' },
     { title: '项目描述', dataIndex: 'description', render: (v) => <span className="block max-w-56 truncate text-gray-500" title={v}>{v}</span> },

@@ -1,5 +1,9 @@
 import { useMemo, useState } from 'react'
 import Button from './Button'
+import {
+  CheckboxListSelectAllRow,
+  IndeterminateCheckbox,
+} from './CheckboxList'
 import { IconChevronDown, IconSearch } from './Icons'
 
 /** 约 10 行任务行高度（每行 ~32px） */
@@ -8,6 +12,7 @@ const ROW_HEIGHT = 32
 
 const PANEL_CLS = 'flex min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white'
 const HEADER_CLS = 'shrink-0 border-b border-gray-100 px-3 py-2 text-sm font-medium text-gray-700'
+const TREE_CHECKBOX_CLS = 'h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-gray-300 accent-blue-600'
 
 function nodeKey(type, id) {
   return `${type}:${id}`
@@ -18,19 +23,16 @@ function parseNodeKey(key) {
   return { type, id }
 }
 
-function Checkbox({ checked, indeterminate, disabled = false, onChange, className = '' }) {
+function TreeCheckbox({ checked, indeterminate, disabled = false, onChange, className = '' }) {
   return (
-    <input
-      type="checkbox"
+    <IndeterminateCheckbox
       checked={checked}
+      indeterminate={indeterminate}
       disabled={disabled}
-      ref={(el) => {
-        if (el) el.indeterminate = indeterminate
-      }}
-      onChange={disabled ? undefined : onChange}
-      className={`h-3.5 w-3.5 shrink-0 accent-blue-600 ${
-        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-      } ${className}`}
+      onChange={onChange}
+      className={`${TREE_CHECKBOX_CLS}${className ? ` ${className}` : ''}${
+        disabled ? ' cursor-not-allowed opacity-50' : ''
+      }`}
     />
   )
 }
@@ -79,6 +81,33 @@ export default function TreeTransfer({
     }).filter(Boolean)
   }, [projects, tasks, selectedSet])
 
+  const leftSelectableTasks = useMemo(
+    () => leftGroups.flatMap((g) => g.tasks.filter((t) => !selectedSet.has(t.id))),
+    [leftGroups, selectedSet],
+  )
+
+  const leftSelectableKeys = useMemo(
+    () => leftSelectableTasks.map((t) => nodeKey('task', t.id)),
+    [leftSelectableTasks],
+  )
+
+  const leftSelectableCheckedCount = useMemo(
+    () => leftSelectableKeys.filter((k) => leftChecked.has(k)).length,
+    [leftSelectableKeys, leftChecked],
+  )
+
+  const leftAllSelectableChecked = leftSelectableTasks.length > 0
+    && leftSelectableCheckedCount === leftSelectableTasks.length
+  const leftSomeSelectableChecked = leftSelectableCheckedCount > 0 && !leftAllSelectableChecked
+
+  const rightCheckedCount = useMemo(
+    () => value.filter((id) => rightChecked.has(id)).length,
+    [value, rightChecked],
+  )
+
+  const rightAllChecked = value.length > 0 && rightCheckedCount === value.length
+  const rightSomeChecked = rightCheckedCount > 0 && !rightAllChecked
+
   const toggleExpand = (projectId) => {
     setExpanded((prev) => {
       const next = new Set(prev)
@@ -86,6 +115,27 @@ export default function TreeTransfer({
       else next.add(projectId)
       return next
     })
+  }
+
+  const toggleLeftSelectAll = () => {
+    if (leftAllSelectableChecked) {
+      setLeftChecked((prev) => {
+        const next = new Set(prev)
+        leftSelectableKeys.forEach((k) => next.delete(k))
+        return next
+      })
+    } else {
+      setLeftChecked((prev) => {
+        const next = new Set(prev)
+        leftSelectableKeys.forEach((k) => next.add(k))
+        return next
+      })
+    }
+  }
+
+  const toggleRightSelectAll = () => {
+    if (rightAllChecked) setRightChecked(new Set())
+    else setRightChecked(new Set(value))
   }
 
   const toggleLeftTask = (taskId) => {
@@ -166,85 +216,98 @@ export default function TreeTransfer({
             />
           </div>
         </div>
-        <div className="overflow-y-auto p-2" style={listScrollStyle}>
+        <div className="overflow-y-auto" style={listScrollStyle}>
           {leftGroups.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-gray-400">暂无匹配任务</div>
+            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">暂无匹配任务</div>
           ) : (
-            leftGroups.map(({ project, tasks: visibleTasks }) => {
-              const selectable = visibleTasks.filter((t) => !selectedSet.has(t.id))
-              const transferred = visibleTasks.filter((t) => selectedSet.has(t.id))
-              const selectableKeys = selectable.map((t) => nodeKey('task', t.id))
-              const selectableCheckedCount = selectableKeys.filter((k) => leftChecked.has(k)).length
-              const allTransferred = selectable.length === 0 && transferred.length > 0
-              const allSelectableChecked = selectable.length > 0 && selectableCheckedCount === selectable.length
-              const projectChecked = allTransferred || allSelectableChecked
-              const projectIndeterminate = !allTransferred && selectableCheckedCount > 0 && !allSelectableChecked
-              const projectDisabled = selectable.length === 0
-              const isExpanded = expanded.has(project.id)
+            <>
+              {leftSelectableTasks.length > 0 && (
+                <CheckboxListSelectAllRow
+                  checked={leftAllSelectableChecked}
+                  indeterminate={leftSomeSelectableChecked}
+                  onToggle={toggleLeftSelectAll}
+                  selectedCount={leftSelectableCheckedCount}
+                  totalCount={leftSelectableTasks.length}
+                />
+              )}
+              <div className="p-2">
+                {leftGroups.map(({ project, tasks: visibleTasks }) => {
+                  const selectable = visibleTasks.filter((t) => !selectedSet.has(t.id))
+                  const transferred = visibleTasks.filter((t) => selectedSet.has(t.id))
+                  const selectableKeys = selectable.map((t) => nodeKey('task', t.id))
+                  const selectableCheckedCount = selectableKeys.filter((k) => leftChecked.has(k)).length
+                  const allTransferred = selectable.length === 0 && transferred.length > 0
+                  const allSelectableChecked = selectable.length > 0 && selectableCheckedCount === selectable.length
+                  const projectChecked = allTransferred || allSelectableChecked
+                  const projectIndeterminate = !allTransferred && selectableCheckedCount > 0 && !allSelectableChecked
+                  const projectDisabled = selectable.length === 0
+                  const isExpanded = expanded.has(project.id)
 
-              return (
-                <div key={project.id} className="mb-1">
-                  <div
-                    className="flex items-center gap-1.5 rounded px-1 hover:bg-gray-50"
-                    style={{ minHeight: ROW_HEIGHT }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(project.id)}
-                      className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center text-gray-400"
-                    >
-                      <IconChevronDown className={`transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                    </button>
-                    <Checkbox
-                      checked={projectChecked}
-                      indeterminate={projectIndeterminate}
-                      disabled={projectDisabled}
-                      onChange={() => toggleLeftProject(visibleTasks)}
-                    />
-                    <span className={`min-w-0 flex-1 truncate text-sm font-medium ${projectDisabled ? 'text-gray-400' : 'text-gray-800'}`}>
-                      {project.name}
-                    </span>
-                    <span className="shrink-0 text-xs text-gray-400">{project.id}</span>
-                  </div>
-                  {isExpanded && (
-                    <div className="ml-7 space-y-0.5">
-                      {visibleTasks.map((t) => {
-                        const locked = selectedSet.has(t.id)
-                        const checked = locked || leftChecked.has(nodeKey('task', t.id))
-                        const rowCls = `flex items-center gap-2 rounded px-1 ${
-                          locked ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer hover:bg-gray-50'
-                        }`
+                  return (
+                    <div key={project.id} className="mb-1">
+                      <div
+                        className="flex items-center gap-1.5 rounded px-1 hover:bg-gray-50"
+                        style={{ minHeight: ROW_HEIGHT }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(project.id)}
+                          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center text-gray-400"
+                        >
+                          <IconChevronDown className={`transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                        </button>
+                        <TreeCheckbox
+                          checked={projectChecked}
+                          indeterminate={projectIndeterminate}
+                          disabled={projectDisabled}
+                          onChange={() => toggleLeftProject(visibleTasks)}
+                        />
+                        <span className={`min-w-0 flex-1 truncate text-sm font-medium ${projectDisabled ? 'text-gray-400' : 'text-gray-800'}`}>
+                          {project.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-gray-400">{project.id}</span>
+                      </div>
+                      {isExpanded && (
+                        <div className="ml-7 space-y-0.5">
+                          {visibleTasks.map((t) => {
+                            const locked = selectedSet.has(t.id)
+                            const checked = locked || leftChecked.has(nodeKey('task', t.id))
+                            const rowCls = `flex items-center gap-2 rounded px-1 ${
+                              locked ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer hover:bg-gray-50'
+                            }`
 
-                        if (locked) {
-                          return (
-                            <div key={t.id} className={rowCls} style={{ minHeight: ROW_HEIGHT }}>
-                              <Checkbox checked={checked} disabled />
-                              <span className="min-w-0 flex-1 truncate text-sm text-gray-400">{t.name}</span>
-                              <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
-                            </div>
-                          )
-                        }
+                            if (locked) {
+                              return (
+                                <div key={t.id} className={rowCls} style={{ minHeight: ROW_HEIGHT }}>
+                                  <TreeCheckbox checked={checked} disabled />
+                                  <span className="min-w-0 flex-1 truncate text-sm text-gray-400">{t.name}</span>
+                                  <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
+                                </div>
+                              )
+                            }
 
-                        return (
-                          <label
-                            key={t.id}
-                            className={rowCls}
-                            style={{ minHeight: ROW_HEIGHT }}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onChange={() => toggleLeftTask(t.id)}
-                            />
-                            <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{t.name}</span>
-                            <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
-                          </label>
-                        )
-                      })}
+                            return (
+                              <label
+                                key={t.id}
+                                className={rowCls}
+                                style={{ minHeight: ROW_HEIGHT }}
+                              >
+                                <TreeCheckbox
+                                  checked={checked}
+                                  onChange={() => toggleLeftTask(t.id)}
+                                />
+                                <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{t.name}</span>
+                                <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )
-            })
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -272,49 +335,60 @@ export default function TreeTransfer({
         <div className={HEADER_CLS}>
           已选任务（总计 {value.length} 条）
         </div>
-        <div className="overflow-y-auto p-2" style={listScrollStyle}>
+        <div className="overflow-y-auto" style={listScrollStyle}>
           {rightGroups.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-gray-400">请从左侧添加任务</div>
+            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">请从左侧添加任务</div>
           ) : (
-            rightGroups.map(({ project, tasks: selectedTasks }) => {
-              const ids = selectedTasks.map((t) => t.id)
-              const checkedCount = ids.filter((id) => rightChecked.has(id)).length
-              const allChecked = ids.length > 0 && checkedCount === ids.length
-              const indeterminate = checkedCount > 0 && !allChecked
+            <>
+              <CheckboxListSelectAllRow
+                checked={rightAllChecked}
+                indeterminate={rightSomeChecked}
+                onToggle={toggleRightSelectAll}
+                selectedCount={rightCheckedCount}
+                totalCount={value.length}
+              />
+              <div className="p-2">
+                {rightGroups.map(({ project, tasks: selectedTasks }) => {
+                  const ids = selectedTasks.map((t) => t.id)
+                  const checkedCount = ids.filter((id) => rightChecked.has(id)).length
+                  const allChecked = ids.length > 0 && checkedCount === ids.length
+                  const indeterminate = checkedCount > 0 && !allChecked
 
-              return (
-                <div key={project.id} className="mb-3 last:mb-0">
-                  <div
-                    className="mb-1 flex items-center gap-2 rounded bg-gray-50 px-2"
-                    style={{ minHeight: ROW_HEIGHT }}
-                  >
-                    <Checkbox
-                      checked={allChecked}
-                      indeterminate={indeterminate}
-                      onChange={() => toggleRightProject({ project, tasks: selectedTasks })}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">{project.name}</span>
-                    <span className="shrink-0 text-xs text-gray-500">{selectedTasks.length} 条</span>
-                  </div>
-                  <div className="ml-2 space-y-0.5">
-                    {selectedTasks.map((t) => (
-                      <label
-                        key={t.id}
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 hover:bg-gray-50"
+                  return (
+                    <div key={project.id} className="mb-3 last:mb-0">
+                      <div
+                        className="mb-1 flex items-center gap-2 rounded bg-gray-50 px-2"
                         style={{ minHeight: ROW_HEIGHT }}
                       >
-                        <Checkbox
-                          checked={rightChecked.has(t.id)}
-                          onChange={() => toggleRightTask(t.id)}
+                        <TreeCheckbox
+                          checked={allChecked}
+                          indeterminate={indeterminate}
+                          onChange={() => toggleRightProject({ project, tasks: selectedTasks })}
                         />
-                        <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{t.name}</span>
-                        <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )
-            })
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">{project.name}</span>
+                        <span className="shrink-0 text-xs text-gray-500">{selectedTasks.length} 条</span>
+                      </div>
+                      <div className="ml-2 space-y-0.5">
+                        {selectedTasks.map((t) => (
+                          <label
+                            key={t.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 hover:bg-gray-50"
+                            style={{ minHeight: ROW_HEIGHT }}
+                          >
+                            <TreeCheckbox
+                              checked={rightChecked.has(t.id)}
+                              onChange={() => toggleRightTask(t.id)}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{t.name}</span>
+                            <span className="shrink-0 text-xs text-gray-400">{t.id}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

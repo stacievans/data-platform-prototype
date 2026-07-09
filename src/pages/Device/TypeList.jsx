@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Table from '../../components/common/Table'
 import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
-import { CreatorReadonlyField } from '../../components/common/FormField'
-import { useCurrentNickname } from '../../context/AuthContext'
+import { useCurrentNickname, useAuth } from '../../context/AuthContext'
 import { IconPlus } from '../../components/common/Icons'
 import {
   getAllDeviceTypes,
   isDeviceTypeNameTaken,
   setDeviceTypes,
-  setDeviceInstances,
   countInstancesByTypeId,
 } from '../../mock/devices'
 import { bodyTypeTags, endTypeTags } from '../../mock/tags'
@@ -152,7 +151,6 @@ function TypeModal({ open, editing, onCancel, onOk }) {
       width={520}
     >
       <div className="space-y-4">
-        {!isEdit && <CreatorReadonlyField />}
         <Field label="类型名称" required error={errs.name}>
           <input
             placeholder="请输入类型名称"
@@ -191,6 +189,107 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         </Field>
       </div>
     </Modal>
+  )
+}
+
+function DeleteTypeAction({ row, onDelete }) {
+  const { can } = useAuth()
+  const allowed = can('device.delete')
+  const count = row.instanceCount ?? 0
+  const blocked = count > 0
+  const tip = `该类型下仍有 ${count} 个实例，请先变更实例类型或删除实例`
+  const anchorRef = useRef(null)
+  const tipRef = useRef(null)
+  const [tipVisible, setTipVisible] = useState(false)
+  const [tipStyle, setTipStyle] = useState({ left: 0, top: 0, opacity: 0 })
+
+  const repositionTip = () => {
+    const anchor = anchorRef.current
+    const tipEl = tipRef.current
+    if (!anchor || !tipEl) return
+
+    const rect = anchor.getBoundingClientRect()
+    const tipW = tipEl.offsetWidth
+    const tipH = tipEl.offsetHeight
+    const gap = 6
+    const pad = 8
+    const vw = window.innerWidth
+
+    let left = rect.right - tipW
+    if (left + tipW > vw - pad) left = vw - pad - tipW
+    if (left < pad) left = pad
+
+    let top = rect.top - gap - tipH
+    if (top < pad) top = rect.bottom + gap
+
+    setTipStyle({ left, top, opacity: 1 })
+  }
+
+  useLayoutEffect(() => {
+    if (!tipVisible) return
+    repositionTip()
+    const onMove = () => repositionTip()
+    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onMove)
+    return () => {
+      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onMove)
+    }
+  }, [tipVisible, tip])
+
+  const showTip = () => {
+    setTipStyle({ left: 0, top: 0, opacity: 0 })
+    setTipVisible(true)
+  }
+
+  if (!allowed) {
+    return (
+      <PermAction permission="device.delete" mode="disable" className="text-sm text-red-500">
+        删除
+      </PermAction>
+    )
+  }
+
+  if (blocked) {
+    return (
+      <>
+        <span
+          ref={anchorRef}
+          className="inline-flex"
+          onMouseEnter={showTip}
+          onMouseLeave={() => setTipVisible(false)}
+        >
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed text-sm text-red-500 opacity-40"
+          >
+            删除
+          </button>
+        </span>
+        {tipVisible && createPortal(
+          <div
+            ref={tipRef}
+            role="tooltip"
+            className="pointer-events-none fixed z-[9999] w-max max-w-[calc(100vw-16px)] whitespace-normal rounded bg-gray-800 px-2.5 py-1.5 text-left text-xs leading-relaxed text-white shadow-lg"
+            style={{ left: tipStyle.left, top: tipStyle.top, opacity: tipStyle.opacity }}
+          >
+            {tip}
+          </div>,
+          document.body,
+        )}
+      </>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+      onClick={() => onDelete(row)}
+    >
+      删除
+    </button>
   )
 }
 
@@ -255,13 +354,11 @@ export default function TypeList() {
   const confirmDelete = () => {
     if (!deleteTarget) return
     const typeId = deleteTarget.id
+    if (countInstancesByTypeId(typeId) > 0) return
     setDeviceTypes((prev) => prev.filter((t) => t.id !== typeId))
-    setDeviceInstances((prev) => prev.filter((i) => i.typeId !== typeId))
     setDeleteTarget(null)
     refresh()
   }
-
-  const instanceCount = deleteTarget ? countInstancesByTypeId(deleteTarget.id) : 0
 
   const columns = [
     {
@@ -279,11 +376,10 @@ export default function TypeList() {
     },
     { title: '实例数量', dataIndex: 'instanceCount' },
     {
-      title: '类型描述',
+      title: '描述',
       dataIndex: 'description',
       render: (v) => <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>,
     },
-    { title: '创建人', dataIndex: 'creator' },
     dtCol('创建时间', 'createdAt'),
     dtCol('更新时间', 'updatedAt'),
     {
@@ -298,13 +394,7 @@ export default function TypeList() {
           >
             编辑
           </PermAction>
-          <PermAction
-            permission="device.delete"
-            className="cursor-pointer text-sm text-red-500 hover:text-red-400"
-            onClick={() => setDeleteTarget(row)}
-          >
-            删除
-          </PermAction>
+          <DeleteTypeAction row={row} onDelete={setDeleteTarget} />
         </div>
       ),
     },
@@ -381,18 +471,15 @@ export default function TypeList() {
         title="删除设备类型"
         onCancel={() => setDeleteTarget(null)}
         onOk={confirmDelete}
-        okText="确定"
+        okText="确定删除"
         cancelText="取消"
         width={480}
       >
         <p className="text-sm leading-relaxed text-gray-600">
           确定删除类型「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
-          {instanceCount > 0 && (
-            <>
-              {' '}将同时级联删除 <strong className="text-red-600">{instanceCount}</strong> 台设备实例，此操作不可恢复。
-            </>
-          )}
-          {instanceCount === 0 && ' 删除后不可恢复。'}
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-gray-500">
+          仅移除该设备类型选项，不影响历史任务和条目中已记录的类型信息。
         </p>
       </Modal>
     </div>

@@ -26,6 +26,7 @@ import {
   copyPlanInStore,
   planStatusColor,
   resolvePlanDeviceTypeId,
+  resolveDeviceTypeName,
   getQcItemsByProjectId,
   updateQcItemInStore,
   QC_TYPE_OPTIONS,
@@ -47,17 +48,26 @@ import {
   PlanReadonlyDetails,
   PlanAnnotationDetails,
 } from '../../components/collect/CollectPlanForm'
+import { getAnyEntryIdByProjectId } from '../../mock/entries'
 import { tasks as taskStore, syncTasks, nowDatetime } from '../../mock/tasks'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
 import RealDataTab from '../Dashboard/tabs/RealDataTab'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
+
+const PLAN_STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
+const PLAN_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
+const PLAN_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const PLAN_FILTER_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+const PLAN_FILTER_FIELD = 'min-w-0'
+const PLAN_FILTER_ACTIONS = 'flex flex-wrap items-center justify-end gap-2'
 
 const TABS = [
   { key: 'task',      label: '采集任务' },
   { key: 'scheme',    label: '采标方案' },
-  { key: 'members',   label: '项目人员' },
+  { key: 'members',   label: '项目成员' },
   { key: 'dashboard', label: '运营看板' },
 ]
 
@@ -190,11 +200,41 @@ function CollectConfigTab({ projectId, onTasksChange }) {
   const [createTaskPlan, setCreateTaskPlan] = useState(null)
   const [confirm, setConfirm] = useState({ open: false, type: null, plan: null })
 
+  const [qPlanId, setQPlanId] = useState('')
+  const [qPlanName, setQPlanName] = useState('')
+  const [qStatus, setQStatus] = useState('全部')
+  const [filters, setFilters] = useState({})
+
   const deviceTypes = useMemo(() => getAllDeviceTypes(), [modalOpen, viewTarget])
   const durationMeta = useMemo(
     () => calcPlanDurationMeta(form.steps, form.totalDeviation),
     [form.steps, form.totalDeviation],
   )
+
+  const filteredPlans = useMemo(() => {
+    const { planId, planName, status } = filters
+    return plans.filter((p) => {
+      if (planId && !p.id.toLowerCase().includes(planId.toLowerCase())) return false
+      if (planName && !p.name.toLowerCase().includes(planName.toLowerCase())) return false
+      if (status && status !== '全部' && p.status !== status) return false
+      return true
+    })
+  }, [plans, filters])
+
+  const planPageResetKey = useMemo(() => JSON.stringify(filters), [filters])
+
+  const applyFilters = () => setFilters({
+    planId: qPlanId.trim(),
+    planName: qPlanName.trim(),
+    status: qStatus,
+  })
+
+  const resetFilters = () => {
+    setQPlanId('')
+    setQPlanName('')
+    setQStatus('全部')
+    setFilters({})
+  }
 
   const openCreate = () => {
     setEditTarget(null)
@@ -247,16 +287,13 @@ function CollectConfigTab({ projectId, onTasksChange }) {
   }
 
   const renderPlanActions = (row) => {
-    const deleteBtn = (
-      <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
-    )
     if (row.status === '草稿') {
       return (
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'publish', plan: row })}>发布</PlanLinkAction>
-          {deleteBtn}
+          <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
         </div>
       )
     }
@@ -268,16 +305,12 @@ function CollectConfigTab({ projectId, onTasksChange }) {
           <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'archive', plan: row })}>归档</PlanLinkAction>
           <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
           <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
-          {deleteBtn}
         </div>
       )
     }
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
-        <PlanCopyBtn onClick={() => handleCopy(row)} />
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
-        <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
-        {deleteBtn}
       </div>
     )
   }
@@ -305,7 +338,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
   const handleSave = () => {
     const errs = validatePlanForm(form)
     if (Object.keys(errs).length) { setErrors(errs); return }
-    const payload = buildPlanPayloadFromForm(form, deviceTypes)
+    const payload = buildPlanPayloadFromForm(form)
     const now = nowDatetime()
     if (editTarget) {
       updatePlanInStore(editTarget.id, { ...payload, updatedAt: now })
@@ -332,11 +365,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
     {
       title: '本体类型',
       key: 'robotBody',
-      render: (_, row) => {
-        const typeId = resolvePlanDeviceTypeId(row)
-        const type = deviceTypes.find((t) => t.id === typeId)
-        return type?.name ?? row.robotBody ?? '—'
-      },
+      render: (_, row) => resolveDeviceTypeName(resolvePlanDeviceTypeId(row)) || '—',
     },
     { title: '所属场景', dataIndex: 'sceneLabel', render: (v) => v || '—' },
     { title: '采集方式', dataIndex: 'method' },
@@ -357,11 +386,55 @@ function CollectConfigTab({ projectId, onTasksChange }) {
 
   return (
     <div className="space-y-3">
+      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="space-y-3">
+          <div className={PLAN_FILTER_GRID}>
+            <div className={PLAN_FILTER_FIELD}>
+              <label className={PLAN_FILTER_LBL}>方案ID</label>
+              <input
+                value={qPlanId}
+                onChange={(e) => setQPlanId(e.target.value)}
+                placeholder="请输入方案ID"
+                className={PLAN_FILTER_INPUT_CLS}
+              />
+            </div>
+            <div className={PLAN_FILTER_FIELD}>
+              <label className={PLAN_FILTER_LBL}>方案名称</label>
+              <input
+                value={qPlanName}
+                onChange={(e) => setQPlanName(e.target.value)}
+                placeholder="请输入方案名称"
+                className={PLAN_FILTER_INPUT_CLS}
+              />
+            </div>
+            <div className={PLAN_FILTER_FIELD}>
+              <label className={PLAN_FILTER_LBL}>状态</label>
+              <select
+                value={qStatus}
+                onChange={(e) => setQStatus(e.target.value)}
+                className={`${PLAN_FILTER_INPUT_CLS} cursor-pointer`}
+              >
+                {PLAN_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className={PLAN_FILTER_ACTIONS}>
+            <Button onClick={resetFilters}>重置</Button>
+            <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">方案列表</h2>
-        <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建采集方案</PermButton>
+        <PermButton permission="collection.project.create" variant="primary" onClick={openCreate}>+ 新建</PermButton>
       </div>
-      <Table columns={columns} dataSource={plans} />
+      <Table
+        columns={columns}
+        dataSource={filteredPlans}
+        pageSize={LIST_PAGE_SIZE}
+        pageResetKey={planPageResetKey}
+      />
 
       <Modal
         open={!!viewTarget}
@@ -390,7 +463,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
 
       <Modal
         open={modalOpen}
-        title={editTarget ? '编辑采集方案' : '新建采集方案'}
+        title={editTarget ? '编辑采集方案' : '新建'}
         onCancel={() => setModalOpen(false)}
         onOk={handleSave}
         okText={editTarget ? '保存' : '创建'}
@@ -687,7 +760,7 @@ function QcTab({ projectId }) {
 const SCHEME_SUB_TABS = [
   { key: 'collect',  label: '采集方案' },
   { key: 'qc',       label: '质检配置' },
-  { key: 'layout',   label: '播放布局' },
+  { key: 'layout',   label: '标注布局' },
 ]
 
 function SchemeTab({ projectId, onTasksChange }) {
@@ -851,12 +924,30 @@ function LayoutTab({ projectId }) {
     closeModal()
   }
 
+  const openLayoutPreview = (layoutName) => {
+    const entryId = getAnyEntryIdByProjectId(projectId)
+    if (!entryId) {
+      showToast('该项目下暂无采集条目，无法预览布局')
+      return
+    }
+    const params = new URLSearchParams({ mode: 'play', layoutPreview: layoutName })
+    window.open(`/review/${entryId}?${params.toString()}`, '_blank', 'noopener,noreferrer')
+  }
+
   const columns = [
     { title: '序号', dataIndex: 'seq', width: 70 },
     {
       title: '布局名称',
       dataIndex: 'name',
-      render: (v) => <span className="font-medium">{v}</span>,
+      render: (v) => (
+        <button
+          type="button"
+          className="cursor-pointer font-medium text-blue-600 hover:text-blue-500"
+          onClick={() => openLayoutPreview(v)}
+        >
+          {v}
+        </button>
+      ),
     },
     {
       title: '添加日期',

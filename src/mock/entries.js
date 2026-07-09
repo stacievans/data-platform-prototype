@@ -1,12 +1,12 @@
-import { tasks, collectors } from './tasks'
+import { tasks, collectors, enrichTask, getTaskById } from './tasks'
 import { plans } from './plans'
 
 /** 采集条目数据状态（平台主流程） */
 export const DATA_STATUSES = [
   '已上传',
   '已解析',
-  '审核不通过',
-  '已审核',
+  '标注不通过',
+  '已标注',
   '验收不通过',
   '已验收',
 ]
@@ -38,9 +38,9 @@ const pad = (n, len = 2) => String(n).padStart(len, '0')
 
 function pickStatus(task, rand) {
   const pool = task.status === '已归档'
-    ? ['已解析', '已审核', '已审核', '已验收', '已验收', '验收不通过']
+    ? ['已解析', '已标注', '已标注', '已验收', '已验收', '验收不通过']
     : task.status === '已发布'
-      ? ['已上传', '已上传', '已解析', '已解析', '审核不通过', '已审核']
+      ? ['已上传', '已上传', '已解析', '已解析', '标注不通过', '已标注']
       : ['已上传']
   return pool[Math.floor(rand() * pool.length)]
 }
@@ -55,7 +55,8 @@ function buildEntryExtras(task) {
         ? '完成螺钉锁附'
         : `执行「${task?.name ?? '采集任务'}」`
   return {
-    collectDevice: task?.robotBody ?? '—',
+    collectDevice: enrichTask(task)?.device ?? '—',
+    deviceTypeName: task?.deviceTypeName ?? '—',
     collectMethod: task?.method ?? '—',
     taskInstruction: shortInstruction,
     sceneInitialState: plan?.initialScene ? '已就绪' : '—',
@@ -118,13 +119,13 @@ const DEMO_OVERRIDES = {
     regionFrames: DEFAULT_REGION_FRAMES,
   },
   'E-200102': {
-    dataStatus: '审核不通过',
+    dataStatus: '标注不通过',
     qcTime: '2026-05-16 09:12:00',
     reviewOperator: { nickname: '孙丽', id: 'U-2001' },
     flowHistory: [
-      { label: '审核驳回（第2轮）', time: '2026-05-18 14:20:00', operator: '孙丽(U-2001)' },
-      { label: '审核驳回（第1轮）', time: '2026-05-17 10:05:00', operator: '孙丽(U-2001)' },
-      { label: '质检通过', time: '2026-05-16 09:12:00', operator: '系统自动' },
+      { label: '标注驳回（第2轮）', round: 2, time: '2026-05-18 14:20:00', operator: '孙丽(U-2001)' },
+      { label: '标注驳回（第1轮）', round: 1, time: '2026-05-17 10:05:00', operator: '孙丽(U-2001)' },
+      { label: '质检通过', round: 1, time: '2026-05-16 09:12:00', operator: '系统自动' },
     ],
     auditScore: 2,
     auditResult: '不通过',
@@ -152,7 +153,7 @@ const DEMO_OVERRIDES = {
     totalFrames: 3140,
   },
   'E-200105': {
-    dataStatus: '已审核',
+    dataStatus: '已标注',
     auditScore: 4,
     auditResult: '通过',
     auditQuality: '可接受',
@@ -167,9 +168,9 @@ const DEMO_OVERRIDES = {
     reviewOperator: { nickname: '何敏', id: 'U-2003' },
     acceptOperator: { nickname: '陈静', id: 'U-2002' },
     flowHistory: [
-      { label: '验收驳回（第1轮）', time: '2026-05-14 16:45:00', operator: '陈静(U-2002)' },
-      { label: '审核通过（第1轮）', time: '2026-05-12 11:20:00', operator: '何敏(U-2003)' },
-      { label: '质检通过', time: '2026-05-10 08:30:00', operator: '系统自动' },
+      { label: '验收驳回（第1轮）', round: 1, time: '2026-05-14 16:45:00', operator: '陈静(U-2002)' },
+      { label: '标注通过（第1轮）', round: 1, time: '2026-05-12 11:20:00', operator: '何敏(U-2003)' },
+      { label: '质检通过', round: 1, time: '2026-05-10 08:30:00', operator: '系统自动' },
     ],
     auditScore: 4,
     auditResult: '通过',
@@ -192,7 +193,7 @@ const DEMO_OVERRIDES = {
     regionFrames: DEFAULT_REGION_FRAMES,
   },
   'E-200702': {
-    dataStatus: '审核不通过',
+    dataStatus: '标注不通过',
     auditResult: '异常数据',
     auditAbnormal: true,
     auditComment: '传感器时间戳异常，暂按不通过处理。',
@@ -205,10 +206,10 @@ const DEMO_OVERRIDES = {
     reviewOperator: { nickname: '钱琳', id: 'U-2004' },
     acceptOperator: { nickname: '陈静', id: 'U-2002' },
     flowHistory: [
-      { label: '验收驳回（第2轮）', time: '2026-05-26 17:10:00', operator: '陈静(U-2002)' },
-      { label: '验收驳回（第1轮）', time: '2026-05-24 14:30:00', operator: '陈静(U-2002)' },
-      { label: '审核通过（第1轮）', time: '2026-05-23 10:00:00', operator: '钱琳(U-2004)' },
-      { label: '质检通过', time: '2026-05-22 09:15:00', operator: '系统自动' },
+      { label: '验收驳回（第2轮）', round: 2, time: '2026-05-26 17:10:00', operator: '陈静(U-2002)' },
+      { label: '验收驳回（第1轮）', round: 1, time: '2026-05-24 14:30:00', operator: '陈静(U-2002)' },
+      { label: '标注通过（第1轮）', round: 1, time: '2026-05-23 10:00:00', operator: '钱琳(U-2004)' },
+      { label: '质检通过', round: 1, time: '2026-05-22 09:15:00', operator: '系统自动' },
     ],
     auditScore: 3,
     auditResult: '通过',
@@ -218,6 +219,43 @@ const DEMO_OVERRIDES = {
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
+  'E-200201': {
+    dataStatus: '已解析',
+    reviewClaimedBy: { nickname: '孙丽', id: 'U-2001' },
+    reviewClaimedAt: '2026-06-08 14:30:00',
+    qcTime: '2026-06-08 09:00:00',
+    flowHistory: [
+      { label: '质检通过', round: 1, time: '2026-06-08 09:00:00', operator: '系统自动' },
+    ],
+  },
+  'E-200202': {
+    dataStatus: '已标注',
+    acceptClaimedBy: { nickname: '陈静', id: 'U-2002' },
+    acceptClaimedAt: '2026-06-09 10:15:00',
+    qcTime: '2026-06-07 08:20:00',
+    reviewOperator: { nickname: '孙丽', id: 'U-2001' },
+    reviewTime: '2026-06-08 11:40:00',
+    flowHistory: [
+      { label: '标注通过（第1轮）', round: 1, time: '2026-06-08 11:40:00', operator: '孙丽(U-2001)' },
+      { label: '质检通过', round: 1, time: '2026-06-07 08:20:00', operator: '系统自动' },
+    ],
+    auditScore: 4,
+    auditResult: '通过',
+    auditQuality: '可接受',
+    auditTags: ['动作流畅'],
+    auditComment: '标注进行中，等待验收领取。',
+    actionSegments: DEFAULT_ACTION_SEGMENTS,
+    regionFrames: DEFAULT_REGION_FRAMES,
+  },
+  'E-200203': {
+    dataStatus: '已解析',
+    reviewClaimedBy: { nickname: '何敏', id: 'U-2003' },
+    reviewClaimedAt: '2026-06-07 16:45:00',
+    qcTime: '2026-06-07 10:00:00',
+    flowHistory: [
+      { label: '质检通过', round: 1, time: '2026-06-07 10:00:00', operator: '系统自动' },
+    ],
+  },
 }
 
 Object.entries(DEMO_OVERRIDES).forEach(([id, patch]) => {
@@ -225,13 +263,15 @@ Object.entries(DEMO_OVERRIDES).forEach(([id, patch]) => {
   if (entry) Object.assign(entry, patch)
 })
 
-/** 会话内条目补丁（审核/验收提交等） */
+/** 会话内条目补丁（标注/验收提交等） */
 const runtimePatches = {}
 
 export function getEntryById(id) {
   const base = entries.find((e) => e.id === id)
   if (!base) return null
-  return { ...base, ...(runtimePatches[id] ?? {}) }
+  const merged = { ...base, ...(runtimePatches[id] ?? {}) }
+  const task = getTaskById(merged.taskId)
+  return { ...merged, collectDevice: task?.device ?? merged.collectDevice ?? '—' }
 }
 
 export function updateEntry(id, patch) {
@@ -242,17 +282,26 @@ export function updateEntry(id, patch) {
 }
 
 export function getAllEntries() {
-  return entries.map((e) => ({ ...e, ...(runtimePatches[e.id] ?? {}) }))
+  return entries.map((e) => getEntryById(e.id))
 }
 
 export function getEntriesByTaskId(taskId) {
   return getAllEntries().filter((e) => e.taskId === taskId)
 }
 
-const REVIEW_PENDING = ['已解析', '审核不通过']
-const ACCEPT_PENDING = ['已审核', '验收不通过']
+/** 取项目下任意一条采集条目 ID（布局预览等 mock 场景） */
+export function getAnyEntryIdByProjectId(projectId) {
+  for (const task of tasks.filter((t) => t.projectId === projectId)) {
+    const list = getEntriesByTaskId(task.id)
+    if (list.length) return list[0].id
+  }
+  return null
+}
 
-/** 任务下待审核/待验收、上传时间最近的一条 */
+const REVIEW_PENDING = ['已解析', '标注不通过']
+const ACCEPT_PENDING = ['已标注', '验收不通过']
+
+/** 任务下待标注/待验收、上传时间最近的一条 */
 export function findLatestPendingEntry(taskId, mode) {
   const statuses = mode === 'review' ? REVIEW_PENDING : ACCEPT_PENDING
   const pending = getAllEntries()
@@ -264,8 +313,8 @@ export function findLatestPendingEntry(taskId, mode) {
 export const dataStatusColor = {
   已上传: 'gray',
   已解析: 'blue',
-  审核不通过: 'red',
-  已审核: 'purple',
+  标注不通过: 'red',
+  已标注: 'purple',
   验收不通过: 'orange',
   已验收: 'cyan',
 }

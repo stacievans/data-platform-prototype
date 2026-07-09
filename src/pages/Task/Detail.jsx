@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Progress from '../../components/common/Progress'
-import { tasks, taskStatusColor, pct, formatCollectors, formatReviewer } from '../../mock/tasks'
+import { getTaskById, taskStatusColor, pct, formatCollectors, formatReviewer } from '../../mock/tasks'
 import { useAuth } from '../../context/AuthContext'
 import { canAccessTask } from '../../mock/permissions'
 import EntryListPanel from '../../components/task/EntryListPanel'
@@ -14,7 +14,7 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const task = tasks.find((t) => t.id === id)
+  const task = getTaskById(id)
   if (!task) {
     return (
       <div className="rounded-lg border border-gray-100 bg-white py-20 text-center text-gray-400">
@@ -42,6 +42,9 @@ export default function TaskDetail() {
             <p className="mt-1 text-sm text-gray-400">
               {task.id} · {task.projectName} · 方案 {task.planId}
             </p>
+            <p className="mt-1 text-sm text-gray-500">
+              本体类型 {task.robotBody} · 采集设备 {task.device ?? '—'}
+            </p>
           </div>
           <div className="flex items-center gap-10 text-sm">
             <div>
@@ -50,7 +53,7 @@ export default function TaskDetail() {
               <span className="text-xs text-gray-400">{task.collectDone}/{task.collectTotal}</span>
             </div>
             <div>
-              <div className="mb-1 text-gray-400">审核进度</div>
+              <div className="mb-1 text-gray-400">标注进度</div>
               <Progress percent={pct(task.reviewDone, task.collectTotal)} color="bg-purple-500" />
               <span className="text-xs text-gray-400">{task.reviewDone}/{task.collectTotal}</span>
             </div>

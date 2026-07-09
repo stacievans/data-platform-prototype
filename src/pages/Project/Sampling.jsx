@@ -384,7 +384,7 @@ export default function ProjectSampling() {
               批量处理
             </Button>
             <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
-              新建抽检批次
+              新建
             </Button>
           </div>
         </div>

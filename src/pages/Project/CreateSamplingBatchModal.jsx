@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
 import {
+  CHECKBOX_LIST_CLS,
+  CheckboxListSearchInput,
+  CheckboxListSelectAllRow,
+  CheckboxListShell,
+} from '../../components/common/CheckboxList'
+import {
   CREATE_BASIS_OPTIONS,
   buildSamplingOptions,
   calcSampledCount,
@@ -51,6 +57,10 @@ export default function CreateSamplingBatchModal({ open, projectId, onCancel, on
 
   const summary = useMemo(() => summarizeConfigItems(selectedList), [selectedList])
 
+  const allFilteredSelected = filteredOptions.length > 0
+    && filteredOptions.every((o) => form.selected[o.key])
+  const someFilteredSelected = filteredOptions.some((o) => form.selected[o.key])
+
   const setBasis = (basis) => {
     setForm({ name: form.name, basis, search: '', selected: {} })
   }
@@ -74,6 +84,20 @@ export default function CreateSamplingBatchModal({ open, projectId, onCancel, on
     }))
   }
 
+  const toggleSelectAllFiltered = () => {
+    setForm((prev) => {
+      const next = { ...prev.selected }
+      if (allFilteredSelected) {
+        filteredOptions.forEach((o) => delete next[o.key])
+      } else {
+        filteredOptions.forEach((o) => {
+          if (!next[o.key]) next[o.key] = { ...o, ratio: 20 }
+        })
+      }
+      return { ...prev, selected: next }
+    })
+  }
+
   const handleOk = () => {
     if (!form.name.trim()) {
       setNameError(true)
@@ -95,7 +119,7 @@ export default function CreateSamplingBatchModal({ open, projectId, onCancel, on
   return (
     <Modal
       open={open}
-      title="新建抽样验收批次"
+      title="新建"
       onCancel={onCancel}
       onOk={handleOk}
       okText="确定"
@@ -148,40 +172,54 @@ export default function CreateSamplingBatchModal({ open, projectId, onCancel, on
 
       <div>
         <label className={LBL}>选择范围</label>
-        <input
+        <CheckboxListSearchInput
           value={form.search}
           onChange={(e) => setForm({ ...form, search: e.target.value })}
           placeholder="模糊查找选项"
-          className={`${INPUT_CLS} mb-2`}
+          className="mb-2"
         />
-        <div className="max-h-44 overflow-y-auto rounded-lg border border-gray-100">
-          {filteredOptions.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-gray-400">暂无可选范围</p>
-          ) : (
-            filteredOptions.map((opt) => {
-              const checked = Boolean(form.selected[opt.key])
-              return (
-                <label
-                  key={opt.key}
-                  className={`flex cursor-pointer items-center justify-between gap-3 border-b border-gray-50 px-3 py-2.5 last:border-0 hover:bg-gray-50 ${
-                    checked ? 'bg-blue-50/40' : ''
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleOption(opt)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600"
-                    />
-                    <span className="truncate text-sm text-gray-700">{opt.label}</span>
-                  </span>
-                  <span className="shrink-0 text-sm text-gray-400">{opt.totalEntries} 条</span>
-                </label>
-              )
-            })
+        <CheckboxListShell
+          className="max-h-44"
+          empty={
+            filteredOptions.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-gray-400">暂无可选范围</p>
+            ) : undefined
+          }
+        >
+          {filteredOptions.length > 0 && (
+            <>
+              <CheckboxListSelectAllRow
+                checked={allFilteredSelected}
+                indeterminate={someFilteredSelected && !allFilteredSelected}
+                onToggle={toggleSelectAllFiltered}
+                selectedCount={filteredOptions.filter((o) => form.selected[o.key]).length}
+                totalCount={filteredOptions.length}
+              />
+              {filteredOptions.map((opt) => {
+                const checked = Boolean(form.selected[opt.key])
+                return (
+                  <label
+                    key={opt.key}
+                    className={`flex cursor-pointer items-center justify-between gap-3 border-b border-gray-50 px-3 py-2.5 last:border-0 hover:bg-gray-50 ${
+                      checked ? 'bg-blue-50/40' : ''
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleOption(opt)}
+                        className={CHECKBOX_LIST_CLS}
+                      />
+                      <span className="truncate text-sm text-gray-700">{opt.label}</span>
+                    </span>
+                    <span className="shrink-0 text-sm text-gray-400">{opt.totalEntries} 条</span>
+                  </label>
+                )
+              })}
+            </>
           )}
-        </div>
+        </CheckboxListShell>
       </div>
 
       {selectedList.length > 0 && (

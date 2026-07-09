@@ -61,7 +61,7 @@ function SectionTitle({ children }) {
   return <h4 className="mb-3 text-sm font-semibold text-gray-800">{children}</h4>
 }
 
-const BODY_TYPE_HINT = '请先配置采集方案的本体类型'
+const BODY_TYPE_ECHO_EMPTY = '本体类型：—（请先在采集方案中配置）'
 
 function ModeToggle({ value, onChange, disabled }) {
   const opts = [
@@ -192,6 +192,15 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
 
   const deviceSelectDisabled = !activeDeviceTypeId
 
+  const activeDeviceTypeName = useMemo(
+    () => deviceTypes.find((t) => t.id === activeDeviceTypeId)?.name ?? '',
+    [deviceTypes, activeDeviceTypeId],
+  )
+
+  const bodyTypeEchoText = activeDeviceTypeName
+    ? `本体类型：${activeDeviceTypeName}（来自采集方案）`
+    : BODY_TYPE_ECHO_EMPTY
+
   const createDurationMeta = useMemo(
     () => calcPlanDurationMeta(createPlan.steps, createPlan.totalDeviation),
     [createPlan.steps, createPlan.totalDeviation],
@@ -251,7 +260,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   const buildPlanFromCreate = () => ({
     id: nextPlanId(),
     projectId: effectiveProjectId,
-    ...buildPlanPayloadFromForm(createPlan, deviceTypes),
+    ...buildPlanPayloadFromForm(createPlan),
     taskCount: 0,
     status: '已发布',
   })
@@ -261,7 +270,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     if (!leftForm.name.trim()) errs.name = true
     if (!leftForm.purpose) errs.purpose = true
     if (!leftForm.target || isNaN(+leftForm.target) || +leftForm.target < 1) errs.target = true
-    if (!leftForm.deviceInstanceId) errs.deviceInstanceId = deviceSelectDisabled ? BODY_TYPE_HINT : true
+    if (!leftForm.deviceInstanceId) errs.deviceInstanceId = true
 
     if (isEdit) {
       if (Object.keys(errs).length) { setErrors(errs); return }
@@ -271,7 +280,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
         purpose: leftForm.purpose,
         collectTotal: +leftForm.target,
         deviceInstanceId: leftForm.deviceInstanceId,
-        device: instance?.sn ?? instance?.code ?? '—',
+        device: instance?.code ?? '—',
         layoutId: leftForm.layoutId || null,
       })
       return
@@ -309,9 +318,10 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       planId,
       name: leftForm.name.trim(),
       purpose: leftForm.purpose,
-      device: instance?.sn ?? instance?.code ?? '—',
+      device: instance?.code ?? '—',
       deviceInstanceId: leftForm.deviceInstanceId,
-      robotBody: boundPlan?.robotBody ?? '',
+      deviceTypeId: activeDeviceTypeId || resolvePlanDeviceTypeId(boundPlan),
+      deviceTypeName: activeDeviceTypeName || boundPlan?.deviceTypeName || '—',
       method: boundPlan?.method ?? '',
       scene: sceneLabel,
       projectId: effectiveProjectId,
@@ -382,11 +392,13 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
                   className={inputCls(errors.target)}
                 />
               </Field>
+              <div className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500">
+                {bodyTypeEchoText}
+              </div>
               <Field
                 label="指定采集设备"
                 required
                 error={errors.deviceInstanceId}
-                hint={deviceSelectDisabled ? BODY_TYPE_HINT : undefined}
               >
                 <select
                   value={leftForm.deviceInstanceId}
@@ -395,10 +407,10 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
                   className={`${selectCls(errors.deviceInstanceId)} disabled:cursor-not-allowed disabled:bg-gray-100`}
                 >
                   <option value="" disabled hidden>
-                    {deviceSelectDisabled ? BODY_TYPE_HINT : '请选择设备实例（SN）'}
+                    请选择设备实例
                   </option>
                   {filteredInstances.map((i) => (
-                    <option key={i.id} value={i.id}>{i.sn}</option>
+                    <option key={i.id} value={i.id}>{i.code}</option>
                   ))}
                 </select>
               </Field>
@@ -406,7 +418,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
           </div>
 
           <div>
-            <SectionTitle>审核布局</SectionTitle>
+            <SectionTitle>标注布局</SectionTitle>
             <Field label="布局配置">
               <select
                 value={leftForm.layoutId}

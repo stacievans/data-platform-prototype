@@ -10,7 +10,9 @@ import {
   nowDatetime,
   toPeopleArray,
   formatReviewer,
+  enrichTask,
 } from '../../mock/tasks'
+import { getAllDeviceTypes } from '../../mock/devices'
 import { IconSearch, IconChevronDown } from '../../components/common/Icons'
 import { filterTasksByDataScope } from '../../mock/permissions'
 import { useAuth } from '../../context/AuthContext'
@@ -117,7 +119,8 @@ export default function TaskList({
   const [qCollector, setQCollector] = useState('')
   const [qReviewer, setQReviewer] = useState('')
   const [qPurpose, setQPurpose] = useState('全部')
-  const [qDevice, setQDevice] = useState('全部')
+  const [qBodyType, setQBodyType] = useState('全部')
+  const [qDeviceCode, setQDeviceCode] = useState('')
   const [qScene, setQScene] = useState('全部')
   const [qMethod, setQMethod] = useState('全部')
   const [qStatus, setQStatus] = useState('全部')
@@ -152,9 +155,10 @@ export default function TaskList({
     [scopedTasks, fixedProjectId],
   )
 
+  const deviceTypes = useMemo(() => getAllDeviceTypes(), [location.pathname])
+
   const filterOptions = useMemo(() => ({
     purposes: ['全部', ...new Set(poolTasks.map((t) => t.purpose).filter(Boolean))],
-    devices: ['全部', ...new Set(poolTasks.map((t) => t.device ?? t.robotBody).filter(Boolean))],
     scenes: ['全部', ...new Set(poolTasks.map((t) => t.scene).filter(Boolean))],
     methods: ['全部', ...new Set(poolTasks.map((t) => t.method).filter(Boolean))],
   }), [poolTasks])
@@ -162,22 +166,26 @@ export default function TaskList({
   const filtered = useMemo(() => {
     const {
       taskId, taskName, projectName, planId, collector, reviewer,
-      purpose, device, scene, method, status,
+      purpose, bodyType, deviceCode, scene, method, status,
     } = filters
-    return poolTasks.filter((t) => {
-      if (taskId && !t.id.toLowerCase().includes(taskId.toLowerCase())) return false
-      if (taskName && !t.name.toLowerCase().includes(taskName.toLowerCase())) return false
-      if (projectName && !(t.projectName ?? '').toLowerCase().includes(projectName.toLowerCase())) return false
-      if (planId && !String(t.planId ?? '').toLowerCase().includes(planId.toLowerCase())) return false
-      if (collector && !toPeopleArray(t.collector).some((c) => c.toLowerCase().includes(collector.toLowerCase()))) return false
-      if (reviewer && !formatReviewer(t.reviewer).toLowerCase().includes(reviewer.toLowerCase())) return false
-      if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
-      if (device && device !== '全部' && (t.device ?? t.robotBody) !== device) return false
-      if (scene && scene !== '全部' && t.scene !== scene) return false
-      if (method && method !== '全部' && t.method !== method) return false
-      if (status && status !== '全部' && t.status !== status) return false
-      return true
-    })
+    return poolTasks
+      .filter((t) => {
+        const enriched = enrichTask(t)
+        if (taskId && !t.id.toLowerCase().includes(taskId.toLowerCase())) return false
+        if (taskName && !t.name.toLowerCase().includes(taskName.toLowerCase())) return false
+        if (projectName && !(t.projectName ?? '').toLowerCase().includes(projectName.toLowerCase())) return false
+        if (planId && !String(t.planId ?? '').toLowerCase().includes(planId.toLowerCase())) return false
+        if (collector && !toPeopleArray(t.collector).some((c) => c.toLowerCase().includes(collector.toLowerCase()))) return false
+        if (reviewer && !formatReviewer(t.reviewer).toLowerCase().includes(reviewer.toLowerCase())) return false
+        if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
+        if (bodyType && bodyType !== '全部' && enriched.deviceTypeId !== bodyType) return false
+        if (deviceCode && !(enriched.device ?? '').toLowerCase().includes(deviceCode.toLowerCase())) return false
+        if (scene && scene !== '全部' && t.scene !== scene) return false
+        if (method && method !== '全部' && t.method !== method) return false
+        if (status && status !== '全部' && t.status !== status) return false
+        return true
+      })
+      .map(enrichTask)
   }, [poolTasks, filters])
 
   const taskPageResetKey = useMemo(() => JSON.stringify(filters), [filters])
@@ -190,7 +198,8 @@ export default function TaskList({
     collector: qCollector,
     reviewer: qReviewer,
     purpose: qPurpose,
-    device: qDevice,
+    bodyType: qBodyType,
+    deviceCode: qDeviceCode.trim(),
     scene: qScene,
     method: qMethod,
     status: qStatus,
@@ -204,7 +213,8 @@ export default function TaskList({
     setQCollector('')
     setQReviewer('')
     setQPurpose('全部')
-    setQDevice('全部')
+    setQBodyType('全部')
+    setQDeviceCode('')
     setQScene('全部')
     setQMethod('全部')
     setQStatus('全部')
@@ -294,10 +304,22 @@ export default function TaskList({
                 </select>
               </div>
               <div className={FILTER_FIELD}>
-                <label className={LBL}>采集设备</label>
-                <select value={qDevice} onChange={(e) => setQDevice(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {filterOptions.devices.map((v) => <option key={v} value={v}>{v}</option>)}
+                <label className={LBL}>本体类型</label>
+                <select value={qBodyType} onChange={(e) => setQBodyType(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  <option value="全部">全部</option>
+                  {deviceTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
                 </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>采集设备</label>
+                <input
+                  value={qDeviceCode}
+                  onChange={(e) => setQDeviceCode(e.target.value)}
+                  placeholder="请输入实例编号"
+                  className={INPUT_CLS}
+                />
               </div>
               <div className={FILTER_FIELD}>
                 <label className={LBL}>所属场景</label>
@@ -312,7 +334,7 @@ export default function TaskList({
                 </select>
               </div>
               <div className={FILTER_FIELD}>
-                <label className={LBL}>任务状态</label>
+                <label className={LBL}>状态</label>
                 <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
                   {STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>

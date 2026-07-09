@@ -375,7 +375,7 @@ export default function RealDataTab({ fixedProjectId = null }) {
 
       <div className="grid grid-cols-4 gap-3">
         <CCard title="采集数据量" count={m.collectCount} hours={m.collectHours} icon="📥" iconBg="bg-sky-50" />
-        <CCard title="审核通过量" count={m.reviewCount} hours={m.reviewHours} icon="✅" iconBg="bg-green-50" />
+        <CCard title="标注通过量" count={m.reviewCount} hours={m.reviewHours} icon="✅" iconBg="bg-green-50" />
         <CCard title="采集项目数" value={projectCount} unit="个"           icon="📁" iconBg="bg-indigo-50" />
         <CCard title="采集任务量" value={m.tasks}        unit="个"            icon="📋" iconBg="bg-emerald-50" />
         <CCard title="操作技能"   value={m.skills}       unit="种"            icon="⚡" iconBg="bg-yellow-50" />

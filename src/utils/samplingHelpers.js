@@ -2,9 +2,9 @@ import { tasks } from '../mock/tasks'
 import { getAllEntries, updateEntry } from '../mock/entries'
 import { deriveProcessStatuses } from './entryProcess'
 
-export const CREATE_BASIS_OPTIONS = ['任务名称', '采集员', '审核员', '审核结果', '验收状态']
+export const CREATE_BASIS_OPTIONS = ['任务名称', '采集员', '标注员', '标注结果']
 
-const ACCEPT_PENDING = ['已审核', '验收不通过']
+const ACCEPT_PENDING = ['已标注', '验收不通过']
 
 export function calcSampledCount(total, ratio) {
   const r = Number(ratio)
@@ -18,14 +18,7 @@ export function getProjectEntries(projectId) {
 }
 
 function reviewSubLabel(dataStatus) {
-  return dataStatus === '审核不通过' ? '审核驳回' : '审核通过'
-}
-
-function acceptSubLabel(dataStatus) {
-  if (dataStatus === '已验收') return '已验收'
-  if (dataStatus === '验收不通过') return '验收不通过'
-  if (dataStatus === '已审核') return '待验收'
-  return null
+  return dataStatus === '标注不通过' ? '标注驳回' : '标注通过'
 }
 
 function taskById(taskId) {
@@ -60,7 +53,7 @@ export function buildSamplingOptions(projectId, basis) {
     }))
   }
 
-  if (basis === '审核员') {
+  if (basis === '标注员') {
     const map = new Map()
     entries.forEach((e) => {
       const task = taskById(e.taskId)
@@ -74,25 +67,11 @@ export function buildSamplingOptions(projectId, basis) {
     }))
   }
 
-  if (basis === '审核结果') {
+  if (basis === '标注结果') {
     const map = new Map()
     entries.forEach((e) => {
       const task = taskById(e.taskId)
       const sub = reviewSubLabel(e.dataStatus)
-      const key = `${e.taskId}:${sub}`
-      const label = `${task?.name ?? e.taskId} · ${sub}`
-      if (!map.has(key)) map.set(key, { key, label, totalEntries: 0 })
-      map.get(key).totalEntries += 1
-    })
-    return [...map.values()].filter((o) => o.totalEntries > 0)
-  }
-
-  if (basis === '验收状态') {
-    const map = new Map()
-    entries.forEach((e) => {
-      const sub = acceptSubLabel(e.dataStatus)
-      if (!sub) return
-      const task = taskById(e.taskId)
       const key = `${e.taskId}:${sub}`
       const label = `${task?.name ?? e.taskId} · ${sub}`
       if (!map.has(key)) map.set(key, { key, label, totalEntries: 0 })
@@ -111,22 +90,15 @@ function entriesForOption(projectId, basis, optionKey) {
     const name = optionKey.replace('collector:', '')
     return entries.filter((e) => e.uploader === name)
   }
-  if (basis === '审核员') {
+  if (basis === '标注员') {
     const name = optionKey.replace('reviewer:', '')
     return entries.filter((e) => (taskById(e.taskId)?.reviewer ?? '—') === name)
   }
-  if (basis === '审核结果') {
+  if (basis === '标注结果') {
     const [taskId, sub] = optionKey.split(':')
     return entries.filter((e) => {
       if (e.taskId !== taskId) return false
       return reviewSubLabel(e.dataStatus) === sub
-    })
-  }
-  if (basis === '验收状态') {
-    const [taskId, sub] = optionKey.split(':')
-    return entries.filter((e) => {
-      if (e.taskId !== taskId) return false
-      return acceptSubLabel(e.dataStatus) === sub
     })
   }
   return []
@@ -134,7 +106,7 @@ function entriesForOption(projectId, basis, optionKey) {
 
 /** 详情弹窗：按维度值拆分展示 */
 export function buildDetailItems(projectId, basis, configItems) {
-  if (basis === '审核结果' || basis === '验收状态') {
+  if (basis === '标注结果') {
     return configItems.map((item) => {
       const sampled = calcSampledCount(item.totalEntries, item.ratio)
       const passRate = item.passRate ?? estimatePassRate(projectId, basis, item.key, sampled)
@@ -157,8 +129,8 @@ export function buildDetailItems(projectId, basis, configItems) {
       : entriesForOption(projectId, basis, item.key)
 
     const subs = [
-      { sub: '审核通过', match: (e) => e.dataStatus !== '审核不通过' },
-      { sub: '审核驳回', match: (e) => e.dataStatus === '审核不通过' },
+      { sub: '标注通过', match: (e) => e.dataStatus !== '标注不通过' },
+      { sub: '标注驳回', match: (e) => e.dataStatus === '标注不通过' },
     ]
 
     subs.forEach(({ sub, match }) => {
@@ -167,7 +139,7 @@ export function buildDetailItems(projectId, basis, configItems) {
       const totalEntries = group.length
       const sampledEntries = calcSampledCount(totalEntries, item.ratio)
       const passed = group.filter((e) => {
-        const ps = deriveProcessStatuses(e.dataStatus)
+        const ps = deriveProcessStatuses(e)
         return ps.accept === 'passed' || (ps.review === 'passed' && ps.accept !== 'rejected')
       }).length
       const reviewed = group.filter((e) => ['已验收', '验收不通过'].includes(e.dataStatus)).length

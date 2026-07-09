@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Modal from '../../components/common/Modal'
-import { IconPlus, IconSearch } from '../../components/common/Icons'
+import { IconPlus } from '../../components/common/Icons'
+import {
+  CHECKBOX_LIST_CLS,
+  CheckboxListSearchInput,
+  CheckboxListSelectAllRow,
+  CheckboxListShell,
+} from '../../components/common/CheckboxList'
 import { SelectChevronWrap } from '../../components/common/SelectControl'
 import { PermButton } from '../../components/common/PermissionAction'
 import { useToast } from '../../components/common/Toast'
@@ -131,6 +137,7 @@ function PersonDropdownSelect({
   placeholder = '请选择',
   disabled = false,
   disabledPlaceholder,
+  error = false,
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
@@ -139,6 +146,11 @@ function PersonDropdownSelect({
     () => options.filter((name) => name.toLowerCase().includes(q.trim().toLowerCase())),
     [options, q],
   )
+
+  const closeDropdown = () => {
+    setOpen(false)
+    setQ('')
+  }
 
   if (disabled) {
     return (
@@ -154,6 +166,12 @@ function PersonDropdownSelect({
     )
   }
 
+  const inputCls = `h-8 w-full rounded-md border bg-white py-0 pl-2.5 pr-8 text-sm text-gray-700 outline-none focus:ring-2 ${
+    error
+      ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
+  }`
+
   return (
     <SelectChevronWrap className="w-full">
       <div className="relative">
@@ -162,28 +180,30 @@ function PersonDropdownSelect({
           onChange={(e) => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-8 w-full rounded-md border border-gray-300 bg-white py-0 pl-2.5 pr-8 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className={inputCls}
         />
         <button
           type="button"
           tabIndex={-1}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => (open ? closeDropdown() : setOpen(true))}
           className="absolute inset-y-0 right-0 w-8 cursor-pointer"
           aria-label="展开选项"
         />
         {open && (
           <>
-            <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
+            <div className="fixed inset-0 z-[70]" onClick={closeDropdown} />
             <div className="absolute z-[71] mt-1 max-h-40 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
               {filtered.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-gray-400">无匹配人员</p>
+                <p className="px-3 py-2 text-xs text-gray-400">无匹配用户</p>
               ) : (
                 filtered.map((name) => (
                   <button
                     key={name}
                     type="button"
-                    onClick={() => { onChange(name); setQ(''); setOpen(false) }}
-                    className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => { onChange(name); closeDropdown() }}
+                    className={`block w-full cursor-pointer px-3 py-1.5 text-left text-sm hover:bg-gray-50 ${
+                      name === value ? 'bg-blue-50 font-medium text-blue-600' : 'text-gray-700'
+                    }`}
                   >
                     {name}
                   </button>
@@ -213,7 +233,9 @@ function TaskCheckboxList({
     )
   }, [tasks, q])
 
-  const allChecked = filtered.length > 0 && filtered.every((t) => selectedIds.includes(t.id))
+  const selectedInFiltered = filtered.filter((t) => selectedIds.includes(t.id)).length
+  const allChecked = filtered.length > 0 && selectedInFiltered === filtered.length
+  const someChecked = selectedInFiltered > 0 && !allChecked
 
   const toggleAll = () => {
     if (allChecked) {
@@ -231,52 +253,52 @@ function TaskCheckboxList({
     }
   }
 
+  if (tasks.length === 0) {
+    return <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">暂无任务</p>
+  }
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="relative min-w-0 flex-1">
-          <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="h-8 w-full rounded-md border border-gray-300 bg-white pl-8 pr-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={toggleAll}
-          disabled={filtered.length === 0}
-          className="shrink-0 cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition hover:border-blue-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {allChecked ? '取消全选' : '全选'}
-        </button>
-      </div>
-      {tasks.length === 0 ? (
-        <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">暂无任务</p>
-      ) : (
-        <div className="max-h-36 overflow-y-auto rounded-md border border-gray-300 bg-white p-2">
-          {filtered.length === 0 ? (
-            <p className="px-1 py-2 text-xs text-gray-400">无匹配任务</p>
-          ) : (
-            filtered.map((task) => (
+      <CheckboxListSearchInput
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={searchPlaceholder}
+      />
+      <CheckboxListShell
+        className="max-h-36"
+        empty={
+          filtered.length === 0 ? (
+            <p className="px-3 py-4 text-center text-xs text-gray-400">无匹配任务</p>
+          ) : undefined
+        }
+      >
+        {filtered.length > 0 && (
+          <>
+            <CheckboxListSelectAllRow
+              checked={allChecked}
+              indeterminate={someChecked}
+              onToggle={toggleAll}
+              selectedCount={selectedInFiltered}
+              totalCount={filtered.length}
+            />
+            {filtered.map((task) => (
               <label
                 key={task.id}
-                className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-gray-50"
+                className="flex cursor-pointer items-center gap-2 border-b border-gray-50 px-3 py-2 last:border-0 hover:bg-gray-50"
               >
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(task.id)}
                   onChange={() => toggleOne(task.id)}
-                  className="h-4 w-4 cursor-pointer accent-blue-600"
+                  className={CHECKBOX_LIST_CLS}
                 />
                 <span className="flex-1 text-sm text-gray-700">{task.name}</span>
                 <span className="text-xs text-gray-400">{task.id}</span>
               </label>
-            ))
-          )}
-        </div>
-      )}
+            ))}
+          </>
+        )}
+      </CheckboxListShell>
     </div>
   )
 }
@@ -630,31 +652,20 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       <div>
         <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
           选择用户<span className="text-red-500">*</span>
+          <span className="text-xs font-normal text-gray-400">（模糊查找 · 单选）</span>
         </label>
-        <SelectChevronWrap className="w-full" disabled={!form.role}>
-          <select
-            value={form.name}
-            disabled={!form.role}
-            onChange={(e) => {
-              setForm((f) => ({ ...f, name: e.target.value }))
-              setErrors((er) => ({ ...er, name: false }))
-            }}
-            className={`h-8 w-full rounded-md border px-2.5 text-sm outline-none transition-colors focus:ring-2 ${
-              !form.role
-                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
-                : errors.name
-                  ? 'cursor-pointer border-red-400 focus:ring-red-100'
-                  : 'cursor-pointer border-gray-300 text-gray-700 focus:border-blue-500 focus:ring-blue-100'
-            }`}
-          >
-            <option value="" disabled hidden>
-              {!form.role ? '请先选择角色' : '请选择用户'}
-            </option>
-            {formUsers.map((u) => (
-              <option key={u.uid} value={u.nickname}>{u.nickname}</option>
-            ))}
-          </select>
-        </SelectChevronWrap>
+        <PersonDropdownSelect
+          value={form.name}
+          onChange={(name) => {
+            setForm((f) => ({ ...f, name }))
+            setErrors((er) => ({ ...er, name: false }))
+          }}
+          options={formUsers.map((u) => u.nickname)}
+          placeholder={!form.role ? '请先选择角色' : '请输入用户姓名查找'}
+          disabled={!form.role}
+          disabledPlaceholder="请先选择角色"
+          error={errors.name}
+        />
         {errors.name && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
       </div>
 

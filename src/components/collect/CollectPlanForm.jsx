@@ -5,7 +5,7 @@ import Button from '../common/Button'
 import { IconTrash, IconChevronDown } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
 import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags } from '../../mock/tags'
-import { resolvePlanDeviceTypeId, deviceTypeIdToRobotBody } from '../../mock/plans'
+import { resolvePlanDeviceTypeId } from '../../mock/plans'
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 
@@ -489,13 +489,11 @@ export function planToForm(plan) {
   }
 }
 
-export function buildPlanPayloadFromForm(form, deviceTypes) {
-  const deviceType = deviceTypes.find((t) => t.id === form.deviceTypeId)
+export function buildPlanPayloadFromForm(form) {
   const { durationMin, durationMax, totalDeviation } = calcPlanDurationMeta(form.steps, form.totalDeviation)
   const sceneLabel = formatSceneLabel(form.sceneId, form.subSceneId, form.tagId)
   return {
     name: form.name.trim(),
-    robotBody: deviceTypeIdToRobotBody(form.deviceTypeId) || deviceType?.name || '',
     deviceTypeId: form.deviceTypeId,
     method: form.method,
     sceneLabel,

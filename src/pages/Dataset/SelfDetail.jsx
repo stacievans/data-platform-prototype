@@ -2,16 +2,20 @@ import { useMemo, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Button from '../../components/common/Button'
+import Modal from '../../components/common/Modal'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Progress from '../../components/common/Progress'
+import { PermButton } from '../../components/common/PermissionAction'
 import { useToast } from '../../components/common/Toast'
-import { getDatasetById } from '../../mock/datasets'
+import { getDatasetById, patchSelfDataset } from '../../mock/datasets'
+import { entries } from '../../mock/entries'
 import {
   getDatasetEntries,
   getProjectTaskInclusionStats,
   getProjectDistributionStats,
   getDatasetListStats,
+  computeEntryMetrics,
 } from '../../utils/datasetMetrics'
 import {
   getConversionJobsByDatasetId,
@@ -145,8 +149,8 @@ function OverviewTab({ dataset }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h4 className="mb-2 text-sm font-medium text-gray-700">各项目纳入任务</h4>
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-800">各项目纳入条目</h3>
         <Table
           columns={taskColumns}
           dataSource={taskStats}
@@ -173,10 +177,43 @@ function OverviewTab({ dataset }) {
   )
 }
 
-function EntriesTab({ dataset, onConversionStart }) {
+function RemoveDatasetEntryModal({ entry, open, onCancel, onConfirm }) {
+  if (!entry) return null
+
+  return (
+    <Modal
+      open={open}
+      title="删除条目"
+      onCancel={onCancel}
+      width={480}
+      footer={
+        <>
+          <Button onClick={onCancel}>取消</Button>
+          <Button
+            variant="primary"
+            className="border-red-500 bg-red-500 hover:border-red-600 hover:bg-red-600"
+            onClick={onConfirm}
+          >
+            确定删除
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm leading-relaxed text-gray-600">
+        仅从本数据集移除该条目，不影响采集项目中的原始数据。
+      </p>
+      <p className="mt-3 text-sm text-gray-500">
+        条目 ID：<span className="font-medium text-gray-800">{entry.id}</span>
+      </p>
+    </Modal>
+  )
+}
+
+function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   const { show, ToastNode } = useToast()
   const operator = useCurrentNickname()
   const allEntries = useMemo(() => getDatasetEntries(dataset), [dataset])
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const projectOptions = useMemo(() => {
     const names = [...new Set(allEntries.map((e) => e.projectName).filter(Boolean))]
@@ -246,6 +283,18 @@ function EntriesTab({ dataset, onConversionStart }) {
     setSelectedIds(new Set())
   }
 
+  const confirmRemoveEntry = () => {
+    if (!deleteTarget) return
+    onRemoveEntry?.(deleteTarget.id)
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.delete(deleteTarget.id)
+      return next
+    })
+    setDeleteTarget(null)
+    show('已从数据集中移除该条目')
+  }
+
   const columns = [
     {
       title: (
@@ -277,12 +326,12 @@ function EntriesTab({ dataset, onConversionStart }) {
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
     { title: '采集设备', dataIndex: 'collectDevice', render: (v) => v ?? '—' },
-    { title: '上传人', dataIndex: 'uploader' },
+    { title: '采集员', dataIndex: 'uploader' },
     dtCol('采集时间', 'collectTime'),
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 280,
       render: (_, row) => (
         <div className="flex items-center justify-center gap-1">
           <Button
@@ -294,6 +343,15 @@ function EntriesTab({ dataset, onConversionStart }) {
           </Button>
           <Button variant="link" size="sm" onClick={() => show('已加入下载队列')}>下载</Button>
           <Button variant="link" size="sm" onClick={() => show('导出任务已提交')}>导出</Button>
+          <PermButton
+            permission="dataset.self.update"
+            mode="disable"
+            variant="linkDanger"
+            size="sm"
+            onClick={() => setDeleteTarget(row)}
+          >
+            删除
+          </PermButton>
         </div>
       ),
     },
@@ -302,6 +360,12 @@ function EntriesTab({ dataset, onConversionStart }) {
   return (
     <div className="space-y-3">
       {ToastNode}
+      <RemoveDatasetEntryModal
+        entry={deleteTarget}
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmRemoveEntry}
+      />
       <FilterBar onReset={resetFilters} onSearch={applyFilters}>
         <div className={FILTER_FIELD}>
           <label className={LBL}>所属项目</label>
@@ -328,7 +392,7 @@ function EntriesTab({ dataset, onConversionStart }) {
         <div className="flex flex-wrap gap-2">
           <Button disabled={!hasSelection} onClick={() => runBatchConvert('转图片')}>转图片</Button>
           <Button disabled={!hasSelection} onClick={() => runBatchConvert('转视频')}>转视频</Button>
-          <Button disabled={!hasSelection} onClick={() => show('已加入下载队列')}>下载</Button>
+          <Button disabled={!hasSelection} onClick={() => show('已加入下载队列')}>批量下载</Button>
         </div>
       </div>
 
@@ -400,6 +464,9 @@ function ConversionsTab({ jobs }) {
           </select>
         </div>
       </FilterBar>
+
+      <h3 className="text-sm font-semibold text-gray-800">记录列表</h3>
+
       <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
     </div>
   )
@@ -453,6 +520,9 @@ function ConvertedDatasetsTab({ records }) {
           </select>
         </div>
       </FilterBar>
+
+      <h3 className="text-sm font-semibold text-gray-800">数据集列表</h3>
+
       <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
     </div>
   )
@@ -461,11 +531,28 @@ function ConvertedDatasetsTab({ records }) {
 export default function SelfDatasetDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [dataset] = useState(() => getDatasetById(id))
+  const [dataset, setDataset] = useState(() => getDatasetById(id))
   const [tab, setTab] = useState('overview')
   const [convTick, setConvTick] = useState(0)
 
   const refreshConversions = useCallback(() => setConvTick((t) => t + 1), [])
+
+  const handleRemoveEntry = useCallback((entryId) => {
+    setDataset((prev) => {
+      if (!prev) return prev
+      const remainingIds = (prev.entryIds ?? []).filter((eid) => eid !== entryId)
+      const remainingEntries = entries.filter((e) => remainingIds.includes(e.id))
+      const metrics = computeEntryMetrics(remainingEntries)
+      const patch = {
+        entryIds: remainingIds,
+        trajCount: metrics.count,
+        totalSize: metrics.totalSize,
+        totalDuration: metrics.totalDuration,
+      }
+      patchSelfDataset(prev.id, patch)
+      return { ...prev, ...patch }
+    })
+  }, [])
 
   const conversionJobs = useMemo(
     () => getConversionJobsByDatasetId(id),
@@ -511,8 +598,8 @@ export default function SelfDatasetDetail() {
 
   const metaItems = [
     ['数据集 ID', dataset.id],
-    ['关联项目', stats.projectCount],
-    ['关联任务', stats.taskCount],
+    ['关联项目数', stats.projectCount],
+    ['关联任务数', stats.taskCount],
     ['条目数量', stats.entryCount.toLocaleString()],
     ['总数据量', stats.totalSize],
     ['总时长', stats.totalDuration],
@@ -547,7 +634,11 @@ export default function SelfDatasetDetail() {
       )}
       {tab === 'entries' && (
         <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <EntriesTab dataset={dataset} onConversionStart={handleConversionStart} />
+          <EntriesTab
+            dataset={dataset}
+            onConversionStart={handleConversionStart}
+            onRemoveEntry={handleRemoveEntry}
+          />
         </div>
       )}
       {tab === 'conversions' && (

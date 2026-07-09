@@ -26,7 +26,7 @@ const initialRoles = [
   {
     id: 'R-004',
     name: '标注员',
-    description: '审核采集数据，进行质检标注操作',
+    description: '标注采集数据，进行质检标注操作',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
   },

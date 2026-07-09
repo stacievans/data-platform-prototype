@@ -73,7 +73,7 @@ export default function UploadRecord() {
         getTask={getTask}
         getProjectId={getProjectId}
         onDelete={(id) => setRecords((list) => list.filter((e) => e.id !== id))}
-        listTitle="采集条目"
+        listTitle="条目列表"
         deleteModalTitle="删除采集条目"
         hideProcessTabs
         showScopeColumns

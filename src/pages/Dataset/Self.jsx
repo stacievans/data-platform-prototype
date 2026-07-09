@@ -137,8 +137,20 @@ export default function SelfDataset() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
-    { title: '数据集名称', dataIndex: 'name', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
+    { title: 'ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    {
+      title: '数据集名称',
+      dataIndex: 'name',
+      render: (v, row) => (
+        <button
+          type="button"
+          onClick={() => navigate(`/dataset/self/${row.id}`)}
+          className="cursor-pointer text-sm font-semibold text-blue-600 hover:text-blue-500"
+        >
+          {v}
+        </button>
+      ),
+    },
     {
       title: '关联项目数',
       key: 'projectCount',
@@ -198,7 +210,7 @@ export default function SelfDataset() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-gray-800">真机数据集列表</h2>
-          <PermButton permission="dataset.self.download" onClick={() => navigate('/dataset/self/download')}>下载数据集</PermButton>
+          <PermButton permission="dataset.self.download" onClick={() => navigate('/dataset/self/download')}>下载说明</PermButton>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex overflow-hidden rounded-md border border-gray-300">

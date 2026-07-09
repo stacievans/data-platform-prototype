@@ -7,7 +7,7 @@ import { nowDateTime } from '../utils/formatDateTime'
 export const plans = [
   {
     id: 'PL-3001', projectId: 'P-1001', name: '客厅杂物分拣方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操',
+    deviceTypeId: 'DTY-001', method: 'VR遥操',
     initialScene: '桌面杂物随机摆放，收纳筐置于桌右侧，确保筐口朝上',
     durationMin: 30, durationMax: 60,
     steps: [
@@ -22,7 +22,7 @@ export const plans = [
   },
   {
     id: 'PL-3002', projectId: 'P-1001', name: '卧室物品归位方案',
-    robotBody: 'AlphaBot-1 双灵巧手', method: 'VR遥操',
+    deviceTypeId: 'DTY-002', method: 'VR遥操',
     initialScene: '卧室床头柜物品散落，目标归位区已用胶带标记',
     durationMin: 40, durationMax: 90,
     steps: [
@@ -39,7 +39,7 @@ export const plans = [
   },
   {
     id: 'PL-3003', projectId: 'P-1001', name: '玩具收纳方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-001', method: '外骨骼',
     initialScene: '玩具散落地面，收纳箱开盖置于角落，操作区域无遮挡',
     durationMin: 25, durationMax: 50,
     steps: [
@@ -53,7 +53,7 @@ export const plans = [
   },
   {
     id: 'PL-3004', projectId: 'P-1002', name: '蔬菜切配方案',
-    robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: 'VR遥操',
+    deviceTypeId: 'DTY-005', method: 'VR遥操',
     initialScene: '菜板固定于操作台，蔬菜预处理完毕放于左侧托盘，刀具归位于右侧刀架',
     durationMin: 60, durationMax: 120,
     steps: [
@@ -72,7 +72,7 @@ export const plans = [
   },
   {
     id: 'PL-3005', projectId: 'P-1002', name: '餐具清洗方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-001', method: '外骨骼',
     initialScene: '待洗餐具叠放于水槽左侧，清洗槽注水完毕，晾置架位于右侧',
     durationMin: 40, durationMax: 80,
     steps: [
@@ -88,7 +88,7 @@ export const plans = [
   },
   {
     id: 'PL-3006', projectId: 'P-1003', name: '螺钉锁附方案',
-    robotBody: 'AlphaBot-1 双灵巧手', method: 'VR遥操',
+    deviceTypeId: 'DTY-002', method: 'VR遥操',
     initialScene: '工件固定于夹具，螺钉和螺丝刀位于指定托盘，锁附位已标记',
     durationMin: 60, durationMax: 120,
     steps: [
@@ -109,7 +109,7 @@ export const plans = [
   },
   {
     id: 'PL-3007', projectId: 'P-1003', name: '线束插接方案',
-    robotBody: 'AlphaBot-2 左夹爪右灵巧手', method: 'VR遥操',
+    deviceTypeId: 'DTY-004', method: 'VR遥操',
     initialScene: '线束连接器置于操作台，插头端朝上，插座固定在夹具，空间净高 ≥ 15cm',
     durationMin: 45, durationMax: 90,
     steps: [
@@ -127,7 +127,7 @@ export const plans = [
   },
   {
     id: 'PL-3008', projectId: 'P-1003', name: '轴承压装方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-001', method: '外骨骼',
     initialScene: '轴承置于对中夹具，压装工件固定于压机工作台，导向销已插入',
     durationMin: 30, durationMax: 60,
     steps: [
@@ -142,7 +142,7 @@ export const plans = [
   },
   {
     id: 'PL-3009', projectId: 'P-1004', name: '货架补货方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操',
+    deviceTypeId: 'DTY-001', method: 'VR遥操',
     initialScene: '货架指定层位空缺，补货车备好商品位于货架前 0.5m，货位标签已扫描确认',
     durationMin: 40, durationMax: 80,
     steps: [
@@ -159,7 +159,7 @@ export const plans = [
   },
   {
     id: 'PL-3010', projectId: 'P-1004', name: '商品理货方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-001', method: '外骨骼',
     initialScene: '货架商品排列混乱，标准摆放示意贴于货架侧面，理货区段已划定',
     durationMin: 30, durationMax: 60,
     steps: [
@@ -174,7 +174,7 @@ export const plans = [
   },
   {
     id: 'PL-3011', projectId: 'P-1005', name: 'T恤折叠方案',
-    robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: 'VR遥操',
+    deviceTypeId: 'DTY-005', method: 'VR遥操',
     initialScene: 'T恤展开平铺于折叠台，领口朝上，台面清洁无皱褶',
     durationMin: 60, durationMax: 120,
     steps: [
@@ -194,7 +194,7 @@ export const plans = [
   },
   {
     id: 'PL-3012', projectId: 'P-1005', name: '毛巾对折方案',
-    robotBody: 'AlphaBot-1 双灵巧手', method: '外骨骼',
+    deviceTypeId: 'DTY-002', method: '外骨骼',
     initialScene: '毛巾平铺于操作台，长边朝前，台面边缘与毛巾边缘留 5cm 余量',
     durationMin: 20, durationMax: 40,
     steps: [
@@ -208,7 +208,7 @@ export const plans = [
   },
   {
     id: 'PL-3013', projectId: 'P-1006', name: '餐具回收方案',
-    robotBody: 'AlphaBot-2 左夹爪右灵巧手', method: 'VR遥操',
+    deviceTypeId: 'DTY-004', method: 'VR遥操',
     initialScene: '餐桌清空，脏餐具摆放于桌面中央，回收车停于桌侧 0.3m 处',
     durationMin: 35, durationMax: 70,
     steps: [
@@ -224,7 +224,7 @@ export const plans = [
   },
   {
     id: 'PL-3014', projectId: 'P-1006', name: '桌面擦拭方案',
-    robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-001', method: '外骨骼',
     initialScene: '桌面有污迹，清洁布已湿润置于托盘，擦拭路径从左至右',
     durationMin: 20, durationMax: 45,
     steps: [
@@ -237,7 +237,7 @@ export const plans = [
   },
   {
     id: 'PL-3015', projectId: 'P-1007', name: '箱体协同搬运方案',
-    robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: 'VR遥操',
+    deviceTypeId: 'DTY-005', method: 'VR遥操',
     initialScene: '箱体置于起始工位，目标工位标记清晰，双臂初始展开确认无干涉',
     durationMin: 50, durationMax: 100,
     steps: [
@@ -255,7 +255,7 @@ export const plans = [
   },
   {
     id: 'PL-3016', projectId: 'P-1007', name: '码垛堆叠方案',
-    robotBody: 'AlphaBot-2 左夹爪右灵巧手', method: '外骨骼',
+    deviceTypeId: 'DTY-004', method: '外骨骼',
     initialScene: '托盘箱体置于输送带末端，码垛区标记完成，已有两层底座',
     durationMin: 40, durationMax: 80,
     steps: [
@@ -271,7 +271,7 @@ export const plans = [
   },
   {
     id: 'PL-3017', projectId: 'P-1008', name: '小物件精细抓取方案',
-    robotBody: 'AlphaBot-1 双灵巧手', method: 'VR遥操',
+    deviceTypeId: 'DTY-002', method: 'VR遥操',
     initialScene: '精密零件散布于工作台，放大镜辅助标定完成，照明充足无反光',
     durationMin: 30, durationMax: 60,
     steps: [
@@ -288,7 +288,7 @@ export const plans = [
   },
   {
     id: 'PL-3018', projectId: 'P-1008', name: '卡片翻取方案',
-    robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: '外骨骼',
+    deviceTypeId: 'DTY-005', method: '外骨骼',
     initialScene: '卡片叠放于卡槽，翻取目标卡标记在第 3 张，背景台面为深色',
     durationMin: 20, durationMax: 40,
     steps: [
@@ -302,21 +302,6 @@ export const plans = [
     taskCount: 1, status: '已发布',
   },
 ]
-
-/** robotBody（方案字段）→ 设备类型 ID，用于实例级联；兼容历史 mock 名称 */
-export const ROBOT_BODY_TO_DEVICE_TYPE = {
-  'AlphaBot-1 双夹爪':         'DTY-001',
-  'AlphaBotX · 夹爪+夹爪':       'DTY-001',
-  'AlphaBot-1 双灵巧手':        'DTY-002',
-  'AlphaBotX · 灵巧手+灵巧手':  'DTY-002',
-  'AlphaBot-2 双灵巧手':        'DTY-003',
-  'AlphaBot2 · 灵巧手+灵巧手':  'DTY-003',
-  'AlphaBot-2 左夹爪右灵巧手':  'DTY-004',
-  'AlphaBot2 · 夹爪+灵巧手':    'DTY-004',
-  'AlphaBot-2 左灵巧手右夹爪':  'DTY-005',
-  'AlphaBot2 · 灵巧手+夹爪':    'DTY-005',
-  'AlphaBot-2 双夹爪':         'DTY-001',
-}
 
 /** 各方案默认三级场景路径（与 sceneTypeTree 级联一致） */
 const PLAN_SCENE_PATH = {
@@ -347,7 +332,7 @@ function formatSceneLabelFromTree(sceneId, subSceneId, tagId) {
   return [scene?.name, sub?.name, tag?.name].filter(Boolean).join(' / ')
 }
 
-function resolveDeviceTypeName(deviceTypeId) {
+export function resolveDeviceTypeName(deviceTypeId) {
   if (!deviceTypeId) return ''
   return getAllDeviceTypes().find((t) => t.id === deviceTypeId)?.name ?? ''
 }
@@ -370,16 +355,17 @@ function nowDatetime() {
 
 function enrichPlan(p) {
   const project = projects.find((pr) => pr.id === p.projectId)
-  const deviceTypeId = p.deviceTypeId ?? ROBOT_BODY_TO_DEVICE_TYPE[p.robotBody] ?? ''
+  const deviceTypeId = p.deviceTypeId ?? ''
   const scenePath = p.scenePath ?? PLAN_SCENE_PATH[p.id] ?? null
   const sceneLabel = scenePath
     ? formatSceneLabelFromTree(scenePath.sceneId, scenePath.subSceneId, scenePath.tagId)
     : (p.sceneLabel ?? '—')
-  const robotBody = resolveDeviceTypeName(deviceTypeId) || p.robotBody || '—'
+  const deviceTypeName = p.deviceTypeName ?? (resolveDeviceTypeName(deviceTypeId) || '—')
   return {
     ...p,
     deviceTypeId,
-    robotBody,
+    deviceTypeName,
+    robotBody: deviceTypeName,
     scenePath,
     sceneLabel,
     creator: p.creator ?? project?.creator ?? '—',
@@ -391,16 +377,25 @@ function enrichPlan(p) {
 
 let runtimePlans = plans.map(enrichPlan)
 
+function withLiveDeviceTypeName(plan) {
+  if (!plan) return plan
+  return {
+    ...plan,
+    robotBody: plan.deviceTypeName ?? plan.robotBody ?? (resolveDeviceTypeName(plan.deviceTypeId) || '—'),
+  }
+}
+
 export function getAllPlans() {
-  return runtimePlans
+  return runtimePlans.map(withLiveDeviceTypeName)
 }
 
 export function getPlansByProjectId(projectId) {
-  return runtimePlans.filter((p) => p.projectId === projectId)
+  return runtimePlans.filter((p) => p.projectId === projectId).map(withLiveDeviceTypeName)
 }
 
 export function getPlanById(id) {
-  return runtimePlans.find((p) => p.id === id) ?? null
+  const plan = runtimePlans.find((p) => p.id === id) ?? null
+  return plan ? withLiveDeviceTypeName(plan) : null
 }
 
 export function appendPlan(plan) {
@@ -474,16 +469,7 @@ export function nextPlanId() {
 }
 
 export function resolvePlanDeviceTypeId(plan) {
-  if (plan?.deviceTypeId) return plan.deviceTypeId
-  return ROBOT_BODY_TO_DEVICE_TYPE[plan?.robotBody] ?? ''
-}
-
-export function deviceTypeIdToRobotBody(typeId) {
-  if (!typeId) return ''
-  const name = resolveDeviceTypeName(typeId)
-  if (name) return name
-  const found = Object.entries(ROBOT_BODY_TO_DEVICE_TYPE).find(([, id]) => id === typeId)
-  return found?.[0] ?? ''
+  return plan?.deviceTypeId ?? ''
 }
 
 // 质检方案（按项目，固定质检项模板）
@@ -542,7 +528,7 @@ export function buildDefaultPlayLayoutRow(projectId) {
 
 export const playLayouts = [
   { id: 1, projectId: 'P-1001', name: '四宫格布局', date: '2026-03-13 00:00:00', description: '主视角 + 双腕部相机 + 轨迹曲线' },
-  { id: 2, projectId: 'P-1001', name: '审核专用布局', date: '2026-03-25 00:00:00', description: '主视角大屏 + 质检项悬浮面板' },
+  { id: 2, projectId: 'P-1001', name: '标注专用布局', date: '2026-03-25 00:00:00', description: '主视角大屏 + 质检项悬浮面板' },
   { id: 3, projectId: 'P-1002', name: '厨房双视角布局', date: '2026-03-21 00:00:00', description: '俯视 + 侧视双视角，附力控曲线' },
   { id: 4, projectId: 'P-1002', name: '动捕回放布局', date: '2026-04-01 00:00:00', description: '骨骼点云 + RGB 同步回放' },
   { id: 5, projectId: 'P-1003', name: '装配工位布局', date: '2026-04-03 00:00:00', description: '工位全景 + 末端特写 + 六维力曲线' },

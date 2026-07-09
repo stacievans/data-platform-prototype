@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '../../components/common/Modal'
+import {
+  CHECKBOX_LIST_CLS,
+  CheckboxListSelectAllRow,
+  CheckboxListShell,
+} from '../../components/common/CheckboxList'
 import { calcSampledCount } from '../../utils/samplingHelpers'
 
 const LBL = 'mb-1.5 block text-sm text-gray-700'
@@ -40,6 +45,8 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
   }, [open, batch, configItems])
 
   const allSelected = configItems.length > 0 && configItems.every((i) => selectedKeys.has(i.key))
+  const selectedCount = configItems.filter((i) => selectedKeys.has(i.key)).length
+  const someSelected = selectedCount > 0 && !allSelected
   const selectedItems = configItems.filter((i) => selectedKeys.has(i.key))
   const selectedTotal = selectedItems.reduce((s, i) => s + i.totalEntries, 0)
 
@@ -92,21 +99,16 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
       </div>
 
       <div>
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
+        <CheckboxListShell className="max-h-52">
+          {configItems.length > 0 && (
+            <CheckboxListSelectAllRow
               checked={allSelected}
-              onChange={toggleAll}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              indeterminate={someSelected}
+              onToggle={toggleAll}
+              selectedCount={selectedCount}
+              totalCount={configItems.length}
             />
-            全选
-          </label>
-          <span className="text-sm text-blue-600">
-            已选 {selectedItems.length} 个选项，合计 {selectedTotal} 条
-          </span>
-        </div>
-        <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-100">
+          )}
           {configItems.map((item) => {
             const checked = selectedKeys.has(item.key)
             const sampled = calcSampledCount(item.totalEntries, item.ratio)
@@ -122,7 +124,7 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleOne(item.key)}
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600"
+                    className={`mt-0.5 ${CHECKBOX_LIST_CLS}`}
                   />
                   <span>
                     <span className="block text-sm font-medium text-gray-800">{item.label}</span>
@@ -135,7 +137,12 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
               </label>
             )
           })}
-        </div>
+        </CheckboxListShell>
+        {selectedCount > 0 && (
+          <p className="mt-2 text-xs text-gray-500">
+            已选选项合计 {selectedTotal} 条条目
+          </p>
+        )}
       </div>
 
       <div>

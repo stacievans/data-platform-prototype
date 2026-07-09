@@ -8,6 +8,7 @@ import {
   getAllDeviceTypes,
   getAllDeviceInstances,
   getNextInstanceCode,
+  isDeviceSnTaken,
   setDeviceInstances,
 } from '../../mock/devices'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
@@ -56,7 +57,7 @@ function computeTypeSegments(instances, types) {
   return withPct.map(({ id, name, count, pct }) => ({ id, name, count, pct }))
 }
 
-function Field({ label, required, error, children }) {
+function Field({ label, required, error, errorMsg, children }) {
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
@@ -64,7 +65,10 @@ function Field({ label, required, error, children }) {
         {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+      {error === 'required' && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+      {error === 'duplicate' && (
+        <p className="mt-1 text-xs text-red-500">{errorMsg ?? '该 SN 已存在'}</p>
+      )}
     </div>
   )
 }
@@ -147,8 +151,6 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
   const [snError, setSnError] = useState(false)
   const [typeError, setTypeError] = useState(false)
 
-  const selectedType = types.find((t) => t.id === formTypeId)
-
   useEffect(() => {
     if (!open) return
     setSn(editing?.sn ?? '')
@@ -158,22 +160,17 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
   }, [open, editing])
 
   const handleOk = () => {
-    if (!isEdit && !formTypeId) { setTypeError(true); return }
-    if (!sn.trim()) { setSnError(true); return }
-    const ts = now()
-    if (isEdit) {
-      onOk({
-        ...editing,
-        sn: sn.trim(),
-        description: description.trim(),
-        updatedAt: ts,
-      })
-    } else {
+    const trimmedSn = sn.trim()
+    if (!isEdit) {
+      if (!trimmedSn) { setSnError('required'); return }
+      if (isDeviceSnTaken(trimmedSn)) { setSnError('duplicate'); return }
+      if (!formTypeId) { setTypeError(true); return }
+      const ts = now()
       onOk({
         id: `INS-${Date.now()}`,
         typeId: formTypeId,
         code: nextCode,
-        sn: sn.trim(),
+        sn: trimmedSn,
         description: description.trim(),
         status: '离线',
         battery: 100,
@@ -181,10 +178,17 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
         registeredAt: ts,
         updatedAt: ts,
       })
+      return
     }
-  }
 
-  const codeDisplay = isEdit ? editing.code : nextCode
+    if (!formTypeId) { setTypeError(true); return }
+    onOk({
+      ...editing,
+      typeId: formTypeId,
+      description: description.trim(),
+      updatedAt: now(),
+    })
+  }
 
   return (
     <Modal
@@ -196,34 +200,38 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
       width={520}
     >
       <div className="space-y-4">
-        <Field label="所属类型" required={!isEdit} error={typeError}>
+        <Field label="SN" required={!isEdit} error={snError}>
           {isEdit ? (
-            <input readOnly value={selectedType?.name ?? editing?.typeName ?? '—'} className={readOnlyCls} />
+            <input readOnly value={sn} className={readOnlyCls} />
           ) : (
-            <select
-              value={formTypeId}
-              onChange={(e) => { onTypeIdChange(e.target.value); setTypeError(false) }}
-              className={selectCls + (typeError ? ' border-red-400' : '')}
-            >
-              <option value="" disabled hidden>请选择设备类型</option>
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            <input
+              placeholder="请输入 SN 号"
+              value={sn}
+              onChange={(e) => { setSn(e.target.value); setSnError(false) }}
+              className={inputCls + (snError ? ' border-red-400 focus:ring-red-100' : '')}
+            />
           )}
         </Field>
-        <Field label="实例编号">
-          <input readOnly value={codeDisplay} className={readOnlyCls} />
+
+        <Field label="设备类型" required error={typeError ? 'required' : false}>
+          <select
+            value={formTypeId}
+            onChange={(e) => { onTypeIdChange(e.target.value); setTypeError(false) }}
+            className={selectCls + (typeError ? ' border-red-400' : '')}
+          >
+            <option value="" disabled hidden>请选择设备类型</option>
+            {types.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          {isEdit && (
+            <p className="mt-1.5 text-xs text-gray-400">
+              变更类型不影响历史任务和条目中已记录的本体类型
+            </p>
+          )}
         </Field>
-        <Field label="SN" required error={snError}>
-          <input
-            placeholder="请输入 SN 号"
-            value={sn}
-            onChange={(e) => { setSn(e.target.value); setSnError(false) }}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="设备描述">
+
+        <Field label="描述">
           <textarea
             placeholder="选填，简要说明设备用途或部署位置"
             value={description}
@@ -232,40 +240,6 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
             className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </Field>
-      </div>
-    </Modal>
-  )
-}
-
-function DetailModal({ instance, onClose }) {
-  if (!instance) return null
-  return (
-    <Modal
-      open
-      title="设备实例详情"
-      onCancel={onClose}
-      footer={<div className="flex justify-end border-t border-gray-100 px-6 py-3.5"><Button onClick={onClose}>关闭</Button></div>}
-      width={520}
-    >
-      <div>
-        <p className="mb-2 text-xs font-medium text-gray-500">实例信息</p>
-        <dl className="space-y-3 text-sm">
-          {[
-            ['实例编号', instance.code],
-            ['SN', instance.sn],
-            ['所属类型', instance.typeName],
-            ['在线状态', <StatusBadge key="st" status={instance.status} />],
-            ['电量', <BatteryCell key="bat" battery={instance.battery} />],
-            ['设备描述', instance.description?.trim() ? instance.description : '—'],
-            ['创建时间', formatDateTime(instance.createdAt)],
-            ['更新时间', formatDateTime(instance.updatedAt)],
-          ].map(([label, value]) => (
-            <div key={label} className="flex gap-3">
-              <dt className="w-24 shrink-0 text-gray-500">{label}</dt>
-              <dd className="text-gray-800">{value}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </Modal>
   )
@@ -282,7 +256,6 @@ export default function InstanceList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRow, setEditingRow] = useState(null)
   const [formTypeId, setFormTypeId] = useState('')
-  const [detailTarget, setDetailTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [nextCode, setNextCode] = useState('')
 
@@ -323,7 +296,7 @@ export default function InstanceList() {
 
   const openCreateModal = () => {
     setEditingRow(null)
-    setFormTypeId(types[0]?.id ?? '')
+    setFormTypeId('')
     setNextCode(getNextInstanceCode())
     setModalOpen(true)
   }
@@ -352,16 +325,20 @@ export default function InstanceList() {
   }
 
   const columns = [
-    {
-      title: '实例编号',
-      dataIndex: 'code',
-      render: (v) => <span className="font-medium text-gray-800">{v}</span>,
-    },
     { title: 'SN', dataIndex: 'sn', render: (v) => <span className="font-mono text-xs">{v}</span> },
     {
-      title: '所属类型',
+      title: '设备类型',
       dataIndex: 'typeName',
       render: (v) => <span className="text-sm text-gray-700">{v}</span>,
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      render: (v) => (
+        <span className="block max-w-xs truncate text-sm text-gray-600" title={v?.trim() || undefined}>
+          {v?.trim() ? v : '—'}
+        </span>
+      ),
     },
     {
       title: '在线状态',
@@ -380,7 +357,6 @@ export default function InstanceList() {
       key: 'actions',
       render: (_, row) => (
         <div className="flex items-center gap-2">
-          <button type="button" className="cursor-pointer text-sm text-blue-600 hover:text-blue-500" onClick={() => setDetailTarget(row)}>查看详情</button>
           <PermAction permission="device.edit" className="cursor-pointer text-sm text-blue-600 hover:text-blue-500" onClick={() => { setEditingRow(row); setFormTypeId(row.typeId); setModalOpen(true) }}>编辑</PermAction>
           <PermAction permission="device.delete" className="cursor-pointer text-sm text-red-500 hover:text-red-400" onClick={() => setDeleteTarget(row)}>删除</PermAction>
         </div>
@@ -474,10 +450,6 @@ export default function InstanceList() {
         onCancel={closeModal}
         onOk={handleSave}
       />
-
-      {detailTarget && (
-        <DetailModal instance={detailTarget} onClose={() => setDetailTarget(null)} />
-      )}
 
       <Modal
         open={!!deleteTarget}

@@ -13,7 +13,7 @@ alphaloop dataset download \\
 # 按数据状态 / 格式筛选下载
 alphaloop dataset download \\
   --dataset-id DS-001 \\
-  --status 已审核 \\
+  --status 已标注 \\
   --format LeRobot \\
   --output ./downloads/filtered/`
 
@@ -34,7 +34,7 @@ client.download(
     dataset_id="DS-001",
     output_dir="./downloads/filtered/",
     formats=["h5", "LeRobot"],
-    statuses=["已解析", "已审核"],
+    statuses=["已解析", "已标注"],
 )`
 
 function CodeBlock({ title, code, onCopy }) {

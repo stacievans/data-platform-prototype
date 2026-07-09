@@ -19,7 +19,7 @@ export const auditReviewTagTreeSeed = [
   {
     id: 'AT-G-002',
     name: '问题标签',
-    description: '审核过程中发现的具体问题类型',
+    description: '标注过程中发现的具体问题类型',
     creator: '孙丽',
     createdAt: ts('2026-04-01'),
     updatedAt: ts('2026-04-01'),

@@ -1,11 +1,13 @@
 // 采集任务（15条，跨项目）
 // status: 草稿 | 已发布 | 已归档
 import { nowDateTime } from '../utils/formatDateTime'
+import { getPlanById, resolvePlanDeviceTypeId, resolveDeviceTypeName } from './plans'
+import { getAllDeviceInstances } from './devices'
 
 export const tasks = [
   {
     id: 'T-2001', planId: 'PL-3001', name: '客厅杂物分拣-第1批', purpose: '正式采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操', scene: '家庭场景',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-001', device: 'DEV-A01', method: 'VR遥操', scene: '家庭场景',
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 500, collectDone: 500, reviewDone: 500, acceptDone: 480, dataTotal: 500,
     status: '已归档', collector: ['刘伟', '周杰'], reviewer: '孙丽',
@@ -13,7 +15,7 @@ export const tasks = [
   },
   {
     id: 'T-2002', planId: 'PL-3001', name: '客厅杂物分拣-第2批', purpose: '正式采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操', scene: '家庭场景',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-002', device: 'DEV-A02', method: 'VR遥操', scene: '家庭场景',
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 500, collectDone: 386, reviewDone: 210, acceptDone: 168, dataTotal: 386,
     status: '已发布', collector: ['刘伟'], reviewer: '孙丽',
@@ -21,7 +23,7 @@ export const tasks = [
   },
   {
     id: 'T-2003', planId: 'PL-3002', name: '卧室物品归位采集', purpose: '正式采集',
-    device: 'AlphaBot-1 双灵巧手', robotBody: 'AlphaBot-1 双灵巧手', method: 'VR遥操', scene: '家庭场景',
+    deviceTypeId: 'DTY-002', deviceInstanceId: 'INS-005', device: 'DEV-A03', method: 'VR遥操', scene: '家庭场景',
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 300, collectDone: 300, reviewDone: 152, acceptDone: 120, dataTotal: 300,
     status: '已发布', collector: ['周杰', '刘伟', '吴磊'], reviewer: '孙丽',
@@ -29,7 +31,7 @@ export const tasks = [
   },
   {
     id: 'T-2004', planId: 'PL-3003', name: '玩具收纳试采', purpose: '试采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼', scene: '家庭场景',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-003', device: 'DEV-B02', method: '外骨骼', scene: '家庭场景',
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 100, collectDone: 100, reviewDone: 100, acceptDone: 100, dataTotal: 100,
     status: '已归档', collector: ['周杰'], reviewer: '何敏',
@@ -37,7 +39,7 @@ export const tasks = [
   },
   {
     id: 'T-2005', planId: 'PL-3004', name: '蔬菜切配-土豆丝', purpose: '正式采集',
-    device: 'AlphaBot-2 左灵巧手右夹爪', robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: '外骨骼', scene: '厨房操作',
+    deviceTypeId: 'DTY-005', deviceInstanceId: 'INS-010', device: 'DEV-E01', method: '外骨骼', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 268, reviewDone: 120, acceptDone: 86, dataTotal: 268,
     status: '已发布', collector: ['吴磊', '郑浩'], reviewer: '何敏',
@@ -45,7 +47,7 @@ export const tasks = [
   },
   {
     id: 'T-2006', planId: 'PL-3004', name: '蔬菜切配-青椒块', purpose: '正式采集',
-    device: 'SN20260510J8830', deviceInstanceId: 'INS-010', robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: '外骨骼', scene: '厨房操作',
+    deviceTypeId: 'DTY-005', deviceInstanceId: 'INS-010', device: 'DEV-E01', method: '外骨骼', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: ['吴磊'], reviewer: '何敏',
@@ -53,7 +55,7 @@ export const tasks = [
   },
   {
     id: 'T-2007', planId: 'PL-3005', name: '餐具清洗采集', purpose: '正式采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操', scene: '厨房操作',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-004', device: 'DEV-D01', method: 'VR遥操', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 350, collectDone: 350, reviewDone: 350, acceptDone: 350, dataTotal: 350,
     status: '已归档', collector: ['刘伟'], reviewer: '何敏',
@@ -61,7 +63,7 @@ export const tasks = [
   },
   {
     id: 'T-2008', planId: 'PL-3006', name: '螺钉锁附-M4工位', purpose: '正式采集',
-    device: 'AlphaBot-2 双灵巧手', robotBody: 'AlphaBot-2 双灵巧手', method: 'VR遥操', scene: '工业装配',
+    deviceTypeId: 'DTY-003', deviceInstanceId: 'INS-007', device: 'DEV-B01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 452, reviewDone: 430, acceptDone: 400, dataTotal: 452,
     status: '已发布', collector: ['郑浩', '吴磊'], reviewer: '钱琳',
@@ -69,7 +71,7 @@ export const tasks = [
   },
   {
     id: 'T-2009', planId: 'PL-3006', name: '螺钉锁附-M6工位', purpose: '正式采集',
-    device: 'SN20260321D5520', deviceInstanceId: 'INS-007', robotBody: 'AlphaBot-2 双灵巧手', method: 'VR遥操', scene: '工业装配',
+    deviceTypeId: 'DTY-003', deviceInstanceId: 'INS-007', device: 'DEV-B01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: ['郑浩'], reviewer: '钱琳',
@@ -77,7 +79,7 @@ export const tasks = [
   },
   {
     id: 'T-2010', planId: 'PL-3007', name: '线束插接采集', purpose: '正式采集',
-    device: 'AlphaBot-2 左夹爪右灵巧手', robotBody: 'AlphaBot-2 左夹爪右灵巧手', method: 'VR遥操', scene: '工业装配',
+    deviceTypeId: 'DTY-004', deviceInstanceId: 'INS-009', device: 'DEV-C01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 450, collectDone: 450, reviewDone: 318, acceptDone: 300, dataTotal: 450,
     status: '已归档', collector: ['吴磊'], reviewer: '钱琳',
@@ -85,7 +87,7 @@ export const tasks = [
   },
   {
     id: 'T-2011', planId: 'PL-3009', name: '货架补货-饮料区', purpose: '正式采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: 'VR遥操', scene: '零售货架',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-001', device: 'DEV-A01', method: 'VR遥操', scene: '零售货架',
     projectId: 'P-1004', projectName: '零售货架补货采集',
     collectTotal: 300, collectDone: 300, reviewDone: 300, acceptDone: 298, dataTotal: 300,
     status: '已归档', collector: ['周杰', '刘伟'], reviewer: '孙丽',
@@ -93,7 +95,7 @@ export const tasks = [
   },
   {
     id: 'T-2012', planId: 'PL-3009', name: '货架补货-零食区', purpose: '试采集',
-    device: 'AlphaBot-1 双夹爪', robotBody: 'AlphaBot-1 双夹爪', method: '外骨骼', scene: '零售货架',
+    deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-002', device: 'DEV-A02', method: '外骨骼', scene: '零售货架',
     projectId: 'P-1004', projectName: '零售货架补货采集',
     collectTotal: 300, collectDone: 300, reviewDone: 300, acceptDone: 300, dataTotal: 300,
     status: '已归档', collector: ['周杰'], reviewer: '孙丽',
@@ -101,7 +103,7 @@ export const tasks = [
   },
   {
     id: 'T-2013', planId: 'PL-3011', name: 'T恤折叠标准采集', purpose: '正式采集',
-    device: 'AlphaBot-2 左灵巧手右夹爪', robotBody: 'AlphaBot-2 左灵巧手右夹爪', method: 'VR遥操', scene: '家庭场景',
+    deviceTypeId: 'DTY-005', deviceInstanceId: 'INS-010', device: 'DEV-E01', method: 'VR遥操', scene: '家庭场景',
     projectId: 'P-1005', projectName: '衣物折叠采集',
     collectTotal: 500, collectDone: 124, reviewDone: 60, acceptDone: 42, dataTotal: 124,
     status: '已发布', collector: ['刘伟', '周杰'], reviewer: '何敏',
@@ -109,7 +111,7 @@ export const tasks = [
   },
   {
     id: 'T-2014', planId: 'PL-3013', name: '餐具回收晚高峰采集', purpose: '质检回流',
-    device: 'AlphaBot-2 左夹爪右灵巧手', robotBody: 'AlphaBot-2 左夹爪右灵巧手', method: 'VR遥操', scene: '餐饮服务',
+    deviceTypeId: 'DTY-004', deviceInstanceId: 'INS-009', device: 'DEV-C01', method: 'VR遥操', scene: '餐饮服务',
     projectId: 'P-1006', projectName: '餐桌清理采集',
     collectTotal: 200, collectDone: 58, reviewDone: 20, acceptDone: 12, dataTotal: 58,
     status: '已发布', collector: ['郑浩'], reviewer: '孙丽',
@@ -117,7 +119,7 @@ export const tasks = [
   },
   {
     id: 'T-2016', planId: 'PL-3018', name: '双臂协作搬运-标准采集', purpose: '正式采集',
-    device: 'AlphaBot-2 双夹爪', robotBody: 'AlphaBot-2 双夹爪', method: 'VR遥操', scene: '工业装配',
+    deviceTypeId: 'DTY-005', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1007', projectName: '双臂协作搬运采集',
     collectTotal: 500, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: [], reviewer: '',
@@ -125,7 +127,7 @@ export const tasks = [
   },
   {
     id: 'T-2015', planId: 'PL-3017', name: '小物件精细抓取采集', purpose: '正式采集',
-    device: 'AlphaBot-1 双灵巧手', robotBody: 'AlphaBot-1 双灵巧手', method: '外骨骼', scene: '办公整理',
+    deviceTypeId: 'DTY-002', deviceInstanceId: 'INS-006', device: 'DEV-F01', method: '外骨骼', scene: '办公整理',
     projectId: 'P-1008', projectName: '精细抓取操作采集',
     collectTotal: 800, collectDone: 215, reviewDone: 96, acceptDone: 72, dataTotal: 215,
     status: '已发布', collector: ['吴磊', '刘伟'], reviewer: '钱琳',
@@ -165,6 +167,36 @@ export function nowDatetime() {
   return nowDateTime()
 }
 
+function resolveTaskDeviceTypeId(task) {
+  if (task?.deviceTypeId) return task.deviceTypeId
+  const plan = getPlanById(task?.planId)
+  return resolvePlanDeviceTypeId(plan)
+}
+
+/** 运行时解析设备类型名称与实例编号（deviceTypeName 为创建时快照，不随类型库变更） */
+export function enrichTask(task) {
+  if (!task) return null
+  const deviceTypeId = resolveTaskDeviceTypeId(task)
+  const deviceTypeName = task.deviceTypeName ?? (resolveDeviceTypeName(deviceTypeId) || '—')
+  const robotBody = deviceTypeName
+
+  let deviceInstanceId = task.deviceInstanceId ?? ''
+  let device = task.device ?? '—'
+
+  if (deviceInstanceId) {
+    const inst = getAllDeviceInstances().find((i) => i.id === deviceInstanceId)
+    if (inst?.code) device = inst.code
+  } else if (device && device !== '—') {
+    const inst = getAllDeviceInstances().find((i) => i.code === device || i.sn === device)
+    if (inst) {
+      deviceInstanceId = inst.id
+      device = inst.code ?? device
+    }
+  }
+
+  return { ...task, deviceTypeId, deviceTypeName, robotBody, device, deviceInstanceId }
+}
+
 /** 同步更新全局任务 mock（项目人员分配、任务列表等共用） */
 export function syncTasks(updater) {
   const next = typeof updater === 'function' ? updater([...tasks]) : updater
@@ -173,5 +205,13 @@ export function syncTasks(updater) {
 }
 
 export function getTaskById(id) {
-  return tasks.find((t) => t.id === id)
+  const raw = tasks.find((t) => t.id === id)
+  return raw ? enrichTask(raw) : null
+}
+
+for (const task of tasks) {
+  if (!task.deviceTypeName) {
+    const typeId = resolveTaskDeviceTypeId(task)
+    task.deviceTypeName = resolveDeviceTypeName(typeId) || '—'
+  }
 }

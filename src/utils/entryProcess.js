@@ -1,28 +1,51 @@
 import { formatDateTime, formatDateFromDate } from './formatDateTime'
 
-/** 三工序状态：passed | rejected | pending | none */
-export function deriveProcessStatuses(dataStatus) {
+/** 三工序状态：pending | processing | passed | rejected | none */
+export function deriveProcessStatuses(entryOrStatus) {
+  const entry = typeof entryOrStatus === 'object' && entryOrStatus !== null
+    ? entryOrStatus
+    : { dataStatus: entryOrStatus }
+  const { dataStatus } = entry
+
+  let base
   switch (dataStatus) {
     case '已上传':
+      base = { qc: 'pending', review: 'none', accept: 'none' }
+      break
     case '已解析':
-      return { qc: 'passed', review: 'pending', accept: 'none' }
-    case '审核不通过':
-      return { qc: 'passed', review: 'rejected', accept: 'none' }
-    case '已审核':
-      return { qc: 'passed', review: 'passed', accept: 'pending' }
+      base = { qc: 'passed', review: 'pending', accept: 'none' }
+      break
+    case '标注不通过':
+      base = { qc: 'passed', review: 'rejected', accept: 'none' }
+      break
+    case '已标注':
+      base = { qc: 'passed', review: 'passed', accept: 'pending' }
+      break
     case '验收不通过':
-      return { qc: 'passed', review: 'passed', accept: 'rejected' }
+      base = { qc: 'passed', review: 'passed', accept: 'rejected' }
+      break
     case '已验收':
-      return { qc: 'passed', review: 'passed', accept: 'passed' }
+      base = { qc: 'passed', review: 'passed', accept: 'passed' }
+      break
     default:
-      return { qc: 'none', review: 'none', accept: 'none' }
+      base = { qc: 'none', review: 'none', accept: 'none' }
   }
+
+  if (entry.reviewClaimedBy && ['已解析', '标注不通过'].includes(dataStatus)) {
+    base = { ...base, review: 'processing' }
+  }
+  if (entry.acceptClaimedBy && ['已标注', '验收不通过'].includes(dataStatus)) {
+    base = { ...base, accept: 'processing' }
+  }
+
+  return base
 }
 
 export const PROCESS_STATUS_LABEL = {
+  pending: '待处理',
+  processing: '处理中',
   passed: '已通过',
   rejected: '已驳回',
-  pending: '待处理',
   none: '—',
 }
 
@@ -40,21 +63,49 @@ export function getEntryDisplayFileName(entry) {
   return `${entry.fileName}.${ext}`
 }
 
-
 export function getEntryCollectTime(entry) {
   return formatDateTime(entry.collectTime ?? entry.uploadTime)
 }
 
-/** 无显式 flowHistory 时，由 dataStatus 推导基础流转节点（时间倒序） */
+function parseRoundFromLabel(label) {
+  const m = String(label ?? '').match(/第(\d+)轮/)
+  return m ? parseInt(m[1], 10) : 1
+}
+
+function isQcFlowLabel(label) {
+  return String(label ?? '').includes('质检')
+}
+
+function normalizeFlowNode(node) {
+  return {
+    ...node,
+    round: node.round ?? parseRoundFromLabel(node.label),
+    operator: isQcFlowLabel(node.label) ? '系统自动' : (node.operator ?? '—'),
+  }
+}
+
+function buildFlowNode({ label, time, operator, round }) {
+  const node = {
+    label,
+    time,
+    operator: isQcFlowLabel(label) ? '系统自动' : operator,
+    round: round ?? parseRoundFromLabel(label),
+  }
+  return normalizeFlowNode(node)
+}
+
+/** 无显式 flowHistory 时，由 dataStatus 推导基础流转节点（时间倒序，最新在前） */
 export function resolveFlowHistory(entry, task) {
-  if (entry.flowHistory?.length) return entry.flowHistory
+  if (entry.flowHistory?.length) {
+    return entry.flowHistory.map(normalizeFlowNode)
+  }
 
   const reviewer = entry.reviewOperator ?? defaultReviewOperator(task)
   const acceptor = entry.acceptOperator ?? { nickname: '陈静', id: 'U-2002' }
   const qcTime = formatDateTime(entry.qcTime ?? entry.uploadTime)
   const nodes = []
 
-  const push = (node) => nodes.unshift(node)
+  const push = (node) => nodes.unshift(buildFlowNode(node))
 
   switch (entry.dataStatus) {
     case '已验收':
@@ -62,46 +113,53 @@ export function resolveFlowHistory(entry, task) {
         label: '验收通过（第1轮）',
         time: entry.acceptTime ?? shiftTime(qcTime, 48),
         operator: formatOperatorPlain(acceptor),
+        round: 1,
       })
       push({
-        label: '审核通过（第1轮）',
+        label: '标注通过（第1轮）',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
+        round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动' })
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     case '验收不通过':
       push({
         label: '验收驳回（第1轮）',
         time: entry.acceptTime ?? shiftTime(qcTime, 48),
         operator: formatOperatorPlain(acceptor),
+        round: 1,
       })
       push({
-        label: '审核通过（第1轮）',
+        label: '标注通过（第1轮）',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
+        round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动' })
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
-    case '已审核':
+    case '已标注':
       push({
-        label: '审核通过（第1轮）',
+        label: '标注通过（第1轮）',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
+        round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动' })
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
-    case '审核不通过':
+    case '标注不通过':
       push({
-        label: '审核驳回（第1轮）',
+        label: '标注驳回（第1轮）',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
+        round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动' })
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     case '已上传':
+      break
     case '已解析':
-      push({ label: '质检通过', time: qcTime, operator: '系统自动' })
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     default:
       break
@@ -129,20 +187,20 @@ function shiftTime(timeStr, hours) {
 }
 
 export const PROCESS_TABS = [
-  { key: 'all', label: '全部' },
   { key: 'qc', label: '质检' },
-  { key: 'review', label: '审核' },
+  { key: 'review', label: '标注' },
   { key: 'accept', label: '验收' },
 ]
 
 export const PROCESS_SUB_STATUS_OPTIONS = [
   { key: 'all', label: '全部' },
   { key: 'pending', label: '待处理' },
+  { key: 'processing', label: '处理中' },
   { key: 'passed', label: '已通过' },
   { key: 'rejected', label: '已驳回' },
 ]
 
-export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '已通过', '已驳回']
+export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '处理中', '已通过', '已驳回']
 
 export function getProcessFieldKey(tab) {
   if (tab === 'qc') return 'qc'
@@ -152,12 +210,17 @@ export function getProcessFieldKey(tab) {
 }
 
 export function formLabelToStatus(label) {
-  const map = { 待处理: 'pending', 已通过: 'passed', 已驳回: 'rejected' }
+  const map = {
+    待处理: 'pending',
+    处理中: 'processing',
+    已通过: 'passed',
+    已驳回: 'rejected',
+  }
   return map[label] ?? null
 }
 
 export function matchFormProcessFilters(entry, { qcStatus, reviewStatus, acceptStatus }) {
-  const ps = deriveProcessStatuses(entry.dataStatus)
+  const ps = deriveProcessStatuses(entry)
   if (qcStatus && qcStatus !== '全部') {
     const s = formLabelToStatus(qcStatus)
     if (s && ps.qc !== s) return false
@@ -177,16 +240,17 @@ export function matchProcessSubFilter(entry, tab, subStatus) {
   if (tab === 'all' || !subStatus || subStatus === 'all') return true
   const field = getProcessFieldKey(tab)
   if (!field) return true
-  return deriveProcessStatuses(entry.dataStatus)[field] === subStatus
+  return deriveProcessStatuses(entry)[field] === subStatus
 }
 
 export function countProcessSubStatuses(entries, tab) {
-  const counts = { all: entries.length, pending: 0, passed: 0, rejected: 0 }
+  const counts = { all: entries.length, pending: 0, processing: 0, passed: 0, rejected: 0 }
   const field = getProcessFieldKey(tab)
   if (!field) return counts
   entries.forEach((entry) => {
-    const status = deriveProcessStatuses(entry.dataStatus)[field]
+    const status = deriveProcessStatuses(entry)[field]
     if (status === 'pending') counts.pending += 1
+    else if (status === 'processing') counts.processing += 1
     else if (status === 'passed') counts.passed += 1
     else if (status === 'rejected') counts.rejected += 1
   })

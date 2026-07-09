@@ -131,13 +131,3 @@ export const projectMembers = {
     { id: 'PM-1008-3', name: '钱琳',   roles: ['标注员'],             taskIds: ['T-2015'],                      joinedAt: '2026-05-27 15:45:00' },
   ],
 }
-
-// 整机本体类型配置（本体型号 + 左/右末端）
-export const robotBodies = [
-  { name: 'AlphaBot-1 双夹爪',         bodyModel: 'AlphaBot-1', leftEnd: '夹爪',   rightEnd: '夹爪'   },
-  { name: 'AlphaBot-1 双灵巧手',        bodyModel: 'AlphaBot-1', leftEnd: '灵巧手', rightEnd: '灵巧手' },
-  { name: 'AlphaBot-2 双夹爪',         bodyModel: 'AlphaBot-2', leftEnd: '夹爪',   rightEnd: '夹爪'   },
-  { name: 'AlphaBot-2 双灵巧手',        bodyModel: 'AlphaBot-2', leftEnd: '灵巧手', rightEnd: '灵巧手' },
-  { name: 'AlphaBot-2 左灵巧手右夹爪',  bodyModel: 'AlphaBot-2', leftEnd: '灵巧手', rightEnd: '夹爪'   },
-  { name: 'AlphaBot-2 左夹爪右灵巧手',  bodyModel: 'AlphaBot-2', leftEnd: '夹爪',   rightEnd: '灵巧手' },
-]
