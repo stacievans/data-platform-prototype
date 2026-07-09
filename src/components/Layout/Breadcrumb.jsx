@@ -20,14 +20,10 @@ const routes = [
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
   { match: /^\/dataset\/self\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情']] },
   { match: /^\/dataset\/self/, crumbs: [['数据集管理'], ['真机数据集']] },
-  { match: /^\/dataset\/open\/download$/, crumbs: [['数据集管理'], ['开源数据集', '/dataset/open'], ['下载数据集']] },
-  { match: /^\/dataset\/open\/[^/]+\/usage$/, crumbs: [['数据集管理'], ['开源数据集', '/dataset/open'], ['数据集详情']] },
-  { match: /^\/dataset\/open/, crumbs: [['数据集管理'], ['开源数据集']] },
   { match: /^\/tag/, crumbs: [['标签管理']] },
   { match: /^\/device/, crumbs: [['设备管理']] },
   { match: /^\/system\/user/, crumbs: [['系统管理'], ['用户管理']] },
   { match: /^\/system\/role/, crumbs: [['系统管理'], ['角色管理']] },
-  { match: /^\/system\/log/, crumbs: [['系统管理'], ['系统日志']] },
   { match: /^\/system/, crumbs: [['系统管理']] },
 ]
 

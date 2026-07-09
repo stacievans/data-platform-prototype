@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
+import { dtCol } from '../../utils/formatDateTime'
 
 const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
 
@@ -328,8 +329,8 @@ export default function TaskTable({
     { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi /> },
     { title: '标注员', dataIndex: 'reviewer', render: (v) => <PeopleCell value={v} multi={false} /> },
     { title: '创建人', dataIndex: 'creator', render: (v) => v ?? '—' },
-    { title: '创建时间', dataIndex: 'createdAt' },
-    { title: '更新时间', dataIndex: 'updatedAt', render: (v, row) => v ?? row.createdAt ?? '—' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('更新时间', 'updatedAt', { fallbackKey: 'createdAt' }),
     {
       title: '操作',
       key: 'actions',

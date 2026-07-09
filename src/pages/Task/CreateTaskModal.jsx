@@ -25,11 +25,11 @@ import {
   playLayouts,
 } from '../../mock/plans'
 import { projects } from '../../mock/projects'
-import { taskTypeTags } from '../../mock/tags'
+import { getTaskPurposeTags } from '../../mock/tags'
 import { getAllDeviceTypes, getAllDeviceInstances, getInStockInstancesByTypeId } from '../../mock/devices'
 import { useCurrentNickname } from '../../context/AuthContext'
 
-const PURPOSE_OPTIONS = taskTypeTags.map((t) => ({
+const PURPOSE_OPTIONS = getTaskPurposeTags().map((t) => ({
   value: t.name,
   label: t.name,
 }))

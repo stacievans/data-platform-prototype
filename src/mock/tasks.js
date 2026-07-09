@@ -1,5 +1,7 @@
 // 采集任务（15条，跨项目）
 // status: 草稿 | 已发布 | 已归档
+import { nowDateTime } from '../utils/formatDateTime'
+
 export const tasks = [
   {
     id: 'T-2001', planId: 'PL-3001', name: '客厅杂物分拣-第1批', purpose: '正式采集',
@@ -7,7 +9,7 @@ export const tasks = [
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 500, collectDone: 500, reviewDone: 500, acceptDone: 480, dataTotal: 500,
     status: '已归档', collector: ['刘伟', '周杰'], reviewer: '孙丽',
-    creator: '李明', createdAt: '2026-03-13 09:30', updatedAt: '2026-05-20 16:40',
+    creator: '李明', createdAt: '2026-03-13 09:30:00', updatedAt: '2026-05-20 16:40:00',
   },
   {
     id: 'T-2002', planId: 'PL-3001', name: '客厅杂物分拣-第2批', purpose: '正式采集',
@@ -15,7 +17,7 @@ export const tasks = [
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 500, collectDone: 386, reviewDone: 210, acceptDone: 168, dataTotal: 386,
     status: '已发布', collector: ['刘伟'], reviewer: '孙丽',
-    creator: '李明', createdAt: '2026-04-08 10:15', updatedAt: '2026-06-08 11:22',
+    creator: '李明', createdAt: '2026-04-08 10:15:00', updatedAt: '2026-06-08 11:22:00',
   },
   {
     id: 'T-2003', planId: 'PL-3002', name: '卧室物品归位采集', purpose: '正式采集',
@@ -23,7 +25,7 @@ export const tasks = [
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 300, collectDone: 300, reviewDone: 152, acceptDone: 120, dataTotal: 300,
     status: '已发布', collector: ['周杰', '刘伟', '吴磊'], reviewer: '孙丽',
-    creator: '李明', createdAt: '2026-04-20 14:00', updatedAt: '2026-06-05 09:18',
+    creator: '李明', createdAt: '2026-04-20 14:00:00', updatedAt: '2026-06-05 09:18:00',
   },
   {
     id: 'T-2004', planId: 'PL-3003', name: '玩具收纳试采', purpose: '试采集',
@@ -31,7 +33,7 @@ export const tasks = [
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 100, collectDone: 100, reviewDone: 100, acceptDone: 100, dataTotal: 100,
     status: '已归档', collector: ['周杰'], reviewer: '何敏',
-    creator: '李明', createdAt: '2026-03-28 11:40', updatedAt: '2026-04-15 17:30',
+    creator: '李明', createdAt: '2026-03-28 11:40:00', updatedAt: '2026-04-15 17:30:00',
   },
   {
     id: 'T-2005', planId: 'PL-3004', name: '蔬菜切配-土豆丝', purpose: '正式采集',
@@ -39,7 +41,7 @@ export const tasks = [
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 268, reviewDone: 120, acceptDone: 86, dataTotal: 268,
     status: '已发布', collector: ['吴磊', '郑浩'], reviewer: '何敏',
-    creator: '王芳', createdAt: '2026-03-22 09:00', updatedAt: '2026-06-09 14:05',
+    creator: '王芳', createdAt: '2026-03-22 09:00:00', updatedAt: '2026-06-09 14:05:00',
   },
   {
     id: 'T-2006', planId: 'PL-3004', name: '蔬菜切配-青椒块', purpose: '正式采集',
@@ -47,7 +49,7 @@ export const tasks = [
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: ['吴磊'], reviewer: '何敏',
-    creator: '王芳', layoutId: 3, createdAt: '2026-06-01 16:20', updatedAt: '2026-06-01 16:20',
+    creator: '王芳', layoutId: 3, createdAt: '2026-06-01 16:20:00', updatedAt: '2026-06-01 16:20:00',
   },
   {
     id: 'T-2007', planId: 'PL-3005', name: '餐具清洗采集', purpose: '正式采集',
@@ -55,7 +57,7 @@ export const tasks = [
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 350, collectDone: 350, reviewDone: 350, acceptDone: 350, dataTotal: 350,
     status: '已归档', collector: ['刘伟'], reviewer: '何敏',
-    creator: '王芳', createdAt: '2026-04-05 13:10', updatedAt: '2026-05-28 10:00',
+    creator: '王芳', createdAt: '2026-04-05 13:10:00', updatedAt: '2026-05-28 10:00:00',
   },
   {
     id: 'T-2008', planId: 'PL-3006', name: '螺钉锁附-M4工位', purpose: '正式采集',
@@ -63,7 +65,7 @@ export const tasks = [
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 452, reviewDone: 430, acceptDone: 400, dataTotal: 452,
     status: '已发布', collector: ['郑浩', '吴磊'], reviewer: '钱琳',
-    creator: '李明', createdAt: '2026-04-03 08:45', updatedAt: '2026-06-10 08:30',
+    creator: '李明', createdAt: '2026-04-03 08:45:00', updatedAt: '2026-06-10 08:30:00',
   },
   {
     id: 'T-2009', planId: 'PL-3006', name: '螺钉锁附-M6工位', purpose: '正式采集',
@@ -71,7 +73,7 @@ export const tasks = [
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: ['郑浩'], reviewer: '钱琳',
-    creator: '李明', layoutId: 5, createdAt: '2026-05-12 10:30', updatedAt: '2026-05-12 10:30',
+    creator: '李明', layoutId: 5, createdAt: '2026-05-12 10:30:00', updatedAt: '2026-05-12 10:30:00',
   },
   {
     id: 'T-2010', planId: 'PL-3007', name: '线束插接采集', purpose: '正式采集',
@@ -79,7 +81,7 @@ export const tasks = [
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 450, collectDone: 450, reviewDone: 318, acceptDone: 300, dataTotal: 450,
     status: '已归档', collector: ['吴磊'], reviewer: '钱琳',
-    creator: '李明', createdAt: '2026-04-25 09:50', updatedAt: '2026-05-30 18:20',
+    creator: '李明', createdAt: '2026-04-25 09:50:00', updatedAt: '2026-05-30 18:20:00',
   },
   {
     id: 'T-2011', planId: 'PL-3009', name: '货架补货-饮料区', purpose: '正式采集',
@@ -87,7 +89,7 @@ export const tasks = [
     projectId: 'P-1004', projectName: '零售货架补货采集',
     collectTotal: 300, collectDone: 300, reviewDone: 300, acceptDone: 298, dataTotal: 300,
     status: '已归档', collector: ['周杰', '刘伟'], reviewer: '孙丽',
-    creator: '周杰', createdAt: '2026-04-16 14:25', updatedAt: '2026-05-15 12:00',
+    creator: '周杰', createdAt: '2026-04-16 14:25:00', updatedAt: '2026-05-15 12:00:00',
   },
   {
     id: 'T-2012', planId: 'PL-3009', name: '货架补货-零食区', purpose: '试采集',
@@ -95,7 +97,7 @@ export const tasks = [
     projectId: 'P-1004', projectName: '零售货架补货采集',
     collectTotal: 300, collectDone: 300, reviewDone: 300, acceptDone: 300, dataTotal: 300,
     status: '已归档', collector: ['周杰'], reviewer: '孙丽',
-    creator: '周杰', createdAt: '2026-05-02 11:05', updatedAt: '2026-05-25 09:40',
+    creator: '周杰', createdAt: '2026-05-02 11:05:00', updatedAt: '2026-05-25 09:40:00',
   },
   {
     id: 'T-2013', planId: 'PL-3011', name: 'T恤折叠标准采集', purpose: '正式采集',
@@ -103,7 +105,7 @@ export const tasks = [
     projectId: 'P-1005', projectName: '衣物折叠采集',
     collectTotal: 500, collectDone: 124, reviewDone: 60, acceptDone: 42, dataTotal: 124,
     status: '已发布', collector: ['刘伟', '周杰'], reviewer: '何敏',
-    creator: '王芳', createdAt: '2026-04-30 09:20', updatedAt: '2026-06-07 16:45',
+    creator: '王芳', createdAt: '2026-04-30 09:20:00', updatedAt: '2026-06-07 16:45:00',
   },
   {
     id: 'T-2014', planId: 'PL-3013', name: '餐具回收晚高峰采集', purpose: '质检回流',
@@ -111,7 +113,7 @@ export const tasks = [
     projectId: 'P-1006', projectName: '餐桌清理采集',
     collectTotal: 200, collectDone: 58, reviewDone: 20, acceptDone: 12, dataTotal: 58,
     status: '已发布', collector: ['郑浩'], reviewer: '孙丽',
-    creator: '孙丽', createdAt: '2026-05-11 18:00', updatedAt: '2026-06-06 20:10',
+    creator: '孙丽', createdAt: '2026-05-11 18:00:00', updatedAt: '2026-06-06 20:10:00',
   },
   {
     id: 'T-2016', planId: 'PL-3018', name: '双臂协作搬运-标准采集', purpose: '正式采集',
@@ -119,7 +121,7 @@ export const tasks = [
     projectId: 'P-1007', projectName: '双臂协作搬运采集',
     collectTotal: 500, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
     status: '草稿', collector: [], reviewer: '',
-    creator: '赵强', createdAt: '2026-05-18 10:30', updatedAt: '2026-05-18 10:30',
+    creator: '赵强', createdAt: '2026-05-18 10:30:00', updatedAt: '2026-05-18 10:30:00',
   },
   {
     id: 'T-2015', planId: 'PL-3017', name: '小物件精细抓取采集', purpose: '正式采集',
@@ -127,7 +129,7 @@ export const tasks = [
     projectId: 'P-1008', projectName: '精细抓取操作采集',
     collectTotal: 800, collectDone: 215, reviewDone: 96, acceptDone: 72, dataTotal: 215,
     status: '已发布', collector: ['吴磊', '刘伟'], reviewer: '钱琳',
-    creator: '李明', createdAt: '2026-05-27 10:00', updatedAt: '2026-06-10 15:30',
+    creator: '李明', createdAt: '2026-05-27 10:00:00', updatedAt: '2026-06-10 15:30:00',
   },
 ]
 
@@ -160,7 +162,7 @@ export function nextTaskId(taskList) {
 }
 
 export function nowDatetime() {
-  return new Date().toISOString().slice(0, 16).replace('T', ' ')
+  return nowDateTime()
 }
 
 /** 同步更新全局任务 mock（项目人员分配、任务列表等共用） */

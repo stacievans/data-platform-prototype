@@ -1,5 +1,9 @@
 import { entries } from '../mock/entries'
 import { tasks } from '../mock/tasks'
+import { projects } from '../mock/projects'
+import { getEntryCollectTime, getEntryDisplayFileName } from './entryProcess'
+
+export const ACCEPTED_DATA_STATUS = '已验收'
 
 export function parseSizeToMB(sizeStr) {
   const m = String(sizeStr).match(/^([\d.]+)\s*(TB|GB|MB)$/i)
@@ -58,6 +62,63 @@ export function filterEntriesByCriteria(taskIds, statuses, formats) {
   )
 }
 
+export function filterAcceptedEntriesByTasks(taskIds, formats = null) {
+  if (!taskIds.length) return []
+  return entries.filter(
+    (e) => taskIds.includes(e.taskId)
+      && e.dataStatus === ACCEPTED_DATA_STATUS
+      && (!formats?.length || formats.includes(e.format)),
+  )
+}
+
+export function resolveDatasetProjectIds(dataset) {
+  if (dataset.projectIds?.length) return dataset.projectIds
+  if (dataset.projectId) return [dataset.projectId]
+  const fromTasks = [...new Set(
+    (dataset.taskIds ?? []).map((tid) => tasks.find((t) => t.id === tid)?.projectId).filter(Boolean),
+  )]
+  return fromTasks
+}
+
+export function resolveDatasetProjectNames(dataset) {
+  const ids = resolveDatasetProjectIds(dataset)
+  return ids.map((id) => {
+    const fromDataset = dataset.projectNames?.[id]
+      ?? (dataset.projectId === id ? dataset.projectName : null)
+    return fromDataset ?? projects.find((p) => p.id === id)?.name ?? id
+  })
+}
+
+export function getDatasetListStats(dataset) {
+  const projectIds = resolveDatasetProjectIds(dataset)
+  const taskIds = dataset.taskIds ?? []
+  const entryCount = (dataset.entryIds ?? []).length || dataset.trajCount || 0
+  return {
+    projectCount: projectIds.length,
+    taskCount: taskIds.length,
+    entryCount,
+    totalSize: dataset.totalSize ?? '—',
+    totalDuration: dataset.totalDuration ?? '—',
+  }
+}
+
+export function matchesDatasetListFilter(dataset, { name, projectName, taskName }) {
+  if (name && !dataset.name.toLowerCase().includes(name.toLowerCase())) return false
+  if (projectName) {
+    const names = resolveDatasetProjectNames(dataset)
+    const q = projectName.toLowerCase()
+    if (!names.some((n) => n.toLowerCase().includes(q))) return false
+  }
+  if (taskName) {
+    const q = taskName.toLowerCase()
+    const names = (dataset.taskIds ?? [])
+      .map((tid) => tasks.find((t) => t.id === tid)?.name)
+      .filter(Boolean)
+    if (!names.some((n) => n.toLowerCase().includes(q))) return false
+  }
+  return true
+}
+
 export function computeEntryMetrics(entryList) {
   const totalMB = entryList.reduce((sum, e) => sum + parseSizeToMB(e.size), 0)
   const totalSec = entryList.reduce((sum, e) => sum + parseDurationToSec(e.duration), 0)
@@ -79,14 +140,54 @@ export function countByField(entryList, field) {
 }
 
 export function getDatasetEntries(dataset) {
-  const taskMap = new Map(tasks.map((t) => [t.id, t.name]))
+  const taskMap = new Map(tasks.map((t) => [t.id, t]))
   const idSet = new Set(dataset.entryIds ?? [])
   return entries
     .filter((e) => idSet.has(e.id))
-    .map((e) => ({
-      ...e,
-      taskName: taskMap.get(e.taskId) ?? e.taskId,
-    }))
+    .map((e) => {
+      const task = taskMap.get(e.taskId)
+      const projectId = task?.projectId ?? '—'
+      const projectName = task?.projectName ?? projects.find((p) => p.id === projectId)?.name ?? '—'
+      return {
+        ...e,
+        taskName: task?.name ?? e.taskId,
+        projectId,
+        projectName,
+        displayName: getEntryDisplayFileName(e),
+        collectTime: getEntryCollectTime(e),
+      }
+    })
+}
+
+export function getProjectTaskInclusionStats(dataset) {
+  const included = entries.filter((e) => (dataset.entryIds ?? []).includes(e.id))
+  const taskMap = new Map(tasks.map((t) => [t.id, t]))
+  const grouped = included.reduce((acc, e) => {
+    const task = taskMap.get(e.taskId)
+    const key = e.taskId
+    if (!acc[key]) {
+      acc[key] = {
+        projectId: task?.projectId ?? '—',
+        projectName: task?.projectName ?? '—',
+        taskId: e.taskId,
+        taskName: task?.name ?? e.taskId,
+        count: 0,
+      }
+    }
+    acc[key].count += 1
+    return acc
+  }, {})
+  return Object.values(grouped).sort((a, b) => a.projectId.localeCompare(b.projectId) || a.taskId.localeCompare(b.taskId))
+}
+
+export function getProjectDistributionStats(dataset) {
+  const included = entries.filter((e) => (dataset.entryIds ?? []).includes(e.id))
+  return included.reduce((acc, e) => {
+    const task = tasks.find((t) => t.id === e.taskId)
+    const name = task?.projectName ?? task?.projectId ?? '未知项目'
+    acc[name] = (acc[name] ?? 0) + 1
+    return acc
+  }, {})
 }
 
 export function getInclusionOverview(dataset) {
@@ -156,17 +257,37 @@ export function formatUpdateChangeSummary({ addedCount, addedSize, removedCount,
 export function buildDatasetFromCriteria({
   projectId,
   projectName,
+  projectIds,
+  projectNames,
   taskIds,
   statuses,
   formats,
+  acceptedOnly = false,
 }) {
-  const matched = filterEntriesByCriteria(taskIds, statuses, formats)
+  const matched = acceptedOnly
+    ? filterAcceptedEntriesByTasks(taskIds, formats)
+    : filterEntriesByCriteria(taskIds, statuses, formats)
   const metrics = computeEntryMetrics(matched)
+  const resolvedProjectIds = projectIds?.length
+    ? projectIds
+    : projectId
+      ? [projectId]
+      : [...new Set(taskIds.map((tid) => tasks.find((t) => t.id === tid)?.projectId).filter(Boolean))]
+  const resolvedNames = projectNames ?? Object.fromEntries(
+    resolvedProjectIds.map((id) => [
+      id,
+      projects.find((p) => p.id === id)?.name ?? (projectId === id ? projectName : id),
+    ]),
+  )
   return {
-    projectId,
-    projectName,
+    projectId: resolvedProjectIds[0] ?? projectId,
+    projectName: resolvedProjectIds.length === 1
+      ? (typeof resolvedNames === 'object' ? resolvedNames[resolvedProjectIds[0]] : projectName)
+      : resolvedProjectIds.map((id) => (typeof resolvedNames === 'object' ? resolvedNames[id] : id)).join('、'),
+    projectIds: resolvedProjectIds,
+    projectNames: typeof resolvedNames === 'object' ? resolvedNames : {},
     taskIds: [...taskIds],
-    statuses: [...statuses],
+    statuses: acceptedOnly ? [ACCEPTED_DATA_STATUS] : [...statuses],
     formats: [...formats],
     entryIds: matched.map((e) => e.id),
     trajCount: metrics.count,

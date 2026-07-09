@@ -30,7 +30,6 @@ const menu = [
     icon: <IconDataset />,
     children: [
       { key: '/dataset/self', label: '真机数据集', permission: 'dataset.self.view' },
-      { key: '/dataset/open', label: '开源数据集', permission: 'dataset.open.view' },
     ],
   },
   { key: '/tag', label: '标签管理', icon: <IconTag />, permission: 'tag.view' },
@@ -42,7 +41,6 @@ const menu = [
     children: [
       { key: '/system/user', label: '用户管理', permission: 'system.user.view' },
       { key: '/system/role', label: '角色管理', permission: 'system.role.view' },
-      { key: '/system/log', label: '系统日志', permission: 'system.log.view' },
     ],
   },
 ]

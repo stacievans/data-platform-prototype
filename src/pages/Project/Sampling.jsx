@@ -35,6 +35,7 @@ import CreateSamplingBatchModal from './CreateSamplingBatchModal'
 import SamplingBatchDetailModal from './SamplingBatchDetailModal'
 import BatchAcceptProcessModal from './BatchAcceptProcessModal'
 import BulkAcceptProcessModal from './BulkAcceptProcessModal'
+import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 
 const STATUS_MAP = {
   not_started: { label: '未开始', color: 'gray' },
@@ -150,7 +151,7 @@ export default function ProjectSampling() {
     const summary = summarizeConfigItems(configItems)
     const detailItems = buildDetailItems(id, basis, configItems)
     const entryIds = pickSampleEntryIds(id, basis, configItems)
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    const now = nowDateTime()
 
     appendSamplingBatch({
       id: nextSamplingBatchId(),
@@ -267,7 +268,7 @@ export default function ProjectSampling() {
       ),
     },
     { title: '创建人', dataIndex: 'creator' },
-    { title: '创建时间', dataIndex: 'createdAt' },
+    dtCol('创建时间', 'createdAt'),
     {
       title: '操作',
       key: 'actions',
@@ -334,7 +335,7 @@ export default function ProjectSampling() {
               </div>
               <div>
                 <div className="text-gray-400">创建时间</div>
-                <div className="mt-1 font-medium whitespace-nowrap text-gray-700">{project.createdAt}</div>
+                <div className="mt-1 font-medium whitespace-nowrap text-gray-700">{formatDateTime(project.createdAt)}</div>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import {
   filterEntriesByCriteria,
   formatUpdateChangeSummary,
 } from '../../utils/datasetMetrics'
+import { nowDateTime } from '../../utils/formatDateTime'
 
 // TODO: 真机数据集「纳入数据状态」筛选项与条目新状态枚举联动（下一版）
 const DATA_STATUSES = ['已上传', '已解析', '已审核']
@@ -101,7 +102,7 @@ export default function UpdateDatasetModal({ open, dataset, onClose }) {
     if (!hasChange) errs.noChange = true
     if (Object.keys(errs).length) { setErrors(errs); return }
 
-    const now = new Date().toISOString().slice(0, 16).replace('T', ' ')
+    const now = nowDateTime()
     const changeSummary = formatUpdateChangeSummary({
       addedCount: previewDiff.addedMetrics.count,
       addedSize: previewDiff.addedMetrics.totalSize,

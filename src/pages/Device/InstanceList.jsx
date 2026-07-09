@@ -10,13 +10,14 @@ import {
   getNextInstanceCode,
   setDeviceInstances,
 } from '../../mock/devices'
+import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
 const selectCls = `${inputCls} cursor-pointer bg-white`
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
-const now = () => new Date().toISOString().slice(0, 19).replace('T', ' ')
+const now = () => nowDateTime()
 
 const SEGMENT_COLORS = ['#60a5fa', '#a78bfa', '#2dd4bf', '#f472b6', '#fbbf24', '#fb923c']
 
@@ -256,8 +257,8 @@ function DetailModal({ instance, onClose }) {
             ['在线状态', <StatusBadge key="st" status={instance.status} />],
             ['电量', <BatteryCell key="bat" battery={instance.battery} />],
             ['设备描述', instance.description?.trim() ? instance.description : '—'],
-            ['创建时间', instance.createdAt],
-            ['更新时间', instance.updatedAt],
+            ['创建时间', formatDateTime(instance.createdAt)],
+            ['更新时间', formatDateTime(instance.updatedAt)],
           ].map(([label, value]) => (
             <div key={label} className="flex gap-3">
               <dt className="w-24 shrink-0 text-gray-500">{label}</dt>
@@ -372,8 +373,8 @@ export default function InstanceList() {
       dataIndex: 'battery',
       render: (v) => <BatteryCell battery={v} />,
     },
-    { title: '创建时间', dataIndex: 'createdAt' },
-    { title: '更新时间', dataIndex: 'updatedAt' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '操作',
       key: 'actions',

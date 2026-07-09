@@ -11,14 +11,10 @@ import UploadRecord from '../pages/UploadRecord'
 import SelfDataset from '../pages/Dataset/Self'
 import SelfDatasetDetail from '../pages/Dataset/SelfDetail'
 import SelfDatasetDownload from '../pages/Dataset/SelfDownload'
-import OpenDataset from '../pages/Dataset/Open'
-import OpenDatasetDownload from '../pages/Dataset/OpenDownload'
-import OpenDatasetUsage from '../pages/Dataset/OpenUsage'
 import TagManage from '../pages/Tag'
 import DeviceManage from '../pages/Device'
 import UserManage from '../pages/System/UserManage'
 import RoleManage from '../pages/System/RoleManage'
-import LogPage from '../pages/System/LogPage'
 import ReviewWorkbench from '../pages/Review/Workbench'
 
 const router = createBrowserRouter([
@@ -45,16 +41,17 @@ const router = createBrowserRouter([
       { path: 'dataset/self', element: <SelfDataset /> },
       { path: 'dataset/self/download', element: <SelfDatasetDownload /> },
       { path: 'dataset/self/:id', element: <SelfDatasetDetail /> },
-      { path: 'dataset/open', element: <OpenDataset /> },
-      { path: 'dataset/open/download', element: <OpenDatasetDownload /> },
-      { path: 'dataset/open/:id/usage', element: <OpenDatasetUsage /> },
+      { path: 'dataset/open/download', element: <Navigate to="/dataset/self" replace /> },
+      { path: 'dataset/open/:id/usage', element: <Navigate to="/dataset/self" replace /> },
+      { path: 'dataset/open', element: <Navigate to="/dataset/self" replace /> },
+      { path: 'dataset/open/*', element: <Navigate to="/dataset/self" replace /> },
       { path: 'tag', element: <TagManage /> },
       { path: 'device', element: <DeviceManage /> },
       { path: 'device/:typeId', element: <Navigate to="/device" replace /> },
       { path: 'system', element: <Navigate to="/system/user" replace /> },
       { path: 'system/user', element: <UserManage /> },
       { path: 'system/role', element: <RoleManage /> },
-      { path: 'system/log', element: <LogPage /> },
+      { path: 'system/log', element: <Navigate to="/system/user" replace /> },
       { path: '*', element: <Navigate to="/dashboard" replace /> },
     ],
   },

@@ -52,6 +52,7 @@ import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
 import RealDataTab from '../Dashboard/tabs/RealDataTab'
+import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 
 const TABS = [
   { key: 'task',      label: '采集任务' },
@@ -342,8 +343,8 @@ function CollectConfigTab({ projectId, onTasksChange }) {
     { title: '动作步骤数', dataIndex: 'steps', render: (v) => (Array.isArray(v) ? v.length : v ?? '—') },
     { title: '关联任务数', dataIndex: 'taskCount', render: (v) => v ?? 0 },
     { title: '创建人', dataIndex: 'creator', render: (v) => v || '—' },
-    { title: '创建时间', dataIndex: 'createdAt', render: (v) => v || '—' },
-    { title: '更新时间', dataIndex: 'updatedAt', render: (v) => v || '—' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '状态', dataIndex: 'status',
       render: (v) => <Badge color={planStatusColor[v] ?? 'gray'} dot>{v}</Badge>,
@@ -841,7 +842,7 @@ function LayoutTab({ projectId }) {
           id: Date.now(),
           projectId,
           name: form.name.trim(),
-          date: '2026-06-10',
+          date: nowDateTime(),
           description: form.description.trim(),
           layoutFileName,
         },
@@ -863,7 +864,7 @@ function LayoutTab({ projectId }) {
       render: (v, row) => (
         row.isSystemBuiltIn
           ? <Badge color="gray">系统内置</Badge>
-          : v
+          : formatDateTime(v)
       ),
     },
     { title: '描述', dataIndex: 'description', render: (v) => <span className="text-gray-500">{v}</span> },
@@ -1058,7 +1059,7 @@ export default function ProjectDetail() {
             </div>
             <div>
               <div className="text-gray-400">创建时间</div>
-              <div className="mt-0.5 font-medium text-gray-700">{project.createdAt}</div>
+              <div className="mt-0.5 font-medium text-gray-700">{formatDateTime(project.createdAt)}</div>
             </div>
           </div>
         </div>

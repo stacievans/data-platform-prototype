@@ -1,28 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import Modal from '../../components/common/Modal'
+import TreeTransfer from '../../components/common/TreeTransfer'
 import { CreatorReadonlyField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { projects } from '../../mock/projects'
 import { tasks } from '../../mock/tasks'
-import { entries } from '../../mock/entries'
 import {
-  formatTotalDuration,
-  formatTotalSize,
-  parseDurationToSec,
-  parseSizeToMB,
+  ACCEPTED_DATA_STATUS,
+  filterAcceptedEntriesByTasks,
+  computeEntryMetrics,
 } from '../../utils/datasetMetrics'
+import { nowDateTime } from '../../utils/formatDateTime'
 
-// TODO: 真机数据集「纳入数据状态」筛选项与条目新状态枚举联动（下一版）
-const DATA_STATUSES = ['已上传', '已解析', '已审核']
 const DATA_FORMATS = ['h5', 'LeRobot']
 
 const emptyForm = () => ({
   name: '',
   description: '',
-  projectId: '',
   taskIds: [],
-  statuses: [],
-  formats: [],
+  formats: [...DATA_FORMATS],
 })
 
 function FormRow({ label, required, error, children }) {
@@ -59,62 +55,16 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
     }
   }, [open])
 
-  const projectTasks = useMemo(
-    () => (form.projectId ? tasks.filter((t) => t.projectId === form.projectId) : []),
-    [form.projectId],
-  )
-
   const previewEntries = useMemo(() => {
-    if (!form.projectId || !form.taskIds.length || !form.statuses.length || !form.formats.length) return []
-    return entries.filter(
-      (e) =>
-        form.taskIds.includes(e.taskId)
-        && form.statuses.includes(e.dataStatus)
-        && form.formats.includes(e.format),
-    )
-  }, [form.projectId, form.taskIds, form.statuses, form.formats])
+    if (!form.taskIds.length || !form.formats.length) return []
+    return filterAcceptedEntriesByTasks(form.taskIds, form.formats)
+  }, [form.taskIds, form.formats])
 
-  const preview = useMemo(() => {
-    const count = previewEntries.length
-    const totalMB = previewEntries.reduce((sum, e) => sum + parseSizeToMB(e.size), 0)
-    const totalSec = previewEntries.reduce((sum, e) => sum + parseDurationToSec(e.duration), 0)
-    return {
-      count,
-      size: formatTotalSize(totalMB),
-      duration: formatTotalDuration(totalSec),
-    }
-  }, [previewEntries])
+  const preview = useMemo(() => computeEntryMetrics(previewEntries), [previewEntries])
 
-  const setProjectId = (projectId) => {
-    setForm((f) => ({ ...f, projectId, taskIds: [] }))
-    setErrors((e) => ({ ...e, projectId: false, taskIds: false }))
-  }
-
-  const toggleTask = (taskId) => {
-    setForm((f) => ({
-      ...f,
-      taskIds: f.taskIds.includes(taskId)
-        ? f.taskIds.filter((id) => id !== taskId)
-        : [...f.taskIds, taskId],
-    }))
+  const setTaskIds = (taskIds) => {
+    setForm((f) => ({ ...f, taskIds }))
     setErrors((e) => ({ ...e, taskIds: false }))
-  }
-
-  const toggleAllTasks = () => {
-    const allIds = projectTasks.map((t) => t.id)
-    const allSelected = allIds.length > 0 && allIds.every((id) => form.taskIds.includes(id))
-    setForm((f) => ({ ...f, taskIds: allSelected ? [] : allIds }))
-    setErrors((e) => ({ ...e, taskIds: false }))
-  }
-
-  const toggleStatus = (status) => {
-    setForm((f) => ({
-      ...f,
-      statuses: f.statuses.includes(status)
-        ? f.statuses.filter((s) => s !== status)
-        : [...f.statuses, status],
-    }))
-    setErrors((e) => ({ ...e, statuses: false }))
   }
 
   const toggleFormat = (format) => {
@@ -127,34 +77,42 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
     setErrors((e) => ({ ...e, formats: false }))
   }
 
-  const allTasksSelected = projectTasks.length > 0
-    && projectTasks.every((t) => form.taskIds.includes(t.id))
-
   const handleCreate = () => {
     const errs = {}
     if (!form.name.trim()) errs.name = true
-    if (!form.projectId) errs.projectId = true
     if (!form.taskIds.length) errs.taskIds = true
-    if (!form.statuses.length) errs.statuses = true
     if (!form.formats.length) errs.formats = true
     if (Object.keys(errs).length) { setErrors(errs); return }
 
-    const now = new Date().toISOString().slice(0, 16).replace('T', ' ')
-    const project = projects.find((p) => p.id === form.projectId)
+    const projectIds = [...new Set(
+      form.taskIds.map((tid) => tasks.find((t) => t.id === tid)?.projectId).filter(Boolean),
+    )]
+    const projectNames = Object.fromEntries(
+      projectIds.map((id) => [id, projects.find((p) => p.id === id)?.name ?? id]),
+    )
+    const primaryProject = projects.find((p) => p.id === projectIds[0])
+
+    const now = nowDateTime()
     const newId = nextDatasetId(datasets)
+
     onClose({
       id: newId,
       name: form.name.trim(),
       description: form.description.trim(),
-      projectId: form.projectId,
-      projectName: project?.name ?? '',
+      projectId: projectIds[0],
+      projectName: projectIds.length === 1
+        ? (primaryProject?.name ?? '')
+        : projectIds.map((id) => projectNames[id]).join('、'),
+      projectIds,
+      projectNames,
       taskIds: [...form.taskIds],
-      statuses: [...form.statuses],
+      statuses: [ACCEPTED_DATA_STATUS],
       formats: [...form.formats],
+      autoSync: true,
       entryIds: previewEntries.map((e) => e.id),
       trajCount: preview.count,
-      totalSize: preview.size,
-      totalDuration: preview.duration,
+      totalSize: preview.totalSize,
+      totalDuration: preview.totalDuration,
       createdBy: creatorName,
       createdAt: now,
       updatedBy: creatorName,
@@ -164,7 +122,7 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
         updatedAt: now,
         updatedBy: creatorName,
         opType: '创建',
-        changeSummary: `创建数据集，纳入 ${preview.count.toLocaleString()} 条数据，${preview.size}`,
+        changeSummary: `创建数据集，纳入 ${preview.count.toLocaleString()} 条数据，${preview.totalSize}`,
         remark: form.description.trim() || '—',
       }],
     })
@@ -182,11 +140,10 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
       onCancel={() => onClose(null)}
       onOk={handleCreate}
       okText="创建"
-      width={640}
+      width={920}
       fitViewport
     >
       <div className="space-y-6 pr-1">
-        {/* 区块一：基本信息 */}
         <section>
           <SectionTitle>基本信息</SectionTitle>
           <div className="space-y-4">
@@ -211,75 +168,23 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
           </div>
         </section>
 
-        {/* 区块二：选择数据来源 */}
         <section>
           <SectionTitle>选择数据来源</SectionTitle>
           <div className="space-y-4">
-            <FormRow label="来源项目" required error={errors.projectId}>
-              <select
-                value={form.projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className={`${inputCls(errors.projectId)} cursor-pointer ${form.projectId ? 'text-gray-700' : 'text-gray-400'}`}
-              >
-                <option value="" disabled hidden>请选择采集项目</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </FormRow>
-
-            {form.projectId && (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  纳入任务<span className="text-red-500">*</span>
-                </label>
-                <div className={`rounded-md border p-3 ${errors.taskIds ? 'border-red-400' : 'border-gray-200'}`}>
-                  <label className="mb-2 flex cursor-pointer items-center gap-2 border-b border-gray-100 pb-2">
-                    <input
-                      type="checkbox"
-                      checked={allTasksSelected}
-                      onChange={toggleAllTasks}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-sm font-medium text-gray-700">全选</span>
-                  </label>
-                  <div className="max-h-40 space-y-1 overflow-y-auto">
-                    {projectTasks.map((t) => (
-                      <label key={t.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          checked={form.taskIds.includes(t.id)}
-                          onChange={() => toggleTask(t.id)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm text-gray-700">{t.name}</span>
-                        <span className="text-xs text-gray-400">{t.id}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                {errors.taskIds && <p className="mt-1 text-xs text-red-500">请至少选择一个任务</p>}
-              </div>
-            )}
-
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                纳入数据状态<span className="text-red-500">*</span>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                纳入任务<span className="text-red-500">*</span>
               </label>
-              <div className={`flex flex-wrap gap-4 rounded-md border px-3 py-2.5 ${errors.statuses ? 'border-red-400' : 'border-gray-200'}`}>
-                {DATA_STATUSES.map((s) => (
-                  <label key={s} className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={form.statuses.includes(s)}
-                      onChange={() => toggleStatus(s)}
-                      className="cursor-pointer"
-                    />
-                    {s}
-                  </label>
-                ))}
-              </div>
-              {errors.statuses && <p className="mt-1 text-xs text-red-500">请至少选择一种数据状态</p>}
+              <p className="mb-2 text-xs text-gray-400">可勾选多个采集项目，仅纳入验收通过的数据</p>
+              <TreeTransfer
+                key={open ? 'open' : 'closed'}
+                projects={projects}
+                tasks={tasks}
+                value={form.taskIds}
+                onChange={setTaskIds}
+                error={errors.taskIds}
+              />
+              {errors.taskIds && <p className="mt-1 text-xs text-red-500">请至少选择一个任务</p>}
             </div>
 
             <div>
@@ -300,11 +205,13 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
                 ))}
               </div>
               {errors.formats && <p className="mt-1 text-xs text-red-500">请至少选择一种数据格式</p>}
+              <p className="mt-2 text-xs text-gray-400">
+                创建后自动同步：符合条件的新增验收通过数据自动纳入，平台删除的数据自动移除
+              </p>
             </div>
           </div>
         </section>
 
-        {/* 区块三：预览 */}
         <section>
           <SectionTitle>预览</SectionTitle>
           <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-gray-600">
@@ -314,10 +221,11 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
             </p>
             <p className="mt-1.5">
               预计总数据量：
-              <strong className="ml-1 text-base text-blue-700">{preview.size}</strong>
+              <strong className="ml-1 text-base text-blue-700">{preview.totalSize}</strong>
             </p>
-            <p className="mt-2 text-xs text-gray-400">
-              创建后将按当前条件生成快照，后续项目新增数据不会自动纳入本数据集。
+            <p className="mt-1.5">
+              预计总时长：
+              <strong className="ml-1 text-base text-blue-700">{preview.totalDuration}</strong>
             </p>
           </div>
         </section>

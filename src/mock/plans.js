@@ -1,6 +1,7 @@
 import { projects } from './projects'
-import { sceneTypeTree } from './tags'
+import { getSceneTypeTree } from './tags'
 import { getAllDeviceTypes } from './devices'
+import { nowDateTime } from '../utils/formatDateTime'
 
 // 采集方案
 export const plans = [
@@ -340,7 +341,7 @@ const PLAN_SCENE_PATH = {
 }
 
 function formatSceneLabelFromTree(sceneId, subSceneId, tagId) {
-  const scene = sceneTypeTree.find((s) => s.id === sceneId)
+  const scene = getSceneTypeTree().find((s) => s.id === sceneId)
   const sub = scene?.subScenes?.find((s) => s.id === subSceneId)
   const tag = sub?.tags?.find((t) => t.id === tagId)
   return [scene?.name, sub?.name, tag?.name].filter(Boolean).join(' / ')
@@ -364,7 +365,7 @@ function planDatetimeSeed(id, kind) {
 }
 
 function nowDatetime() {
-  return new Date().toISOString().slice(0, 19).replace('T', ' ')
+  return nowDateTime()
 }
 
 function enrichPlan(p) {
@@ -540,14 +541,14 @@ export function buildDefaultPlayLayoutRow(projectId) {
 }
 
 export const playLayouts = [
-  { id: 1, projectId: 'P-1001', name: '四宫格布局', date: '2026-03-13', description: '主视角 + 双腕部相机 + 轨迹曲线' },
-  { id: 2, projectId: 'P-1001', name: '审核专用布局', date: '2026-03-25', description: '主视角大屏 + 质检项悬浮面板' },
-  { id: 3, projectId: 'P-1002', name: '厨房双视角布局', date: '2026-03-21', description: '俯视 + 侧视双视角，附力控曲线' },
-  { id: 4, projectId: 'P-1002', name: '动捕回放布局', date: '2026-04-01', description: '骨骼点云 + RGB 同步回放' },
-  { id: 5, projectId: 'P-1003', name: '装配工位布局', date: '2026-04-03', description: '工位全景 + 末端特写 + 六维力曲线' },
-  { id: 6, projectId: 'P-1004', name: '货架巡检布局', date: '2026-04-16', description: '货架全景 + 抓取特写' },
-  { id: 7, projectId: 'P-1005', name: '折叠关键帧布局', date: '2026-04-29', description: '主视角 + 形变关键帧缩略条' },
-  { id: 8, projectId: 'P-1006', name: '服务场景布局', date: '2026-05-10', description: '全景 + 末端相机双画面' },
-  { id: 9, projectId: 'P-1007', name: '双臂监控布局', date: '2026-05-19', description: '左右臂分屏 + 同步性指标' },
-  { id: 10, projectId: 'P-1008', name: '灵巧手特写布局', date: '2026-05-27', description: '指尖特写 + 触觉热力图' },
+  { id: 1, projectId: 'P-1001', name: '四宫格布局', date: '2026-03-13 00:00:00', description: '主视角 + 双腕部相机 + 轨迹曲线' },
+  { id: 2, projectId: 'P-1001', name: '审核专用布局', date: '2026-03-25 00:00:00', description: '主视角大屏 + 质检项悬浮面板' },
+  { id: 3, projectId: 'P-1002', name: '厨房双视角布局', date: '2026-03-21 00:00:00', description: '俯视 + 侧视双视角，附力控曲线' },
+  { id: 4, projectId: 'P-1002', name: '动捕回放布局', date: '2026-04-01 00:00:00', description: '骨骼点云 + RGB 同步回放' },
+  { id: 5, projectId: 'P-1003', name: '装配工位布局', date: '2026-04-03 00:00:00', description: '工位全景 + 末端特写 + 六维力曲线' },
+  { id: 6, projectId: 'P-1004', name: '货架巡检布局', date: '2026-04-16 00:00:00', description: '货架全景 + 抓取特写' },
+  { id: 7, projectId: 'P-1005', name: '折叠关键帧布局', date: '2026-04-29 00:00:00', description: '主视角 + 形变关键帧缩略条' },
+  { id: 8, projectId: 'P-1006', name: '服务场景布局', date: '2026-05-10 00:00:00', description: '全景 + 末端相机双画面' },
+  { id: 9, projectId: 'P-1007', name: '双臂监控布局', date: '2026-05-19 00:00:00', description: '左右臂分屏 + 同步性指标' },
+  { id: 10, projectId: 'P-1008', name: '灵巧手特写布局', date: '2026-05-27 00:00:00', description: '指尖特写 + 触觉热力图' },
 ]

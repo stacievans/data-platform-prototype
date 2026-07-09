@@ -1,48 +1,63 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Button from '../../components/common/Button'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
-import { getDatasetById, patchSelfDataset } from '../../mock/datasets'
-import { dataStatusColor } from '../../mock/entries'
-import { tasks } from '../../mock/tasks'
-import { getDatasetEntries, getInclusionOverview } from '../../utils/datasetMetrics'
+import Progress from '../../components/common/Progress'
+import { useToast } from '../../components/common/Toast'
+import { getDatasetById } from '../../mock/datasets'
+import {
+  getDatasetEntries,
+  getProjectTaskInclusionStats,
+  getProjectDistributionStats,
+  getDatasetListStats,
+} from '../../utils/datasetMetrics'
+import {
+  getConversionJobsByDatasetId,
+  getConvertedDatasetsByDatasetId,
+  createConversionJob,
+  completeConversionJob,
+  CONVERSION_TASK_TYPES,
+  CONVERSION_STATUSES,
+  CONVERTED_DATASET_TYPES,
+} from '../../mock/datasetConversions'
 import { IconSearch } from '../../components/common/Icons'
-import { PermButton } from '../../components/common/PermissionAction'
-import UpdateDatasetModal from './UpdateDatasetModal'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
+import { useCurrentNickname } from '../../context/AuthContext'
+import { dtCol, formatDateTime } from '../../utils/formatDateTime'
 
 const TABS = [
   { key: 'overview', label: '数据概览' },
   { key: 'entries', label: '数据条目' },
-  { key: 'logs', label: '更新记录' },
+  { key: 'conversions', label: '转换记录' },
+  { key: 'converted', label: '转换数据集' },
 ]
 
-// TODO: 真机数据集「纳入数据状态」筛选项与条目新状态枚举联动（下一版）
-const DATA_STATUSES = ['已上传', '已解析', '已审核']
 const DATA_FORMATS = ['h5', 'LeRobot']
-
 const LBL = 'mb-1 block text-xs text-gray-500'
-const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-
-const opTypeColor = {
-  创建: 'text-blue-600 bg-blue-50',
-  更新数据: 'text-green-600 bg-green-50',
-  编辑信息: 'text-amber-600 bg-amber-50',
-}
-
-const STATUS_BAR_COLORS = {
-  已上传: { bar: 'bg-slate-400', dot: 'bg-slate-400' },
-  已解析: { bar: 'bg-blue-400', dot: 'bg-blue-400' },
-  已审核: { bar: 'bg-violet-400', dot: 'bg-violet-400' },
-  审核不通过: { bar: 'bg-red-400', dot: 'bg-red-400' },
-  验收不通过: { bar: 'bg-amber-400', dot: 'bg-amber-400' },
-  已验收: { bar: 'bg-cyan-400', dot: 'bg-cyan-400' },
-}
+const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const FILTER_ROW = 'flex flex-wrap items-end gap-3'
+const FILTER_FIELDS = 'flex min-w-0 flex-1 flex-wrap items-end gap-3'
+const FILTER_FIELD = 'min-w-0 flex-1 basis-36'
 
 const FORMAT_BAR_COLORS = {
   h5: { bar: 'bg-sky-500', dot: 'bg-sky-500' },
   LeRobot: { bar: 'bg-teal-500', dot: 'bg-teal-500' },
+}
+
+const PROJECT_BAR_PALETTE = [
+  { bar: 'bg-blue-500', dot: 'bg-blue-500' },
+  { bar: 'bg-violet-500', dot: 'bg-violet-500' },
+  { bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
+  { bar: 'bg-amber-500', dot: 'bg-amber-500' },
+  { bar: 'bg-rose-500', dot: 'bg-rose-500' },
+]
+
+const conversionStatusColor = {
+  进行中: 'blue',
+  已完成: 'green',
+  失败: 'red',
 }
 
 function StackedRatioBar({ title, keys, stats, colorMap }) {
@@ -72,6 +87,7 @@ function StackedRatioBar({ title, keys, stats, colorMap }) {
           <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-gray-600">
             {keys.map((k) => {
               const count = stats[k] ?? 0
+              if (count <= 0) return null
               const pct = total ? ((count / total) * 100).toFixed(1) : '0.0'
               return (
                 <span key={k} className="inline-flex items-center gap-1.5">
@@ -89,46 +105,67 @@ function StackedRatioBar({ title, keys, stats, colorMap }) {
   )
 }
 
+function FilterBar({ children, onReset, onSearch }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <div className={FILTER_ROW}>
+        <div className={FILTER_FIELDS}>{children}</div>
+        <div className="flex shrink-0 gap-2">
+          <Button onClick={onReset}>重置</Button>
+          <Button variant="primary" icon={<IconSearch />} onClick={onSearch}>查询</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab({ dataset }) {
-  const overview = useMemo(() => getInclusionOverview(dataset), [dataset])
+  const taskStats = useMemo(() => getProjectTaskInclusionStats(dataset), [dataset])
+  const projectStats = useMemo(() => getProjectDistributionStats(dataset), [dataset])
+  const formatStats = useMemo(() => {
+    const entries = getDatasetEntries(dataset)
+    return entries.reduce((acc, e) => {
+      acc[e.format] = (acc[e.format] ?? 0) + 1
+      return acc
+    }, {})
+  }, [dataset])
+
+  const projectKeys = Object.keys(projectStats)
+  const projectColorMap = Object.fromEntries(
+    projectKeys.map((k, i) => [k, PROJECT_BAR_PALETTE[i % PROJECT_BAR_PALETTE.length]]),
+  )
 
   const taskColumns = [
-    { title: '任务 ID', dataIndex: 'taskId', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '项目 ID', dataIndex: 'projectId', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '项目名称', dataIndex: 'projectName' },
+    { title: '任务 ID', dataIndex: 'taskId', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '任务名称', dataIndex: 'taskName' },
     { title: '纳入条目数', dataIndex: 'count', render: (v) => v.toLocaleString() },
   ]
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-          <div className="text-xs text-gray-400">来源项目</div>
-          <div className="mt-1 text-sm font-semibold text-gray-800">{overview.projectName ?? '—'}</div>
-          <div className="text-xs text-gray-400">{overview.projectId}</div>
-        </div>
-        <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-          <div className="text-xs text-gray-400">已绑定任务</div>
-          <div className="mt-1 text-sm font-semibold text-gray-800">{overview.taskStats.length} 个</div>
-          <div className="text-xs text-gray-400">共 {overview.totalCount.toLocaleString()} 条纳入</div>
-        </div>
-      </div>
-
       <div>
-        <h4 className="mb-2 text-sm font-medium text-gray-700">各任务纳入条目</h4>
-        <Table columns={taskColumns} dataSource={overview.taskStats} rowKey="taskId" />
+        <h4 className="mb-2 text-sm font-medium text-gray-700">各项目纳入任务</h4>
+        <Table
+          columns={taskColumns}
+          dataSource={taskStats}
+          rowKey="taskId"
+          pageSize={LIST_PAGE_SIZE}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <StackedRatioBar
-          title="数据状态分布"
-          keys={DATA_STATUSES}
-          stats={overview.statusStats}
-          colorMap={STATUS_BAR_COLORS}
+          title="来源项目分布"
+          keys={projectKeys}
+          stats={projectStats}
+          colorMap={projectColorMap}
         />
         <StackedRatioBar
           title="数据格式分布"
           keys={DATA_FORMATS}
-          stats={overview.formatStats}
+          stats={formatStats}
           colorMap={FORMAT_BAR_COLORS}
         />
       </div>
@@ -136,63 +173,127 @@ function OverviewTab({ dataset }) {
   )
 }
 
-function EntriesTab({ dataset }) {
+function EntriesTab({ dataset, onConversionStart }) {
+  const { show, ToastNode } = useToast()
+  const operator = useCurrentNickname()
   const allEntries = useMemo(() => getDatasetEntries(dataset), [dataset])
 
-  const taskOptions = useMemo(() => {
-    const ids = new Set(allEntries.map((e) => e.taskId))
-    return ['全部', ...tasks.filter((t) => ids.has(t.id)).map((t) => t.name)]
+  const projectOptions = useMemo(() => {
+    const names = [...new Set(allEntries.map((e) => e.projectName).filter(Boolean))]
+    return ['全部', ...names]
   }, [allEntries])
 
+  const taskOptions = useMemo(() => {
+    const names = [...new Set(allEntries.map((e) => e.taskName).filter(Boolean))]
+    return ['全部', ...names]
+  }, [allEntries])
+
+  const [qProject, setQProject] = useState('全部')
   const [qTask, setQTask] = useState('全部')
-  const [qDataStatus, setQDataStatus] = useState('全部')
   const [qFormat, setQFormat] = useState('全部')
   const [filters, setFilters] = useState({})
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   const filtered = useMemo(() => {
-    const { task, dataStatus, format } = filters
+    const { project, task, format } = filters
     return allEntries.filter((e) => {
+      if (project && project !== '全部' && e.projectName !== project) return false
       if (task && task !== '全部' && e.taskName !== task) return false
-      if (dataStatus && dataStatus !== '全部' && e.dataStatus !== dataStatus) return false
       if (format && format !== '全部' && e.format !== format) return false
       return true
     })
   }, [allEntries, filters])
 
-  const applyFilters = () => setFilters({ task: qTask, dataStatus: qDataStatus, format: qFormat })
+  const pageResetKey = useMemo(() => `${JSON.stringify(filters)}:${filtered.length}`, [filters, filtered.length])
 
+  const allSelected = filtered.length > 0 && filtered.every((e) => selectedIds.has(e.id))
+  const hasSelection = filtered.some((e) => selectedIds.has(e.id))
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map((e) => e.id)))
+    }
+  }
+
+  const toggleRow = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const applyFilters = () => setFilters({ project: qProject, task: qTask, format: qFormat })
   const resetFilters = () => {
+    setQProject('全部')
     setQTask('全部')
-    setQDataStatus('全部')
     setQFormat('全部')
     setFilters({})
   }
 
+  const runBatchConvert = (taskType) => {
+    const ids = [...selectedIds]
+    if (!ids.length) return
+    onConversionStart({
+      taskType,
+      operator,
+      entryCount: ids.length,
+    })
+    show(`已提交${taskType}任务（${ids.length} 条）`)
+    setSelectedIds(new Set())
+  }
+
   const columns = [
+    {
+      title: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={toggleAll}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600"
+          aria-label="全选"
+        />
+      ),
+      key: 'select',
+      width: 48,
+      render: (_, row) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.id)}
+          onChange={() => toggleRow(row.id)}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600"
+        />
+      ),
+    },
     { title: '条目 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
-    { title: '文件名', dataIndex: 'fileName', render: (v) => <span className="font-mono text-xs">{v}</span> },
+    { title: '所属项目', dataIndex: 'projectName' },
     { title: '所属任务', dataIndex: 'taskName' },
+    { title: '文件 ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs">{v ?? row.id.replace('E-', 'F-')}</span> },
+    { title: '文件名称', dataIndex: 'displayName', render: (v) => <span className="font-mono text-xs">{v}</span> },
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
+    { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
+    { title: '采集设备', dataIndex: 'collectDevice', render: (v) => v ?? '—' },
     { title: '上传人', dataIndex: 'uploader' },
-    {
-      title: '数据状态',
-      dataIndex: 'dataStatus',
-      render: (v) => <Badge color={dataStatusColor[v] ?? 'gray'} dot>{v}</Badge>,
-    },
-    {
-      title: '数据格式',
-      dataIndex: 'format',
-      render: (v) => <div className="flex justify-center"><Badge color="cyan">{v}</Badge></div>,
-    },
+    dtCol('采集时间', 'collectTime'),
     {
       title: '操作',
       key: 'actions',
-      render: () => (
-        <div className="flex items-center gap-1">
-          <Button variant="link" size="sm">播放</Button>
-          <Button variant="link" size="sm">下载</Button>
-          <Button variant="link" size="sm">导出</Button>
+      width: 180,
+      render: (_, row) => (
+        <div className="flex items-center justify-center gap-1">
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => window.open(`/review/${row.id}?mode=play`, '_blank')}
+          >
+            播放
+          </Button>
+          <Button variant="link" size="sm" onClick={() => show('已加入下载队列')}>下载</Button>
+          <Button variant="link" size="sm" onClick={() => show('导出任务已提交')}>导出</Button>
         </div>
       ),
     },
@@ -200,44 +301,159 @@ function EntriesTab({ dataset }) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1 basis-36">
-            <label className={LBL}>所属任务</label>
-            <select value={qTask} onChange={(e) => setQTask(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-              {taskOptions.map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-          <div className="min-w-0 flex-1 basis-28">
-            <label className={LBL}>数据状态</label>
-            <select value={qDataStatus} onChange={(e) => setQDataStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-              {['全部', ...DATA_STATUSES].map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-          <div className="min-w-0 flex-1 basis-28">
-            <label className={LBL}>数据格式</label>
-            <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-              {['全部', 'h5', 'LeRobot'].map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
+      {ToastNode}
+      <FilterBar onReset={resetFilters} onSearch={applyFilters}>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>所属项目</label>
+          <select value={qProject} onChange={(e) => setQProject(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {projectOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
         </div>
-        <div className="mt-3 flex justify-end gap-2">
-          <Button onClick={resetFilters}>重置</Button>
-          <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>所属任务</label>
+          <select value={qTask} onChange={(e) => setQTask(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {taskOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>数据格式</label>
+          <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {['全部', ...DATA_FORMATS].map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      </FilterBar>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-gray-800">条目列表</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!hasSelection} onClick={() => runBatchConvert('转图片')}>转图片</Button>
+          <Button disabled={!hasSelection} onClick={() => runBatchConvert('转视频')}>转视频</Button>
+          <Button disabled={!hasSelection} onClick={() => show('已加入下载队列')}>下载</Button>
         </div>
       </div>
-      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={10} />
+
+      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
     </div>
   )
 }
 
-function LogsTab({ updateLogs, logColumns, onUpdateClick }) {
+function ConversionsTab({ jobs }) {
+  const [qId, setQId] = useState('')
+  const [qType, setQType] = useState('全部')
+  const [qStatus, setQStatus] = useState('全部')
+  const [filters, setFilters] = useState({})
+
+  const filtered = useMemo(() => {
+    const { id, type, status } = filters
+    return jobs.filter((j) => {
+      if (id && !j.id.toLowerCase().includes(id.toLowerCase())) return false
+      if (type && type !== '全部' && j.taskType !== type) return false
+      if (status && status !== '全部' && j.status !== status) return false
+      return true
+    })
+  }, [jobs, filters])
+
+  const pageResetKey = useMemo(() => JSON.stringify(filters), [filters])
+
+  const columns = [
+    { title: '转换任务 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '目标数据集', dataIndex: 'targetDatasetName', wrap: true },
+    { title: '任务类型', dataIndex: 'taskType' },
+    {
+      title: '任务进度',
+      key: 'progress',
+      render: (_, row) => (
+        row.status === '已完成'
+          ? <Progress percent={100} />
+          : <Progress percent={row.progress ?? 0} />
+      ),
+    },
+    { title: '操作人', dataIndex: 'operator' },
+    {
+      title: '任务状态',
+      dataIndex: 'status',
+      render: (v) => <Badge color={conversionStatusColor[v] ?? 'gray'} dot>{v}</Badge>,
+    },
+    dtCol('操作时间', 'operatedAt'),
+  ]
+
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-end">
-        <PermButton permission="dataset.self.update" variant="primary" onClick={onUpdateClick}>更新数据集</PermButton>
-      </div>
-      <Table columns={logColumns} dataSource={updateLogs} rowKey="id" />
+    <div className="space-y-3">
+      <FilterBar
+        onReset={() => { setQId(''); setQType('全部'); setQStatus('全部'); setFilters({}) }}
+        onSearch={() => setFilters({ id: qId.trim(), type: qType, status: qStatus })}
+      >
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>任务 ID</label>
+          <input value={qId} onChange={(e) => setQId(e.target.value)} placeholder="请输入任务ID" className={INPUT_CLS} />
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>任务类型</label>
+          <select value={qType} onChange={(e) => setQType(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {CONVERSION_TASK_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>任务状态</label>
+          <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {CONVERSION_STATUSES.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      </FilterBar>
+      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+    </div>
+  )
+}
+
+function ConvertedDatasetsTab({ records }) {
+  const [qId, setQId] = useState('')
+  const [qName, setQName] = useState('')
+  const [qType, setQType] = useState('全部')
+  const [filters, setFilters] = useState({})
+
+  const filtered = useMemo(() => {
+    const { id, name, type } = filters
+    return records.filter((r) => {
+      if (id && !r.id.toLowerCase().includes(id.toLowerCase())) return false
+      if (name && !r.name.toLowerCase().includes(name.toLowerCase())) return false
+      if (type && type !== '全部' && r.type !== type) return false
+      return true
+    })
+  }, [records, filters])
+
+  const pageResetKey = useMemo(() => JSON.stringify(filters), [filters])
+
+  const columns = [
+    { title: '转换数据集 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '数据集名称', dataIndex: 'name', wrap: true },
+    { title: '数据集类型', dataIndex: 'type' },
+    { title: '文件数量', dataIndex: 'fileCount', render: (v) => v.toLocaleString() },
+    { title: '创建人', dataIndex: 'createdBy' },
+    dtCol('创建时间', 'createdAt'),
+  ]
+
+  return (
+    <div className="space-y-3">
+      <FilterBar
+        onReset={() => { setQId(''); setQName(''); setQType('全部'); setFilters({}) }}
+        onSearch={() => setFilters({ id: qId.trim(), name: qName.trim(), type: qType })}
+      >
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>转换数据集 ID</label>
+          <input value={qId} onChange={(e) => setQId(e.target.value)} placeholder="请输入数据集ID" className={INPUT_CLS} />
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>数据集名称</label>
+          <input value={qName} onChange={(e) => setQName(e.target.value)} placeholder="请输入数据集名称" className={INPUT_CLS} />
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>数据集类型</label>
+          <select value={qType} onChange={(e) => setQType(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+            {CONVERTED_DATASET_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      </FilterBar>
+      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
     </div>
   )
 }
@@ -245,16 +461,44 @@ function LogsTab({ updateLogs, logColumns, onUpdateClick }) {
 export default function SelfDatasetDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [dataset, setDataset] = useState(() => getDatasetById(id))
+  const [dataset] = useState(() => getDatasetById(id))
   const [tab, setTab] = useState('overview')
-  const [updateOpen, setUpdateOpen] = useState(false)
+  const [convTick, setConvTick] = useState(0)
 
-  const updateLogs = useMemo(
-    () => [...(dataset?.updateLogs ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [dataset?.updateLogs],
+  const refreshConversions = useCallback(() => setConvTick((t) => t + 1), [])
+
+  const conversionJobs = useMemo(
+    () => getConversionJobsByDatasetId(id),
+    [id, convTick],
   )
 
-  if (!dataset) {
+  const convertedDatasets = useMemo(
+    () => getConvertedDatasetsByDatasetId(id),
+    [id, convTick],
+  )
+
+  const stats = useMemo(
+    () => (dataset ? getDatasetListStats(dataset) : null),
+    [dataset],
+  )
+
+  const handleConversionStart = useCallback(({ taskType, operator, entryCount }) => {
+    if (!dataset) return
+    const job = createConversionJob({
+      datasetId: dataset.id,
+      datasetName: dataset.name,
+      taskType,
+      operator,
+      entryCount,
+    })
+    refreshConversions()
+    window.setTimeout(() => {
+      completeConversionJob(job)
+      refreshConversions()
+    }, 2500)
+  }, [dataset, refreshConversions])
+
+  if (!dataset || !stats) {
     return (
       <div className="rounded-lg border border-gray-100 bg-white py-20 text-center text-gray-400">
         数据集不存在
@@ -266,76 +510,15 @@ export default function SelfDatasetDetail() {
   }
 
   const metaItems = [
-    ['数据集ID', dataset.id],
-    ['轨迹数量', dataset.trajCount.toLocaleString()],
-    ['总数据量', dataset.totalSize],
-    ['轨迹总时长', dataset.totalDuration],
+    ['数据集 ID', dataset.id],
+    ['关联项目', stats.projectCount],
+    ['关联任务', stats.taskCount],
+    ['条目数量', stats.entryCount.toLocaleString()],
+    ['总数据量', stats.totalSize],
+    ['总时长', stats.totalDuration],
     ['创建人', dataset.createdBy ?? '—'],
-    ['创建时间', dataset.createdAt],
-    ['最后更新人', dataset.updatedBy],
-    ['最后更新时间', dataset.updatedAt],
+    ['创建时间', formatDateTime(dataset.createdAt)],
   ]
-
-  const logColumns = [
-    { title: '更新时间', dataIndex: 'updatedAt', width: 150 },
-    { title: '更新人', dataIndex: 'updatedBy', width: 90 },
-    {
-      title: '操作类型',
-      dataIndex: 'opType',
-      width: 100,
-      render: (v) => (
-        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${opTypeColor[v] ?? 'bg-gray-100 text-gray-600'}`}>
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: '客观变更',
-      dataIndex: 'changeSummary',
-      wrap: true,
-      render: (v) => <span className="text-gray-700">{v}</span>,
-    },
-    {
-      title: '更新说明',
-      dataIndex: 'remark',
-      wrap: true,
-      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
-    },
-  ]
-
-  const handleUpdate = (patch) => {
-    setUpdateOpen(false)
-    if (!patch) return
-
-    const nextLogs = [patch.updateLog, ...(dataset.updateLogs ?? [])]
-    const nextDataset = {
-      ...dataset,
-      entryIds: patch.entryIds,
-      taskIds: patch.taskIds,
-      statuses: patch.statuses,
-      formats: patch.formats,
-      trajCount: patch.trajCount,
-      totalSize: patch.totalSize,
-      totalDuration: patch.totalDuration,
-      updatedBy: patch.updatedBy,
-      updatedAt: patch.updatedAt,
-      updateLogs: nextLogs,
-    }
-
-    patchSelfDataset(dataset.id, {
-      entryIds: patch.entryIds,
-      taskIds: patch.taskIds,
-      statuses: patch.statuses,
-      formats: patch.formats,
-      trajCount: patch.trajCount,
-      totalSize: patch.totalSize,
-      totalDuration: patch.totalDuration,
-      updatedBy: patch.updatedBy,
-      updatedAt: patch.updatedAt,
-      updateLogs: nextLogs,
-    })
-    setDataset(nextDataset)
-  }
 
   return (
     <div className="space-y-4">
@@ -362,22 +545,21 @@ export default function SelfDatasetDetail() {
           <OverviewTab dataset={dataset} />
         </div>
       )}
-      {tab === 'entries' && <EntriesTab dataset={dataset} />}
-      {tab === 'logs' && (
+      {tab === 'entries' && (
         <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <LogsTab
-            updateLogs={updateLogs}
-            logColumns={logColumns}
-            onUpdateClick={() => setUpdateOpen(true)}
-          />
+          <EntriesTab dataset={dataset} onConversionStart={handleConversionStart} />
         </div>
       )}
-
-      <UpdateDatasetModal
-        open={updateOpen}
-        dataset={dataset}
-        onClose={handleUpdate}
-      />
+      {tab === 'conversions' && (
+        <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+          <ConversionsTab jobs={conversionJobs} />
+        </div>
+      )}
+      {tab === 'converted' && (
+        <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+          <ConvertedDatasetsTab records={convertedDatasets} />
+        </div>
+      )}
     </div>
   )
 }

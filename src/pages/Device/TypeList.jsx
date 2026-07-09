@@ -15,6 +15,7 @@ import {
 } from '../../mock/devices'
 import { bodyTypeTags, endTypeTags } from '../../mock/tags'
 import { buildTypeNameReference } from '../../utils/deviceTypeName'
+import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 
 const BODY_OPTIONS = bodyTypeTags.map((t) => t.name)
 const END_OPTIONS = endTypeTags.map((t) => t.name)
@@ -24,7 +25,7 @@ const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200
 const selectCls = `${inputCls} bg-white`
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
-const nowDatetime = () => new Date().toISOString().slice(0, 19).replace('T', ' ')
+const nowDatetime = () => nowDateTime()
 
 const emptyTypeForm = () => ({
   name: '',
@@ -283,8 +284,8 @@ export default function TypeList() {
       render: (v) => <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>,
     },
     { title: '创建人', dataIndex: 'creator' },
-    { title: '创建时间', dataIndex: 'createdAt' },
-    { title: '更新时间', dataIndex: 'updatedAt' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '操作',
       key: 'actions',

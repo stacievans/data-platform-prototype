@@ -24,6 +24,7 @@ import {
   countProcessSubStatuses,
   filterEntriesByForm,
 } from '../../utils/entryProcess'
+import { formatDateTime } from '../../utils/formatDateTime'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -220,7 +221,7 @@ function QcDetailModal({ open, entry, projectId, onClose }) {
     <Modal open={open} title="质检详情" onCancel={onClose} footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>} width={640}>
       <div className="space-y-4">
         <div className="text-sm text-gray-500">
-          质检时间：<span className="font-medium text-gray-800">{entry.qcTime ?? entry.uploadTime ?? '—'}</span>
+          质检时间：<span className="font-medium text-gray-800">{formatDateTime(entry.qcTime ?? entry.uploadTime)}</span>
         </div>
         <div className="overflow-hidden rounded-lg border border-gray-100">
           <table className="w-full text-sm">
@@ -267,7 +268,7 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
               <span className="relative z-10 mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-blue-500 bg-white" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-gray-800">{node.label}</div>
-                <div className="mt-0.5 text-xs text-gray-400">{node.time}</div>
+                <div className="mt-0.5 text-xs text-gray-400">{formatDateTime(node.time)}</div>
                 <div className="mt-0.5 text-xs text-gray-500">操作人：{node.operator ?? '—'}</div>
               </div>
             </div>

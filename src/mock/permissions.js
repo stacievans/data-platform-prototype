@@ -43,9 +43,8 @@ export const permissionCatalog = [
     id: 'system',
     name: '系统管理',
     children: [
-      { id: 'system.user', name: '用户管理', actions: ['view', 'create', 'edit'] },
+      { id: 'system.user', name: '用户管理', actions: ['view', 'create', 'edit', 'delete'] },
       { id: 'system.role', name: '角色权限', actions: ['view', 'create', 'assignPerm'] },
-      { id: 'system.log', name: '系统日志', actions: ['view', 'export'] },
     ],
   },
 ]
@@ -58,10 +57,8 @@ export const ROUTE_VIEW_PERMISSION = [
   { prefix: '/collection/upload', permission: 'collection.upload.view' },
   { prefix: '/review', permission: 'collection.task.view' },
   { prefix: '/dataset/self', permission: 'dataset.self.view' },
-  { prefix: '/dataset/open', permission: 'dataset.open.view' },
   { prefix: '/tag', permission: 'tag.view' },
   { prefix: '/device', permission: 'device.view' },
-  { prefix: '/system/log', permission: 'system.log.view' },
   { prefix: '/system/role', permission: 'system.role.view' },
   { prefix: '/system/user', permission: 'system.user.view' },
   { prefix: '/system', permission: 'system.user.view', alt: 'system.role.view' },
@@ -74,12 +71,10 @@ export const MENU_VIEW_PERMISSION = {
   '/collection/task': 'collection.task.view',
   '/collection/upload': 'collection.upload.view',
   '/dataset/self': 'dataset.self.view',
-  '/dataset/open': 'dataset.open.view',
   '/tag': 'tag.view',
   '/device': 'device.view',
   '/system/user': 'system.user.view',
   '/system/role': 'system.role.view',
-  '/system/log': 'system.log.view',
 }
 
 export function getLeafModules(catalog = permissionCatalog) {

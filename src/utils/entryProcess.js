@@ -1,3 +1,5 @@
+import { formatDateTime, formatDateFromDate } from './formatDateTime'
+
 /** 三工序状态：passed | rejected | pending | none */
 export function deriveProcessStatuses(dataStatus) {
   switch (dataStatus) {
@@ -38,8 +40,9 @@ export function getEntryDisplayFileName(entry) {
   return `${entry.fileName}.${ext}`
 }
 
+
 export function getEntryCollectTime(entry) {
-  return entry.collectTime ?? entry.uploadTime ?? '—'
+  return formatDateTime(entry.collectTime ?? entry.uploadTime)
 }
 
 /** 无显式 flowHistory 时，由 dataStatus 推导基础流转节点（时间倒序） */
@@ -48,7 +51,7 @@ export function resolveFlowHistory(entry, task) {
 
   const reviewer = entry.reviewOperator ?? defaultReviewOperator(task)
   const acceptor = entry.acceptOperator ?? { nickname: '陈静', id: 'U-2002' }
-  const qcTime = entry.qcTime ?? entry.uploadTime ?? '—'
+  const qcTime = formatDateTime(entry.qcTime ?? entry.uploadTime)
   const nodes = []
 
   const push = (node) => nodes.unshift(node)
@@ -119,10 +122,10 @@ function formatOperatorPlain(operator) {
 
 function shiftTime(timeStr, hours) {
   if (!timeStr || timeStr === '—') return timeStr
-  const d = new Date(timeStr.replace(' ', 'T'))
-  if (Number.isNaN(d.getTime())) return timeStr
+  const d = new Date(formatDateTime(timeStr).replace(' ', 'T'))
+  if (Number.isNaN(d.getTime())) return formatDateTime(timeStr)
   d.setHours(d.getHours() + hours)
-  return d.toISOString().slice(0, 16).replace('T', ' ')
+  return formatDateFromDate(d)
 }
 
 export const PROCESS_TABS = [

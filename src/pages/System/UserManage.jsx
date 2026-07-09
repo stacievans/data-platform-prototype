@@ -5,8 +5,10 @@ import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import { Input, Select } from '../../components/common/FormField'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
+import { PermAction } from '../../components/common/PermissionAction'
 import { users as initialUsers, roleColor } from '../../mock/misc'
 import { useAuth } from '../../context/AuthContext'
+import { dtCol, formatRelativeTime, nowDateTime } from '../../utils/formatDateTime'
 
 const roleNames = ['管理员', '平台运营', '采集员', '标注员', '游客', '工程师']
 
@@ -15,29 +17,32 @@ const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 
 const emptyCreate = { username: '', nickname: '', phone: '', role: '', status: '启用' }
 
 export default function UserManage() {
-  const { can } = useAuth()
-  const [users, setUsers]   = useState(initialUsers)
+  const { can, user: currentUser } = useAuth()
+  const [users, setUsers] = useState(initialUsers)
   const [editing, setEditing] = useState(null)
-  const [form, setForm]       = useState({ nickname: '', role: '', status: '' })
-  const [createOpen, setCreateOpen]     = useState(false)
-  const [createForm, setCreateForm]     = useState(emptyCreate)
+  const [form, setForm] = useState({ nickname: '', role: '', status: '' })
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createForm, setCreateForm] = useState(emptyCreate)
   const [createErrors, setCreateErrors] = useState({})
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
-  const [qUid,      setQUid]      = useState('')
+  const [qUid, setQUid] = useState('')
   const [qUsername, setQUsername] = useState('')
   const [qNickname, setQNickname] = useState('')
-  const [qRole,     setQRole]     = useState('')
-  const [qStatus,   setQStatus]   = useState('')
-  const [filters, setFilters]     = useState({})
+  const [qRole, setQRole] = useState('')
+  const [qStatus, setQStatus] = useState('')
+  const [filters, setFilters] = useState({})
+
+  const relativeNow = useMemo(() => new Date(), [users])
 
   const filtered = useMemo(() =>
     users.filter((u) => {
       const { uid, username, nickname, role, status } = filters
-      if (uid      && !u.uid?.toLowerCase().includes(uid.toLowerCase()))           return false
+      if (uid && !u.uid?.toLowerCase().includes(uid.toLowerCase())) return false
       if (username && !u.username.toLowerCase().includes(username.toLowerCase())) return false
-      if (nickname && !u.nickname.includes(nickname))   return false
-      if (role     && u.role   !== role)                  return false
-      if (status   && u.status !== status)                return false
+      if (nickname && !u.nickname.includes(nickname)) return false
+      if (role && u.role !== role) return false
+      if (status && u.status !== status) return false
       return true
     }),
     [users, filters],
@@ -65,18 +70,36 @@ export default function UserManage() {
   const handleCreateUser = () => {
     const errs = {}
     if (!createForm.username.trim()) errs.username = true
-    if (!createForm.nickname.trim()) errs.nickname  = true
-    if (!createForm.phone.trim())    errs.phone     = true
-    if (!createForm.role)            errs.role      = true
+    if (!createForm.nickname.trim()) errs.nickname = true
+    if (!createForm.phone.trim()) errs.phone = true
+    if (!createForm.role) errs.role = true
     if (Object.keys(errs).length) { setCreateErrors(errs); return }
     const maxId = Math.max(...users.map((u) => u.id), 0)
-    const uid   = `U-${String(maxId + 1).padStart(3, '0')}`
-    setUsers([{ id: maxId + 1, uid, ...createForm }, ...users])
-    setCreateOpen(false); setCreateForm(emptyCreate); setCreateErrors({})
+    const uid = `U-${String(maxId + 1).padStart(3, '0')}`
+    const now = nowDateTime()
+    setUsers([{
+      id: maxId + 1,
+      uid,
+      ...createForm,
+      createdAt: now,
+      lastLoginAt: null,
+    }, ...users])
+    setCreateOpen(false)
+    setCreateForm(emptyCreate)
+    setCreateErrors({})
   }
 
   const openEdit = (user) => { setEditing(user.id); setForm({ nickname: user.nickname, role: user.role, status: user.status }) }
   const handleSave = () => { setUsers((l) => l.map((u) => (u.id === editing ? { ...u, ...form } : u))); setEditing(null) }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    setUsers((list) => list.filter((u) => u.id !== deleteTarget.id))
+    setDeleteTarget(null)
+  }
+
+  const canEdit = can('system.user.edit')
+  const canDelete = can('system.user.delete')
 
   const columns = [
     { title: '用户ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-blue-600">{v ?? '—'}</span> },
@@ -85,17 +108,43 @@ export default function UserManage() {
     { title: '手机号', dataIndex: 'phone' },
     { title: '角色', dataIndex: 'role', render: (v) => <Badge color={roleColor[v]}>{v}</Badge> },
     { title: '状态', dataIndex: 'status', render: (v) => <Badge color={v === '启用' ? 'green' : 'gray'} dot>{v}</Badge> },
+    dtCol('创建时间', 'createdAt'),
+    {
+      title: '最后登录',
+      dataIndex: 'lastLoginAt',
+      render: (v) => (
+        <span className="text-gray-600">{formatRelativeTime(v, relativeNow)}</span>
+      ),
+    },
     {
       title: '操作',
       key: 'actions',
-      render: (_, row) => can('system.user.edit')
-        ? <Button variant="link" size="sm" onClick={() => openEdit(row)}>编辑</Button>
-        : <span className="text-xs text-gray-300">—</span>,
+      render: (_, row) => {
+        if (!canEdit && !canDelete) return <span className="text-xs text-gray-300">—</span>
+        const isSelf = currentUser?.uid === row.uid
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {canEdit && (
+              <Button variant="link" size="sm" onClick={() => openEdit(row)}>编辑</Button>
+            )}
+            {canDelete && !isSelf && (
+              <PermAction
+                permission="system.user.delete"
+                mode="hide"
+                className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+                onClick={() => setDeleteTarget(row)}
+              >
+                删除
+              </PermAction>
+            )}
+          </div>
+        )
+      },
     },
   ]
 
   const fieldCls = (err) => `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
-  const fSelCls  = (err) => `h-8 w-full cursor-pointer rounded-md border px-2.5 text-sm text-gray-700 outline-none focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
+  const fSelCls = (err) => `h-8 w-full cursor-pointer rounded-md border px-2.5 text-sm text-gray-700 outline-none focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
   const Req = ({ label }) => <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">{label}<span className="text-red-500">*</span></label>
 
   return (
@@ -179,6 +228,20 @@ export default function UserManage() {
           <Select label="角色" value={form.role} options={roleNames.map((r) => ({ value: r, label: r }))} onChange={(e) => setForm({ ...form, role: e.target.value })} />
           <Select label="状态" value={form.status} options={['启用', '停用'].map((s) => ({ value: s, label: s }))} onChange={(e) => setForm({ ...form, status: e.target.value })} />
         </div>
+      </Modal>
+
+      <Modal
+        open={!!deleteTarget}
+        title="删除用户"
+        onCancel={() => setDeleteTarget(null)}
+        onOk={confirmDelete}
+        okText="确定删除"
+        width={480}
+      >
+        <p className="text-sm leading-relaxed text-gray-600">
+          确定删除用户「<strong className="text-gray-800">{deleteTarget?.nickname}</strong>」（{deleteTarget?.username}）？
+          删除后该用户将无法登录平台，此操作不可恢复。
+        </p>
       </Modal>
       </div>
     </div>

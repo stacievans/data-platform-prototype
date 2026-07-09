@@ -12,6 +12,7 @@ import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { filterProjectsByDataScope } from '../../mock/permissions'
 import { PermButton, PermAction, PermMenuItem } from '../../components/common/PermissionAction'
 import { LIST_PAGE_SIZE, usePagination } from '../../hooks/usePagination'
+import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 
 /* ── status helpers ── */
 const STATUS_MAP = {
@@ -286,7 +287,7 @@ export default function ProjectList() {
   const resetFilters = () => { setQueryId(''); setQueryName(''); setQueryStatus(''); setQueryCreator(''); setQueryDateFrom(''); setQueryDateTo(''); setFilters({}) }
 
   /* ── CRUD ── */
-  const now = () => new Date().toISOString().slice(0, 16).replace('T', ' ')
+  const now = () => nowDateTime()
 
   const handleCreate = () => {
     const errs = {}
@@ -357,8 +358,8 @@ export default function ProjectList() {
       render: (v, row) => <MiniProgress collected={v} target={row.target} />,
     },
     { title: '状态',     dataIndex: 'status',    render: (v) => statusBadge(v) },
-    { title: '创建时间', dataIndex: 'createdAt' },
-    { title: '最后更新', dataIndex: 'updatedAt' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('最后更新', 'updatedAt'),
     {
       title: '操作', dataIndex: 'id',
       render: (id, row) => {
@@ -519,8 +520,8 @@ export default function ProjectList() {
 
                 {/* footer */}
                 <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                  <span>创建：{p.createdAt.slice(0, 10)}</span>
-                  <span>更新：{p.updatedAt.slice(0, 10)}</span>
+                  <span>创建：{formatDateTime(p.createdAt)}</span>
+                  <span>更新：{formatDateTime(p.updatedAt)}</span>
                 </div>
               </div>
             )

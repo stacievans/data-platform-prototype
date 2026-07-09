@@ -4,7 +4,7 @@ import Badge from '../common/Badge'
 import Button from '../common/Button'
 import { IconTrash, IconChevronDown } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
-import { sceneTypeTree, collectionMethodTags, atomicSkillTags } from '../../mock/tags'
+import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags } from '../../mock/tags'
 import { resolvePlanDeviceTypeId, deviceTypeIdToRobotBody } from '../../mock/plans'
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
@@ -15,7 +15,7 @@ export const emptyCreatePlan = () => ({
   subSceneId: '',
   tagId: '',
   deviceTypeId: '',
-  method: collectionMethodTags[0]?.name ?? 'VR遥操',
+  method: getCollectionMethodTags()[0]?.name ?? '算法采集',
   initialScene: '',
   steps: [{ ...EMPTY_STEP }],
   totalDeviation: '',
@@ -51,7 +51,7 @@ export const selectCls = (err) =>
   }`
 
 export function formatSceneLabel(sceneId, subSceneId, tagId) {
-  const scene = sceneTypeTree.find((s) => s.id === sceneId)
+  const scene = getSceneTypeTree().find((s) => s.id === sceneId)
   const sub = scene?.subScenes?.find((s) => s.id === subSceneId)
   const tag = sub?.tags?.find((t) => t.id === tagId)
   return [scene?.name, sub?.name, tag?.name].filter(Boolean).join(' / ')
@@ -167,6 +167,7 @@ export function BodyTypeField({ typeId, deviceTypes, onChange, error, readonly =
 }
 
 export function SceneCascadeFields({ form, onChange, readonly = false, errors = {} }) {
+  const sceneTypeTree = getSceneTypeTree()
   const scene = sceneTypeTree.find((s) => s.id === form.sceneId)
   const subScenes = scene?.subScenes ?? []
   const sub = subScenes.find((s) => s.id === form.subSceneId)
@@ -269,7 +270,7 @@ export function AtomicSkillMultiSelect({ value = [], onChange, readonly = false 
       style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, width: menuPos.width, zIndex: 9999 }}
       className="rounded-md border border-gray-200 bg-white py-1 shadow-lg"
     >
-      {atomicSkillTags.map((t) => {
+      {getAtomicSkillTags().map((t) => {
         const checked = value.includes(t.name)
         return (
           <label
@@ -554,7 +555,7 @@ export function CollectPlanFormFields({
           onChange={(e) => onChange({ method: e.target.value })}
           className={selectCls(errors.plan_method)}
         >
-          {collectionMethodTags.map((t) => (
+          {getCollectionMethodTags().map((t) => (
             <option key={t.id} value={t.name}>{t.name}</option>
           ))}
         </select>

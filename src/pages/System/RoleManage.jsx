@@ -8,6 +8,7 @@ import { useToast } from '../../components/common/Toast'
 import { countPermittedModules } from '../../mock/permissions'
 import { useAuth } from '../../context/AuthContext'
 import RolePermissionModal from './RolePermissionModal'
+import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -43,7 +44,7 @@ export default function RoleManage() {
       permissions: [],
       moduleCount: 0,
       memberCount: 0,
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: nowDateTime(),
       type: createForm.type,
     })
     setCreateOpen(false)
@@ -74,7 +75,7 @@ export default function RoleManage() {
     { title: '角色描述', dataIndex: 'description', render: (v) => <span className="text-gray-500 max-w-xs truncate block" title={v}>{v}</span> },
     { title: '权限模块数', dataIndex: 'moduleCount' },
     { title: '成员数', dataIndex: 'memberCount' },
-    { title: '创建时间', dataIndex: 'createdAt' },
+    dtCol('创建时间', 'createdAt'),
     { title: '类型', dataIndex: 'type', render: (v) => <Badge color={v === '内置' ? 'blue' : 'purple'}>{v}</Badge> },
     {
       title: '操作',

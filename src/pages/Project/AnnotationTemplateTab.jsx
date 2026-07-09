@@ -7,8 +7,9 @@ import { CreatorReadonlyField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { annotationTemplates as initialTemplates } from '../../mock/misc'
 import { useTagRowActions } from '../Tag/TagTableActions'
+import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 
-const now = () => new Date().toISOString().slice(0, 16).replace('T', ' ')
+const now = () => nowDateTime()
 
 function Field({ label, required, error, children }) {
   return (
@@ -70,7 +71,7 @@ function TagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
 
   const handleOk = () => {
     if (!form.name.trim()) { setErrs({ name: true }); return }
-    const ts = now().slice(0, 10)
+    const ts = now()
     if (isEdit) {
       onOk({
         ...editing,
@@ -158,8 +159,8 @@ export default function AnnotationTemplateTab() {
       title: '模板名称', dataIndex: 'name',
       render: (v) => <span className="font-medium text-gray-800">{v}</span>,
     },
-    { title: '创建时间', dataIndex: 'createdAt' },
-    { title: '最后更新', dataIndex: 'updatedAt' },
+    dtCol('创建时间', 'createdAt'),
+    dtCol('最后更新', 'updatedAt'),
     actionColumn,
   ]
 

@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目/任务/上传 · 审核工作台（播放/审核/验收）· 真机/开源数据集 · 标签与设备管理 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
+**核心能力**：运营看板 · 采集项目/任务/条目 · 抽样验收 · 审核工作台（播放/审核/验收）· 真机/开源数据集 · 标签与设备管理 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
 
 ---
 
@@ -64,7 +64,7 @@ npm run preview
 
 ## RBAC 权限体系
 
-原型实现 **功能权限**（菜单 / 路由 / 部分按钮）+ **数据范围**（采集员 / 标注员任务与上传过滤）。用户与角色为 **一对一** 绑定，不支持多角色权限合并。
+原型实现 **功能权限**（菜单 / 路由 / 部分按钮）+ **数据范围**（采集员 / 标注员任务与条目过滤）。用户与角色为 **一对一** 绑定，不支持多角色权限合并。
 
 ### 平台角色与项目成员角色
 
@@ -123,7 +123,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 运营看板 | `dashboard` | view |
 | 采集项目 | `collection.project` | view, create, edit, delete, archive |
 | 采集任务 | `collection.task` | view, create, edit, delete |
-| 上传记录 | `collection.upload` | view, download, delete |
+| 采集条目 | `collection.upload` | view, download, delete |
 | 真机数据集 | `dataset.self` | view, create, edit, delete, update, download |
 | 开源数据集 | `dataset.open` | view, import, download |
 | 标签管理 | `tag` | view, create, edit, delete |
@@ -166,16 +166,16 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 路由 | 直链访问无 view 权限 → `NoPermission` 占位页 | `PermissionGuard.jsx` + `ROUTE_VIEW_PERMISSION` |
 | 顶部/全局操作 | 无权限 → **不渲染**（如「+ 新建项目」、侧边栏入口） | `PermButton` / `IfPerm`（`mode="hide"` 默认） |
 | 行内/卡片/详情操作 | 无权限 → **置灰 + Tooltip**「暂无操作权限，请联系管理员分配」 | `PermButton` / `PermAction` / `PermMenuItem`（`mode="disable"`） |
-| 数据范围 | 按角色过滤项目/任务/上传/条目 | `permissions.js` 数据范围 helper |
+| 数据范围 | 按角色过滤项目/任务/条目 | `permissions.js` 数据范围 helper |
 
 **已接入按钮级权限的页面**（`PermissionAction.jsx`）：
 
 | 页面 | 受控操作 |
 |---|---|
-| 采集项目 | 新建项目；卡片/列表：创建任务、编辑、归档、删除 |
+| 采集项目 | 新建项目；卡片/列表：创建任务、**验收**、编辑、归档、删除 |
 | 项目详情 | 采标方案（采集/质检/布局）、采集任务、项目人员各 Tab 操作 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、审核、验收、导出、归档、删除 |
-| 上传记录 | 下载、删除 |
+| 采集条目 | 下载、删除 |
 | 真机数据集 | 新建、编辑、删除、下载；卡片菜单编辑/删除 |
 | 真机数据集详情 | 更新数据集 |
 | 开源数据集 | 导入、下载 |
@@ -191,12 +191,12 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 基于 `misc.js` → `projectMembers`（项目人员 Tab 配置）：
 
-| 角色 | 项目列表 | 任务列表 | 任务详情条目 | 上传记录 |
+| 角色 | 项目列表 | 任务列表 | 任务详情条目 | 采集条目 |
 |---|---|---|---|---|
 | **管理员** | 全部 | 全部 | 全部 | 全部 |
-| **平台运营** | 本人担任 **平台运营** 的项目 | 上述项目下全部任务 | 上述任务下全部条目 | 上述任务关联上传 |
+| **平台运营** | 本人担任 **平台运营** 的项目 | 上述项目下全部任务 | 上述任务下全部条目 | 上述任务关联条目 |
 | **采集员** | 本人担任 **采集员** 的项目 | `taskIds` 分配的任务 | **仅本人上传**（`uploader === 昵称`） | 仅本人上传 |
-| **标注员** | 本人担任 **标注员** 的项目 | `taskIds` 分配的任务 | 分配任务下 **全部条目** | 分配任务关联上传 |
+| **标注员** | 本人担任 **标注员** 的项目 | `taskIds` 分配的任务 | 分配任务下 **全部条目** | 分配任务关联条目 |
 | **游客 / 工程师** | 无 `collection.*` 路由权限 | — | — | — |
 
 进入任务详情前校验 `canAccessTask`；进入项目详情前校验 `canAccessProject`。无权限时显示 `NoPermission`（与路由 view 权限独立）。
@@ -244,7 +244,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 **项目筛选**（全局看板）：
 - 顶部「所属项目」下拉：全部项目 / 各采集项目（`projects.js`）
 - 选中单项目后显示「清除筛选」链接
-- 组件支持 `fixedProjectId` prop：传入后锁定项目、隐藏筛选器（当前仅运营看板使用，未传该 prop；可供项目详情等页面复用）
+- 组件支持 `fixedProjectId` prop：传入后锁定项目、隐藏筛选器（**项目详情 → 运营看板 Tab** 已接入；全局运营看板不传该 prop）
 
 **8 张指标卡**（紧凑双行布局，前两卡含条数 + 小时副值）：
 
@@ -295,21 +295,23 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **标题栏**：「项目列表」+ 视图切换按钮 + 「+ 新建项目」
 - **新建项目弹窗**：自动生成项目 ID（只读）、项目名称（必填）、**创建人**（只读，随演示身份）、项目描述
 - **卡片/列表字段**：项目 ID、名称、场景、任务数、创建人、描述、采集进度条（蓝色/绿色，100% 变绿）、状态 badge、创建/更新时间
-- **操作**：查看详情、创建任务、编辑、归档/取消归档、删除（需二次确认输入项目名）
+- **操作**：查看详情、创建任务、编辑、归档/取消归档、删除（需二次确认输入项目名）；**进行中 / 已完成** 项目卡片/列表额外显示 **验收**（`AcceptChoiceModal`：全量验收 → 项目详情采集任务 Tab；抽样验收 → 抽样验收页）
 - **状态**：未开始（灰）/ 进行中（蓝）/ 已完成（绿）/ 已归档（灰）
+- **分页**：卡片视图与列表视图均为 **10 条/页**（`usePagination` + `ListPaginator` / `Table`）；筛选条件变更时重置至第 1 页
 
 > 项目 mock 数据仍保留 `type`（正式/测试）字段，**列表与详情 UI 已不再展示项目类型**。
 
 ---
 
 ### 项目详情 `/collection/project/:id`
-顶部紧凑头部（项目名称 + 描述 + 元信息横排）+ **3 个 Tab**（样式与真机数据集详情 Tab 一致）：
+顶部紧凑头部（项目名称 + 描述 + 元信息横排）+ **4 个 Tab**（样式与真机数据集详情 Tab 一致）：
 
 | Tab | 内容 |
 |---|---|
-| 采集任务 | 复用 `Task/index.jsx`（`fixedProjectId` 锁定当前项目，隐藏「所属项目」筛选列，含筛选区 + `TaskTable` + 「+ 新建任务」） |
+| 采集任务 | 复用 `Task/index.jsx`（`fixedProjectId` 锁定当前项目，隐藏「所属项目名称」筛选与列表列，含筛选区 + `TaskTable` + 「+ 新建任务」）；支持 URL `?tab=task`（全量验收入口） |
 | 采标方案 | 内含 **3 个二级 Tab**（胶囊样式，见下文） |
 | 项目人员 | 成员列表 + 添加/编辑成员弹窗（见下文） |
+| 运营看板 | 复用 `RealDataTab`（`fixedProjectId` 锁定当前项目，隐藏全局项目筛选） |
 
 #### 采标方案 → 二级 Tab
 
@@ -406,6 +408,23 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 ---
 
+### 抽样验收 `/collection/project/:id/sampling`
+从项目列表「验收 → 抽样验收」进入；面包屑：采集项目 / {项目名} / 抽样验收。进入前校验 `canAccessProject`。
+
+**页头**：与项目详情一致的紧凑项目信息卡（ID、任务数、创建人、创建时间）。
+
+**筛选区**（单行，点击「查询」生效）：批次名称（模糊）、抽样依据（全部 / 任务名称 / 采集员 / 审核员 / 审核结果 / 验收状态）；「重置」「查询」同行右对齐。
+
+**抽检批次列表**（10 条/页）：
+- **列**：勾选、批次 ID、批次名称、抽样依据、总条目、抽检条目、通过率（色阶：≥90% 绿 / ≥70% 橙 / 否则红）、验收进度（迷你进度条）、创建人、创建时间、操作
+- **操作**：**验收**（未完成批次；打开该批次最新待验收条目的验收工作台 `mode=accept`）· **详情**（`SamplingBatchDetailModal` 抽检明细）· **处理**（`BatchAcceptProcessModal` 按选项批量通过/驳回）
+- **批量处理**（`BulkAcceptProcessModal`）：已选批次批量处理，或 **项目整体验收**（处理全部待验收条目）
+- **新建抽检批次**（`CreateSamplingBatchModal`）：批次名称 + 抽样依据 + 配置项（比例/条目数）；保存时 `pickSampleEntryIds` 抽样并写入 `samplingBatches.js` runtime store
+
+**运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、`appendSamplingBatch`、`updateSamplingBatch`、`getProjectProcessStats`
+
+---
+
 ### 新建/编辑任务弹窗（`CreateTaskModal`，项目任务 Tab 共用）
 
 **布局**：`fitViewport` 宽弹窗（960px），左右双栏 — 左「基础信息 + 审核布局」，右「采集方案」。
@@ -432,9 +451,13 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 ### 采集任务 `/collection/task`
 - **数据范围**：列表经 `filterTasksByDataScope` 过滤（采集员/标注员仅见相关任务）
-- **筛选区**（点击「查询」生效）：所属项目、任务 ID（文本搜索）、任务名称（文本搜索）、任务状态、采集员（包含匹配）、标注员（包含匹配）；筛选项左侧均匀拉伸，「重置」「查询」固定右侧
+- **筛选区**（5 列响应式网格，点击「查询」生效；**展开筛选** 显示第二行）：
+  - **首行（始终可见）**：任务 ID、任务名称、所属项目名称（全局列表；项目详情 Tab 内隐藏）、采集方案 ID、采集员
+  - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、采集设备、所属场景、采集方式、任务状态
+  - 各字段 placeholder 为具体提示（如「请输入任务ID」「请输入项目名称」「请输入姓名」）；「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务 ID、任务名称、任务用途、采集设备、采集方案 ID、所属场景、采集方式、采集员（多人首名 + `+N` pill）、标注员、状态、采集/审核/验收进度、总数据量、创建人、创建/更新时间
+- **列表字段**：任务 ID、任务名称、所属项目名称（全局列表）、任务用途、采集设备、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/审核/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
+- **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」）：
 
 | 状态 | 操作 |
@@ -451,17 +474,32 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 ### 任务详情 `/collection/task/:id`
 进入前校验 `canAccessTask`：采集员/标注员访问非本人任务时显示 `NoPermission`（与路由 view 权限独立）。
 
-顶部展示任务名称、状态、采集/审核进度、采集员/标注员（多人逗号分隔）。**2 个 Tab**：
+顶部展示任务名称、状态、采集/审核/验收进度、采集员/标注员（多人逗号分隔）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
 
-| Tab | 内容 |
-|---|---|
-| 采集条目 | 筛选区（点击「查询」生效）+ 条目列表 |
-| 任务信息 | 纯只读网格展示任务字段（含本体类型 `robotBody`） |
+---
 
-#### 采集条目列表字段
-条目 ID、文件名、文件大小、时长、上传时间、上传人、数据状态（badge）、数据格式（h5/LeRobot badge 居中）、操作
+### 采集条目列表（`EntryDataTable`，任务详情 / 采集条目页共用）
 
-**数据状态**（6 值，`entries.js` → `DATA_STATUSES`）：
+**使用场景**：
+- **任务详情**：`EntryListPanel` 按 `taskId` 过滤 + 数据范围；显示工序 Tab、批量操作
+- **采集条目页** `/collection/upload`：`hideProcessTabs` + `showScopeColumns`（所属项目/任务名称列与筛选）
+
+#### 工序 Tab 栏（任务详情 / 项目任务 Tab 内；采集条目页隐藏）
+- **工序**：全部 / 质检 / 审核 / 验收（胶囊 Tab）
+- **状态**：待处理 / 已通过 / 已驳回 / 全部；各选项旁显示当前计数
+- 工序为 **全部** 时，状态行仅显示「全部」；选中质检/审核/验收后才展示完整子状态筛选
+
+#### 筛选区（5 列网格 + 展开行，点击「查询」生效）
+- **首行**：条目 ID、文件名称、数据格式（全部/h5/LeRobot）；采集条目页额外：所属项目名称、所属任务名称
+- **展开行**：质检状态、审核状态、验收状态（全部/待处理/已通过/已驳回）
+- 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
+
+#### 列表字段
+勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、采集设备、**质检状态**（已通过可点击查看 `QcDetailModal`）、**审核状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、上传人、采集时间、操作（`EntryActions`）
+
+工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传/已解析 → 质检已通过、审核待处理；已审核 → 验收待处理；等。
+
+**数据状态**（6 值，`entries.js` → `DATA_STATUSES`，驱动 `EntryActions` 中间按钮）：
 
 | 状态 | badge 颜色 | 说明 |
 |---|---|---|
@@ -472,7 +510,9 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 验收不通过 | orange | 验收驳回，可重新验收 |
 | 已验收 | cyan | 流程结束 |
 
-**筛选**：条目 ID、文件名、上传人、数据状态、数据格式；点击「查询」生效。
+**批量操作**（需勾选）：批量下载、重新质检、播放转码（Toast 占位）
+
+**分页**：**10 条/页**；工序 Tab / 子状态 / 筛选变更时 `pageResetKey` 重置第 1 页
 
 **操作栏**（`EntryActions.jsx`）：固定 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`
 
@@ -483,7 +523,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 已审核 / 验收不通过 | 播放 | **验收** → `mode=accept` | 占位 | 二次确认 |
 | 已验收 | 播放 | 占位 | 占位 | 二次确认 |
 
-播放/审核/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除需输入文件名二次确认。上传记录页复用同一 `EntryActions` 组件。
+播放/审核/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除需输入文件名二次确认。
 
 > **TODO**：中间按钮角色校验（审核=标注员、验收=平台运营）尚未接入。
 
@@ -507,6 +547,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
   - 下区：时间轴（播放/暂停、倍速、帧 scrubber、动作段与区域段；`review` 模式可编辑动作段）
 - **右侧面板**（340px，可折叠）：基本信息 / 审核结论 / 验收结论 / 可展开「采集方案详情」
 - **提交**：审核提交 → 更新 `dataStatus` 为「已审核」或「审核不通过」；验收提交 → 「已验收」或「验收不通过」；提交后自动跳转同任务下一条，末条则回任务详情
+- **返回**：条目不存在时显示「返回采集条目」，跳转 `/collection/upload`
 
 **可视化 mock**：`src/assets/review/` 真实占位图（头/胸/腕相机、URDF）；信号数据由 `mock/signalData.js` 生成；播放头仅驱动信号图与时间轴。
 
@@ -514,12 +555,13 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 ---
 
-### 上传记录 `/collection/upload`
-- **数据范围**：采集员见本人上传；标注员见 `reviewer` 含本人的任务关联上传；管理员/平台运营/工程师见全部
+### 采集条目 `/collection/upload`
+侧边栏显示为「采集条目」（路由 `/collection/upload` 不变）。
+
+- **数据范围**：采集员见本人上传；标注员见 `reviewer` 含本人的任务关联条目；管理员/平台运营/工程师见全部
 - **SDK 说明折叠区块**（筛选区上方）：默认折叠，点击展开 Python SDK 上传代码示例
-- **筛选区**（点击「查询」生效）：条目 ID、文件名、所属任务、所属项目、上传人、数据状态、数据格式；「重置」清空
-- **列表字段**：条目 ID、文件名、所属任务、所属项目、文件大小、时长、上传时间、上传人、数据状态（badge）、数据格式（badge）、操作（`EntryActions` 四列操作栏）
-- 数据与采集条目 mock 对齐，文件名不含 `.mcap` 后缀，格式在「数据格式」列展示
+- **条目列表**：复用 `EntryDataTable`（`listTitle="采集条目"`、`hideProcessTabs`、`showScopeColumns`）；**无工序 Tab**，展示所属项目/任务名称列与筛选
+- 数据与 `entries.js` mock 对齐；展示文件名为 `{fileName}.{h5|lerobot}`，格式在「数据格式」列展示
 
 ---
 
@@ -784,6 +826,10 @@ src/
 ├── components/
 │   ├── collect/
 │   │   └── CollectPlanForm.jsx    # 采集方案表单/只读详情/标注方案只读视图（项目详情与新建任务共用）
+│   ├── entry/
+│   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/流转弹窗）
+│   ├── task/
+│   │   └── EntryListPanel.jsx     # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区）
 │   │   ├── Header.jsx         # 顶栏（演示身份切换 + 退出登录）
@@ -793,7 +839,8 @@ src/
 │   └── common/
 │       ├── Button.jsx         # 按钮（primary / link / linkDanger）
 │       ├── Modal.jsx          # 弹窗（支持 fitViewport 视口限高与内容滚动）
-│       ├── Table.jsx          # 表格（斑马纹、全列居中；pageSize 分页；scrollVisibleRows 固定可见行数+表内滚动，可与分页组合）
+│       ├── Table.jsx          # 表格（斑马纹、全列居中；pageSize 分页 + ListPaginator 在横向滚动区外；scrollVisibleRows 固定可见行数+表内滚动）
+│       ├── ListPaginator.jsx  # 统一分页脚：「{pageSize} 条/页 · 共 {total} 条记录」
 │       ├── Badge.jsx          # 状态标签（多色、dot 模式）
 │       ├── Tabs.jsx           # Tab 切换（蓝色下划线）
 │       ├── Progress.jsx       # 进度条
@@ -819,13 +866,19 @@ src/
 │   │       ├── RealDataTab.jsx    # 支持 fixedProjectId prop
 │   │       └── OpenDataTab.jsx
 │   ├── Project/
-│   │   ├── index.jsx              # 采集项目列表（卡片/列表，点查询）
-│   │   ├── Detail.jsx             # 项目详情（3 Tab + 采标方案 3 二级 Tab）
+│   │   ├── index.jsx              # 采集项目列表（卡片/列表、验收入口、10 条/页）
+│   │   ├── Detail.jsx             # 项目详情（4 Tab + 采标方案 3 二级 Tab）
+│   │   ├── Sampling.jsx           # 抽样验收页
+│   │   ├── CreateSamplingBatchModal.jsx
+│   │   ├── SamplingBatchDetailModal.jsx
+│   │   ├── BatchAcceptProcessModal.jsx
+│   │   ├── BulkAcceptProcessModal.jsx
+│   │   ├── MembersTab.jsx
 │   │   └── AnnotationTemplateTab.jsx  # 历史组件，当前采标方案未引用
 │   ├── Task/
-│   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，点查询）
-│   │   ├── Detail.jsx             # 任务详情（2 Tab：采集条目/任务信息）
-│   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏）
+│   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，5 列筛选网格）
+│   │   ├── Detail.jsx             # 任务详情（摘要卡 + EntryListPanel）
+│   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏、showProjectColumn）
 │   │   └── CreateTaskModal.jsx
 │   ├── Review/
 │   │   ├── Workbench.jsx          # 审核工作台（独立全屏路由）
@@ -835,7 +888,7 @@ src/
 │   │       ├── UrdfTrajectoryMock.jsx
 │   │       ├── SignalChartMock.jsx  # recharts 折线图
 │   │       └── PlayheadOverlay.jsx
-│   ├── UploadRecord/index.jsx     # 上传记录（含 SDK 折叠说明）
+│   ├── UploadRecord/index.jsx     # 采集条目页（含 SDK 折叠说明；路由仍为 /collection/upload）
 │   ├── Dataset/
 │   │   ├── Self.jsx               # 真机数据集列表
 │   │   ├── SelfDetail.jsx         # 真机数据集详情（3 Tab）
@@ -866,8 +919,12 @@ src/
 │   └── AuthContext.jsx            # AuthProvider
 ├── App.jsx                        # AuthProvider + RouterProvider
 ├── main.jsx
+├── hooks/
+│   └── usePagination.js           # 卡片列表分页 hook；LIST_PAGE_SIZE = 10
 ├── utils/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
+│   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录
+│   ├── samplingHelpers.js         # 抽样验收：抽样算法、批次/项目批量处理、工作台打开
 │   ├── openDatasetMetrics.js      # 开源数据集：dataSize/trajCount 解析
 │   └── deviceTypeName.js          # buildTypeName / buildTypeNameReference
 ├── mock/
@@ -875,7 +932,8 @@ src/
 │   ├── plans.js                   # 采集方案、质检项、播放布局
 │   ├── tasks.js                   # 采集任务（15 条）
 │   ├── entries.js                 # 采集条目 + 6 值 dataStatus + runtime patch
-│   ├── uploads.js                 # 上传记录（由 entries 派生）
+│   ├── uploads.js                 # 采集条目列表数据源（由 entries 派生）
+│   ├── samplingBatches.js         # 抽样验收批次（6 条初始 + runtime store）
 │   ├── datasets.js                # 真机/开源数据集 mock + runtime API
 │   ├── tags.js                    # 采集/设备标签、sceneTypeTree、auditReviewTags
 │   ├── devices.js                 # 设备类型 + 实例运行时 store
@@ -899,14 +957,16 @@ src/
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-001 张华** |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`；刷新后恢复 preset |
 | 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；审核工作台提交后更新 `dataStatus` 与会话内持久 |
+| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`updateSamplingBatch` / `appendSamplingBatch`；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
 | 删除确认 | 重要删除需输入名称完全匹配；标签/设备为 Modal 二次确认 |
 | Toast | `useToast` hook，2.5 秒自动消失 |
-| 表格对齐 | `Table` 表头与单元格默认水平居中；支持 `pageSize` 分页 + `scrollVisibleRows`/`bodyRowHeight` 组合（运营看板任务进度 5 行、排行榜 6 行可见，每页 10 条） |
+| 表格对齐 | `Table` 表头与单元格默认水平居中；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外，避免横向滚动时不可见）；`scrollVisibleRows` + `bodyRowHeight` 可固定表内可见行数并 sticky 表头（运营看板任务进度 5 行、排行榜 6 行，每页 10 条） |
+| 分页惯例 | 项目卡片、任务列表、条目列表、抽样批次列表统一 **10 条/页**；`pageResetKey` / `usePagination` 的 `resetKey` 在筛选变更时重置第 1 页 |
 | 筛选交互 | 绝大多数列表页点击「查询」生效；**角色管理**页（`/system/role`）筛选为输入即过滤 |
-| 筛选布局惯例 | 筛选项左侧 `flex min-w-0 flex-1` + 各字段 `flex-1 basis-0`；「重置」「查询」固定右侧 `shrink-0` |
+| 筛选布局惯例 | 任务/条目列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮（展开/重置/查询）末行右对齐。其余列表仍可用 `flex` 单行 + 右侧固定按钮 |
 | 弹窗限高 | `Modal` 的 `fitViewport`：限高 85vh、内容区滚动、底部按钮固定 |
 | 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset` |
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
@@ -926,7 +986,8 @@ src/
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
 | 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；采集员/标注员支持多人） |
 | 采集条目 | 每任务 5~10 条（伪随机生成）；**6 值** `dataStatus`；含 `actionSegments`、`regionFrames`、审核/验收字段 |
-| 上传记录 | 由 `entries` 派生，字段与条目列表对齐 |
+| 采集条目页数据 | 由 `entries` 派生（`uploads.js`），字段与 `EntryDataTable` 对齐 |
+| 抽样验收批次 | 6 条初始（P-1001 × 3、P-1002 × 3）；含 `configItems`、`detailItems`、`entryIds`；会话内可新建 |
 | 真机数据集 | 5 条；绑定 `projectId`、`taskIds`、`statuses`、`formats`、`entryIds` |
 | 开源数据集 | 10 条（ODS-001~010）；支持 Excel 导入追加 |
 | 采集标签 | 任务类型 2、采集方案 2、原子技能 7；场景类型三层树（3 个一级场景） |
@@ -996,9 +1057,10 @@ src/
 | `/dashboard` | 运营看板 | `dashboard.view` |
 | `/collection/project` | 采集项目列表 | `collection.project.view` |
 | `/collection/project/:id` | 项目详情 | 同上 |
+| `/collection/project/:id/sampling` | 抽样验收 | 同上 |
 | `/collection/task` | 采集任务列表 | `collection.task.view` |
 | `/collection/task/:id` | 任务详情（含数据范围校验） | 同上 |
-| `/collection/upload` | 上传记录 | `collection.upload.view` |
+| `/collection/upload` | 采集条目 | `collection.upload.view` |
 | `/review/:entryId` | 审核工作台（独立全屏，无侧边栏） | `collection.task.view` |
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
 | `/dataset/self/download` | 数据集下载说明 | 同上 |

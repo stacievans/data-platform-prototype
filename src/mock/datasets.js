@@ -1,26 +1,28 @@
-import { buildDatasetFromCriteria } from '../utils/datasetMetrics'
+import { ACCEPTED_DATA_STATUS, buildDatasetFromCriteria } from '../utils/datasetMetrics'
 
-// TODO: 真机数据集「纳入数据状态」筛选项与条目新状态枚举联动（下一版）
-const DATA_STATUSES = ['已上传', '已解析', '已审核']
 const DATA_FORMATS = ['h5', 'LeRobot']
 
 function makeDataset(base, binding) {
   const bound = buildDatasetFromCriteria({
     projectId: base.projectId,
     projectName: base.projectName,
+    projectIds: base.projectIds,
     taskIds: binding.taskIds,
-    statuses: binding.statuses ?? DATA_STATUSES,
     formats: binding.formats ?? DATA_FORMATS,
+    acceptedOnly: true,
   })
   return {
     ...base,
+    projectIds: bound.projectIds,
+    projectNames: bound.projectNames,
     taskIds: bound.taskIds,
-    statuses: bound.statuses,
+    statuses: [ACCEPTED_DATA_STATUS],
     formats: bound.formats,
     entryIds: bound.entryIds,
     trajCount: bound.trajCount,
     totalSize: bound.totalSize,
     totalDuration: bound.totalDuration,
+    autoSync: base.autoSync ?? true,
   }
 }
 
@@ -33,18 +35,17 @@ export const selfDatasets = [
     projectId: 'P-1001',
     projectName: '家庭物品整理采集',
     createdBy: '李明',
-    createdAt: '2026-04-10 10:00',
+    createdAt: '2026-04-10 10:00:00',
     updatedBy: '李明',
-    updatedAt: '2026-06-08 15:20',
+    updatedAt: '2026-06-08 15:20:00',
     updateLogs: [
-      { id: 'UL-001-4', updatedAt: '2026-06-08 15:20', updatedBy: '李明', opType: '更新数据', changeSummary: '追加 3 条，+4.2 GB；移除 1 条，-856 MB', remark: '补充第2批客厅分拣质检通过数据' },
-      { id: 'UL-001-3', updatedAt: '2026-05-22 09:40', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 5 条，+6.8 GB', remark: '纳入卧室归位任务新标注批次' },
-      { id: 'UL-001-2', updatedAt: '2026-05-15 11:00', updatedBy: '王芳', opType: '编辑信息', changeSummary: '修改数据集名称：家庭整理操作数据集 → 家庭整理操作数据集 v2', remark: '按版本迭代规范统一命名' },
-      { id: 'UL-001-1', updatedAt: '2026-04-10 10:00', updatedBy: '李明', opType: '创建', changeSummary: '创建数据集，纳入 28 条数据，38.4 GB', remark: '首期纳入客厅与卧室已完成任务数据' },
+      { id: 'UL-001-4', updatedAt: '2026-06-08 15:20:00', updatedBy: '李明', opType: '更新数据', changeSummary: '追加 3 条，+4.2 GB；移除 1 条，-856 MB', remark: '补充第2批客厅分拣质检通过数据' },
+      { id: 'UL-001-3', updatedAt: '2026-05-22 09:40:00', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 5 条，+6.8 GB', remark: '纳入卧室归位任务新标注批次' },
+      { id: 'UL-001-2', updatedAt: '2026-05-15 11:00:00', updatedBy: '王芳', opType: '编辑信息', changeSummary: '修改数据集名称：家庭整理操作数据集 → 家庭整理操作数据集 v2', remark: '按版本迭代规范统一命名' },
+      { id: 'UL-001-1', updatedAt: '2026-04-10 10:00:00', updatedBy: '李明', opType: '创建', changeSummary: '创建数据集，纳入 28 条数据，38.4 GB', remark: '首期纳入客厅与卧室已完成任务数据' },
     ],
   }, {
     taskIds: ['T-2001', 'T-2002', 'T-2004'],
-    statuses: ['已审核', '已上传'],
     formats: ['h5', 'LeRobot'],
   }),
   makeDataset({
@@ -53,17 +54,16 @@ export const selfDatasets = [
     projectId: 'P-1002',
     projectName: '厨房烹饪操作采集',
     createdBy: '王芳',
-    createdAt: '2026-04-22 14:30',
+    createdAt: '2026-04-22 14:30:00',
     updatedBy: '王芳',
-    updatedAt: '2026-06-05 09:45',
+    updatedAt: '2026-06-05 09:45:00',
     updateLogs: [
-      { id: 'UL-002-3', updatedAt: '2026-06-05 09:45', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 4 条，+5.1 GB', remark: '餐具清洗任务新增质检通过条目' },
-      { id: 'UL-002-2', updatedAt: '2026-05-18 16:20', updatedBy: '何敏', opType: '编辑信息', changeSummary: '更新数据集描述信息', remark: '补充数据来源说明，便于后续复用' },
-      { id: 'UL-002-1', updatedAt: '2026-04-22 14:30', updatedBy: '王芳', opType: '创建', changeSummary: '创建数据集，纳入 18 条数据，24.6 GB', remark: '初始纳入蔬菜切配与餐具清洗任务' },
+      { id: 'UL-002-3', updatedAt: '2026-06-05 09:45:00', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 4 条，+5.1 GB', remark: '餐具清洗任务新增质检通过条目' },
+      { id: 'UL-002-2', updatedAt: '2026-05-18 16:20:00', updatedBy: '何敏', opType: '编辑信息', changeSummary: '更新数据集描述信息', remark: '补充数据来源说明，便于后续复用' },
+      { id: 'UL-002-1', updatedAt: '2026-04-22 14:30:00', updatedBy: '王芳', opType: '创建', changeSummary: '创建数据集，纳入 18 条数据，24.6 GB', remark: '初始纳入蔬菜切配与餐具清洗任务' },
     ],
   }, {
     taskIds: ['T-2005', 'T-2007'],
-    statuses: ['已上传', '已解析', '已审核'],
     formats: ['LeRobot'],
   }),
   makeDataset({
@@ -72,18 +72,17 @@ export const selfDatasets = [
     projectId: 'P-1003',
     projectName: '工业零件装配采集',
     createdBy: '张华',
-    createdAt: '2026-05-06 09:15',
+    createdAt: '2026-05-06 09:15:00',
     updatedBy: '张华',
-    updatedAt: '2026-06-10 11:30',
+    updatedAt: '2026-06-10 11:30:00',
     updateLogs: [
-      { id: 'UL-003-4', updatedAt: '2026-06-10 11:30', updatedBy: '张华', opType: '更新数据', changeSummary: '追加 6 条，+8.3 GB；移除 2 条，-1.4 GB', remark: '线束插接任务复核后批量纳入' },
-      { id: 'UL-003-3', updatedAt: '2026-05-28 14:05', updatedBy: '钱琳', opType: '更新数据', changeSummary: '追加 3 条，+2.9 GB', remark: 'M4工位新解析批次试运行纳入' },
-      { id: 'UL-003-2', updatedAt: '2026-05-12 10:10', updatedBy: '张华', opType: '编辑信息', changeSummary: '修改数据集描述与标签备注', remark: '对齐工业装配项目文档口径' },
-      { id: 'UL-003-1', updatedAt: '2026-05-06 09:15', updatedBy: '张华', opType: '创建', changeSummary: '创建数据集，纳入 22 条数据，31.2 GB', remark: '首期覆盖螺钉锁附与线束插接任务' },
+      { id: 'UL-003-4', updatedAt: '2026-06-10 11:30:00', updatedBy: '张华', opType: '更新数据', changeSummary: '追加 6 条，+8.3 GB；移除 2 条，-1.4 GB', remark: '线束插接任务复核后批量纳入' },
+      { id: 'UL-003-3', updatedAt: '2026-05-28 14:05:00', updatedBy: '钱琳', opType: '更新数据', changeSummary: '追加 3 条，+2.9 GB', remark: 'M4工位新解析批次试运行纳入' },
+      { id: 'UL-003-2', updatedAt: '2026-05-12 10:10:00', updatedBy: '张华', opType: '编辑信息', changeSummary: '修改数据集描述与标签备注', remark: '对齐工业装配项目文档口径' },
+      { id: 'UL-003-1', updatedAt: '2026-05-06 09:15:00', updatedBy: '张华', opType: '创建', changeSummary: '创建数据集，纳入 22 条数据，31.2 GB', remark: '首期覆盖螺钉锁附与线束插接任务' },
     ],
   }, {
     taskIds: ['T-2008', 'T-2010'],
-    statuses: ['已解析', '已审核', '已上传'],
     formats: ['h5', 'LeRobot'],
   }),
   makeDataset({
@@ -92,16 +91,15 @@ export const selfDatasets = [
     projectId: 'P-1005',
     projectName: '衣物折叠采集',
     createdBy: '李明',
-    createdAt: '2026-05-20 16:45',
+    createdAt: '2026-05-20 16:45:00',
     updatedBy: '李明',
-    updatedAt: '2026-06-01 18:00',
+    updatedAt: '2026-06-01 18:00:00',
     updateLogs: [
-      { id: 'UL-004-2', updatedAt: '2026-06-01 18:00', updatedBy: '李明', opType: '更新数据', changeSummary: '追加 2 条，+1.8 GB', remark: 'T恤折叠标准采集新标注批次' },
-      { id: 'UL-004-1', updatedAt: '2026-05-20 16:45', updatedBy: '李明', opType: '创建', changeSummary: '创建数据集，纳入 9 条数据，12.5 GB', remark: '柔性物体操作首期快照' },
+      { id: 'UL-004-2', updatedAt: '2026-06-01 18:00:00', updatedBy: '李明', opType: '更新数据', changeSummary: '追加 2 条，+1.8 GB', remark: 'T恤折叠标准采集新标注批次' },
+      { id: 'UL-004-1', updatedAt: '2026-05-20 16:45:00', updatedBy: '李明', opType: '创建', changeSummary: '创建数据集，纳入 9 条数据，12.5 GB', remark: '柔性物体操作首期快照' },
     ],
   }, {
     taskIds: ['T-2013'],
-    statuses: ['已审核', '已上传'],
     formats: ['h5'],
   }),
   makeDataset({
@@ -110,17 +108,16 @@ export const selfDatasets = [
     projectId: 'P-1008',
     projectName: '精细抓取操作采集',
     createdBy: '王芳',
-    createdAt: '2026-06-02 11:20',
+    createdAt: '2026-06-02 11:20:00',
     updatedBy: '王芳',
-    updatedAt: '2026-06-09 14:10',
+    updatedAt: '2026-06-09 14:10:00',
     updateLogs: [
-      { id: 'UL-005-3', updatedAt: '2026-06-09 14:10', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 3 条，+3.6 GB', remark: 'beta 版补充精细抓取质检数据' },
-      { id: 'UL-005-2', updatedAt: '2026-06-06 09:30', updatedBy: '吴磊', opType: '编辑信息', changeSummary: '修改数据集名称，增加 beta 标识', remark: '区分试运行版本与正式版数据集' },
-      { id: 'UL-005-1', updatedAt: '2026-06-02 11:20', updatedBy: '王芳', opType: '创建', changeSummary: '创建数据集，纳入 11 条数据，15.8 GB', remark: '小物件精细抓取首期数据' },
+      { id: 'UL-005-3', updatedAt: '2026-06-09 14:10:00', updatedBy: '王芳', opType: '更新数据', changeSummary: '追加 3 条，+3.6 GB', remark: 'beta 版补充精细抓取质检数据' },
+      { id: 'UL-005-2', updatedAt: '2026-06-06 09:30:00', updatedBy: '吴磊', opType: '编辑信息', changeSummary: '修改数据集名称，增加 beta 标识', remark: '区分试运行版本与正式版数据集' },
+      { id: 'UL-005-1', updatedAt: '2026-06-02 11:20:00', updatedBy: '王芳', opType: '创建', changeSummary: '创建数据集，纳入 11 条数据，15.8 GB', remark: '小物件精细抓取首期数据' },
     ],
   }, {
     taskIds: ['T-2015'],
-    statuses: ['已上传', '已解析', '已审核'],
     formats: ['h5', 'LeRobot'],
   }),
 ]

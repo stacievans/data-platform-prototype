@@ -6,7 +6,7 @@ import {
   getEntriesByTaskId,
   updateEntry,
 } from '../../mock/entries'
-import { auditReviewTags } from '../../mock/tags'
+import { getAuditReviewTagGroups } from '../../mock/tags'
 import { tasks } from '../../mock/tasks'
 import { plans } from '../../mock/plans'
 import { useAuth } from '../../context/AuthContext'
@@ -157,6 +157,7 @@ function SegmentedControl({ options, value, onChange, readOnly, variantMap = {} 
 function TagCheckboxDropdown({ value, onChange, readOnly }) {
   const ref = useRef(null)
   const [open, setOpen] = useState(false)
+  const tagGroups = getAuditReviewTagGroups()
 
   useEffect(() => {
     if (!open) return
@@ -194,20 +195,25 @@ function TagCheckboxDropdown({ value, onChange, readOnly }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-md border border-gray-200 bg-white p-1.5 shadow-lg">
-          {auditReviewTags.map((t) => (
-            <label
-              key={t.id}
-              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              <input
-                type="checkbox"
-                checked={value.includes(t.name)}
-                onChange={() => toggle(t.name)}
-                className="h-4 w-4 cursor-pointer accent-blue-600"
-              />
-              {t.name}
-            </label>
+        <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-gray-200 bg-white p-1.5 shadow-lg">
+          {tagGroups.map((group) => (
+            <div key={group.groupName} className="mb-1 last:mb-0">
+              <p className="px-2 py-1 text-xs font-medium text-gray-400">{group.groupName}</p>
+              {group.tags.map((name) => (
+                <label
+                  key={name}
+                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={value.includes(name)}
+                    onChange={() => toggle(name)}
+                    className="h-4 w-4 cursor-pointer accent-blue-600"
+                  />
+                  {name}
+                </label>
+              ))}
+            </div>
           ))}
         </div>
       )}

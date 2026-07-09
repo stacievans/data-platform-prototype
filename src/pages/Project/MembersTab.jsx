@@ -15,6 +15,7 @@ import {
   formatReviewer,
   formatCollectors,
 } from '../../mock/tasks'
+import { dtCol, nowDateTime, formatDateTime } from '../../utils/formatDateTime'
 
 const ROLE_COLLECTOR = '采集员'
 const ROLE_REVIEWER = '标注员'
@@ -26,7 +27,7 @@ const ROLE_COLORS = {
   [ROLE_BOTH]: 'purple',
   平台运营: 'blue',
 }
-const nowDatetime = () => new Date().toISOString().slice(0, 19).replace('T', ' ')
+const nowDatetime = () => nowDateTime()
 
 function hasCollector(task) {
   return toPeopleArray(task.collector).filter(Boolean).length > 0
@@ -696,7 +697,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         <span className="tabular-nums text-gray-800">{memberTaskCount({ taskIds: ids })}</span>
       ),
     },
-    { title: '加入时间', dataIndex: 'joinedAt' },
+    dtCol('加入时间', 'joinedAt'),
     {
       title: '操作',
       key: 'actions',
