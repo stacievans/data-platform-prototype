@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import Button from '../../components/common/Button'
 import { useToast } from '../../components/common/Toast'
 
 const CLI_CODE = `# 安装 CLI 工具
@@ -76,13 +75,7 @@ export default function SelfDatasetDownload() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-gray-100 bg-white px-5 py-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-gray-800">真机数据集下载说明</h2>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => show('SDK 下载功能即将开放')}>下载 SDK</Button>
-            <Button onClick={() => show('访问密钥管理功能即将开放')}>查看访问密钥</Button>
-          </div>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-800">真机数据集下载说明</h2>
         <p className="mt-3 text-sm text-amber-600">
           示例代码，以实际 SDK 为准
         </p>
