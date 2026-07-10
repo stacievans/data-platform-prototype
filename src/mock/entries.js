@@ -127,6 +127,7 @@ const DEMO_OVERRIDES = {
     dataStatus: '标注不通过',
     qcTime: '2026-05-16 09:12:00',
     reviewOperator: { nickname: '孙丽', id: 'U-2001' },
+    reviewTime: '2026-05-18 14:20:00',
     flowHistory: [
       { label: '标注驳回（第2轮）', round: 2, time: '2026-05-18 14:20:00', operator: '孙丽(U-2001)' },
       { label: '标注驳回（第1轮）', round: 1, time: '2026-05-17 10:05:00', operator: '孙丽(U-2001)' },
@@ -170,7 +171,9 @@ const DEMO_OVERRIDES = {
     dataStatus: '验收不通过',
     qcTime: '2026-05-10 08:30:00',
     reviewOperator: { nickname: '何敏', id: 'U-2003' },
+    reviewTime: '2026-05-12 11:20:00',
     acceptOperator: { nickname: '陈静', id: 'U-2002' },
+    acceptTime: '2026-05-14 16:45:00',
     flowHistory: [
       { label: '验收驳回（第1轮）', round: 1, time: '2026-05-14 16:45:00', operator: '陈静(U-2002)' },
       { label: '标注通过（第1轮）', round: 1, time: '2026-05-12 11:20:00', operator: '何敏(U-2003)' },
@@ -198,6 +201,8 @@ const DEMO_OVERRIDES = {
   },
   'E-200702': {
     dataStatus: '标注不通过',
+    reviewOperator: { nickname: '何敏', id: 'U-2003' },
+    reviewTime: '2026-06-10 15:22:00',
     auditResult: '异常数据',
     auditAbnormal: true,
     auditComment: '传感器时间戳异常，暂按不通过处理。',
@@ -208,7 +213,9 @@ const DEMO_OVERRIDES = {
     dataStatus: '验收不通过',
     qcTime: '2026-05-22 09:15:00',
     reviewOperator: { nickname: '钱琳', id: 'U-2004' },
+    reviewTime: '2026-05-23 10:00:00',
     acceptOperator: { nickname: '陈静', id: 'U-2002' },
+    acceptTime: '2026-05-26 17:10:00',
     flowHistory: [
       { label: '验收驳回（第2轮）', round: 2, time: '2026-05-26 17:10:00', operator: '陈静(U-2002)' },
       { label: '验收驳回（第1轮）', round: 1, time: '2026-05-24 14:30:00', operator: '陈静(U-2002)' },
@@ -277,6 +284,39 @@ for (const entry of entries) {
   entry.qcResults = buildEntryQcResults(entryQcSeed(entry.id), {
     frameDropFail: entry.dataStatus === '质检不通过',
   })
+}
+
+const REVIEW_REJECT_REASONS = [
+  '抓取阶段轨迹抖动明显，需重采。',
+  '关键步骤缺失，未完成放置动作。',
+  '末端姿态偏差较大，建议重新采集。',
+  '动作语义与任务描述不一致。',
+  '多段轨迹衔接不连贯，存在明显停顿。',
+]
+
+const ACCEPT_REJECT_REASONS = [
+  '与任务指令不符，请复核场景初始状态。',
+  '需补充末端位姿标注。',
+  '标注分段边界不准确，请修正后重新提交。',
+  '区域帧标注遗漏关键物体，请补全。',
+  '验收抽检发现动作标签与轨迹不匹配。',
+]
+
+function pickRejectReason(id, list) {
+  let h = 0
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) | 0
+  return list[Math.abs(h) % list.length]
+}
+
+for (const entry of entries) {
+  if (entry.dataStatus === '标注不通过') {
+    if (!entry.auditResult) entry.auditResult = entry.auditAbnormal ? '异常数据' : '不通过'
+    if (!entry.auditComment?.trim()) entry.auditComment = pickRejectReason(entry.id, REVIEW_REJECT_REASONS)
+  }
+  if (entry.dataStatus === '验收不通过') {
+    if (!entry.acceptResult) entry.acceptResult = '不通过'
+    if (!entry.acceptComment?.trim()) entry.acceptComment = pickRejectReason(entry.id, ACCEPT_REJECT_REASONS)
+  }
 }
 
 /** 会话内条目补丁（标注/验收提交等） */

@@ -7,6 +7,7 @@ import Modal from '../common/Modal'
 import { IconSearch, IconChevronDown } from '../common/Icons'
 import { useToast } from '../common/Toast'
 import { getQcItemsByProjectId } from '../../mock/plans'
+import { getAuditReviewTagGroups } from '../../mock/tags'
 import { resolveQcRowResult } from '../../utils/qcResults'
 import { formatReviewer } from '../../mock/tasks'
 import EntryActions from '../common/EntryActions'
@@ -32,7 +33,7 @@ const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const FORMAT_OPTIONS = ['全部', 'h5', 'LeRobot']
 const ROW_LABEL_CLS = 'shrink-0 w-10 text-sm text-gray-500'
-const FILTER_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+const FILTER_GRID_ROW = 'grid grid-cols-5 gap-3'
 const FILTER_FIELD = 'min-w-0'
 const FILTER_ACTIONS = 'flex flex-wrap items-center justify-end gap-2'
 
@@ -229,6 +230,145 @@ function ProcessSubFilterBar({ counts, activeKey, onChange }) {
   )
 }
 
+function DetailField({ label, children }) {
+  return (
+    <div>
+      <div className="mb-1.5 text-xs text-gray-500">{label}</div>
+      <div className="text-sm text-gray-800">{children}</div>
+    </div>
+  )
+}
+
+function GroupedAuditTags({ tags = [] }) {
+  const groups = useMemo(() => getAuditReviewTagGroups(), [])
+  const grouped = useMemo(() => {
+    const tagSet = new Set(tags)
+    const result = groups
+      .map((g) => ({ groupName: g.groupName, tags: g.tags.filter((t) => tagSet.has(t)) }))
+      .filter((g) => g.tags.length > 0)
+    const known = new Set(groups.flatMap((g) => g.tags))
+    const other = tags.filter((t) => !known.has(t))
+    if (other.length) result.push({ groupName: '其他', tags: other })
+    return result
+  }, [groups, tags])
+
+  if (!tags.length) return <span className="text-gray-400">—</span>
+
+  return (
+    <div className="space-y-3">
+      {grouped.map(({ groupName, tags: groupTags }) => (
+        <div key={groupName}>
+          <div className="mb-1.5 text-xs font-medium text-gray-400">{groupName}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {groupTags.map((t) => (
+              <Badge key={t} color="blue">{t}</Badge>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function resolveReviewTime(entry) {
+  if (entry.reviewTime) return entry.reviewTime
+  const node = entry.flowHistory?.find((h) => String(h.label ?? '').includes('标注'))
+  return node?.time ?? entry.uploadTime
+}
+
+function resolveAcceptTime(entry) {
+  if (entry.acceptTime) return entry.acceptTime
+  const node = entry.flowHistory?.find((h) => String(h.label ?? '').includes('验收'))
+  return node?.time ?? entry.uploadTime
+}
+
+function formatOperatorDisplay(operator) {
+  if (!operator) return '—'
+  if (typeof operator === 'string') return operator
+  const { nickname, id } = operator
+  if (!nickname) return '—'
+  return id ? `${nickname}(${id})` : nickname
+}
+
+function ReviewDetailModal({ open, entry, task, onClose }) {
+  if (!open || !entry) return null
+  const operator = resolveReviewOperator(entry, task)
+  const conclusion = entry.auditAbnormal ? '异常数据' : (entry.auditResult ?? '—')
+  const conclusionCls = entry.auditAbnormal || entry.auditResult === '不通过'
+    ? 'font-medium text-red-600'
+    : entry.auditResult === '通过'
+      ? 'font-medium text-emerald-700'
+      : ''
+
+  return (
+    <Modal
+      open={open}
+      title="标注详情"
+      onCancel={onClose}
+      footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>}
+      width={560}
+    >
+      <div className="space-y-4">
+        <DetailField label="标注结论">
+          <span className={conclusionCls}>{conclusion}</span>
+        </DetailField>
+        <DetailField label="标注标签">
+          <GroupedAuditTags tags={entry.auditTags ?? []} />
+        </DetailField>
+        <DetailField label="标注意见">
+          {entry.auditComment?.trim() ? entry.auditComment : '—'}
+        </DetailField>
+        <DetailField label="操作人">
+          {formatOperatorDisplay(operator)}
+        </DetailField>
+        <DetailField label="操作时间">
+          {formatDateTime(resolveReviewTime(entry))}
+        </DetailField>
+      </div>
+    </Modal>
+  )
+}
+
+function AcceptDetailModal({ open, entry, onClose }) {
+  if (!open || !entry) return null
+  const operator = resolveAcceptOperator(entry)
+  const ps = deriveProcessStatuses(entry)
+  const isRejected = ps.accept === 'rejected'
+  const conclusion = entry.acceptResult ?? '—'
+  const conclusionCls = entry.acceptResult === '不通过'
+    ? 'font-medium text-red-600'
+    : entry.acceptResult === '通过'
+      ? 'font-medium text-emerald-700'
+      : ''
+
+  return (
+    <Modal
+      open={open}
+      title="验收详情"
+      onCancel={onClose}
+      footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>}
+      width={560}
+    >
+      <div className="space-y-4">
+        <DetailField label="验收结论">
+          <span className={conclusionCls}>{conclusion}</span>
+        </DetailField>
+        {isRejected && (
+          <DetailField label="驳回理由">
+            {entry.acceptComment?.trim() ? entry.acceptComment : '—'}
+          </DetailField>
+        )}
+        <DetailField label="操作人">
+          {formatOperatorDisplay(operator)}
+        </DetailField>
+        <DetailField label="操作时间">
+          {formatDateTime(resolveAcceptTime(entry))}
+        </DetailField>
+      </div>
+    </Modal>
+  )
+}
+
 function QcDetailModal({ open, entry, projectId, onClose }) {
   const qcItems = useMemo(() => getQcItemsByProjectId(projectId), [projectId, open])
   if (!open || !entry) return null
@@ -375,6 +515,8 @@ export default function EntryDataTable({
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [qcTarget, setQcTarget] = useState(null)
+  const [reviewTarget, setReviewTarget] = useState(null)
+  const [acceptTarget, setAcceptTarget] = useState(null)
   const [flowTarget, setFlowTarget] = useState(null)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
 
@@ -533,7 +675,7 @@ export default function EntryDataTable({
       },
     },
     {
-      title: <ColumnTitleHint label="标注状态" hint="悬停查看操作人信息" />,
+      title: <ColumnTitleHint label="标注状态" hint="点击查看标注详情，悬停查看操作人" />,
       key: 'reviewStatus',
       render: (_, row) => {
         const ps = deriveProcessStatuses(row)
@@ -541,18 +683,32 @@ export default function EntryDataTable({
         const operator = ps.review === 'processing'
           ? row.reviewClaimedBy
           : (ps.review === 'passed' || ps.review === 'rejected') ? resolveReviewOperator(row, task) : null
-        return <ProcessStatusCell status={ps.review} operator={operator} />
+        return (
+          <ProcessStatusCell
+            status={ps.review}
+            operator={operator}
+            clickable={ps.review === 'passed' || ps.review === 'rejected'}
+            onClick={() => setReviewTarget(row)}
+          />
+        )
       },
     },
     {
-      title: <ColumnTitleHint label="验收状态" hint="悬停查看操作人信息" />,
+      title: <ColumnTitleHint label="验收状态" hint="点击查看验收详情，悬停查看操作人" />,
       key: 'acceptStatus',
       render: (_, row) => {
         const ps = deriveProcessStatuses(row)
         const operator = ps.accept === 'processing'
           ? row.acceptClaimedBy
           : (ps.accept === 'passed' || ps.accept === 'rejected') ? resolveAcceptOperator(row) : null
-        return <ProcessStatusCell status={ps.accept} operator={operator} />
+        return (
+          <ProcessStatusCell
+            status={ps.accept}
+            operator={operator}
+            clickable={ps.accept === 'passed' || ps.accept === 'rejected'}
+            onClick={() => setAcceptTarget(row)}
+          />
+        )
       },
     },
     {
@@ -591,7 +747,7 @@ export default function EntryDataTable({
 
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
         <div className="space-y-3">
-          <div className={FILTER_GRID}>
+          <div className={FILTER_GRID_ROW}>
             <div className={FILTER_FIELD}>
               <label className={LBL}>条目ID</label>
               <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
@@ -618,28 +774,55 @@ export default function EntryDataTable({
                 {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
+            {!showScopeColumns && (
+              <>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>质检状态</label>
+                  <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>标注状态</label>
+                  <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
 
           {filtersExpanded && (
-            <div className={FILTER_GRID}>
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>质检状态</label>
-                <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>标注状态</label>
-                <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>验收状态</label>
-                <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
+            <div className={FILTER_GRID_ROW}>
+              {showScopeColumns ? (
+                <>
+                  <div className={FILTER_FIELD}>
+                    <label className={LBL}>质检状态</label>
+                    <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                      {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className={FILTER_FIELD}>
+                    <label className={LBL}>标注状态</label>
+                    <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                      {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className={FILTER_FIELD}>
+                    <label className={LBL}>验收状态</label>
+                    <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                      {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>验收状态</label>
+                  <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
@@ -683,6 +866,15 @@ export default function EntryDataTable({
       />
 
       <QcDetailModal open={!!qcTarget} entry={qcTarget} projectId={qcProjectId} onClose={() => setQcTarget(null)} />
+
+      <ReviewDetailModal
+        open={!!reviewTarget}
+        entry={reviewTarget}
+        task={reviewTarget ? getTask?.(reviewTarget) : null}
+        onClose={() => setReviewTarget(null)}
+      />
+
+      <AcceptDetailModal open={!!acceptTarget} entry={acceptTarget} onClose={() => setAcceptTarget(null)} />
 
       <FlowTimelineModal
         open={!!flowTarget}

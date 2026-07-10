@@ -194,8 +194,13 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, defau
     }
 
     if (!formTypeId) { setTypeError(true); return }
+
+    if (!trimmedCode) { setCodeError('required'); return }
+    if (isDeviceCodeTaken(trimmedCode, editing.id)) { setCodeError('duplicate_code'); return }
+
     onOk({
       ...editing,
+      code: trimmedCode,
       typeId: formTypeId,
       description: description.trim(),
       updatedAt: now(),
@@ -212,17 +217,13 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, defau
       width={520}
     >
       <div className="space-y-4">
-        <Field label="编号" required={!isEdit} error={codeError}>
-          {isEdit ? (
-            <input readOnly value={code} className={readOnlyCls} />
-          ) : (
-            <input
-              placeholder="请输入实例编号"
-              value={code}
-              onChange={(e) => { setCode(e.target.value); setCodeError(false) }}
-              className={inputCls + (codeError ? ' border-red-400 focus:ring-red-100' : '')}
-            />
-          )}
+        <Field label="编号" required error={codeError}>
+          <input
+            placeholder="请输入实例编号"
+            value={code}
+            onChange={(e) => { setCode(e.target.value); setCodeError(false) }}
+            className={inputCls + (codeError ? ' border-red-400 focus:ring-red-100' : '')}
+          />
         </Field>
 
         <Field label="SN" required={!isEdit} error={snError}>

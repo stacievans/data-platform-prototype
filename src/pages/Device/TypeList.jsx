@@ -5,7 +5,7 @@ import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
 import { useCurrentNickname, useAuth } from '../../context/AuthContext'
-import { IconPlus } from '../../components/common/Icons'
+import { IconPlus, IconUpload, IconClose } from '../../components/common/Icons'
 import {
   getAllDeviceTypes,
   isDeviceTypeNameTaken,
@@ -27,6 +27,9 @@ const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5
 const LBL = 'mb-1 block text-xs text-gray-500'
 const nowDatetime = () => nowDateTime()
 
+const URDF_FILE_MAX_BYTES = 20 * 1024 * 1024
+const URDF_ACCEPT = '.urdf,.xacro,application/xml,text/xml'
+
 const emptyTypeForm = () => {
   const bodies = getBodyTypeTagNames()
   const ends = getEndTypeTagNames()
@@ -36,7 +39,85 @@ const emptyTypeForm = () => {
     leftEnd: ends[0] ?? '',
     rightEnd: ends[0] ?? '',
     description: '',
+    urdfFileName: '',
   }
+}
+
+function UrdfFileUpload({ fileName, error, onSelect, onClear }) {
+  const fileRef = useRef(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  const acceptFile = (file) => {
+    if (!file) return
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (!['urdf', 'xacro'].includes(ext ?? '')) {
+      onSelect('', '请上传 URDF 或 XACRO 格式文件')
+      return
+    }
+    if (file.size > URDF_FILE_MAX_BYTES) {
+      onSelect('', '文件大小不能超过 20MB')
+      return
+    }
+    onSelect(file.name, '')
+  }
+
+  const onFileChange = (e) => {
+    acceptFile(e.target.files?.[0])
+    e.target.value = ''
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    acceptFile(e.dataTransfer.files?.[0])
+  }
+
+  if (fileName) {
+    return (
+      <div className={`flex items-center justify-between rounded-md border px-3 py-2 ${error ? 'border-red-400 bg-red-50/30' : 'border-gray-200 bg-gray-50'}`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <IconUpload className="h-4 w-4 shrink-0 text-blue-500" />
+          <span className="truncate text-sm text-gray-800">{fileName}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => { onClear(); if (fileRef.current) fileRef.current.value = '' }}
+          className="ml-2 flex shrink-0 cursor-pointer items-center gap-1 text-xs text-gray-500 hover:text-red-500"
+        >
+          <IconClose className="h-3.5 w-3.5" />
+          移除
+        </button>
+        <input ref={fileRef} type="file" accept={URDF_ACCEPT} className="hidden" onChange={onFileChange} />
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
+          error
+            ? 'border-red-400 bg-red-50/30'
+            : dragOver
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+        }`}
+        onClick={() => fileRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click() }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+      >
+        <IconUpload className="mb-2 h-8 w-8 text-gray-400" />
+        <p className="text-sm text-gray-600">点击或拖拽 URDF 文件到此区域上传</p>
+        <p className="mt-1 text-xs text-gray-400">支持 .urdf / .xacro，文件大小不超过 20MB</p>
+        <input ref={fileRef} type="file" accept={URDF_ACCEPT} className="hidden" onChange={onFileChange} />
+      </div>
+      {error && <p className="mt-1.5 text-xs text-red-500">{error}</p>}
+    </div>
+  )
 }
 
 function Field({ label, required, error, errorMsg, children }) {
@@ -60,6 +141,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
   const endOptions = getEndTypeTagNames()
   const [form, setForm] = useState(emptyTypeForm())
   const [errs, setErrs] = useState({})
+  const [urdfError, setUrdfError] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -70,11 +152,13 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         leftEnd: editing.leftEnd,
         rightEnd: editing.rightEnd,
         description: editing.description ?? '',
+        urdfFileName: '',
       })
     } else {
       setForm(emptyTypeForm())
     }
     setErrs({})
+    setUrdfError('')
   }, [open, editing])
 
   const set = (k, v) => {
@@ -96,6 +180,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
     }
 
     if (Object.keys(nextErrs).length) { setErrs(nextErrs); return }
+    if (urdfError) return
 
     const ts = nowDatetime()
 
@@ -113,7 +198,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         body: form.body,
         leftEnd: form.leftEnd,
         rightEnd: form.rightEnd,
-        hasUrdf: false,
+        hasUrdf: Boolean(form.urdfFileName),
         description: form.description.trim(),
         creator: creatorName,
         createdAt: ts,
@@ -185,6 +270,22 @@ function TypeModal({ open, editing, onCancel, onOk }) {
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </Field>
+        {!isEdit && (
+          <Field label="URDF">
+            <UrdfFileUpload
+              fileName={form.urdfFileName}
+              error={urdfError}
+              onSelect={(name, err) => {
+                setForm((f) => ({ ...f, urdfFileName: name }))
+                setUrdfError(err)
+              }}
+              onClear={() => {
+                setForm((f) => ({ ...f, urdfFileName: '' }))
+                setUrdfError('')
+              }}
+            />
+          </Field>
+        )}
       </div>
     </Modal>
   )
