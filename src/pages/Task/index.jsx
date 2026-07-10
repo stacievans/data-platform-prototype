@@ -9,7 +9,6 @@ import {
   syncTasks,
   nextTaskId,
   nowDatetime,
-  toPeopleArray,
   formatReviewer,
   enrichTask,
 } from '../../mock/tasks'
@@ -177,7 +176,7 @@ export default function TaskList({
         if (taskName && !t.name.toLowerCase().includes(taskName.toLowerCase())) return false
         if (projectName && !(t.projectName ?? '').toLowerCase().includes(projectName.toLowerCase())) return false
         if (planId && !String(t.planId ?? '').toLowerCase().includes(planId.toLowerCase())) return false
-        if (collector && !toPeopleArray(t.collector).some((c) => c.toLowerCase().includes(collector.toLowerCase()))) return false
+        if (collector && !formatReviewer(t.collector).toLowerCase().includes(collector.toLowerCase())) return false
         if (reviewer && !formatReviewer(t.reviewer).toLowerCase().includes(reviewer.toLowerCase())) return false
         if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
         if (bodyType && bodyType !== '全部' && enriched.deviceTypeId !== bodyType) return false

@@ -323,7 +323,7 @@ export default function TaskTable({
       dataIndex: 'acceptDone',
       render: (v, row) => progressCell(row.acceptDone ?? 0, row.collectTotal, 'bg-emerald-500'),
     },
-    { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi /> },
+    { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi={false} /> },
     { title: '标注员', dataIndex: 'reviewer', render: (v) => <PeopleCell value={v} multi={false} /> },
     { title: '创建人', dataIndex: 'creator', render: (v) => v ?? '—' },
     dtCol('创建时间', 'createdAt'),

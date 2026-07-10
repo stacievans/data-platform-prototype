@@ -17,7 +17,6 @@ import { projects } from '../../mock/projects'
 import {
   collectors,
   reviewers,
-  toPeopleArray,
   formatReviewer,
   formatCollectors,
 } from '../../mock/tasks'
@@ -36,7 +35,8 @@ const ROLE_COLORS = {
 const nowDatetime = () => nowDateTime()
 
 function hasCollector(task) {
-  return toPeopleArray(task.collector).filter(Boolean).length > 0
+  const name = formatReviewer(task.collector)
+  return Boolean(name && name !== '—')
 }
 
 function hasReviewer(task) {
@@ -85,11 +85,11 @@ function tasksForMemberRole(member, role, projectTasks) {
     if (!member.taskIds.includes(t.id)) return false
     if (role === ROLE_BOTH) {
       return (
-        toPeopleArray(t.collector).includes(member.name)
+        formatReviewer(t.collector) === member.name
         || formatReviewer(t.reviewer) === member.name
       )
     }
-    if (role === ROLE_COLLECTOR) return toPeopleArray(t.collector).includes(member.name)
+    if (role === ROLE_COLLECTOR) return formatReviewer(t.collector) === member.name
     if (role === ROLE_REVIEWER) return formatReviewer(t.reviewer) === member.name
     return false
   })
@@ -474,10 +474,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       const assignReviewer = form.role === ROLE_REVIEWER || form.role === ROLE_BOTH
 
       if (assignCollector) {
-        const list = toPeopleArray(t.collector)
-        if (!list.includes(form.name)) {
-          updated = { ...updated, collector: [...list, form.name] }
-        }
+        updated = { ...updated, collector: form.name }
       }
       if (assignReviewer) {
         membersDraft = stripAnnotatorForTask(membersDraft, t.id, form.name)
@@ -546,7 +543,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         if (role === ROLE_COLLECTOR || role === ROLE_BOTH) {
           updated = {
             ...updated,
-            collector: toPeopleArray(t.collector).filter((p) => p !== removeOpen.name),
+            collector: formatReviewer(t.collector) === removeOpen.name ? '' : t.collector,
           }
         }
         if (role === ROLE_REVIEWER || role === ROLE_BOTH) {
@@ -583,7 +580,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     if (!hasCollector(assignTask) && assignForm.collector) {
       updated = {
         ...updated,
-        collector: [...toPeopleArray(assignTask.collector), assignForm.collector],
+        collector: assignForm.collector,
       }
       nextMembers = upsertMemberAssignment(nextMembers, {
         name: assignForm.collector,

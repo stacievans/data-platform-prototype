@@ -1,4 +1,10 @@
-import { tasks, collectors, enrichTask, getTaskById } from './tasks'
+import {
+  collectors,
+  enrichTask,
+  formatReviewer,
+  getTaskById,
+  tasks,
+} from './tasks'
 import { plans } from './plans'
 import { buildEntryQcResults, entryQcSeed } from '../utils/qcResults'
 
@@ -89,9 +95,9 @@ export const entries = tasks.flatMap((task, ti) => {
     const sizeMB = Math.round((80 + rand() * 1900) * 10) / 10
     const durSec = Math.round(15 + rand() * 150)
     const day = 1 + Math.floor(rand() * 28)
-    const taskCollectors = Array.isArray(task.collector) ? task.collector : [task.collector]
+    const taskCollector = formatReviewer(task.collector)
     const uploader = rand() < 0.8
-      ? taskCollectors[Math.floor(rand() * taskCollectors.length)]
+      ? (taskCollector !== '—' ? taskCollector : collectors[Math.floor(rand() * collectors.length)])
       : collectors[Math.floor(rand() * collectors.length)]
     return {
       id: `E-${task.id.slice(2)}${pad(i + 1)}`,

@@ -62,7 +62,7 @@ const emptyCreate = {
 
   role: '',
 
-  status: '正常',
+  status: '启用',
 
 }
 
@@ -80,7 +80,7 @@ const emptyEdit = {
 
   role: '',
 
-  status: '正常',
+  status: '启用',
 
 }
 
@@ -88,7 +88,7 @@ const emptyEdit = {
 
 function toDisplayStatus(status) {
 
-  return status === '停用' ? '停用' : '正常'
+  return status === '停用' ? '停用' : '启用'
 
 }
 
@@ -208,6 +208,42 @@ function ReadonlyField({ label, value }) {
 
 
 
+function StatusSwitch({ enabled, disabled, onToggle }) {
+
+  return (
+
+    <button
+
+      type="button"
+
+      disabled={disabled}
+
+      onClick={onToggle}
+
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+
+      } ${enabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+
+      aria-label={enabled ? '启用' : '停用'}
+
+    >
+
+      <span
+
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${enabled ? 'left-[18px]' : 'left-0.5'}`}
+
+      />
+
+    </button>
+
+  )
+
+}
+
+
+
 function StatusRadio({ name, value, onChange }) {
 
   return (
@@ -218,7 +254,7 @@ function StatusRadio({ name, value, onChange }) {
 
       <div className="flex items-center gap-6">
 
-        {['正常', '停用'].map((s) => (
+        {['启用', '停用'].map((s) => (
 
           <label key={s} className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
 
@@ -602,6 +638,18 @@ export default function UserListPanel({
 
 
 
+  const handleToggleStatus = (row) => {
+
+    const next = row.status === '启用' ? '停用' : '启用'
+
+    updateRuntimeUser(row.id, { status: next })
+
+    refreshUsers()
+
+  }
+
+
+
   const canEdit = can('system.user.edit')
 
   const canDelete = can('system.user.delete')
@@ -632,7 +680,16 @@ export default function UserListPanel({
 
     { title: '邮箱', dataIndex: 'email', render: (v) => <span className="text-gray-600">{v || '—'}</span> },
 
-    { title: '状态', dataIndex: 'status', render: (v) => <Badge color={v === '启用' ? 'green' : 'gray'} dot>{v}</Badge> },
+    { title: '状态', dataIndex: 'status', render: (v, row) => {
+      const isSelf = currentUser?.uid === row.uid
+      return (
+        <StatusSwitch
+          enabled={v === '启用'}
+          disabled={!canEdit || isSelf}
+          onToggle={() => handleToggleStatus(row)}
+        />
+      )
+    } },
 
     dtCol('创建时间', 'createdAt'),
 
