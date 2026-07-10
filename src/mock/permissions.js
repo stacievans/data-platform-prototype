@@ -45,6 +45,7 @@ export const permissionCatalog = [
     children: [
       { id: 'system.user', name: '用户管理', actions: ['view', 'create', 'edit', 'delete'] },
       { id: 'system.role', name: '角色权限', actions: ['view', 'create', 'assignPerm'] },
+      { id: 'system.org', name: '组织管理', actions: ['view'] },
     ],
   },
 ]
@@ -59,6 +60,7 @@ export const ROUTE_VIEW_PERMISSION = [
   { prefix: '/dataset/self', permission: 'dataset.self.view' },
   { prefix: '/tag', permission: 'tag.view' },
   { prefix: '/device', permission: 'device.view' },
+  { prefix: '/system/org', permission: 'system.org.view' },
   { prefix: '/system/role', permission: 'system.role.view' },
   { prefix: '/system/user', permission: 'system.user.view' },
   { prefix: '/system', permission: 'system.user.view', alt: 'system.role.view' },
@@ -75,6 +77,7 @@ export const MENU_VIEW_PERMISSION = {
   '/device': 'device.view',
   '/system/user': 'system.user.view',
   '/system/role': 'system.role.view',
+  '/system/org': 'system.org.view',
 }
 
 export function getLeafModules(catalog = permissionCatalog) {
@@ -112,6 +115,11 @@ export function resolveRouteViewPermission(pathname) {
 
 const ALL_KEYS = buildAllPermissionKeys()
 
+export const SUPER_ADMIN_ROLE = '超级管理员'
+export const ORG_ADMIN_ROLE = '组织管理员'
+
+const ORG_ADMIN_KEYS = ALL_KEYS.filter((k) => !k.startsWith('system.org.'))
+
 /** 采集员 / 标注员共用功能权限 */
 const COLLECTOR_ANNOTATOR_KEYS = [
   'dashboard.view',
@@ -130,8 +138,11 @@ const COLLECTOR_ANNOTATOR_KEYS = [
 /** 内置角色权限 preset */
 export function buildRolePermissionPreset(roleName) {
   switch (roleName) {
-    case '管理员':
+    case SUPER_ADMIN_ROLE:
       return [...ALL_KEYS]
+    case ORG_ADMIN_ROLE:
+    case '管理员':
+      return [...ORG_ADMIN_KEYS]
     case '平台运营':
       return ALL_KEYS.filter((k) => {
         if (k.startsWith('system.')) return false
@@ -167,9 +178,9 @@ export function buildRolePermissionPreset(roleName) {
 
 // ── 数据范围（基于 projectMembers） ──
 
-/** 仅管理员全量数据 */
+/** 组织管理员 / 超级管理员全量数据 */
 export function hasFullDataScope(roleName) {
-  return roleName === '管理员'
+  return roleName === ORG_ADMIN_ROLE || roleName === SUPER_ADMIN_ROLE || roleName === '管理员'
 }
 
 function isProjectManager(member) {

@@ -15,6 +15,8 @@ import TagManage from '../pages/Tag'
 import DeviceManage from '../pages/Device'
 import UserManage from '../pages/System/UserManage'
 import RoleManage from '../pages/System/RoleManage'
+import OrgManage from '../pages/System/OrgManage'
+import OrgDetail from '../pages/System/OrgDetail'
 import ReviewWorkbench from '../pages/Review/Workbench'
 
 const router = createBrowserRouter([
@@ -51,6 +53,8 @@ const router = createBrowserRouter([
       { path: 'system', element: <Navigate to="/system/user" replace /> },
       { path: 'system/user', element: <UserManage /> },
       { path: 'system/role', element: <RoleManage /> },
+      { path: 'system/org/:id', element: <OrgDetail /> },
+      { path: 'system/org', element: <OrgManage /> },
       { path: 'system/log', element: <Navigate to="/system/user" replace /> },
       { path: '*', element: <Navigate to="/dashboard" replace /> },
     ],

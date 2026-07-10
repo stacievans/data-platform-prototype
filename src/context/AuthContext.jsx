@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { users } from '../mock/misc'
+import { getRuntimeUsers } from '../mock/organizations'
 import {
   DEMO_PERSONAS,
   USER_EMAILS,
@@ -9,12 +9,12 @@ import {
   setRoleStatus as persistRoleStatus,
   deleteRuntimeRole,
 } from '../mock/rbac'
-import { resolveRouteViewPermission } from '../mock/permissions'
+import { resolveRouteViewPermission, buildRolePermissionPreset, SUPER_ADMIN_ROLE } from '../mock/permissions'
 
-const DEFAULT_UID = 'U-001'
+const DEFAULT_UID = 'U-000'
 
 function userFromUid(uid) {
-  const u = users.find((x) => x.uid === uid)
+  const u = getRuntimeUsers().find((x) => x.uid === uid)
   if (!u) return null
   return {
     uid: u.uid,
@@ -23,7 +23,8 @@ function userFromUid(uid) {
     role: u.role,
     phone: u.phone,
     status: u.status,
-    email: USER_EMAILS[u.nickname] ?? `${u.username}@ai2robotics.com`,
+    orgId: u.orgId,
+    email: USER_EMAILS[u.nickname] ?? u.email ?? `${u.username}@ai2robotics.com`,
   }
 }
 
@@ -34,8 +35,12 @@ export function AuthProvider({ children }) {
   const [roles, setRoles] = useState(() => getRuntimeRoles())
 
   const permissionSet = useMemo(() => {
-    const role = roles.find((r) => r.name === user?.role)
-    return new Set(role?.permissions ?? [])
+    if (!user?.role) return new Set()
+    if (user.role === SUPER_ADMIN_ROLE) {
+      return new Set(buildRolePermissionPreset(SUPER_ADMIN_ROLE))
+    }
+    const role = roles.find((r) => r.name === user.role)
+    return new Set(role?.permissions ?? buildRolePermissionPreset(user.role))
   }, [roles, user?.role])
 
   const can = useCallback((key) => permissionSet.has(key), [permissionSet])

@@ -44,14 +44,14 @@ function TooltipWrap({ label, children }) {
   )
 }
 
-/* 操作列"查看"蓝色实心小按钮 */
+/* 操作列「查看详情」蓝色实心小按钮 */
 const ViewBtn = ({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
     className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
   >
-    查看
+    查看详情
   </button>
 )
 

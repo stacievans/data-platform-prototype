@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
-import { IconPlus } from '../../components/common/Icons'
+import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import { countPermittedModules } from '../../mock/permissions'
 import { useAuth } from '../../context/AuthContext'
@@ -15,13 +16,71 @@ const inputCls = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 t
 const selCls = `${inputCls} cursor-pointer`
 
 function TooltipWrap({ label, children }) {
+  const anchorRef = useRef(null)
+  const tipRef = useRef(null)
+  const [visible, setVisible] = useState(false)
+  const [tipStyle, setTipStyle] = useState({ left: 0, top: 0, opacity: 0 })
+
+  const repositionTip = () => {
+    const anchor = anchorRef.current
+    const tipEl = tipRef.current
+    if (!anchor || !tipEl) return
+
+    const rect = anchor.getBoundingClientRect()
+    const tipW = tipEl.offsetWidth
+    const tipH = tipEl.offsetHeight
+    const gap = 6
+    const pad = 8
+    const vw = window.innerWidth
+
+    const centerX = rect.left + rect.width / 2
+    let left = centerX - tipW / 2
+    if (left + tipW > vw - pad) left = vw - pad - tipW
+    if (left < pad) left = pad
+
+    let top = rect.top - gap - tipH
+    if (top < pad) top = rect.bottom + gap
+
+    setTipStyle({ left, top, opacity: 1 })
+  }
+
+  useLayoutEffect(() => {
+    if (!visible) return
+    repositionTip()
+    const onMove = () => repositionTip()
+    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onMove)
+    return () => {
+      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onMove)
+    }
+  }, [visible, label])
+
   return (
-    <span className="group/tip relative inline-flex shrink-0">
-      {children}
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow group-hover/tip:block">
-        {label}
+    <>
+      <span
+        ref={anchorRef}
+        className="inline-flex shrink-0"
+        onMouseEnter={() => {
+          setTipStyle({ left: 0, top: 0, opacity: 0 })
+          setVisible(true)
+        }}
+        onMouseLeave={() => setVisible(false)}
+      >
+        {children}
       </span>
-    </span>
+      {visible && createPortal(
+        <div
+          ref={tipRef}
+          role="tooltip"
+          className="pointer-events-none fixed z-[9999] w-max max-w-[calc(100vw-16px)] whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg"
+          style={{ left: tipStyle.left, top: tipStyle.top, opacity: tipStyle.opacity }}
+        >
+          {label}
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
@@ -49,8 +108,9 @@ function deleteDisabledReason(row) {
 export default function RoleManage() {
   const { roles, saveRolePermissions, addRole, toggleRoleStatus, deleteRole, can } = useAuth()
   const { ToastNode, show: toast } = useToast()
-  const [queryName, setQueryName] = useState('')
-  const [queryType, setQueryType] = useState('')
+  const [qName, setQName] = useState('')
+  const [qType, setQType] = useState('')
+  const [filters, setFilters] = useState({})
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createForm, setCreateForm] = useState({ name: '', description: '', type: '自定义' })
@@ -89,12 +149,15 @@ export default function RoleManage() {
 
   const filtered = useMemo(() =>
     roles.filter((r) => {
-      if (queryName && !r.name.includes(queryName)) return false
-      if (queryType && r.type !== queryType)         return false
+      if (filters.name && !r.name.includes(filters.name)) return false
+      if (filters.type && r.type !== filters.type) return false
       return true
     }),
-    [roles, queryName, queryType],
+    [roles, filters],
   )
+
+  const applyFilters = () => setFilters({ name: qName.trim(), type: qType })
+  const resetFilters = () => { setQName(''); setQType(''); setFilters({}) }
 
   const handleSavePermissions = (permissions) => {
     if (!permTarget) return
@@ -168,23 +231,25 @@ export default function RoleManage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-gray-100 bg-white px-5 py-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-800">角色管理</h2>
-      </div>
-
       <div className="space-y-3">
         <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-end gap-3">
-            <div><label className={LBL}>角色名称</label>
-              <input placeholder="请输入角色名称" value={queryName} onChange={(e) => setQueryName(e.target.value)} className={`${inputCls} w-40`} /></div>
-            <div><label className={LBL}>角色类型</label>
-              <select value={queryType} onChange={(e) => setQueryType(e.target.value)} className={`${selCls} w-28`}>
+            <div className="min-w-[200px] flex-1">
+              <label className={LBL}>角色名称</label>
+              <input placeholder="请输入角色名称" value={qName} onChange={(e) => setQName(e.target.value)} className={inputCls} />
+            </div>
+            <div className="min-w-[140px] flex-1">
+              <label className={LBL}>角色类型</label>
+              <select value={qType} onChange={(e) => setQType(e.target.value)} className={selCls}>
                 <option value="">全部类型</option>
                 <option value="内置">内置</option>
                 <option value="自定义">自定义</option>
-              </select></div>
-            <button onClick={() => { setQueryName(''); setQueryType('') }}
-              className="h-8 cursor-pointer rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-600 hover:bg-gray-50">重置</button>
+              </select>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button onClick={resetFilters}>重置</Button>
+              <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-between">

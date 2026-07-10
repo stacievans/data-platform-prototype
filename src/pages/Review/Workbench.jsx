@@ -438,6 +438,7 @@ function AuditPanel({ mode, entry, form, setForm, onSubmitReview, onSubmitAccept
           <MetaRow label="采集项目" value={ctx.projectName} />
           <MetaRow label="采集任务" value={ctx.taskName} />
           <MetaRow label="采集员" value={entry.uploader} />
+          <MetaRow label="设备类型" value={entry.deviceTypeName ?? '—'} />
           <MetaRow
             label="采集设备"
             value={entry.collectDevice}

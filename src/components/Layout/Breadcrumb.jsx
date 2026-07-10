@@ -24,6 +24,8 @@ const routes = [
   { match: /^\/device/, crumbs: [['设备管理']] },
   { match: /^\/system\/user/, crumbs: [['系统管理'], ['用户管理']] },
   { match: /^\/system\/role/, crumbs: [['系统管理'], ['角色管理']] },
+  { match: /^\/system\/org\/[^/]+$/, crumbs: [['系统管理'], ['组织管理', '/system/org'], ['组织详情']] },
+  { match: /^\/system\/org/, crumbs: [['系统管理'], ['组织管理']] },
   { match: /^\/system/, crumbs: [['系统管理']] },
 ]
 

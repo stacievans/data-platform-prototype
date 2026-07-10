@@ -18,6 +18,7 @@ import {
 } from '../../mock/tags'
 import { buildTypeNameReference } from '../../utils/deviceTypeName'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
+import urdfImg from '../../assets/review/urdf-robot.png'
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
@@ -34,7 +35,6 @@ const emptyTypeForm = () => {
     body: bodies[0] ?? '',
     leftEnd: ends[0] ?? '',
     rightEnd: ends[0] ?? '',
-    urdf: '',
     description: '',
   }
 }
@@ -69,7 +69,6 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         body: editing.body,
         leftEnd: editing.leftEnd,
         rightEnd: editing.rightEnd,
-        urdf: editing.urdf ?? '',
         description: editing.description ?? '',
       })
     } else {
@@ -114,7 +113,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         body: form.body,
         leftEnd: form.leftEnd,
         rightEnd: form.rightEnd,
-        urdf: form.urdf.trim(),
+        hasUrdf: false,
         description: form.description.trim(),
         creator: creatorName,
         createdAt: ts,
@@ -177,13 +176,6 @@ function TypeModal({ open, editing, onCancel, onOk }) {
             {renderEndField('右', form.rightEnd, 'rightEnd')}
           </Field>
         </div>
-        <Field label="URDF">
-          {isEdit ? (
-            <input readOnly value={form.urdf} className={readOnlyCls} />
-          ) : (
-            <input placeholder="请输入 URDF 文件路径（选填）" value={form.urdf} onChange={(e) => set('urdf', e.target.value)} className={inputCls} />
-          )}
-        </Field>
         <Field label="描述">
           <textarea
             rows={2}
@@ -299,6 +291,38 @@ function DeleteTypeAction({ row, onDelete }) {
   )
 }
 
+function UrdfPreviewModal({ open, typeName, onClose }) {
+  return (
+    <Modal
+      open={open}
+      title="URDF 模型预览"
+      onCancel={onClose}
+      width={560}
+      footer={(
+        <div className="flex justify-end">
+          <Button onClick={onClose}>关闭</Button>
+        </div>
+      )}
+    >
+      <p className="mb-4 text-sm text-gray-500">{typeName}</p>
+      <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-black">
+        <img
+          src={urdfImg}
+          alt=""
+          className="mx-auto aspect-[4/3] w-full max-h-[360px] object-contain"
+          draggable={false}
+        />
+        <span className="absolute bottom-3 left-3 rounded bg-black/60 px-2 py-1 text-xs text-white">
+          零坐标初始姿态
+        </span>
+      </div>
+      <p className="mt-4 text-center text-xs text-gray-400">
+        当前为静态占位，正式版本支持拖拽旋转查看
+      </p>
+    </Modal>
+  )
+}
+
 export default function TypeList() {
   const [types, setTypes] = useState(() => getAllDeviceTypes())
   const bodyOptions = getBodyTypeTagNames()
@@ -313,6 +337,7 @@ export default function TypeList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRow, setEditingRow] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [previewTarget, setPreviewTarget] = useState(null)
 
   const refresh = () => setTypes(getAllDeviceTypes())
 
@@ -379,8 +404,14 @@ export default function TypeList() {
     { title: '右末端类型', dataIndex: 'rightEnd' },
     {
       title: 'URDF',
-      dataIndex: 'urdf',
-      render: (v) => <span className="font-mono text-xs text-gray-600">{v || '—'}</span>,
+      key: 'urdf',
+      render: (_, row) => (
+        row.hasUrdf ? (
+          <Button variant="link" size="sm" onClick={() => setPreviewTarget(row)}>预览</Button>
+        ) : (
+          <span className="text-gray-400">—</span>
+        )
+      ),
     },
     { title: '实例数量', dataIndex: 'instanceCount' },
     {
@@ -473,6 +504,12 @@ export default function TypeList() {
       <Table columns={columns} dataSource={filtered} />
 
       <TypeModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} />
+
+      <UrdfPreviewModal
+        open={!!previewTarget}
+        typeName={previewTarget?.name ?? ''}
+        onClose={() => setPreviewTarget(null)}
+      />
 
       <Modal
         open={!!deleteTarget}

@@ -7,7 +7,7 @@ const initialDeviceTypes = [
     body: 'AlphaBot1',
     leftEnd: '因时·EG2-4B 夹爪',
     rightEnd: '因时·EG2-4B 夹爪',
-    urdf: 'alphabotx_gripper_dual.urdf',
+    hasUrdf: true,
     description: '单臂夹爪配置，适用于家庭与零售场景采集',
     creator: '张华',
     createdAt: '2026-03-08 10:30:00',
@@ -19,7 +19,7 @@ const initialDeviceTypes = [
     body: 'AlphaBot1',
     leftEnd: '因时·RH56DFX 灵巧手',
     rightEnd: '因时·RH56DFX 灵巧手',
-    urdf: 'alphabotx_dexhand_dual.urdf',
+    hasUrdf: false,
     description: '灵巧手配置，支持精细操作与触觉采集',
     creator: '张华',
     createdAt: '2026-03-08 11:15:00',
@@ -31,7 +31,7 @@ const initialDeviceTypes = [
     body: 'AlphaBot2',
     leftEnd: '因时·RH56BFX 灵巧手',
     rightEnd: '因时·RH56BFX 灵巧手',
-    urdf: 'alphabot2_dexhand_dual.urdf',
+    hasUrdf: true,
     description: '双臂灵巧手协作配置，工业装配场景',
     creator: '张华',
     createdAt: '2026-03-10 08:00:00',
@@ -43,7 +43,7 @@ const initialDeviceTypes = [
     body: 'AlphaBot2',
     leftEnd: '因时·EG2-4C 夹爪',
     rightEnd: '因时·RH56DFX 灵巧手',
-    urdf: 'alphabot2_gripper_dexhand.urdf',
+    hasUrdf: true,
     description: '双臂异构末端，左夹爪右灵巧手快换工位',
     creator: '李明',
     createdAt: '2026-04-01 13:20:00',
@@ -55,7 +55,7 @@ const initialDeviceTypes = [
     body: 'AlphaBot2',
     leftEnd: '因时·RH56BFX 灵巧手',
     rightEnd: '因时·EG2-4B 夹爪',
-    urdf: 'alphabot2_dexhand_gripper.urdf',
+    hasUrdf: true,
     description: '双臂异构末端，左灵巧手右夹爪，厨房与餐饮场景',
     creator: '李明',
     createdAt: '2026-04-05 15:40:00',
@@ -81,10 +81,12 @@ let runtimeInstances = initialDeviceInstances.map((i) => ({ ...i }))
 
 export function enrichDeviceType(type) {
   if (!type) return null
+  const { urdf, ...rest } = type
   return {
-    ...type,
-    name: type.name ?? buildTypeName(type.body, type.leftEnd, type.rightEnd),
-    instanceCount: runtimeInstances.filter((i) => i.typeId === type.id).length,
+    ...rest,
+    hasUrdf: rest.hasUrdf ?? Boolean(urdf),
+    name: rest.name ?? buildTypeName(rest.body, rest.leftEnd, rest.rightEnd),
+    instanceCount: runtimeInstances.filter((i) => i.typeId === rest.id).length,
   }
 }
 

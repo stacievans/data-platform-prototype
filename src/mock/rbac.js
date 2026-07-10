@@ -1,11 +1,11 @@
-import { buildRolePermissionPreset, countPermittedModules } from './permissions'
-import { users } from './misc'
+import { buildRolePermissionPreset, countPermittedModules, SUPER_ADMIN_ROLE } from './permissions'
+import { getRuntimeUsers } from './organizations'
 
 const initialRoles = [
   {
     id: 'R-001',
-    name: '管理员',
-    description: '平台最高权限，可操作全部功能模块',
+    name: '组织管理员',
+    description: '本组织最高权限，可操作本组织全部功能模块',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
     status: '启用',
@@ -69,7 +69,7 @@ const initialRoles = [
 ]
 
 function memberCountForRole(roleName) {
-  return users.filter((u) => u.role === roleName).length
+  return getRuntimeUsers().filter((u) => u.role === roleName).length
 }
 
 function enrichRole(role) {
@@ -86,7 +86,7 @@ function enrichRole(role) {
 let runtimeRoles = initialRoles.map(enrichRole)
 
 export function getRuntimeRoles() {
-  return runtimeRoles.map(enrichRole)
+  return runtimeRoles.map(enrichRole).filter((r) => r.name !== SUPER_ADMIN_ROLE)
 }
 
 export function updateRolePermissions(roleId, permissions) {
@@ -121,9 +121,10 @@ export function getRoleByName(name) {
   return getRuntimeRoles().find((r) => r.name === name)
 }
 
-/** 顶栏演示身份切换（启用用户） */
+/** 顶栏演示身份切换（启用用户）；超级管理员不在角色管理列表中 */
 export const DEMO_PERSONAS = [
-  { uid: 'U-001', label: '管理员（张华）' },
+  { uid: 'U-000', label: '超级管理员' },
+  { uid: 'U-001', label: '组织管理员（张华）' },
   { uid: 'U-002', label: '平台运营（李明）' },
   { uid: 'U-004', label: '采集员（刘伟）' },
   { uid: 'U-006', label: '标注员（孙丽）' },
@@ -131,7 +132,10 @@ export const DEMO_PERSONAS = [
   { uid: 'U-010', label: '工程师（陈工）' },
 ]
 
+export { SUPER_ADMIN_ROLE }
+
 export const USER_EMAILS = {
+  系统: 'system@ai2robotics.com',
   张华: 'zhanghua@ai2robotics.com',
   李明: 'ming.li@ai2robotics.com',
   王芳: 'wangfang@ai2robotics.com',

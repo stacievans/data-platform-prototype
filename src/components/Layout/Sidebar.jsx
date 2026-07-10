@@ -41,6 +41,7 @@ const menu = [
     children: [
       { key: '/system/user', label: '用户管理', permission: 'system.user.view' },
       { key: '/system/role', label: '角色管理', permission: 'system.role.view' },
+      { key: '/system/org', label: '组织管理', permission: 'system.org.view' },
     ],
   },
 ]

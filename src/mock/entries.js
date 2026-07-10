@@ -48,6 +48,7 @@ function pickStatus(task, rand) {
 }
 
 function buildEntryExtras(task) {
+  const enriched = enrichTask(task)
   const plan = plans.find((p) => p.id === task?.planId)
   const shortInstruction = task?.name?.includes('分拣')
     ? '挂回货架'
@@ -57,9 +58,10 @@ function buildEntryExtras(task) {
         ? '完成螺钉锁附'
         : `执行「${task?.name ?? '采集任务'}」`
   return {
-    collectDevice: enrichTask(task)?.device ?? '—',
-    collectDeviceSn: enrichTask(task)?.deviceSn ?? '',
-    deviceTypeName: task?.deviceTypeName ?? '—',
+    collectDevice: enriched?.device ?? '—',
+    collectDeviceSn: enriched?.deviceSn ?? '',
+    deviceTypeId: enriched?.deviceTypeId ?? '',
+    deviceTypeName: enriched?.deviceTypeName ?? '—',
     collectMethod: task?.method ?? '—',
     taskInstruction: shortInstruction,
     sceneInitialState: plan?.initialScene ? '已就绪' : '—',
@@ -287,8 +289,10 @@ export function getEntryById(id) {
   const task = getTaskById(merged.taskId)
   return {
     ...merged,
-    collectDevice: task?.device ?? merged.collectDevice ?? '—',
-    collectDeviceSn: task?.deviceSn ?? merged.collectDeviceSn ?? '',
+    collectDevice: merged.collectDevice ?? task?.device ?? '—',
+    collectDeviceSn: merged.collectDeviceSn ?? task?.deviceSn ?? '',
+    deviceTypeId: merged.deviceTypeId ?? '',
+    deviceTypeName: merged.deviceTypeName ?? '—',
   }
 }
 

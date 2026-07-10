@@ -327,6 +327,11 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
     {
+      title: '设备类型',
+      dataIndex: 'deviceTypeName',
+      render: (v) => <span className="text-gray-700">{v || '—'}</span>,
+    },
+    {
       title: '采集设备',
       dataIndex: 'collectDevice',
       render: (v, row) => <CollectDeviceCell code={v} sn={row.collectDeviceSn} />,
