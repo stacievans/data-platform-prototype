@@ -8,6 +8,7 @@ import {
   getAllDeviceTypes,
   getAllDeviceInstances,
   getNextInstanceCode,
+  isDeviceCodeTaken,
   isDeviceSnTaken,
   setDeviceInstances,
 } from '../../mock/devices'
@@ -68,6 +69,9 @@ function Field({ label, required, error, errorMsg, children }) {
       {error === 'required' && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
       {error === 'duplicate' && (
         <p className="mt-1 text-xs text-red-500">{errorMsg ?? '该 SN 已存在'}</p>
+      )}
+      {error === 'duplicate_code' && (
+        <p className="mt-1 text-xs text-red-500">该编号已存在，请使用其他编号</p>
       )}
     </div>
   )
@@ -144,24 +148,32 @@ function BatteryCell({ battery }) {
   )
 }
 
-function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextCode, onCancel, onOk }) {
+function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, defaultCode, onCancel, onOk }) {
   const isEdit = Boolean(editing)
+  const [code, setCode] = useState('')
   const [sn, setSn] = useState('')
   const [description, setDescription] = useState('')
+  const [codeError, setCodeError] = useState(false)
   const [snError, setSnError] = useState(false)
   const [typeError, setTypeError] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    setCode(editing?.code ?? defaultCode ?? '')
     setSn(editing?.sn ?? '')
     setDescription(editing?.description ?? '')
+    setCodeError(false)
     setSnError(false)
     setTypeError(false)
-  }, [open, editing])
+  }, [open, editing, defaultCode])
 
   const handleOk = () => {
+    const trimmedCode = code.trim()
     const trimmedSn = sn.trim()
+
     if (!isEdit) {
+      if (!trimmedCode) { setCodeError('required'); return }
+      if (isDeviceCodeTaken(trimmedCode)) { setCodeError('duplicate_code'); return }
       if (!trimmedSn) { setSnError('required'); return }
       if (isDeviceSnTaken(trimmedSn)) { setSnError('duplicate'); return }
       if (!formTypeId) { setTypeError(true); return }
@@ -169,7 +181,7 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
       onOk({
         id: `INS-${Date.now()}`,
         typeId: formTypeId,
-        code: nextCode,
+        code: trimmedCode,
         sn: trimmedSn,
         description: description.trim(),
         status: '离线',
@@ -200,6 +212,19 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
       width={520}
     >
       <div className="space-y-4">
+        <Field label="编号" required={!isEdit} error={codeError}>
+          {isEdit ? (
+            <input readOnly value={code} className={readOnlyCls} />
+          ) : (
+            <input
+              placeholder="请输入实例编号"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setCodeError(false) }}
+              className={inputCls + (codeError ? ' border-red-400 focus:ring-red-100' : '')}
+            />
+          )}
+        </Field>
+
         <Field label="SN" required={!isEdit} error={snError}>
           {isEdit ? (
             <input readOnly value={sn} className={readOnlyCls} />
@@ -226,7 +251,7 @@ function InstanceModal({ open, editing, types, formTypeId, onTypeIdChange, nextC
           </select>
           {isEdit && (
             <p className="mt-1.5 text-xs text-gray-400">
-              变更类型不影响历史任务和条目中已记录的本体类型
+              变更类型不影响历史任务和条目中已记录的设备类型
             </p>
           )}
         </Field>
@@ -325,6 +350,11 @@ export default function InstanceList() {
   }
 
   const columns = [
+    {
+      title: '编号',
+      dataIndex: 'code',
+      render: (v) => <span className="font-mono text-xs font-medium text-gray-800">{v}</span>,
+    },
     { title: 'SN', dataIndex: 'sn', render: (v) => <span className="font-mono text-xs">{v}</span> },
     {
       title: '设备类型',
@@ -406,11 +436,11 @@ export default function InstanceList() {
               </select>
             </div>
             <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>实例编号</label>
+              <label className={LBL}>编号</label>
               <input
                 value={codeQuery}
                 onChange={(e) => setCodeQuery(e.target.value)}
-                placeholder="输入实例编号"
+                placeholder="输入编号"
                 className={FILTER_CLS}
               />
             </div>
@@ -446,7 +476,7 @@ export default function InstanceList() {
         types={types}
         formTypeId={editingRow?.typeId ?? formTypeId}
         onTypeIdChange={setFormTypeId}
-        nextCode={nextCode}
+        defaultCode={nextCode}
         onCancel={closeModal}
         onOk={handleSave}
       />

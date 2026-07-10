@@ -16,6 +16,7 @@ import WorkbenchLayoutA from './components/WorkbenchLayoutA'
 import WorkbenchLayoutB from './components/WorkbenchLayoutB'
 import LayoutToggle from './components/LayoutToggle'
 import { generateSignalSeries } from './mock/signalData'
+import { CollectDeviceCell } from '../../utils/deviceDisplay'
 
 const SPEEDS = [0.5, 1, 1.5, 2]
 
@@ -50,11 +51,11 @@ function IconLayoutSidebarRight({ className = 'h-4 w-4' }) {
   )
 }
 
-function MetaRow({ label, value }) {
+function MetaRow({ label, value, title }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1.5 text-sm">
       <span className="shrink-0 text-gray-400">{label}</span>
-      <span className="text-right text-gray-800">{value ?? '—'}</span>
+      <span className="text-right text-gray-800" title={title}>{value ?? '—'}</span>
     </div>
   )
 }
@@ -437,7 +438,11 @@ function AuditPanel({ mode, entry, form, setForm, onSubmitReview, onSubmitAccept
           <MetaRow label="采集项目" value={ctx.projectName} />
           <MetaRow label="采集任务" value={ctx.taskName} />
           <MetaRow label="采集员" value={entry.uploader} />
-          <MetaRow label="采集设备" value={entry.collectDevice} />
+          <MetaRow
+            label="采集设备"
+            value={entry.collectDevice}
+            title={entry.collectDeviceSn?.trim() || undefined}
+          />
           <MetaRow label="采集方式" value={entry.collectMethod} />
           <MetaRow label="格式·时长" value={`${entry.format} · ${durationSec}`} />
           <PlanDetailsExpandable

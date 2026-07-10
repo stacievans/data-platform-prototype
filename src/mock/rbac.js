@@ -8,6 +8,7 @@ const initialRoles = [
     description: '平台最高权限，可操作全部功能模块',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
   },
   {
     id: 'R-002',
@@ -15,6 +16,7 @@ const initialRoles = [
     description: '管理采集项目和任务，查看数据集与报表',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
   },
   {
     id: 'R-003',
@@ -22,6 +24,7 @@ const initialRoles = [
     description: '执行采集任务，上传采集数据',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
   },
   {
     id: 'R-004',
@@ -29,6 +32,7 @@ const initialRoles = [
     description: '标注采集数据，进行质检标注操作',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
   },
   {
     id: 'R-005',
@@ -36,6 +40,7 @@ const initialRoles = [
     description: '查看数据集、标签与设备信息',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
   },
   {
     id: 'R-006',
@@ -43,6 +48,23 @@ const initialRoles = [
     description: '查看并下载数据集、标签与设备信息',
     createdAt: '2026-03-01 00:00:00',
     type: '内置',
+    status: '启用',
+  },
+  {
+    id: 'R-007',
+    name: '数据审核员',
+    description: '负责数据集审核与导出审批，无平台配置权限',
+    createdAt: '2026-05-20 10:00:00',
+    type: '自定义',
+    status: '启用',
+  },
+  {
+    id: 'R-008',
+    name: '区域协调员',
+    description: '协调区域采集资源与任务排期',
+    createdAt: '2026-05-22 14:30:00',
+    type: '自定义',
+    status: '启用',
   },
 ]
 
@@ -54,6 +76,7 @@ function enrichRole(role) {
   const permissions = role.permissions ?? buildRolePermissionPreset(role.name)
   return {
     ...role,
+    status: role.status ?? '启用',
     permissions,
     moduleCount: countPermittedModules(permissions),
     memberCount: memberCountForRole(role.name),
@@ -79,8 +102,18 @@ export function appendRuntimeRole(role) {
   const permissions = role.permissions ?? []
   runtimeRoles = [
     ...runtimeRoles,
-    enrichRole({ ...role, permissions }),
+    enrichRole({ status: '启用', ...role, permissions }),
   ]
+  return getRuntimeRoles()
+}
+
+export function setRoleStatus(roleId, status) {
+  runtimeRoles = runtimeRoles.map((r) => (r.id === roleId ? { ...r, status } : r))
+  return getRuntimeRoles()
+}
+
+export function deleteRuntimeRole(roleId) {
+  runtimeRoles = runtimeRoles.filter((r) => r.id !== roleId)
   return getRuntimeRoles()
 }
 

@@ -28,6 +28,7 @@ import {
 import { projects } from '../../mock/projects'
 import { getTaskPurposeTags } from '../../mock/tags'
 import { getAllDeviceTypes, getAllDeviceInstances, getInStockInstancesByTypeId } from '../../mock/devices'
+import { formatDeviceSelectLabel } from '../../utils/deviceDisplay'
 import { useCurrentNickname } from '../../context/AuthContext'
 
 const PURPOSE_OPTIONS = getTaskPurposeTags().map((t) => ({
@@ -637,7 +638,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
                 {deviceSelectDisabled ? '请先配置采集方案' : '请选择设备实例'}
               </option>
               {filteredInstances.map((i) => (
-                <option key={i.id} value={i.id}>{i.code}</option>
+                <option key={i.id} value={i.id}>{formatDeviceSelectLabel(i)}</option>
               ))}
             </select>
           </Field>

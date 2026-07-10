@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 import { canAccessTask } from '../../mock/permissions'
 import EntryListPanel from '../../components/task/EntryListPanel'
 import NoPermission from '../System/NoPermission'
+import { CollectDeviceCell } from '../../utils/deviceDisplay'
 
 /* ---------- 详情页 ---------- */
 export default function TaskDetail() {
@@ -43,7 +44,8 @@ export default function TaskDetail() {
               {task.id} · {task.projectName} · 方案 {task.planId}
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              本体类型 {task.robotBody} · 采集设备 {task.device ?? '—'}
+              设备类型 {task.robotBody} · 采集设备{' '}
+              <CollectDeviceCell code={task.device} sn={task.deviceSn} />
             </p>
           </div>
           <div className="flex items-center gap-10 text-sm">

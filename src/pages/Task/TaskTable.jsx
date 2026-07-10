@@ -11,6 +11,7 @@ import { PermButton, PermAction } from '../../components/common/PermissionAction
 import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
+import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import CreateTaskModal from './CreateTaskModal'
 
 const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
@@ -248,9 +249,6 @@ export default function TaskTable({
           <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'accept')}>验收</LinkAction>
           <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
           <LinkAction permission="collection.task.edit" onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
-          {onDeleteClick && (
-            <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>
-          )}
         </ActionBar>
       )
     }
@@ -258,7 +256,6 @@ export default function TaskTable({
     /* 已归档 */
     return (
       <ActionBar>
-        <DuplicateBtn onClick={() => onCopy?.(row)} />
         <ViewBtn onClick={goView} />
         {onDeleteClick && (
           <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>
@@ -292,8 +289,12 @@ export default function TaskTable({
       render: (v) => <span className="text-gray-700">{v ?? '—'}</span>,
     }] : []),
     { title: '任务用途', dataIndex: 'purpose', render: (v) => v ?? '—' },
-    { title: '本体类型', dataIndex: 'robotBody', render: (v) => v ?? '—' },
-    { title: '采集设备', dataIndex: 'device', render: (v) => v ?? '—' },
+    { title: '设备类型', dataIndex: 'robotBody', render: (v) => v ?? '—' },
+    {
+      title: '采集设备',
+      dataIndex: 'device',
+      render: (v, row) => <CollectDeviceCell code={v} sn={row.deviceSn} />,
+    },
     { title: '采集方案ID', dataIndex: 'planId' },
     { title: '所属场景', dataIndex: 'scene', render: (v) => v ?? '—' },
     { title: '采集方式', dataIndex: 'method' },

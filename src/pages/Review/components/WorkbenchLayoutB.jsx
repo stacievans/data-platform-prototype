@@ -1,15 +1,7 @@
-import { useState } from 'react'
 import PlayheadOverlay from './PlayheadOverlay'
-import CameraMock from './CameraMock'
+import CameraSwapPanel from './CameraSwapPanel'
 import UrdfTrajectoryMock from './UrdfTrajectoryMock'
 import SignalChartMock from './SignalChartMock'
-
-const VIEW_LABELS = {
-  head: '头部 · 主视角',
-  chest: '胸部',
-  leftWrist: '左腕',
-  rightWrist: '右腕',
-}
 
 const SIGNAL_PANELS = [
   { type: 'joint', side: 'left', label: '左臂关节' },
@@ -18,49 +10,6 @@ const SIGNAL_PANELS = [
   { type: 'pose', side: 'right', label: '右末端位姿' },
   { type: 'gripper', side: 'both', label: '夹爪 (左+右)' },
 ]
-
-function CameraSwapArea({ playPct }) {
-  const [mainView, setMainView] = useState('head')
-  const [thumbViews, setThumbViews] = useState(['chest', 'leftWrist', 'rightWrist'])
-
-  const swapWithMain = (clicked) => {
-    setMainView(clicked)
-    setThumbViews((prev) => prev.map((v) => (v === clicked ? mainView : v)))
-  }
-
-  return (
-    <div className="flex h-full min-h-0 min-w-0 flex-[2] flex-col gap-1">
-      <PlayheadOverlay
-        playPct={playPct}
-        label={VIEW_LABELS[mainView]}
-        showPlayhead={false}
-        className="min-h-0 flex-[3]"
-      >
-        <CameraMock view={mainView} />
-      </PlayheadOverlay>
-      <div className="flex min-h-0 flex-1 gap-1">
-        {thumbViews.map((view) => (
-          <PlayheadOverlay
-            key={view}
-            playPct={playPct}
-            label={VIEW_LABELS[view]}
-            showPlayhead={false}
-            className="min-h-0 min-w-0 flex-1 cursor-pointer transition hover:ring-2 hover:ring-blue-400/60"
-          >
-            <button
-              type="button"
-              className="h-full w-full cursor-pointer border-0 bg-transparent p-0"
-              title={`点击与主视角互换 · ${VIEW_LABELS[view]}`}
-              onClick={() => swapWithMain(view)}
-            >
-              <CameraMock view={view} />
-            </button>
-          </PlayheadOverlay>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 /** 布局 B：左 5 张信号图 · 中图像互换 · 右 URDF */
 export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames }) {
@@ -86,7 +35,7 @@ export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames })
         ))}
       </div>
 
-      <CameraSwapArea playPct={playPct} />
+      <CameraSwapPanel playPct={playPct} variant="stack" />
 
       <PlayheadOverlay
         playPct={playPct}

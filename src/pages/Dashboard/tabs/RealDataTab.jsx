@@ -452,7 +452,7 @@ export default function RealDataTab({ fixedProjectId = null }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {[
           { title: '场景分布', data: pData.sceneDistribution },
-          { title: '本体类型分布', data: pData.bodyDistribution },
+          { title: '设备类型分布', data: pData.bodyDistribution },
           { title: '采集方式分布', data: pData.methodDistribution },
           { title: '末端类型分布', data: pData.endTypeDistribution },
         ].map(({ title, data }) => (

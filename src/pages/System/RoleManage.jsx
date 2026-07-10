@@ -14,8 +14,40 @@ const LBL = 'mb-1 block text-xs text-gray-500'
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const selCls = `${inputCls} cursor-pointer`
 
+function TooltipWrap({ label, children }) {
+  return (
+    <span className="group/tip relative inline-flex shrink-0">
+      {children}
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow group-hover/tip:block">
+        {label}
+      </span>
+    </span>
+  )
+}
+
+function StatusSwitch({ enabled, onToggle }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+      aria-label={enabled ? '启用' : '停用'}
+    >
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${enabled ? 'left-[18px]' : 'left-0.5'}`}
+      />
+    </button>
+  )
+}
+
+function deleteDisabledReason(row) {
+  if (row.type === '内置') return '内置角色不可删除'
+  if (row.memberCount > 0) return '该角色下存在成员，无法删除'
+  return null
+}
+
 export default function RoleManage() {
-  const { roles, saveRolePermissions, addRole, can } = useAuth()
+  const { roles, saveRolePermissions, addRole, toggleRoleStatus, deleteRole, can } = useAuth()
   const { ToastNode, show: toast } = useToast()
   const [queryName, setQueryName] = useState('')
   const [queryType, setQueryType] = useState('')
@@ -24,6 +56,7 @@ export default function RoleManage() {
   const [createForm, setCreateForm] = useState({ name: '', description: '', type: '自定义' })
   const [createErrors, setCreateErrors] = useState({})
   const [permTarget, setPermTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const nextRoleId = useMemo(() => {
     const nums = roles.map((r) => parseInt(r.id.replace('R-', '')) || 0)
@@ -46,6 +79,7 @@ export default function RoleManage() {
       memberCount: 0,
       createdAt: nowDateTime(),
       type: createForm.type,
+      status: '启用',
     })
     setCreateOpen(false)
     setCreateForm({ name: '', description: '', type: '自定义' })
@@ -69,6 +103,20 @@ export default function RoleManage() {
     toast(`已更新「${permTarget.name}」权限（${countPermittedModules(permissions)} 个模块）`)
   }
 
+  const handleToggleStatus = (row) => {
+    const result = toggleRoleStatus(row.id)
+    if (!result) return
+    toast(`已${result.status}角色「${result.name}」`)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    const name = deleteTarget.name
+    deleteRole(deleteTarget.id)
+    setDeleteTarget(null)
+    toast(`已删除角色「${name}」`)
+  }
+
   const columns = [
     { title: '角色ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
     { title: '角色名称', dataIndex: 'name', render: (v) => <span className="font-medium">{v}</span> },
@@ -78,11 +126,43 @@ export default function RoleManage() {
     dtCol('创建时间', 'createdAt'),
     { title: '类型', dataIndex: 'type', render: (v) => <Badge color={v === '内置' ? 'blue' : 'purple'}>{v}</Badge> },
     {
+      title: '状态',
+      dataIndex: 'status',
+      render: (v, row) => (
+        <StatusSwitch
+          enabled={v === '启用'}
+          onToggle={() => handleToggleStatus(row)}
+        />
+      ),
+    },
+    {
       title: '操作',
       key: 'actions',
-      render: (_, row) => can('system.role.assignPerm')
-        ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑权限</Button>
-        : <span className="text-xs text-gray-300">—</span>,
+      render: (_, row) => {
+        const deleteReason = deleteDisabledReason(row)
+        const canDelete = !deleteReason
+        const deleteBtn = (
+          <button
+            type="button"
+            disabled={!canDelete}
+            onClick={canDelete ? () => setDeleteTarget(row) : undefined}
+            className={`text-sm ${canDelete ? 'cursor-pointer text-red-500 hover:text-red-400' : 'cursor-not-allowed text-red-300 opacity-40'}`}
+          >
+            删除
+          </button>
+        )
+
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {can('system.role.assignPerm')
+              ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑权限</Button>
+              : <span className="text-xs text-gray-300">—</span>}
+            {deleteReason
+              ? <TooltipWrap label={deleteReason}>{deleteBtn}</TooltipWrap>
+              : deleteBtn}
+          </div>
+        )
+      },
     },
   ]
 
@@ -148,6 +228,20 @@ export default function RoleManage() {
               </div>
             )
           })()}
+        </Modal>
+
+        <Modal
+          open={!!deleteTarget}
+          title="删除角色"
+          onCancel={() => setDeleteTarget(null)}
+          onOk={confirmDelete}
+          okText="确定删除"
+          width={480}
+        >
+          <p className="text-sm leading-relaxed text-gray-600">
+            确定删除角色「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
+            删除后不可恢复，且该角色将无法分配给用户。
+          </p>
         </Modal>
 
         <RolePermissionModal

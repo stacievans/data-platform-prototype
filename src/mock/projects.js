@@ -1,4 +1,4 @@
-// status: 'not_started' | 'in_progress' | 'completed' | 'archived'
+// status: 'open' | 'closed' | 'archived'
 // 采集项目（V2.0 起不再使用 projectType，试采/正式已下沉为任务用途）
 export const projects = [
   {
@@ -10,7 +10,7 @@ export const projects = [
     description: '面向家庭环境的物品分拣与整理操作数据采集，覆盖客厅、卧室多类目标物体。',
     createdAt: '2026-03-12 10:24:00',
     updatedAt: '2026-06-08 17:32:00',
-    status: 'in_progress',
+    status: 'open',
     collected: 124,
     target: 200,
   },
@@ -23,7 +23,7 @@ export const projects = [
     description: '采集切配、翻炒、餐具清洗等厨房精细操作轨迹，用于烹饪技能模型训练。',
     createdAt: '2026-03-20 14:08:00',
     updatedAt: '2026-06-07 09:15:00',
-    status: 'in_progress',
+    status: 'open',
     collected: 88,
     target: 150,
   },
@@ -36,7 +36,7 @@ export const projects = [
     description: '产线零件插拔、螺钉锁附等高精度装配动作采集，要求双臂协同。',
     createdAt: '2026-04-02 09:45:00',
     updatedAt: '2026-06-09 14:20:00',
-    status: 'in_progress',
+    status: 'open',
     collected: 210,
     target: 300,
   },
@@ -49,7 +49,7 @@ export const projects = [
     description: '商超货架商品识别、抓取与补货摆放操作数据采集。',
     createdAt: '2026-04-15 16:30:00',
     updatedAt: '2026-05-20 11:00:00',
-    status: 'completed',
+    status: 'open',
     collected: 80,
     target: 80,
   },
@@ -62,7 +62,7 @@ export const projects = [
     description: '柔性物体（T恤、毛巾、裤装）抓取与折叠操作采集，重点关注形变状态标注。',
     createdAt: '2026-04-28 11:12:00',
     updatedAt: '2026-06-05 16:44:00',
-    status: 'in_progress',
+    status: 'open',
     collected: 34,
     target: 100,
   },
@@ -75,7 +75,7 @@ export const projects = [
     description: '餐厅场景餐具回收、桌面擦拭等服务类操作数据采集。',
     createdAt: '2026-05-09 15:50:00',
     updatedAt: '2026-06-09 10:35:00',
-    status: 'not_started',
+    status: 'closed',
     collected: 0,
     target: 60,
   },
@@ -101,7 +101,7 @@ export const projects = [
     description: '笔、卡片、回形针等小物件灵巧手精细抓取数据采集。',
     createdAt: '2026-05-26 09:18:00',
     updatedAt: '2026-06-10 08:55:00',
-    status: 'in_progress',
+    status: 'open',
     collected: 57,
     target: 150,
   },

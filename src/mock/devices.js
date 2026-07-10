@@ -3,8 +3,8 @@ import { buildTypeName } from '../utils/deviceTypeName'
 const initialDeviceTypes = [
   {
     id: 'DTY-001',
-    name: 'AlphaBotX · 夹爪+夹爪',
-    body: 'AlphaBotX',
+    name: 'AlphaBot1 · 夹爪+夹爪',
+    body: 'AlphaBot1',
     leftEnd: '因时·EG2-4B 夹爪',
     rightEnd: '因时·EG2-4B 夹爪',
     urdf: 'alphabotx_gripper_dual.urdf',
@@ -15,8 +15,8 @@ const initialDeviceTypes = [
   },
   {
     id: 'DTY-002',
-    name: 'AlphaBotX · 灵巧手+灵巧手',
-    body: 'AlphaBotX',
+    name: 'AlphaBot1 · 灵巧手+灵巧手',
+    body: 'AlphaBot1',
     leftEnd: '因时·RH56DFX 灵巧手',
     rightEnd: '因时·RH56DFX 灵巧手',
     urdf: 'alphabotx_dexhand_dual.urdf',
@@ -126,7 +126,7 @@ export function getInstancesByTypeId(typeId) {
   return runtimeInstances.filter((i) => i.typeId === typeId).map(enrichDeviceInstance)
 }
 
-/** 某本体类型下在库（已注册）的设备实例 */
+/** 某设备类型下在库（已注册）的设备实例 */
 export function getInStockInstancesByTypeId(typeId) {
   return getInstancesByTypeId(typeId)
 }
@@ -145,6 +145,14 @@ export function isDeviceSnTaken(sn, excludeId = null) {
   if (!normalized) return false
   return runtimeInstances.some(
     (i) => i.sn?.trim().toLowerCase() === normalized && i.id !== excludeId,
+  )
+}
+
+export function isDeviceCodeTaken(code, excludeId = null) {
+  const normalized = code.trim().toLowerCase()
+  if (!normalized) return false
+  return runtimeInstances.some(
+    (i) => i.code?.trim().toLowerCase() === normalized && i.id !== excludeId,
   )
 }
 

@@ -13,17 +13,16 @@ import { filterProjectsByDataScope } from '../../mock/permissions'
 import { PermButton, PermAction, PermMenuItem } from '../../components/common/PermissionAction'
 import { LIST_PAGE_SIZE, usePagination } from '../../hooks/usePagination'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
-
-/* ── status helpers ── */
-const STATUS_MAP = {
-  not_started: { label: '未开始', color: 'gray' },
-  in_progress:  { label: '进行中', color: 'blue' },
-  completed:    { label: '已完成', color: 'green' },
-  archived:     { label: '已归档', color: 'gray' },
-}
+import { useToast } from '../../components/common/Toast'
+import {
+  canAcceptProject,
+  getProjectStatusMeta,
+  normalizeProjectStatus,
+  PROJECT_STATUS_FILTER_OPTIONS,
+} from '../../utils/projectStatus'
 
 const statusBadge = (status) => {
-  const s = STATUS_MAP[status] ?? { label: status, color: 'gray' }
+  const s = getProjectStatusMeta(status)
   return <Badge color={s.color} dot>{s.label}</Badge>
 }
 
@@ -48,7 +47,16 @@ function MiniProgress({ collected, target }) {
 }
 
 /* ── three-dot menu (card view) ── */
-function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetail, onAccept }) {
+function CardMenu({
+  project,
+  onViewDetail,
+  onEdit,
+  onAccept,
+  onClose,
+  onOpen,
+  onArchive,
+  onDeleteClick,
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -60,8 +68,25 @@ function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetai
   }, [open])
 
   const close = (fn) => () => { setOpen(false); fn() }
-  const isArchived = project.status === 'archived'
-  const showAccept = canAcceptProject(project.status)
+  const status = normalizeProjectStatus(project.status)
+
+  const items = []
+  items.push({ permission: null, label: '查看详情', onClick: close(onViewDetail) })
+
+  if (status === 'archived') {
+    items.push({ permission: 'collection.project.delete', label: '删除', onClick: close(onDeleteClick), danger: true })
+  } else {
+    if (canAcceptProject(status)) {
+      items.push({ permission: null, label: '验收', onClick: close(onAccept) })
+    }
+    items.push({ permission: 'collection.project.edit', label: '编辑', onClick: close(onEdit) })
+    if (status === 'open') {
+      items.push({ permission: 'collection.project.edit', label: '关闭', onClick: close(onClose), warn: true })
+    } else {
+      items.push({ permission: 'collection.project.edit', label: '开启', onClick: close(onOpen) })
+    }
+    items.push({ permission: 'collection.project.archive', label: '归档', onClick: close(onArchive), warn: true })
+  }
 
   return (
     <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
@@ -75,16 +100,20 @@ function CardMenu({ project, onEdit, onToggleArchive, onDeleteClick, onViewDetai
       </button>
       {open && (
         <div className="absolute right-0 top-7 z-20 w-32 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-xl">
-          <CardMenuItem label="查看详情" onClick={close(onViewDetail)} />
-          {showAccept && <CardMenuItem label="验收" onClick={close(onAccept)} />}
-          <PermMenuItem permission="collection.project.edit" label="编辑" onClick={close(onEdit)} />
-          <PermMenuItem
-            permission="collection.project.archive"
-            label={isArchived ? '取消归档' : '归档'}
-            onClick={close(onToggleArchive)}
-            warn={!isArchived}
-          />
-          <PermMenuItem permission="collection.project.delete" label="删除" onClick={close(onDeleteClick)} danger />
+          {items.map((item) => (
+            item.permission
+              ? (
+                <PermMenuItem
+                  key={item.label}
+                  permission={item.permission}
+                  label={item.label}
+                  onClick={item.onClick}
+                  warn={item.warn}
+                  danger={item.danger}
+                />
+              )
+              : <CardMenuItem key={item.label} label={item.label} onClick={item.onClick} warn={item.warn} danger={item.danger} />
+          ))}
         </div>
       )}
     </div>
@@ -103,6 +132,21 @@ function CardMenuItem({ label, onClick, warn, danger }) {
     >
       {label}
     </button>
+  )
+}
+
+/* ── archive confirm modal ── */
+function ArchiveConfirmModal({ project, open, onCancel, onConfirm }) {
+  if (!open || !project) return null
+  return (
+    <Modal open={open} title="归档项目" onCancel={onCancel} onOk={onConfirm} okText="确定归档" width={480}>
+      <p className="text-sm leading-relaxed text-gray-600">
+        确认归档项目「<strong className="text-gray-800">{project.name}</strong>」？
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-500">
+        归档后将无法新建任务、采集方案等；查看与下载不受影响。
+      </p>
+    </Modal>
   )
 }
 
@@ -182,15 +226,60 @@ function FormRow({ label, required, error, children }) {
 const emptyForm = { name: '', description: '' }
 const emptyCreateForm = { name: '', description: '' }
 
-const STATUS_OPTIONS = [
-  { value: '', label: '全部状态' },
-  { value: 'not_started', label: '未开始' },
-  { value: 'in_progress',  label: '进行中' },
-  { value: 'completed',    label: '已完成' },
-  { value: 'archived',     label: '已归档' },
-]
+const STATUS_OPTIONS = PROJECT_STATUS_FILTER_OPTIONS.map(({ value, label }) => ({
+  value,
+  label: value === '' ? '全部状态' : label,
+}))
 
-const canAcceptProject = (status) => status === 'in_progress' || status === 'completed'
+function ViewDetailBtn({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
+    >
+      查看详情
+    </button>
+  )
+}
+
+function ProjectListActions({ row, onViewDetail, onAccept, onEdit, onClose, onOpen, onArchive, onDelete }) {
+  const status = normalizeProjectStatus(row.status)
+
+  const linkCls = 'cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500'
+  const warnCls = 'cursor-pointer px-1 py-0.5 text-xs text-amber-600 hover:text-amber-500'
+
+  if (status === 'archived') {
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        <ViewDetailBtn onClick={() => onViewDetail(row)} />
+        <PermAction
+          permission="collection.project.delete"
+          className="cursor-pointer px-1 py-0.5 text-xs text-red-500 hover:text-red-400"
+          onClick={() => onDelete(row)}
+        >
+          删除
+        </PermAction>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <ViewDetailBtn onClick={() => onViewDetail(row)} />
+      {canAcceptProject(status) && (
+        <button type="button" className={linkCls} onClick={() => onAccept(row)}>验收</button>
+      )}
+      <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onEdit(row)}>编辑</PermAction>
+      {status === 'open' ? (
+        <PermAction permission="collection.project.edit" className={warnCls} onClick={() => onClose(row)}>关闭</PermAction>
+      ) : (
+        <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onOpen(row)}>开启</PermAction>
+      )}
+      <PermAction permission="collection.project.archive" className={warnCls} onClick={() => onArchive(row)}>归档</PermAction>
+    </div>
+  )
+}
 
 function AcceptChoiceModal({ project, open, onCancel, onFullAccept, onSampleAccept }) {
   if (!open || !project) return null
@@ -228,6 +317,7 @@ export default function ProjectList() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const creatorName = useCurrentNickname()
+  const { ToastNode, show: showToast } = useToast()
   const [projects, setProjects] = useState(initialProjects)
   const [view, setView]         = useState('card')
 
@@ -248,8 +338,9 @@ export default function ProjectList() {
   const [editTarget,   setEditTarget]   = useState(null)
   const [form,         setForm]         = useState(emptyForm)
 
-  /* delete confirm */
+  /* delete / archive confirm */
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [archiveTarget, setArchiveTarget] = useState(null)
   const [acceptTarget, setAcceptTarget] = useState(null)
 
   /* auto-generate next project ID */
@@ -267,7 +358,7 @@ export default function ProjectList() {
   const filtered = useMemo(() => scopedProjects.filter((p) => {
     if (filters.id          && !p.id.toLowerCase().includes(filters.id.toLowerCase())) return false
     if (filters.name        && !p.name.includes(filters.name))                          return false
-    if (filters.status      && p.status !== filters.status)                             return false
+    if (filters.status      && normalizeProjectStatus(p.status) !== filters.status)   return false
     if (filters.creator     && !p.creator.includes(filters.creator))                   return false
     if (filters.dateFrom    && p.createdAt < filters.dateFrom)                          return false
     if (filters.dateTo      && p.createdAt > filters.dateTo + ' 23:59')                return false
@@ -301,7 +392,7 @@ export default function ProjectList() {
       description: createForm.description,
       taskCount: 0, creator: creatorName,
       createdAt: t, updatedAt: t,
-      status: 'not_started', collected: 0, target: 100,
+      status: 'open', collected: 0, target: 100,
     }, ...projects])
     setCreateOpen(false)
     setCreateForm(emptyCreateForm)
@@ -315,16 +406,30 @@ export default function ProjectList() {
     setEditOpen(false)
   }
 
-  const handleToggleArchive = (id) => {
-    setProjects(projects.map((p) => {
-      if (p.id !== id) return p
-      return { ...p, status: p.status === 'archived' ? 'in_progress' : 'archived', updatedAt: now() }
-    }))
+  const setProjectStatus = (id, status) => {
+    setProjects(projects.map((p) => (p.id === id ? { ...p, status, updatedAt: now() } : p)))
   }
 
-  const confirmDelete = () => { setProjects(projects.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null) }
+  const handleCloseProject = (row) => {
+    setProjectStatus(row.id, 'closed')
+    showToast(`项目「${row.name}」已关闭`)
+  }
 
-  const goToDetail = (id) => navigate(`/collection/project/${id}`)
+  const handleOpenProject = (row) => {
+    setProjectStatus(row.id, 'open')
+    showToast(`项目「${row.name}」已开启`)
+  }
+
+  const confirmArchive = () => {
+    if (!archiveTarget) return
+    setProjectStatus(archiveTarget.id, 'archived')
+    showToast(`项目「${archiveTarget.name}」已归档`)
+    setArchiveTarget(null)
+  }
+
+  const goViewDetail = (row) => navigate(`/collection/project/${row.id}`)
+
+  const confirmDelete = () => { setProjects(projects.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null) }
 
   const openAcceptChoice = (project) => setAcceptTarget(project)
   const handleFullAccept = () => {
@@ -370,51 +475,18 @@ export default function ProjectList() {
     dtCol('最后更新', 'updatedAt'),
     {
       title: '操作', dataIndex: 'id',
-      render: (id, row) => {
-        const isArchived = row.status === 'archived'
-        const showAccept = canAcceptProject(row.status)
-        return (
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => goToDetail(id)}
-                className="cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
-              >
-                查看详情
-              </button>
-              {showAccept && (
-                <button
-                  onClick={() => openAcceptChoice(row)}
-                  className="cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500"
-                >
-                  验收
-                </button>
-              )}
-              <PermAction
-                permission="collection.project.edit"
-                className="cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500"
-                onClick={() => openEdit(row)}
-              >
-                编辑
-              </PermAction>
-              <PermAction
-                permission="collection.project.archive"
-                className={`cursor-pointer px-1 py-0.5 text-xs ${isArchived ? 'text-blue-500 hover:text-blue-400' : 'text-amber-600 hover:text-amber-500'}`}
-                onClick={() => handleToggleArchive(id)}
-              >
-                {isArchived ? '取消归档' : '归档'}
-              </PermAction>
-            </div>
-            <PermAction
-              permission="collection.project.delete"
-              className="cursor-pointer shrink-0 px-1 py-0.5 text-xs text-red-500 hover:text-red-400"
-              onClick={() => setDeleteTarget(row)}
-            >
-              删除
-            </PermAction>
-          </div>
-        )
-      },
+      render: (_, row) => (
+        <ProjectListActions
+          row={row}
+          onViewDetail={goViewDetail}
+          onAccept={openAcceptChoice}
+          onEdit={openEdit}
+          onClose={handleCloseProject}
+          onOpen={handleOpenProject}
+          onArchive={setArchiveTarget}
+          onDelete={setDeleteTarget}
+        />
+      ),
     },
   ]
 
@@ -475,7 +547,6 @@ export default function ProjectList() {
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {pagedFiltered.map((p) => {
-            const isArchived = p.status === 'archived'
             const progress = p.target > 0 ? Math.min(Math.round((p.collected / p.target) * 100), 100) : 0
             const done = progress >= 100
             return (
@@ -485,7 +556,7 @@ export default function ProjectList() {
                 {/* header */}
                 <div className="flex items-start justify-between">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold text-white ${isArchived ? 'bg-gray-400' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
                       {p.name.slice(0, 1)}
                     </div>
                     <div className="min-w-0">
@@ -497,11 +568,13 @@ export default function ProjectList() {
                     {statusBadge(p.status)}
                     <CardMenu
                       project={p}
+                      onViewDetail={() => goViewDetail(p)}
                       onEdit={() => openEdit(p)}
-                      onToggleArchive={() => handleToggleArchive(p.id)}
-                      onDeleteClick={() => setDeleteTarget(p)}
-                      onViewDetail={() => goToDetail(p.id)}
                       onAccept={() => openAcceptChoice(p)}
+                      onClose={() => handleCloseProject(p)}
+                      onOpen={() => handleOpenProject(p)}
+                      onArchive={() => setArchiveTarget(p)}
+                      onDeleteClick={() => setDeleteTarget(p)}
                     />
                   </div>
                 </div>
@@ -612,6 +685,13 @@ export default function ProjectList() {
         onConfirm={confirmDelete}
       />
 
+      <ArchiveConfirmModal
+        project={archiveTarget}
+        open={!!archiveTarget}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={confirmArchive}
+      />
+
       <AcceptChoiceModal
         project={acceptTarget}
         open={!!acceptTarget}
@@ -619,6 +699,8 @@ export default function ProjectList() {
         onFullAccept={handleFullAccept}
         onSampleAccept={handleSampleAccept}
       />
+
+      {ToastNode}
     </div>
   )
 }

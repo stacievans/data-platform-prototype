@@ -10,14 +10,12 @@ import { users as initialUsers, roleColor } from '../../mock/misc'
 import { useAuth } from '../../context/AuthContext'
 import { dtCol, formatRelativeTime, nowDateTime } from '../../utils/formatDateTime'
 
-const roleNames = ['管理员', '平台运营', '采集员', '标注员', '游客', '工程师']
-
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const emptyCreate = { username: '', nickname: '', phone: '', role: '', status: '启用' }
 
 export default function UserManage() {
-  const { can, user: currentUser } = useAuth()
+  const { can, user: currentUser, roles, enabledRoles } = useAuth()
   const [users, setUsers] = useState(initialUsers)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ nickname: '', role: '', status: '' })
@@ -34,6 +32,14 @@ export default function UserManage() {
   const [filters, setFilters] = useState({})
 
   const relativeNow = useMemo(() => new Date(), [users])
+
+  const allRoleNames = useMemo(() => roles.map((r) => r.name), [roles])
+  const assignableRoleNames = useMemo(() => enabledRoles.map((r) => r.name), [enabledRoles])
+  const editRoleOptions = useMemo(() => {
+    const names = new Set(assignableRoleNames)
+    if (form.role) names.add(form.role)
+    return [...names]
+  }, [assignableRoleNames, form.role])
 
   const filtered = useMemo(() =>
     users.filter((u) => {
@@ -173,7 +179,7 @@ export default function UserManage() {
               <label className={LBL}>角色</label>
               <select value={qRole} onChange={(e) => setQRole(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
                 <option value="">全部角色</option>
-                {roleNames.map((r) => <option key={r} value={r}>{r}</option>)}
+                {allRoleNames.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div className="min-w-0 flex-1 basis-0">
@@ -212,7 +218,7 @@ export default function UserManage() {
           <div><Req label="角色" />
             <select value={createForm.role} onChange={(e) => setC('role', e.target.value)} className={fSelCls(createErrors.role)}>
               <option value="" disabled hidden>请选择角色</option>
-              {roleNames.map((r) => <option key={r} value={r}>{r}</option>)}
+              {assignableRoleNames.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
             {createErrors.role && <p className="mt-1 text-xs text-red-500">请填写此项</p>}</div>
           <div><label className="mb-1.5 block text-sm font-medium text-gray-700">状态</label>
@@ -225,7 +231,7 @@ export default function UserManage() {
       <Modal open={!!editing} title="编辑用户" onCancel={() => setEditing(null)} onOk={handleSave} okText="保存">
         <div className="space-y-4">
           <Input label="昵称" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} />
-          <Select label="角色" value={form.role} options={roleNames.map((r) => ({ value: r, label: r }))} onChange={(e) => setForm({ ...form, role: e.target.value })} />
+          <Select label="角色" value={form.role} options={editRoleOptions.map((r) => ({ value: r, label: r }))} onChange={(e) => setForm({ ...form, role: e.target.value })} />
           <Select label="状态" value={form.status} options={['启用', '停用'].map((s) => ({ value: s, label: s }))} onChange={(e) => setForm({ ...form, status: e.target.value })} />
         </div>
       </Modal>

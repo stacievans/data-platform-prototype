@@ -51,6 +51,7 @@ export const users = [
   { id: 10, uid: 'U-010', username: 'chengong', nickname: '陈工',   phone: '132****5566', role: '工程师',   status: '启用', createdAt: '2026-04-08 16:40:00', lastLoginAt: '2026-06-14 17:30:00' },
   { id: 11, uid: 'U-011', username: 'wulei',    nickname: '吴磊',   phone: '134****7788', role: '采集员&标注员', status: '启用', createdAt: '2026-04-12 09:15:00', lastLoginAt: '2026-06-18 08:20:00' },
   { id: 12, uid: 'U-012', username: 'zhenghao', nickname: '郑浩',   phone: '159****3321', role: '采集员&标注员', status: '启用', createdAt: '2026-04-20 11:30:00', lastLoginAt: '2026-06-11 13:45:00' },
+  { id: 13, uid: 'U-013', username: 'linfang',  nickname: '林芳',   phone: '137****8899', role: '区域协调员',     status: '启用', createdAt: '2026-05-25 09:00:00', lastLoginAt: '2026-06-17 10:12:00' },
 ]
 
 export const roleColor = {
@@ -60,6 +61,8 @@ export const roleColor = {
   标注员: 'orange',
   游客: 'green',
   工程师: 'indigo',
+  数据审核员: 'purple',
+  区域协调员: 'blue',
 }
 
 // 角色权限见 mock/rbac.js

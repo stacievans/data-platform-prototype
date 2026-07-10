@@ -12,12 +12,12 @@ import {
   setDeviceTypes,
   countInstancesByTypeId,
 } from '../../mock/devices'
-import { bodyTypeTags, endTypeTags } from '../../mock/tags'
+import {
+  getBodyTypeTagNames,
+  getEndTypeTagNames,
+} from '../../mock/tags'
 import { buildTypeNameReference } from '../../utils/deviceTypeName'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
-
-const BODY_OPTIONS = bodyTypeTags.map((t) => t.name)
-const END_OPTIONS = endTypeTags.map((t) => t.name)
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
@@ -26,14 +26,18 @@ const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5
 const LBL = 'mb-1 block text-xs text-gray-500'
 const nowDatetime = () => nowDateTime()
 
-const emptyTypeForm = () => ({
-  name: '',
-  body: BODY_OPTIONS[0] ?? '',
-  leftEnd: END_OPTIONS[0] ?? '',
-  rightEnd: END_OPTIONS[0] ?? '',
-  urdf: '',
-  description: '',
-})
+const emptyTypeForm = () => {
+  const bodies = getBodyTypeTagNames()
+  const ends = getEndTypeTagNames()
+  return {
+    name: '',
+    body: bodies[0] ?? '',
+    leftEnd: ends[0] ?? '',
+    rightEnd: ends[0] ?? '',
+    urdf: '',
+    description: '',
+  }
+}
 
 function Field({ label, required, error, errorMsg, children }) {
   return (
@@ -52,6 +56,8 @@ function Field({ label, required, error, errorMsg, children }) {
 function TypeModal({ open, editing, onCancel, onOk }) {
   const isEdit = Boolean(editing)
   const creatorName = useCurrentNickname()
+  const bodyOptions = getBodyTypeTagNames()
+  const endOptions = getEndTypeTagNames()
   const [form, setForm] = useState(emptyTypeForm())
   const [errs, setErrs] = useState({})
 
@@ -125,7 +131,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
     }
     return (
       <select value={form.body} onChange={(e) => set('body', e.target.value)} className={selectCls}>
-        {BODY_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
+        {bodyOptions.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
     )
   }
@@ -136,7 +142,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
     }
     return (
       <select value={value} onChange={(e) => set(key, e.target.value)} className={selectCls}>
-        {END_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
+        {endOptions.map((e) => <option key={e} value={e}>{e}</option>)}
       </select>
     )
   }
@@ -295,6 +301,8 @@ function DeleteTypeAction({ row, onDelete }) {
 
 export default function TypeList() {
   const [types, setTypes] = useState(() => getAllDeviceTypes())
+  const bodyOptions = getBodyTypeTagNames()
+  const endOptions = getEndTypeTagNames()
   const [bodyFilter, setBodyFilter] = useState('全部')
   const [nameQuery, setNameQuery] = useState('')
   const [leftEndFilter, setLeftEndFilter] = useState('全部')
@@ -413,7 +421,7 @@ export default function TypeList() {
                 className={`${FILTER_CLS} cursor-pointer`}
               >
                 <option value="全部">全部</option>
-                {BODY_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
+                {bodyOptions.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div className="min-w-0 flex-1 basis-0">
@@ -433,7 +441,7 @@ export default function TypeList() {
                 className={`${FILTER_CLS} cursor-pointer`}
               >
                 <option value="全部">全部</option>
-                {END_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
+                {endOptions.map((e) => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div className="min-w-0 flex-1 basis-0">
@@ -444,7 +452,7 @@ export default function TypeList() {
                 className={`${FILTER_CLS} cursor-pointer`}
               >
                 <option value="全部">全部</option>
-                {END_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
+                {endOptions.map((e) => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
           </div>

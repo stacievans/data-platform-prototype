@@ -142,7 +142,7 @@ export function BodyTypeField({ typeId, deviceTypes, onChange, error, readonly =
 
   if (readonly) {
     return (
-      <Field label="本体类型">
+      <Field label="设备类型">
         <input readOnly value={type?.name ?? '—'} className={readonlyCls} />
         <BodyTypeParsedPanel type={type} />
       </Field>
@@ -150,13 +150,13 @@ export function BodyTypeField({ typeId, deviceTypes, onChange, error, readonly =
   }
 
   return (
-    <Field label="本体类型" required error={error}>
+    <Field label="设备类型" required error={error}>
       <select
         value={typeId}
         onChange={(e) => onChange(e.target.value)}
         className={selectCls(error)}
       >
-        <option value="" disabled hidden>请选择本体类型</option>
+        <option value="" disabled hidden>请选择设备类型</option>
         {deviceTypes.map((t) => (
           <option key={t.id} value={t.id}>{t.name}</option>
         ))}

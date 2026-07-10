@@ -173,7 +173,17 @@ function resolveTaskDeviceTypeId(task) {
   return resolvePlanDeviceTypeId(plan)
 }
 
-/** 运行时解析设备类型名称与实例编号（deviceTypeName 为创建时快照，不随类型库变更） */
+function resolveCollectDeviceSn(deviceInstanceId, deviceCode) {
+  let inst = null
+  if (deviceInstanceId) {
+    inst = getAllDeviceInstances().find((i) => i.id === deviceInstanceId)
+  } else if (deviceCode && deviceCode !== '—') {
+    inst = getAllDeviceInstances().find((i) => i.code === deviceCode || i.sn === deviceCode)
+  }
+  return inst?.sn ?? ''
+}
+
+/** 运行时解析设备类型名称与实例编号（device / deviceTypeName 为创建时快照，不随类型库变更） */
 export function enrichTask(task) {
   if (!task) return null
   const deviceTypeId = resolveTaskDeviceTypeId(task)
@@ -185,7 +195,7 @@ export function enrichTask(task) {
 
   if (deviceInstanceId) {
     const inst = getAllDeviceInstances().find((i) => i.id === deviceInstanceId)
-    if (inst?.code) device = inst.code
+    if ((!device || device === '—') && inst?.code) device = inst.code
   } else if (device && device !== '—') {
     const inst = getAllDeviceInstances().find((i) => i.code === device || i.sn === device)
     if (inst) {
@@ -194,7 +204,9 @@ export function enrichTask(task) {
     }
   }
 
-  return { ...task, deviceTypeId, deviceTypeName, robotBody, device, deviceInstanceId }
+  const deviceSn = resolveCollectDeviceSn(deviceInstanceId, device)
+
+  return { ...task, deviceTypeId, deviceTypeName, robotBody, device, deviceInstanceId, deviceSn }
 }
 
 /** 同步更新全局任务 mock（项目人员分配、任务列表等共用） */
@@ -210,8 +222,31 @@ export function getTaskById(id) {
 }
 
 for (const task of tasks) {
+  const typeId = resolveTaskDeviceTypeId(task)
   if (!task.deviceTypeName) {
-    const typeId = resolveTaskDeviceTypeId(task)
     task.deviceTypeName = resolveDeviceTypeName(typeId) || '—'
+  } else {
+    task.deviceTypeName = task.deviceTypeName.replace(/AlphaBotX/g, 'AlphaBot1')
+  }
+
+  if (task.deviceInstanceId) {
+    const inst = getAllDeviceInstances().find((i) => i.id === task.deviceInstanceId)
+    if (inst) {
+      task.device = inst.code
+      if (inst.typeId !== typeId) {
+        task.deviceTypeId = inst.typeId
+        task.deviceTypeName = resolveDeviceTypeName(inst.typeId) || '—'
+      }
+    }
+  } else if (task.device && task.device !== '—') {
+    const inst = getAllDeviceInstances().find((i) => i.code === task.device || i.sn === task.device)
+    if (inst) {
+      task.deviceInstanceId = inst.id
+      task.device = inst.code
+      if (inst.typeId !== typeId) {
+        task.deviceTypeId = inst.typeId
+        task.deviceTypeName = resolveDeviceTypeName(inst.typeId) || '—'
+      }
+    }
   }
 }

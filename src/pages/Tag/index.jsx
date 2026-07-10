@@ -11,6 +11,10 @@ import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 import {
   getAtomicSkillTags,
   setAtomicSkillTags,
+  getBodyTypeTags,
+  setBodyTypeTags,
+  getEndTypeTags,
+  setEndTypeTags,
   getCollectionMethodTags,
   setCollectionMethodTags,
   getTaskPurposeTags,
@@ -214,6 +218,8 @@ const outerTabs = [
   { key: 'audit', label: '审核标签' },
   { key: 'scene', label: '场景标签' },
   { key: 'atomicSkill', label: '原子技能标签' },
+  { key: 'bodyType', label: '本体机型标签' },
+  { key: 'endType', label: '末端类型标签' },
   { key: 'collectionMethod', label: '采集方式标签' },
   { key: 'taskPurpose', label: '任务用途标签' },
 ]
@@ -233,6 +239,12 @@ export default function TagManage() {
         {outerTab === 'scene' && <SceneTypePanel />}
         {outerTab === 'atomicSkill' && (
           <FlatTagPanel getData={getAtomicSkillTags} setData={setAtomicSkillTags} idPrefix="SK" showValue />
+        )}
+        {outerTab === 'bodyType' && (
+          <FlatTagPanel getData={getBodyTypeTags} setData={setBodyTypeTags} idPrefix="BT" showValue />
+        )}
+        {outerTab === 'endType' && (
+          <FlatTagPanel getData={getEndTypeTags} setData={setEndTypeTags} idPrefix="ET" showValue />
         )}
         {outerTab === 'collectionMethod' && (
           <FlatTagPanel getData={getCollectionMethodTags} setData={setCollectionMethodTags} idPrefix="CM" showValue />

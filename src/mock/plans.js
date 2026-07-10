@@ -480,6 +480,7 @@ const QC_ITEM_TEMPLATES = [
   { name: '帧率完整性检查', type: '完整性', rule: '实际帧率与额定帧率偏差在允许容差范围内。' },
   { name: '全模态帧数一致性检查', type: '一致性', rule: '各 Topic 帧数与时间戳帧数差值低于阈值。' },
   { name: '持续时长范围检查', type: '有效性', rule: '持续时长在最小值与最大值阈值之间。' },
+  { name: '掉帧检查', type: '有效性', rule: '实际帧率不小于 27Hz，最小实际帧率为 27。' },
 ]
 
 const QC_PROJECT_IDS = ['P-1001', 'P-1002', 'P-1003', 'P-1004', 'P-1005', 'P-1006', 'P-1007', 'P-1008']
@@ -497,7 +498,7 @@ export const qcItems = QC_PROJECT_IDS.flatMap((projectId) =>
     id: `QC-${projectId.slice(2)}-${String(index + 1).padStart(2, '0')}`,
     projectId,
     ...item,
-    enabled: index < 5,
+    enabled: true,
   })),
 )
 

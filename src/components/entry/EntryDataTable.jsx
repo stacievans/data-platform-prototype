@@ -7,6 +7,7 @@ import Modal from '../common/Modal'
 import { IconSearch, IconChevronDown } from '../common/Icons'
 import { useToast } from '../common/Toast'
 import { getQcItemsByProjectId } from '../../mock/plans'
+import { resolveQcRowResult } from '../../utils/qcResults'
 import { formatReviewer } from '../../mock/tasks'
 import EntryActions from '../common/EntryActions'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
@@ -24,6 +25,7 @@ import {
   countProcessSubStatuses,
   filterEntriesByForm,
 } from '../../utils/entryProcess'
+import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { formatDateTime } from '../../utils/formatDateTime'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
@@ -145,15 +147,16 @@ function ProcessStatusCell({ status, operator, onClick, clickable = false }) {
         : status === 'pending'
           ? 'text-gray-500'
           : 'text-gray-300'
+  const canClick = clickable && (status === 'passed' || status === 'rejected')
   const inner = (
     <span
       className={`inline-flex items-center gap-1.5 text-sm ${
-        clickable && status === 'passed' ? 'cursor-pointer hover:text-blue-600' : ''
+        canClick ? 'cursor-pointer hover:text-blue-600' : ''
       } ${colorCls}`}
-      onClick={clickable && status === 'passed' ? onClick : undefined}
-      onKeyDown={clickable && status === 'passed' ? (e) => e.key === 'Enter' && onClick?.() : undefined}
-      role={clickable && status === 'passed' ? 'button' : undefined}
-      tabIndex={clickable && status === 'passed' ? 0 : undefined}
+      onClick={canClick ? onClick : undefined}
+      onKeyDown={canClick ? (e) => e.key === 'Enter' && onClick?.() : undefined}
+      role={canClick ? 'button' : undefined}
+      tabIndex={canClick ? 0 : undefined}
     >
       <StatusIcon status={status} />
       <span>{label}</span>
@@ -227,10 +230,10 @@ function ProcessSubFilterBar({ counts, activeKey, onChange }) {
 }
 
 function QcDetailModal({ open, entry, projectId, onClose }) {
-  const qcItems = useMemo(() => getQcItemsByProjectId(projectId).slice(0, 6), [projectId, open])
+  const qcItems = useMemo(() => getQcItemsByProjectId(projectId), [projectId, open])
   if (!open || !entry) return null
   return (
-    <Modal open={open} title="质检详情" onCancel={onClose} footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>} width={640}>
+    <Modal open={open} title="质检详情" onCancel={onClose} footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>} width={720}>
       <div className="space-y-4">
         <div className="text-sm text-gray-500">
           质检时间：<span className="font-medium text-gray-800">{formatDateTime(entry.qcTime ?? entry.uploadTime)}</span>
@@ -242,21 +245,27 @@ function QcDetailModal({ open, entry, projectId, onClose }) {
                 <th className="px-3 py-2 font-medium">质检分类</th>
                 <th className="px-3 py-2 font-medium">质检项</th>
                 <th className="px-3 py-2 font-medium">检查结果</th>
+                <th className="px-3 py-2 font-medium">详情</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {qcItems.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-3 py-2.5 text-gray-700">{item.type}</td>
-                  <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
-                  <td className="px-3 py-2.5">
-                    <span className="inline-flex items-center gap-1 text-emerald-600">
-                      <StatusIcon status="passed" />
-                      已通过
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {qcItems.map((item) => {
+                const row = resolveQcRowResult(entry, item)
+                const passed = row.passed !== false
+                return (
+                  <tr key={item.id}>
+                    <td className="px-3 py-2.5 text-gray-700">{item.type}</td>
+                    <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={`inline-flex items-center gap-1 ${passed ? 'text-emerald-600' : 'text-red-600'}`}>
+                        <StatusIcon status={passed ? 'passed' : 'rejected'} />
+                        {passed ? '已通过' : '不通过'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-600">{row.detail ?? '—'}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -499,14 +508,22 @@ export default function EntryDataTable({
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
-    { title: '采集设备', dataIndex: 'collectDevice', render: (v) => v ?? '—' },
+    {
+      title: '采集设备',
+      dataIndex: 'collectDevice',
+      render: (v, row) => <CollectDeviceCell code={v} sn={row.collectDeviceSn} />,
+    },
     {
       title: <ColumnTitleHint label="质检状态" hint="点击查看质检详情" />,
       key: 'qcStatus',
       render: (_, row) => {
         const ps = deriveProcessStatuses(row)
         return (
-          <ProcessStatusCell status={ps.qc} clickable={ps.qc === 'passed'} onClick={() => setQcTarget(row)} />
+          <ProcessStatusCell
+            status={ps.qc}
+            clickable={ps.qc === 'passed' || ps.qc === 'rejected'}
+            onClick={() => setQcTarget(row)}
+          />
         )
       },
     },

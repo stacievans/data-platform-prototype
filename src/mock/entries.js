@@ -1,10 +1,12 @@
 import { tasks, collectors, enrichTask, getTaskById } from './tasks'
 import { plans } from './plans'
+import { buildEntryQcResults, entryQcSeed } from '../utils/qcResults'
 
 /** 采集条目数据状态（平台主流程） */
 export const DATA_STATUSES = [
   '已上传',
   '已解析',
+  '质检不通过',
   '标注不通过',
   '已标注',
   '验收不通过',
@@ -56,6 +58,7 @@ function buildEntryExtras(task) {
         : `执行「${task?.name ?? '采集任务'}」`
   return {
     collectDevice: enrichTask(task)?.device ?? '—',
+    collectDeviceSn: enrichTask(task)?.deviceSn ?? '',
     deviceTypeName: task?.deviceTypeName ?? '—',
     collectMethod: task?.method ?? '—',
     taskInstruction: shortInstruction,
@@ -137,17 +140,16 @@ const DEMO_OVERRIDES = {
   },
   'E-200103': { dataStatus: '已上传' },
   'E-200104': {
-    dataStatus: '已解析',
+    dataStatus: '质检不通过',
     displayName: '20260615_145105.h5',
     taskInstruction: '挂回货架',
     sceneInitialState: '已就绪',
-    collectDevice: 'AlphaBot-1 双夹爪',
     collectMethod: 'VR遥操',
     uploader: '刘伟',
     duration: '0:32',
     format: 'h5',
-    auditScore: 4,
-    auditResult: '通过',
+    qcTime: '2026-06-15 14:51:05',
+    qcResults: buildEntryQcResults(104, { frameDropFail: true }),
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
     totalFrames: 3140,
@@ -219,6 +221,11 @@ const DEMO_OVERRIDES = {
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
+  'E-200806': {
+    dataStatus: '质检不通过',
+    qcTime: '2026-06-09 11:20:00',
+    qcResults: buildEntryQcResults(806, { frameDropFail: true }),
+  },
   'E-200201': {
     dataStatus: '已解析',
     reviewClaimedBy: { nickname: '孙丽', id: 'U-2001' },
@@ -263,6 +270,13 @@ Object.entries(DEMO_OVERRIDES).forEach(([id, patch]) => {
   if (entry) Object.assign(entry, patch)
 })
 
+for (const entry of entries) {
+  if (entry.qcResults || entry.dataStatus === '已上传') continue
+  entry.qcResults = buildEntryQcResults(entryQcSeed(entry.id), {
+    frameDropFail: entry.dataStatus === '质检不通过',
+  })
+}
+
 /** 会话内条目补丁（标注/验收提交等） */
 const runtimePatches = {}
 
@@ -271,7 +285,11 @@ export function getEntryById(id) {
   if (!base) return null
   const merged = { ...base, ...(runtimePatches[id] ?? {}) }
   const task = getTaskById(merged.taskId)
-  return { ...merged, collectDevice: task?.device ?? merged.collectDevice ?? '—' }
+  return {
+    ...merged,
+    collectDevice: task?.device ?? merged.collectDevice ?? '—',
+    collectDeviceSn: task?.deviceSn ?? merged.collectDeviceSn ?? '',
+  }
 }
 
 export function updateEntry(id, patch) {

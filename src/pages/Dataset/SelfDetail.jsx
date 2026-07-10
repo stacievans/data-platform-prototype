@@ -29,6 +29,7 @@ import {
 import { IconSearch } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { useCurrentNickname } from '../../context/AuthContext'
+import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { dtCol, formatDateTime } from '../../utils/formatDateTime'
 
 const TABS = [
@@ -325,7 +326,11 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
-    { title: '采集设备', dataIndex: 'collectDevice', render: (v) => v ?? '—' },
+    {
+      title: '采集设备',
+      dataIndex: 'collectDevice',
+      render: (v, row) => <CollectDeviceCell code={v} sn={row.collectDeviceSn} />,
+    },
     { title: '采集员', dataIndex: 'uploader' },
     dtCol('采集时间', 'collectTime'),
     {

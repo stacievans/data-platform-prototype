@@ -157,11 +157,51 @@ const taskPurposeSeed = [
   { id: 'TP-002', name: '试采集', value: '试采集', description: '试验性采集，数据仅供内部参考', creator: '张华', createdAt: ts('2026-03-10'), updatedAt: ts('2026-04-01') },
 ]
 
+const bodyTypeSeed = [
+  { id: 'BT-001', name: 'AlphaBot2', value: '2', description: 'AlphaLoop 第二代双臂协作机器人本体', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-05-20') },
+  { id: 'BT-002', name: 'AlphaBot1', value: '1', description: 'AlphaLoop 自研单臂机器人本体，适配多种末端', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
+]
+
+const endTypeSeed = [
+  { id: 'ET-201', name: '因时·RH56DFX 灵巧手', value: '因时·RH56DFX 灵巧手', description: '因时 RH56DFX 灵巧手，适用于精细操作与触觉采集', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
+  { id: 'ET-202', name: '因时·RH56BFX 灵巧手', value: '因时·RH56BFX 灵巧手', description: '因时 RH56BFX 灵巧手，双臂协作场景常用型号', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-04-10') },
+  { id: 'ET-203', name: '因时·EG2-4B 夹爪', value: '因时·EG2-4B 夹爪', description: '因时 EG2-4B 平行夹爪，适合规则形状物体抓取', creator: '王芳', createdAt: ts('2026-04-01'), updatedAt: ts('2026-04-01') },
+  { id: 'ET-204', name: '因时·EG2-4C 夹爪', value: '因时·EG2-4C 夹爪', description: '因时 EG2-4C 平行夹爪，轻量高速抓取工况', creator: '王芳', createdAt: ts('2026-04-01'), updatedAt: ts('2026-04-01') },
+]
+
 function cloneDeep(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
 let auditReviewTagTreeStore = cloneDeep(auditReviewTagTreeSeed)
+let bodyTypeTagStore = cloneDeep(bodyTypeSeed)
+let endTypeTagStore = cloneDeep(endTypeSeed)
+
+export function getBodyTypeTags() {
+  return bodyTypeTagStore
+}
+
+export function setBodyTypeTags(next) {
+  bodyTypeTagStore = next
+}
+
+export function getEndTypeTags() {
+  return endTypeTagStore
+}
+
+export function setEndTypeTags(next) {
+  endTypeTagStore = next
+}
+
+/** 设备类型弹窗/筛选：本体机型选项名 */
+export function getBodyTypeTagNames() {
+  return getBodyTypeTags().map((t) => t.name)
+}
+
+/** 设备类型弹窗/筛选：末端类型选项名 */
+export function getEndTypeTagNames() {
+  return getEndTypeTags().map((t) => t.name)
+}
 let sceneTypeTreeStore = cloneDeep(sceneTypeTreeSeed)
 let atomicSkillStore = cloneDeep(atomicSkillSeed)
 let collectionMethodStore = cloneDeep(collectionMethodSeed)
@@ -232,16 +272,3 @@ export const collectTagGroups = {
   collectionMethod: collectionMethodSeed,
   atomicSkill: atomicSkillSeed,
 }
-
-/** 设备形态选项（设备管理维护，非标签管理 Tab） */
-export const bodyTypeTags = [
-  { id: 'DT-101', name: 'AlphaBot2', description: 'AlphaLoop 第二代双臂协作机器人本体', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-05-20') },
-  { id: 'DT-102', name: 'AlphaBotX', description: 'AlphaLoop 自研单臂机器人本体，适配多种末端', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
-]
-
-export const endTypeTags = [
-  { id: 'DT-201', name: '因时·RH56DFX 灵巧手', description: '因时 RH56DFX 灵巧手，适用于精细操作与触觉采集', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
-  { id: 'DT-202', name: '因时·RH56BFX 灵巧手', description: '因时 RH56BFX 灵巧手，双臂协作场景常用型号', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-04-10') },
-  { id: 'DT-203', name: '因时·EG2-4B 夹爪', description: '因时 EG2-4B 平行夹爪，适合规则形状物体抓取', creator: '王芳', createdAt: ts('2026-04-01'), updatedAt: ts('2026-04-01') },
-  { id: 'DT-204', name: '因时·EG2-4C 夹爪', description: '因时 EG2-4C 平行夹爪，轻量高速抓取工况', creator: '王芳', createdAt: ts('2026-04-01'), updatedAt: ts('2026-04-01') },
-]

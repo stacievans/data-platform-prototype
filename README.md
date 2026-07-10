@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目/任务/条目 · 抽样验收 · 审核工作台（播放/标注/验收）· 真机数据集（含转换记录/转换数据集）· 五类标签管理 · 设备管理 · 全平台统一时间格式 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
+**核心能力**：运营看板 · 采集项目/任务/条目 · 抽样验收 · 审核工作台（播放/标注/验收）· 真机数据集（含转换记录/转换数据集）· 七类标签管理 · 设备管理 · 全平台统一时间格式 · RBAC 权限演示（菜单/路由/按钮/数据范围）。
 
 ---
 
@@ -322,7 +322,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 **状态机**（两态）：`草稿`（灰 badge）/ `已发布`（蓝 badge）。新建方案直接 **已发布**；复制生成 **草稿**（名称 `{原名}_副本{方案ID}`，`taskCount: 0`）。
 
-**列表字段**：方案 ID、方案名称、本体类型（`robotBody` 展示名）、采集方式、步骤数、状态
+**列表字段**：方案 ID、方案名称、设备类型（`robotBody` 展示名）、采集方式、步骤数、状态
 
 **操作栏按状态**：
 
@@ -340,7 +340,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 **新建/编辑弹窗**（`fitViewport`，与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）：
 - 方案名称（必填）；编辑态方案 ID 只读
 - 所属场景（三级级联，必填）
-- 本体类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端（未选显示「—」）
+- 设备类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端（未选显示「—」）
 - 采集方式（下拉，必填；选项来自 `getCollectionMethodTags()`）
 - 原始场景状态（文本域 0/500）
 - 采集步骤：默认 1 步；每步含步骤描述、原子技能（多选 portal 下拉）、时长(秒)；≥2 步才可删；步骤可留空
@@ -429,7 +429,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 2. **任务用途**（必填；正式采集 / 试采集，来自 `getTaskPurposeTags()`）
 3. **目标条数**（必填，≥1）
 4. **配置采集方案**（新建必填；编辑只读展示摘要）
-5. **指定采集设备**（必填；按已配置方案的设备类型 `deviceTypeId` 级联过滤在库实例；**未配置方案时禁用**，placeholder「请先配置采集方案」）
+5. **指定采集设备**（必填；按已配置方案的设备类型 `deviceTypeId` 级联过滤在库实例；**未配置方案时禁用**，placeholder「请先配置采集方案」；下拉选项格式 **`编号（SN 后 6 位）`**，如 `DEV-A01（A8842）`）
 6. **标注布局**（选填，默认布局；选项来自当前项目 `playLayouts`）
 
 **「配置采集方案」字段**（`PlanSummaryBlock`）：
@@ -463,7 +463,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
   - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、采集设备、所属场景、采集方式、任务状态
   - 各字段 placeholder 为具体提示（如「请输入任务ID」「请输入项目名称」「请输入姓名」）；「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、本体类型、采集设备、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
+- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、**采集设备**（显示实例**编号**，hover Tooltip 完整 SN）、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
 - **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」）：
 
@@ -504,7 +504,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、采集设备、**质检状态**（已通过可点击查看 `QcDetailModal`）、**标注状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、**采集设备**（显示实例编号，hover Tooltip 完整 SN）、**质检状态**（已通过可点击查看 `QcDetailModal`）、**标注状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
 
 工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传/已解析 → 质检已通过、标注待处理；已标注 → 验收待处理；等。
 
@@ -645,7 +645,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 ---
 
 ### 标签管理 `/tag`
-页面标题「标签管理」，**五个一级 Tab**（蓝色下划线）：审核标签、场景标签、原子技能标签、采集方式标签、任务用途标签。
+页面标题「标签管理」，**七个一级 Tab**（蓝色下划线）：审核标签、场景标签、原子技能标签、**本体机型标签**、**末端类型标签**、采集方式标签、任务用途标签。
 
 > **标注模板**（`misc.js` → `annotationTemplates`）为历史 mock，**当前 UI 不再使用独立标注方案 Tab**。标注配置由采集方案步骤自动生成，在项目详情 → 采标方案 → 采集方案列表通过「标注方案」只读弹窗查看（`CollectPlanForm` → `PlanAnnotationDetails`）。
 
@@ -667,15 +667,15 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **操作列**：仅一级场景有编辑/删除；编辑弹窗可嵌套维护全部子场景与三级标签
 - **删除**：级联提示子场景与标签数量
 
-#### 平铺标签 Tab（原子技能 / 采集方式 / 任务用途，`FlatTagPanel` + `FlatTagModal`）
+#### 平铺标签 Tab（原子技能 / 本体机型 / 末端类型 / 采集方式 / 任务用途，`FlatTagPanel` + `FlatTagModal`）
 
-三个 Tab 共用同一套交互：
+五个 Tab 共用同一套交互：
 
 - **筛选**：标签名称 + 标签值（点击「查询」生效）
 - **列表字段**：标签名称、**标签值**、描述、创建人、创建时间、最后更新、操作
 - **新建/编辑弹窗**：标签名称（必填）、标签值（必填）、描述（选填）；新建展示只读「创建人」
 - **分页**：10 条/页
-- **初始 seed**：原子技能 9 条（close/open/press/grasp/push/pull/move/place/pick）；采集方式 5 条（算法采集/便携设备遥操/VR遥操/同构外骨骼/自定义采集）；任务用途 2 条（正式采集/试采集）
+- **初始 seed**：原子技能 9 条（close/open/press/grasp/push/pull/move/place/pick）；**本体机型 2 条**（AlphaBot2 标签值 `2`、AlphaBot1 标签值 `1`）；**末端类型 4 条**（因时·RH56DFX/RH56BFX 灵巧手、EG2-4B/4C 夹爪）；采集方式 5 条（算法采集/便携设备遥操/VR遥操/同构外骨骼/自定义采集）；任务用途 2 条（正式采集/试采集）
 
 ---
 
@@ -688,28 +688,29 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - **左侧**：三个统计卡横排（内容居中）——设备总数 / 在线 / 离线
 - **右侧**：**设备类型占比**堆叠条形图——横向色带按各类型实例数量占比分段；图例格式 `类型名 · XX%`（`Math.round` 取整，各段合计 100%）
 
-**筛选区**（点击「查询」生效）：所属类型、状态、实例编号、SN；左侧四列均匀拉伸，「重置」「查询」固定右侧
+**筛选区**（点击「查询」生效）：所属类型、状态、编号、SN；左侧四列均匀拉伸，「重置」「查询」固定右侧
 
-**列表字段**：SN、**设备类型**、**描述**、在线状态（圆点 badge）、电量（电池图标 + 百分比；&lt;20% 红色，无「低电」文字）、创建时间、更新时间、操作
+**列表字段**：**编号**、SN、**设备类型**、**描述**、在线状态（圆点 badge）、电量（电池图标 + 百分比；&lt;20% 红色，无「低电」文字）、创建时间、更新时间、操作
 
 **操作**：编辑、删除（**无「查看详情」**）
 
 ##### 新建/编辑实例弹窗
 | 字段 | 新建 | 编辑 |
 |---|---|---|
+| 编号 | 必填；默认自动填入 `DEV-XXX` 递增编号，可手动修改；`isDeviceCodeTaken` 唯一校验 | **只读** |
 | SN | 必填手动录入；`isDeviceSnTaken` 唯一校验，重复提示「该 SN 已存在」 | **只读** |
-| 设备类型 | 下拉选择（必选） | **可编辑下拉**；下方灰色提示「变更类型不影响历史任务和条目中已记录的本体类型」 |
+| 设备类型 | 下拉选择（必选） | **可编辑下拉**；下方灰色提示「变更类型不影响历史任务和条目中已记录的设备类型」 |
 | 描述 | 选填 | 选填 |
 
-- 弹窗字段顺序：**SN → 设备类型 → 描述**；**不展示**实例编号（后台仍自动生成 `code`）
-- **实例编号规则**：新建 `DEV-` + 全局三位递增（`DEV-001` 起）；历史字母编号（`DEV-A01` 等）不参与递增
+- 弹窗字段顺序：**编号 → SN → 设备类型 → 描述**
+- **编号规则**：新建默认 `DEV-` + 全局三位递增（`DEV-001` 起）；历史字母编号（`DEV-A01` 等）不参与递增计数，仍可手动录入
 - 新建默认：状态「离线」、电量 100%；写入 `createdAt` / `updatedAt` 到秒
 
 #### 设备类型 Tab（`TypeList.jsx`）
 
 **筛选区**（点击「查询」生效）：本体、类型名称、左末端类型、右末端类型；左侧四列均匀拉伸，「重置」「查询」固定右侧
 
-**下拉选项来源**：本体 ← `bodyTypeTags`；左/右末端 ← `endTypeTags`
+**下拉选项来源**：本体 ← `getBodyTypeTags()`；左/右末端 ← `getEndTypeTags()`（标签管理对应 Tab 维护，增删改后重新进入设备类型页或打开弹窗即可读到最新选项）
 
 **列表字段**：类型名称、本体、左末端类型、右末端类型、URDF、实例数量、**描述**、创建时间、更新时间、操作
 
@@ -726,17 +727,17 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 - 若该类型下仍有实例（`instanceCount > 0`）：删除按钮 **置灰**；hover 时通过 **Portal 渲染至 `document.body`** 的 Tooltip 提示「该类型下仍有 N 个实例，请先变更实例类型或删除实例」（位置跟随按钮，宽度自适应，靠左展开避免超出屏幕右边界）
 - 无实例时：二次确认弹窗；**仅移除类型选项，不级联删除实例**；文案说明不影响历史任务和条目中已记录的类型信息
 
-**本体类型快照**（任务/方案/条目）：新建任务时写入 `deviceTypeName` 快照（`tasks.js`）；采集方案 `plans.js`、条目 `entries.js` 同样优先读快照。变更设备实例/类型的当前绑定 **不回写** 历史任务与条目中的本体类型展示。
+**设备类型快照**（任务/方案/条目）：新建任务时写入 `deviceTypeName` 快照（`tasks.js`）；采集方案 `plans.js`、条目 `entries.js` 同样优先读快照。变更设备实例/类型的当前绑定 **不回写** 历史任务与条目中的设备类型展示。
 
 #### 与标签管理的数据关系
 
-设备本体/末端下拉选项来自 `tags.js` → `bodyTypeTags` / `endTypeTags`（**不在标签管理 Tab 中维护**，为静态 seed）：
+设备类型新建弹窗与筛选栏的本体/末端下拉，读取标签管理 runtime store（`getBodyTypeTags()` / `getEndTypeTags()`）：
 
-| 维度 | 设备管理 `devices.js` | `tags.js` |
+| 维度 | 设备管理 `devices.js` | 标签管理 `tags.js` |
 |---|---|---|
-| 本体选项 | 新建类型下拉读 `bodyTypeTags.name` | 静态 seed（无标签页 CRUD） |
-| 末端选项 | 新建类型下拉读 `endTypeTags.name` | 静态 seed（无标签页 CRUD） |
-| 实体数据 | 设备类型 + 实例的运行时 store | 与设备管理独立，无互相 import |
+| 本体选项 | 新建类型 / 筛选下拉读 `getBodyTypeTagNames()` | 「本体机型标签」Tab CRUD |
+| 末端选项 | 新建类型 / 筛选下拉读 `getEndTypeTagNames()` | 「末端类型标签」Tab CRUD |
+| 实体数据 | 设备类型 + 实例的运行时 store | 标签 store 独立；设备类型创建时写入 `body`/`leftEnd`/`rightEnd` 字符串快照 |
 
 ---
 
@@ -853,7 +854,7 @@ src/
 │   │   ├── OpenUsage.jsx
 │   │   └── ImportOpenDatasetModal.jsx
 │   ├── Tag/
-│   │   ├── index.jsx              # 标签管理（5 个一级 Tab）
+│   │   ├── index.jsx              # 标签管理（7 个一级 Tab）
 │   │   ├── AuditReviewTagPanel.jsx
 │   │   ├── AuditReviewTagModal.jsx
 │   │   ├── TagTableActions.jsx
@@ -937,7 +938,7 @@ scripts/
 | 标签 runtime | `tags.js` getter/setter：`getAuditReviewTagTree`、`getSceneTypeTree`、`getAtomicSkillTags`、`getCollectionMethodTags`、`getTaskPurposeTags`；审核工作台读 `getAuditReviewTagGroups()` |
 | 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob`；详情页 mock 约 2.5s 自动完成 |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
-| 本体类型快照 | 任务 `deviceTypeName`（`CreateTaskModal` 创建时写入）；方案/条目展示优先读快照，不随设备类型库变更而改写历史记录 |
+| 设备类型快照 | 任务 `deviceTypeName`（`CreateTaskModal` 创建时写入）；方案/条目展示优先读快照，不随设备类型库变更而改写历史记录 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
@@ -960,12 +961,14 @@ scripts/
 | 审核标签 | 2 个一级分组、11 个叶子（质量评分 3 + 问题标签 8） |
 | 场景标签 | 三层树（3 个一级场景） |
 | 原子技能标签 | 9 条（含 place、pick） |
+| 本体机型标签 | 2 条（AlphaBot2 / AlphaBot1） |
+| 末端类型标签 | 4 条（灵巧手 ×2、夹爪 ×2） |
 | 采集方式标签 | 5 条 |
 | 任务用途标签 | 2 条（正式采集/试采集） |
-| 设备形态选项 | 本体 2、末端 4（`bodyTypeTags` / `endTypeTags`，非标签页 CRUD） |
-| 设备类型 | 5 条（`DTY-001`~`005`）；列表 **不展示创建人**；时间戳精确到秒 |
-| 设备实例 | 10 条；含 `status`（在线/离线）、`battery`（0~100）、`description`、`createdAt`、`updatedAt`；列表展示 SN / 设备类型 / 描述（**不展示实例编号**） |
-| 本体类型数据源 | 采集方案/任务「本体类型」创建时快照 `deviceTypeName`；运行时 `enrichTask` / `enrichPlan` / 条目 extras 优先读快照；`deviceTypeId` 仍用于设备实例解析 |
+| 设备形态选项 | 本体机型标签 2 条、末端类型标签 4 条（`getBodyTypeTags()` / `getEndTypeTags()`，标签管理 Tab CRUD） |
+| 设备类型 | 5 条（`DTY-001`~`005`）；mock 中历史机型名 **AlphaBotX 已统一为 AlphaBot1**；列表 **不展示创建人**；时间戳精确到秒 |
+| 设备实例 | 10 条；含 `code`（编号）、`status`（在线/离线）、`battery`（0~100）、`description`、`createdAt`、`updatedAt`；列表展示 **编号** / SN / 设备类型 / 描述 |
+| 设备类型数据源 | 采集方案/任务「设备类型」创建时快照 `deviceTypeName`；运行时 `enrichTask` / `enrichPlan` / 条目 extras 优先读快照；`deviceTypeId` 仍用于设备实例解析 |
 | 标注模板 | 3 条（`misc.js` → `annotationTemplates`，**当前 UI 未接入**；标注由采集方案步骤生成） |
 | 用户 | 12 人（见下表；含 `createdAt`、`lastLoginAt`；默认演示 U-001 张华） |
 | 内置角色 | 6 个：`管理员` / `平台运营` / `采集员` / `标注员` / `游客` / `工程师`（`rbac.js` R-001~R-006） |

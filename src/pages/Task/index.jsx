@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
+import ProjectMutateGate from '../../components/common/ProjectMutateGate'
 import {
   tasks as taskStore,
   syncTasks,
@@ -84,6 +85,7 @@ function DeleteConfirmModal({ task, open, onCancel, onConfirm }) {
 ── */
 export default function TaskList({
   fixedProjectId = null,
+  projectStatus = 'open',
   tasks: externalTasks,
   onTasksChange,
   initialMemberFilter = null,
@@ -304,7 +306,7 @@ export default function TaskList({
                 </select>
               </div>
               <div className={FILTER_FIELD}>
-                <label className={LBL}>本体类型</label>
+                <label className={LBL}>设备类型</label>
                 <select value={qBodyType} onChange={(e) => setQBodyType(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
                   <option value="全部">全部</option>
                   {deviceTypes.map((t) => (
@@ -317,7 +319,7 @@ export default function TaskList({
                 <input
                   value={qDeviceCode}
                   onChange={(e) => setQDeviceCode(e.target.value)}
-                  placeholder="请输入实例编号"
+                  placeholder="请输入编号"
                   className={INPUT_CLS}
                 />
               </div>
@@ -361,9 +363,11 @@ export default function TaskList({
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">任务列表</h2>
         {fixedProjectId && (
-          <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
-            + 新建任务
-          </PermButton>
+          <ProjectMutateGate projectStatus={projectStatus}>
+            <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
+              + 新建任务
+            </PermButton>
+          </ProjectMutateGate>
         )}
       </div>
 

@@ -6,6 +6,8 @@ import {
   getRuntimeRoles,
   updateRolePermissions as persistRolePermissions,
   appendRuntimeRole,
+  setRoleStatus as persistRoleStatus,
+  deleteRuntimeRole,
 } from '../mock/rbac'
 import { resolveRouteViewPermission } from '../mock/permissions'
 
@@ -70,10 +72,30 @@ export function AuthProvider({ children }) {
     setRoles(getRuntimeRoles())
   }, [])
 
+  const toggleRoleStatus = useCallback((roleId) => {
+    const role = getRuntimeRoles().find((r) => r.id === roleId)
+    if (!role) return null
+    const next = role.status === '启用' ? '停用' : '启用'
+    persistRoleStatus(roleId, next)
+    setRoles(getRuntimeRoles())
+    return { name: role.name, status: next }
+  }, [])
+
+  const deleteRole = useCallback((roleId) => {
+    deleteRuntimeRole(roleId)
+    setRoles(getRuntimeRoles())
+  }, [])
+
+  const enabledRoles = useMemo(
+    () => roles.filter((r) => r.status === '启用'),
+    [roles],
+  )
+
   const value = useMemo(
     () => ({
       user,
       roles,
+      enabledRoles,
       demoPersonas: DEMO_PERSONAS,
       can,
       canAccessRoute,
@@ -81,8 +103,10 @@ export function AuthProvider({ children }) {
       refreshRoles,
       saveRolePermissions,
       addRole,
+      toggleRoleStatus,
+      deleteRole,
     }),
-    [user, roles, can, canAccessRoute, switchUser, refreshRoles, saveRolePermissions, addRole],
+    [user, roles, enabledRoles, can, canAccessRoute, switchUser, refreshRoles, saveRolePermissions, addRole, toggleRoleStatus, deleteRole],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

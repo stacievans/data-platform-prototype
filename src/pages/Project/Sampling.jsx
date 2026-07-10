@@ -36,13 +36,7 @@ import SamplingBatchDetailModal from './SamplingBatchDetailModal'
 import BatchAcceptProcessModal from './BatchAcceptProcessModal'
 import BulkAcceptProcessModal from './BulkAcceptProcessModal'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
-
-const STATUS_MAP = {
-  not_started: { label: '未开始', color: 'gray' },
-  in_progress: { label: '进行中', color: 'blue' },
-  completed: { label: '已完成', color: 'green' },
-  archived: { label: '已归档', color: 'gray' },
-}
+import { getProjectStatusMeta } from '../../utils/projectStatus'
 
 const INPUT_CLS =
   'h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
@@ -129,7 +123,7 @@ export default function ProjectSampling() {
     return <NoPermission />
   }
 
-  const status = STATUS_MAP[project.status] ?? { label: project.status, color: 'gray' }
+  const status = getProjectStatusMeta(project.status)
   const allSelected = filtered.length > 0 && filtered.every((b) => selectedIds.has(b.id))
   const hasSelection = selectedIds.size > 0
 

@@ -55,14 +55,13 @@ import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
 import RealDataTab from '../Dashboard/tabs/RealDataTab'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
+import { getProjectStatusMeta, normalizeProjectStatus, canProjectMutate } from '../../utils/projectStatus'
+import ProjectMutateGate from '../../components/common/ProjectMutateGate'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const PLAN_STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 const PLAN_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
 const PLAN_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-const PLAN_FILTER_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
-const PLAN_FILTER_FIELD = 'min-w-0'
-const PLAN_FILTER_ACTIONS = 'flex flex-wrap items-center justify-end gap-2'
 
 const TABS = [
   { key: 'task',      label: '采集任务' },
@@ -187,7 +186,7 @@ function SubTabBar({ items, activeKey, onChange }) {
 }
 
 /* ---------- 采集方案 ---------- */
-function CollectConfigTab({ projectId, onTasksChange }) {
+function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const creatorName = useCurrentNickname()
   const [plans, setPlans]         = useState(() => getPlansByProjectId(projectId))
   const refreshPlans              = () => setPlans(getPlansByProjectId(projectId))
@@ -303,7 +302,9 @@ function CollectConfigTab({ projectId, onTasksChange }) {
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'archive', plan: row })}>归档</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
+          {canProjectMutate(projectStatus) && (
+            <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
+          )}
           <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
         </div>
       )
@@ -311,6 +312,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
+        <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
       </div>
     )
   }
@@ -363,7 +365,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
     { title: '方案ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
     { title: '方案名称', dataIndex: 'name' },
     {
-      title: '本体类型',
+      title: '设备类型',
       key: 'robotBody',
       render: (_, row) => resolveDeviceTypeName(resolvePlanDeviceTypeId(row)) || '—',
     },
@@ -387,38 +389,36 @@ function CollectConfigTab({ projectId, onTasksChange }) {
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="space-y-3">
-          <div className={PLAN_FILTER_GRID}>
-            <div className={PLAN_FILTER_FIELD}>
-              <label className={PLAN_FILTER_LBL}>方案ID</label>
-              <input
-                value={qPlanId}
-                onChange={(e) => setQPlanId(e.target.value)}
-                placeholder="请输入方案ID"
-                className={PLAN_FILTER_INPUT_CLS}
-              />
-            </div>
-            <div className={PLAN_FILTER_FIELD}>
-              <label className={PLAN_FILTER_LBL}>方案名称</label>
-              <input
-                value={qPlanName}
-                onChange={(e) => setQPlanName(e.target.value)}
-                placeholder="请输入方案名称"
-                className={PLAN_FILTER_INPUT_CLS}
-              />
-            </div>
-            <div className={PLAN_FILTER_FIELD}>
-              <label className={PLAN_FILTER_LBL}>状态</label>
-              <select
-                value={qStatus}
-                onChange={(e) => setQStatus(e.target.value)}
-                className={`${PLAN_FILTER_INPUT_CLS} cursor-pointer`}
-              >
-                {PLAN_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] flex-1">
+            <label className={PLAN_FILTER_LBL}>方案ID</label>
+            <input
+              value={qPlanId}
+              onChange={(e) => setQPlanId(e.target.value)}
+              placeholder="请输入方案ID"
+              className={PLAN_FILTER_INPUT_CLS}
+            />
           </div>
-          <div className={PLAN_FILTER_ACTIONS}>
+          <div className="min-w-[200px] flex-1">
+            <label className={PLAN_FILTER_LBL}>方案名称</label>
+            <input
+              value={qPlanName}
+              onChange={(e) => setQPlanName(e.target.value)}
+              placeholder="请输入方案名称"
+              className={PLAN_FILTER_INPUT_CLS}
+            />
+          </div>
+          <div className="min-w-[140px] flex-1">
+            <label className={PLAN_FILTER_LBL}>状态</label>
+            <select
+              value={qStatus}
+              onChange={(e) => setQStatus(e.target.value)}
+              className={`${PLAN_FILTER_INPUT_CLS} cursor-pointer`}
+            >
+              {PLAN_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div className="flex shrink-0 gap-2">
             <Button onClick={resetFilters}>重置</Button>
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
@@ -427,7 +427,9 @@ function CollectConfigTab({ projectId, onTasksChange }) {
 
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">方案列表</h2>
-        <PermButton permission="collection.project.create" variant="primary" onClick={openCreate}>+ 新建</PermButton>
+        <ProjectMutateGate projectStatus={projectStatus}>
+          <PermButton permission="collection.project.create" variant="primary" onClick={openCreate}>+ 新建</PermButton>
+        </ProjectMutateGate>
       </div>
       <Table
         columns={columns}
@@ -541,7 +543,7 @@ function CollectConfigTab({ projectId, onTasksChange }) {
 }
 
 /* ---------- 质检配置 ---------- */
-function QcTab({ projectId }) {
+function QcTab({ projectId, projectStatus }) {
   const { can } = useAuth()
   const canEdit = can('collection.project.edit')
   const { ToastNode, show: showToast } = useToast()
@@ -674,15 +676,17 @@ function QcTab({ projectId }) {
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">质检方案配置</h2>
         <div className="flex items-center gap-2">
-          <PermButton
-            permission="collection.project.edit"
-            mode="disable"
-            variant="primary"
-            icon={<IconUpload />}
-            onClick={() => showToast('正在导入质检方案…')}
-          >
-            导入
-          </PermButton>
+          <ProjectMutateGate projectStatus={projectStatus}>
+            <PermButton
+              permission="collection.project.edit"
+              mode="disable"
+              variant="primary"
+              icon={<IconUpload />}
+              onClick={() => showToast('正在导入质检方案…')}
+            >
+              导入
+            </PermButton>
+          </ProjectMutateGate>
           <PermButton
             permission="collection.project.edit"
             mode="disable"
@@ -763,14 +767,14 @@ const SCHEME_SUB_TABS = [
   { key: 'layout',   label: '标注布局' },
 ]
 
-function SchemeTab({ projectId, onTasksChange }) {
+function SchemeTab({ projectId, projectStatus, onTasksChange }) {
   const [sub, setSub] = useState('collect')
   return (
     <div>
       <SubTabBar items={SCHEME_SUB_TABS} activeKey={sub} onChange={setSub} />
-      {sub === 'collect'  && <CollectConfigTab projectId={projectId} onTasksChange={onTasksChange} />}
-      {sub === 'qc'       && <QcTab projectId={projectId} />}
-      {sub === 'layout'   && <LayoutTab projectId={projectId} />}
+      {sub === 'collect'  && <CollectConfigTab projectId={projectId} projectStatus={projectStatus} onTasksChange={onTasksChange} />}
+      {sub === 'qc'       && <QcTab projectId={projectId} projectStatus={projectStatus} />}
+      {sub === 'layout'   && <LayoutTab projectId={projectId} projectStatus={projectStatus} />}
     </div>
   )
 }
@@ -855,7 +859,7 @@ function LayoutFileUpload({ fileName, error, onSelect, onClear }) {
 }
 
 /* ---------- 播放布局 ---------- */
-function LayoutTab({ projectId }) {
+function LayoutTab({ projectId, projectStatus }) {
   const { ToastNode, show: showToast } = useToast()
   const [layouts, setLayouts]     = useState(allLayouts.filter((l) => l.projectId === projectId))
   const [modalOpen, setModalOpen] = useState(false)
@@ -980,7 +984,9 @@ function LayoutTab({ projectId }) {
       {ToastNode}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">布局列表</h2>
-        <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建布局</PermButton>
+        <ProjectMutateGate projectStatus={projectStatus}>
+          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建布局</PermButton>
+        </ProjectMutateGate>
       </div>
       <Table columns={columns} dataSource={displayLayouts} />
 
@@ -1114,23 +1120,27 @@ export default function ProjectDetail() {
     return <NoPermission />
   }
 
+  const projectStatus = normalizeProjectStatus(project.status)
+  const statusMeta = getProjectStatusMeta(project.status)
+  const headerAvatarCls = projectStatus === 'archived'
+    ? 'bg-gray-400'
+    : projectStatus === 'closed'
+      ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+      : 'bg-gradient-to-br from-blue-500 to-blue-700'
+
   return (
     <div className="space-y-4">
       {/* 项目头部 */}
       <div className="rounded-lg border border-gray-100 bg-white px-5 pt-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-lg font-semibold text-white">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-lg text-lg font-semibold text-white ${headerAvatarCls}`}>
               {project.name.slice(0, 1)}
             </div>
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-gray-800">{project.name}</h2>
-                {project.status === 'open' ? (
-                  <Badge color="green" dot>开启</Badge>
-                ) : (
-                  <Badge color="gray" dot>归档</Badge>
-                )}
+                <Badge color={statusMeta.color} dot>{statusMeta.label}</Badge>
               </div>
               <p className="mt-1 text-sm text-gray-500">{project.description}</p>
             </div>
@@ -1160,13 +1170,14 @@ export default function ProjectDetail() {
       {tab === 'task' && (
         <TaskList
           fixedProjectId={id}
+          projectStatus={projectStatus}
           tasks={tasks}
           onTasksChange={setTasks}
           initialMemberFilter={taskMemberFilter}
           onMemberFilterApplied={() => setTaskMemberFilter(null)}
         />
       )}
-      {tab === 'scheme'    && <SchemeTab projectId={id} onTasksChange={setTasks} />}
+      {tab === 'scheme'    && <SchemeTab projectId={id} projectStatus={projectStatus} onTasksChange={setTasks} />}
       {tab === 'members' && (
         <MembersTab
           projectId={id}
