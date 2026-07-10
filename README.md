@@ -422,25 +422,37 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 
 ### 新建/编辑任务弹窗（`CreateTaskModal`，项目任务 Tab 共用）
 
-**布局**：`fitViewport` 宽弹窗（960px），左右双栏 — 左「基础信息 + 标注布局」，右「采集方案」。
+**布局**：单栏 `fitViewport` 弹窗（宽 **520px**，固定面板高 **`min(85vh, 560px)`**；内容超出时弹窗内部滚动，底部确定/取消固定）。采集方案配置移至 **二级弹窗**（`PlanConfigModal`，尺寸与任务弹窗一致，`zIndex=60`，`align="nested"` 相对任务弹窗向右下偏移 **40px**，露出下层边缘体现层级）。
 
-**模式**：
-- **新建**：右侧可在「创建新方案 / 选择已有方案」间切换（`ModeToggle`）
-- **编辑**（`editTask`）：左侧任务字段可改；右侧只读展示关联方案（`PlanReadonlyDetails`），不可切换方案
+**单栏字段顺序**（自上而下）：
+1. **任务名称**（必填；前缀只读任务 ID）
+2. **任务用途**（必填；正式采集 / 试采集，来自 `getTaskPurposeTags()`）
+3. **目标条数**（必填，≥1）
+4. **配置采集方案**（新建必填；编辑只读展示摘要）
+5. **指定采集设备**（必填；按已配置方案的设备类型 `deviceTypeId` 级联过滤在库实例；**未配置方案时禁用**，placeholder「请先配置采集方案」）
+6. **标注布局**（选填，默认布局；选项来自当前项目 `playLayouts`）
 
-**左侧 · 基础信息**：
-- 任务名称（必填；前缀只读任务 ID）
-- 任务用途（必填；正式采集 / 试采集，来自 `getTaskPurposeTags()`）
-- 采集条数（必填，≥1）
-- 指定采集设备（必填；按当前方案本体类型 `deviceTypeId` 过滤在库实例 SN；未配置本体类型时禁用并提示「请先配置采集方案的本体类型」）
+**「配置采集方案」字段**（`PlanSummaryBlock`）：
+- **未配置**：显示「未配置」+ 右侧主色 **配置** 按钮（`Button primary sm`）
+- **已配置**：灰底摘要区三行带字段名 — `方案名称：` / `设备类型：` / `采集方式：`；右上角 **重新配置** 按钮（与「配置」同样式）
+- **编辑模式**：仅展示三行摘要，方案不可改（无重新配置）
+- 从项目详情带 `initialPlan` 进入：打开时自动已配置，方案锁定（二级弹窗只读 `PlanReadonlySection`，无重新配置）
 
-**左侧 · 标注布局**：布局配置（选填，默认布局；选项来自当前项目 `playLayouts`）
+**二级弹窗「配置采集方案」**（`PlanConfigModal`）：
+- 与任务弹窗 **同宽同高**（520px × `min(85vh, 560px)`），选择已有方案时内容较少也 **不缩短**；内容区滚动，底部确定/取消固定
+- **选择方式**（`ModeToggle`，默认 **选择已有方案**）：
+  - **选择已有方案**：`SearchablePlanSelect` 搜索下拉（方案 ID · 名称）+ 选中后 `PlanReadonlyDetails` 只读反显
+  - **创建新方案**：嵌入 `CollectPlanFormFields`（与项目详情采集方案弹窗字段一致）
+- 点击 **确定** 校验通过后回写任务弹窗摘要；**取消** 丢弃本次编辑
+- 重新配置且设备类型变更时，自动清空已选采集设备实例
 
-**右侧 · 采集方案**（新建时必选）：
-- **选择已有方案**：可搜索下拉（方案 ID · 名称）；选中后下方 `PlanReadonlySection` 摘要
-- **创建新方案**：嵌入 `CollectPlanFormFields`（与项目详情采集方案弹窗字段一致）；保存时 `appendPlan`，新方案状态 **已发布**
+**保存**（新建）：
+- 默认任务状态 **草稿**；未配置方案时校验报错
+- **选择已有方案**：绑定 `planId` 与方案字段
+- **创建新方案**：提交任务时 `appendPlan`，新方案状态 **已发布**（二级弹窗确定时不写入列表，保持现有逻辑）
+- 写入 `deviceTypeName` 快照供历史展示
 
-**保存**：新建任务默认状态 **草稿**；校验任务字段 + 方案来源（创建新方案走 `validatePlanForm`）；写入 `deviceTypeName` 快照供历史展示。
+**编辑**（`editTask`）：可改任务名称、用途、目标条数、设备实例、标注布局；关联采集方案以摘要只读展示，不可切换
 
 ---
 
@@ -461,7 +473,7 @@ PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 d
 | 已发布 | 复制 · 查看详情 · 标注 · 验收 · 导出（标签/质检报告 Toast）· 归档（二次确认）· 删除 |
 | 已归档 | 复制 · 查看详情 · 删除 |
 
-- **编辑弹窗**：可改任务名称、用途、采集条数、设备实例、标注布局；关联采标方案只读
+- **编辑弹窗**：可改任务名称、用途、目标条数、设备实例、标注布局；关联采集方案摘要只读（见 [新建/编辑任务弹窗](#新建编辑任务弹窗createtaskmodal项目任务-tab-共用)）
 - **删除**：需输入任务名二次确认
 
 ---
@@ -777,7 +789,7 @@ src/
 │   │   └── Breadcrumb.jsx     # 面包屑
 │   └── common/
 │       ├── Button.jsx         # 按钮（primary / link / linkDanger）
-│       ├── Modal.jsx          # 弹窗（支持 fitViewport 视口限高与内容滚动）
+│       ├── Modal.jsx          # 弹窗（fitViewport、panelHeight 固定面板高、align=nested 二级偏移、内容区滚动）
 │       ├── Table.jsx          # 表格（斑马纹、全列居中；pageSize 分页 + ListPaginator 在横向滚动区外；scrollVisibleRows 固定可见行数+表内滚动）
 │       ├── ListPaginator.jsx  # 统一分页脚：「{pageSize} 条/页 · 共 {total} 条记录」
 │       ├── Badge.jsx          # 状态标签（多色、dot 模式）
@@ -820,7 +832,7 @@ src/
 │   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，5 列筛选网格）
 │   │   ├── Detail.jsx             # 任务详情（摘要卡 + EntryListPanel）
 │   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏、showProjectColumn）
-│   │   └── CreateTaskModal.jsx
+│   │   └── CreateTaskModal.jsx    # 新建/编辑任务（单栏 + PlanConfigModal 二级配置采集方案）
 │   ├── Review/
 │   │   ├── Workbench.jsx          # 审核工作台（独立全屏路由）
 │   │   ├── mock/signalData.js     # 信号图 mock 数据生成
@@ -915,7 +927,8 @@ scripts/
 | 分页惯例 | 项目卡片、任务列表、条目列表、抽样批次列表统一 **10 条/页**；`pageResetKey` / `usePagination` 的 `resetKey` 在筛选变更时重置第 1 页 |
 | 筛选交互 | 绝大多数列表页点击「查询」生效；**角色管理**页（`/system/role`）筛选为输入即过滤 |
 | 筛选布局惯例 | 任务/条目列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮（展开/重置/查询）末行右对齐。其余列表仍可用 `flex` 单行 + 右侧固定按钮 |
-| 弹窗限高 | `Modal` 的 `fitViewport`：限高 85vh、内容区滚动、底部按钮固定 |
+| 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
+| 新建任务弹窗 | `CreateTaskModal`：单栏 520px；`PlanConfigModal` 二级弹窗同尺寸，`zIndex=60`，右下偏移 40px；方案摘要用 `PlanSummaryBlock` 三行展示 |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、抽样批次选择范围、`TreeTransfer` / `UpdateDatasetModal` 等共用首行 **全选** 行（浅灰底 + 分隔线 + 「已选 x / 共 y」+ indeterminate） |
 | 列表名称列跳转 | 采集项目/任务、真机数据集：**名称列蓝色可点击**进详情；**ID 列黑色不可点击** |
 | 条目采集员列 | 全平台条目列表列标题为「**采集员**」，数据字段仍为 `uploader` |
