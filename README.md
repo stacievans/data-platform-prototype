@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · 抽样验收 · 审核工作台（播放/标注/验收）· 七项质检与掉帧检查 · 真机数据集（含转换记录/转换数据集）· 七类标签管理 · 设备管理（编号+SN 展示、**URDF 预览**）· 条目 **设备类型快照** · 全平台统一时间格式 · RBAC 权限演示（菜单/路由/按钮/数据范围/角色启停与删除）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **超级管理员 / 组织管理员** 双层级系统角色。
+**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · 抽样验收 · 审核工作台（播放/标注/验收）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· 七类标签管理 · 设备管理（编号+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · RBAC 权限演示（菜单/路由/按钮/数据范围/角色启停与删除）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
 
 ---
 
@@ -441,11 +441,13 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### 项目人员 Tab
 - **成员列表**：姓名、角色（多 badge）、负责任务（多标签，过多截断 + tooltip）、**加入时间**（`YYYY-MM-DD HH:mm:ss`）、操作（编辑/移除，二次确认移除）
 - 项目创建人固定显示为「平台运营」，置于首行，不可编辑/移除；加入时间取项目 `createdAt`
+- **任务人员绑定规则**：每个任务 **仅 1 名采集员**、**仅 1 名标注员**（`tasks.js` → `collector` / `reviewer` 均为单人字符串；分配时覆盖写入，不追加多人）
 - **添加成员弹窗**（字段顺序）：
   1. **角色**（必选，可多选）：采集员 / 标注员
   2. **选择用户**（必选，单选）：`PersonDropdownSelect` 支持 **模糊搜索** + 下拉单选；仅显示姓名（不含角色后缀）；列出启用用户，排除创建人与已在项目中的成员
   3. **分配任务**：`TaskCheckboxList`（项目任务多选；列表首行统一 **全选** 行：浅灰底 + 「已选 x / 共 y」+ 半选态）
 - **编辑弹窗**：同上顺序；用户字段只读，角色与任务可改
+- **单任务分配弹窗**（任务行「分配人员」）：采集员 / 标注员各选一个；已有采集员时只读展示，不可再追加第二人
 
 ---
 
@@ -509,7 +511,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
   - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、采集设备、所属场景、采集方式、任务状态
   - 各字段 placeholder 为具体提示（如「请输入任务ID」「请输入项目名称」「请输入姓名」）；「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、**采集设备**（显示实例**编号**，hover Tooltip 完整 SN）、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、采集员（多人首名 + `+N` pill）、标注员、创建人、创建/更新时间
+- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、**采集设备**（显示实例**编号**，hover Tooltip 完整 SN）、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、**采集员**（单人）、标注员、创建人、创建/更新时间
 - **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」；**已发布无删除、已归档无复制**）：
 
@@ -527,7 +529,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ### 任务详情 `/collection/task/:id`
 进入前校验 `canAccessTask`：采集员/标注员访问非本人任务时显示 `NoPermission`（与路由 view 权限独立）。
 
-顶部展示任务名称、状态、采集/标注/验收进度、采集员/标注员（多人逗号分隔）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
+顶部展示任务名称、状态、采集/标注/验收进度、采集员/标注员（各 **单人**）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
 
 ---
 
@@ -544,13 +546,27 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **状态**：待处理 / 已通过 / 已驳回 / 全部；各选项旁显示当前计数
 - 工序为 **全部** 时，状态行仅显示「全部」；选中质检/标注/验收后才展示完整子状态筛选
 
-#### 筛选区（5 列网格 + 展开行，点击「查询」生效）
-- **首行**：条目 ID、文件名称、数据格式（全部/h5/LeRobot）；采集条目页额外：所属项目名称、所属任务名称
-- **展开行**：质检状态、标注状态、验收状态（全部/待处理/已通过/已驳回）
+#### 筛选区（固定 **5 列**网格 + 展开行，点击「查询」生效）
+- **任务详情 / 项目内条目**（`showScopeColumns=false`）：
+  - **首行（5 项）**：条目 ID、文件名称、数据格式、质检状态、标注状态
+  - **展开行（1 项）**：验收状态
+- **采集条目页**（`showScopeColumns=true`）：
+  - **首行**：条目 ID、所属项目名称、所属任务名称、文件名称、数据格式
+  - **展开行**：质检状态、标注状态、验收状态
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照，不随类型库变更）、**采集设备**（显示实例编号，hover Tooltip 完整 SN，`CollectDeviceCell`）、**质检状态**（已通过/已驳回可点击查看 `QcDetailModal` 七项结果 + 详情列）、**标注状态** / **验收状态**（已通过/已驳回悬停操作人）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照，不随类型库变更）、**采集设备**（显示实例编号，hover Tooltip 完整 SN，`CollectDeviceCell`）、**质检状态**（已通过/已驳回可点击查看 `QcDetailModal` 七项结果 + 详情列）、**标注状态** / **验收状态**（已通过/已驳回 **可点击查看详情**；处理中/待处理悬停或展示操作人；待处理不可点）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+
+**工序状态详情弹窗**（`EntryDataTable.jsx`）：
+
+| 弹窗 | 触发 | 展示内容 |
+|---|---|---|
+| 质检详情 | 质检已通过/已驳回 | 七项质检结果表格（含掉帧检查详情列） |
+| **标注详情** | 标注已通过/已驳回 | 标注结论、标注标签（按分组 Badge）、标注意见、操作人、操作时间 |
+| **验收详情** | 验收已通过/已驳回 | 验收结论、驳回理由（仅已驳回时）、操作人、操作时间 |
+
+> 标注/验收 **待处理**、**处理中** 状态文字不可点击；已通过/已驳回 hover 仍显示操作人 Tooltip（`formatOperatorTooltip`）。
 
 工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传 → 质检待处理；已解析/质检不通过等 → 各工序对应子状态。
 
@@ -638,7 +654,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### 数据集下载说明 `/dataset/self/download`
 - **面包屑**：数据集管理 / 真机数据集 / 下载数据集
-- **示例代码区**：顶部标注「示例代码，以实际 SDK 为准」；CLI、SDK 两栏并排，各带复制按钮与深色代码块
+- **页头**：标题「真机数据集下载说明」+ 提示「示例代码，以实际 SDK 为准」（**无**「下载 SDK」「查看访问密钥」等操作按钮）
+- **示例代码区**：CLI、SDK 两栏并排，各带复制按钮与深色代码块
 
 #### 新建数据集弹窗（`CreateDatasetModal`）
 单弹窗、三个区块，启用 `fitViewport`（限高 85vh、垂直居中、内容区滚动、底部按钮固定）：
@@ -769,8 +786,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 **新建/编辑类型弹窗**：
 - **类型名称**：必填手动输入；提交时校验重名（`isDeviceTypeNameTaken`）
 - 名称下方灰色参考预览：`参考：{本体}·{左末端}+{右末端}`（`buildTypeNameReference`）
-- **新建**：本体 / 左末端 / 右末端 可填；**不展示创建人**；新建类型默认 `hasUrdf: false`
-- **编辑**：本体、左末端、右末端 **只读锁定**；仅类型名称、描述可改
+- **新建**：本体 / 左末端 / 右末端 可填；**描述**下方 **URDF 上传**（虚线拖拽区，支持 `.urdf` / `.xacro`，≤20MB，选填）；上传后 `hasUrdf: true`，列表显示「预览」；**不展示创建人**
+- **编辑**：本体、左末端、右末端 **只读锁定**；仅类型名称、描述可改（**不含 URDF 更换**）
 - 创建时间、更新时间精确到 `YYYY-MM-DD HH:mm:ss`
 
 **删除类型**：
@@ -805,9 +822,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **筛选区**（点击「查询」生效，单行布局）：用户 ID、**账号**、**用户昵称**、**所属组织**（下拉，**仅超级管理员可见**）、角色、状态；右侧「重置」「查询」
 
-**列表字段**（与组织详情用户列表一致）：用户 ID、账号、用户昵称、**所属组织**、角色、手机号、**邮箱**、状态、创建时间、最后登录、操作
+**列表字段**（与组织详情用户列表一致）：用户 ID、账号、用户昵称、**所属组织**、角色、手机号、**邮箱**、**状态**（Toggle 开关，启用/停用）、创建时间、最后登录、操作
 
 **标题栏**：「用户列表」+ 「+ **新建用户**」（需 `system.user.create`）
+
+**状态列交互**：列表 **Toggle 开关** 切换启用/停用（需 `system.user.edit`；**不可切换当前登录用户本人**）；与组织管理、角色管理开关样式一致
 
 **新建 / 编辑弹窗**（字段顺序统一）：
 1. **账号**（新建必填；编辑只读）
@@ -817,7 +836,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 5. **角色**（下拉可选；**排除组织管理员与超级管理员**；新建必填）
 6. 手机号（选填）
 7. 邮箱（选填）
-8. **状态**（单选「正常 / 停用」，默认正常；存储为「启用 / 停用」）
+8. **状态**（单选「**启用 / 停用**」，默认启用）
 9. **备注**（文本域，0/500 计数）
 
 **操作**：编辑（可改昵称、手机号、邮箱、备注、角色、状态）；删除（不可删当前登录用户；二次确认）
@@ -846,7 +865,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **页头**：白卡片仅显示 **组织名称**（如「智平方」）；面包屑为 `系统管理 / 组织管理 / 组织详情`
 
-**用户列表**：复用 `UserListPanel variant="org"`，仅展示 `orgId` 匹配的用户
+**用户列表**：复用 `UserListPanel variant="org"`，仅展示 `orgId` 匹配的用户（含状态 **Toggle**、新建/编辑「启用/停用」等与用户管理一致）
 
 **筛选区**：用户 ID、账号、用户昵称、**角色**、状态（与用户管理一致，**无所属组织**筛选项）
 
@@ -886,7 +905,7 @@ src/
 │   ├── collect/
 │   │   └── CollectPlanForm.jsx    # 采集方案表单/只读详情/标注方案只读视图（项目详情与新建任务共用）
 │   ├── entry/
-│   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/流转弹窗）
+│   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/标注/验收/流转弹窗）
 │   ├── task/
 │   │   └── EntryListPanel.jsx     # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
 │   ├── Layout/
@@ -1043,7 +1062,7 @@ scripts/
 | 表格对齐 | `Table` 表头与单元格默认水平居中；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外，避免横向滚动时不可见）；`scrollVisibleRows` + `bodyRowHeight` 可固定表内可见行数并 sticky 表头（运营看板任务进度 5 行、排行榜 6 行，每页 10 条） |
 | 分页惯例 | 项目卡片、任务列表、条目列表、抽样批次列表统一 **10 条/页**；`pageResetKey` / `usePagination` 的 `resetKey` 在筛选变更时重置第 1 页 |
 | 筛选交互 | 绝大多数列表页点击「查询」生效（含用户管理、角色管理、组织管理）；角色管理筛选与组织管理布局一致（字段 + 右侧重置/查询） |
-| 筛选布局惯例 | 任务/条目列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮末行右对齐。**项目详情**内采集方案/质检配置筛选与重置/查询 **同一行** |
+| 筛选布局惯例 | 任务列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮末行右对齐。**条目列表（任务详情）**：固定 **5 列首行**（条目 ID、文件名称、数据格式、质检/标注状态）+ 展开 **1 列**（验收状态）。**采集条目页** 首行含所属项目/任务名称，展开行含三工序状态。**项目详情**内采集方案/质检配置筛选与重置/查询 **同一行** |
 | 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
 | 新建任务弹窗 | `CreateTaskModal`：单栏 520px；`PlanConfigModal` 二级弹窗同尺寸，`zIndex=60`，右下偏移 40px；方案摘要用 `PlanSummaryBlock` 三行展示 |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、抽样批次选择范围、`TreeTransfer` / `UpdateDatasetModal` 等共用首行 **全选** 行（浅灰底 + 分隔线 + 「已选 x / 共 y」+ indeterminate） |
@@ -1060,6 +1079,9 @@ scripts/
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
+| URDF 上传 | 新建设备类型弹窗「描述」下方拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
+| 任务采集员 | 每任务 **1 名**采集员（`collector` 字符串）；任务列表/详情单人展示，无 `+N` |
+| 用户状态 UI | 用户列表状态列 Toggle；新建/编辑单选「启用/停用」；`updateRuntimeUser` 即时生效 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
@@ -1073,8 +1095,11 @@ scripts/
 | 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布/已归档**；含 `deviceTypeId`、场景路径、步骤、标注开关） |
 | 质检项 | 每项目固定 **7 条**（8 项目 × 7 = 56 条；含**掉帧检查**；mock 初始 **全部 enabled: true**；`plans.js` → `getQcItemsByProjectId`） |
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
-| 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；采集员/标注员支持多人） |
-| 采集条目 | 每任务 5~10 条（伪随机生成）；**7 值** `dataStatus`（含**质检不通过**）；含 `deviceTypeId`/`deviceTypeName`、`collectDevice`/`collectDeviceSn` 快照；含 `qcResults.frameDrop`、掉帧 demo 条目 E-200104 / E-200806 |
+| 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；**采集员为单人字符串**、标注员为单人） |
+
+**采集任务单条字段（`tasks.js` 摘要）**：`id`, `planId`, `name`, `purpose`, `deviceTypeId`, `deviceInstanceId`, `device`, `method`, `scene`, `projectId`, `collectTotal/Done`, `reviewDone`, `acceptDone`, `status`, **`collector`**（单人字符串，未分配为 `''`）, **`reviewer`**（单人字符串）, `creator`, `createdAt`, `updatedAt`
+
+| 采集条目 | 每任务 5~10 条（伪随机生成）；**7 值** `dataStatus`（含**质检不通过**）；含 `deviceTypeId`/`deviceTypeName`、`collectDevice`/`collectDeviceSn` 快照；含 `qcResults.frameDrop`、掉帧 demo 条目 E-200104 / E-200806；**标注/验收驳回**条目自动补齐 `auditComment` / `acceptComment` 驳回理由 |
 | 采集条目页数据 | 由 `entries` 派生（`uploads.js`），字段与 `EntryDataTable` 对齐 |
 | 抽样验收批次 | 6 条初始（P-1001 × 3、P-1002 × 3）；含 `configItems`、`detailItems`、`entryIds`；会话内可新建 |
 | 真机数据集 | 5 条；支持跨项目 `projectIds`、多 `taskIds`、验收通过条目、`autoSync` |
@@ -1138,7 +1163,9 @@ scripts/
 
 核心：`id`, `fileId`, `taskId`, `fileName`, `size`, `duration`, `uploadTime`, `uploader`, `dataStatus`, `format`
 
-快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, `flowHistory`，以及标注/验收相关字段
+快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, `flowHistory`，以及标注/验收相关字段（`auditResult`, `auditTags`, `auditComment`, `acceptResult`, `acceptComment`, `reviewTime`, `acceptTime`, `reviewOperator`, `acceptOperator` 等）
+
+**驳回理由 mock**：`标注不通过` / `验收不通过` 且缺少意见时，按条目 ID 哈希从预设文案池自动补齐
 
 **运行时 API**：`getEntryById`, `getAllEntries`, `getEntriesByTaskId`, `updateEntry`, `findLatestPendingEntry`
 

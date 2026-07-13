@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Button from '../../components/common/Button'
+import Modal from '../../components/common/Modal'
+import { useToast } from '../../components/common/Toast'
 import {
   getEntryById,
   getEntriesByTaskId,
   updateEntry,
 } from '../../mock/entries'
-import { getAuditReviewTagGroups } from '../../mock/tags'
-import { tasks } from '../../mock/tasks'
-import { plans } from '../../mock/plans'
 import { useAuth } from '../../context/AuthContext'
 import { nowDateTime } from '../../utils/formatDateTime'
 import NoPermission from '../System/NoPermission'
 import WorkbenchLayoutA from './components/WorkbenchLayoutA'
 import WorkbenchLayoutB from './components/WorkbenchLayoutB'
 import LayoutToggle from './components/LayoutToggle'
+import WorkbenchSidePanel from './components/WorkbenchSidePanel'
+import { normalizeAuditQuality } from './constants/workbenchTags'
 import { generateSignalSeries } from './mock/signalData'
-import { CollectDeviceCell } from '../../utils/deviceDisplay'
 
 const SPEEDS = [0.5, 1, 1.5, 2]
 
@@ -30,11 +30,7 @@ function parseMode(raw) {
   return 'play'
 }
 
-function PendingHint({ children }) {
-  return <p className="text-xs text-gray-400">{children}</p>
-}
-
-const PANEL_TITLES = {
+const MODE_LABELS = {
   play: '播放',
   review: '标注',
   accept: '验收',
@@ -42,184 +38,16 @@ const PANEL_TITLES = {
 
 const SIDE_PANEL_WIDTH = 340
 
+function buildPanelSnapshot(form, actionSegments, regionFrames) {
+  return JSON.stringify({ form, actionSegments, regionFrames })
+}
+
 function IconLayoutSidebarRight({ className = 'h-4 w-4' }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M4 4h16v16H4z" />
       <path d="M15 4v16" />
     </svg>
-  )
-}
-
-function MetaRow({ label, value, title }) {
-  return (
-    <div className="flex items-start justify-between gap-3 py-1.5 text-sm">
-      <span className="shrink-0 text-gray-400">{label}</span>
-      <span className="text-right text-gray-800" title={title}>{value ?? '—'}</span>
-    </div>
-  )
-}
-
-function SectionTitle({ children }) {
-  return <h4 className="mb-3 text-sm font-medium text-gray-800">{children}</h4>
-}
-
-function FieldLabel({ children }) {
-  return <div className="mb-2 text-xs text-gray-400">{children}</div>
-}
-
-function PlanDetailsExpandable({ plan, task, sceneFallback = '—' }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="py-1.5">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center justify-between gap-2 text-sm"
-      >
-        <span className="text-gray-400">采集方案详情</span>
-        <svg
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="mt-2 space-y-3 rounded-md border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-          <div>
-            <p className="mb-0.5 text-xs text-gray-400">任务描述</p>
-            <p className="text-sm text-gray-800">{task?.name ?? plan?.name ?? '—'}</p>
-          </div>
-          <div>
-            <p className="mb-0.5 text-xs text-gray-400">初始场景状态</p>
-            <p className="text-sm text-gray-800">{plan?.initialScene ?? sceneFallback}</p>
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs text-gray-400">步骤列表</p>
-            {!plan?.steps?.length ? (
-              <p className="text-sm text-gray-500">暂无步骤</p>
-            ) : (
-              <div className="space-y-1">
-                {plan.steps.map((step, i) => (
-                  <div
-                    key={`${step.description}-${i}`}
-                    className="grid grid-cols-[20px_1fr_auto_auto] items-center gap-x-2 gap-y-0.5 rounded bg-white/80 px-2 py-1.5 text-xs"
-                  >
-                    <span className="font-medium text-blue-600">{i + 1}</span>
-                    <span className="text-gray-800">{step.description || '—'}</span>
-                    <span className="text-gray-500">{step.atomicSkill}</span>
-                    <span className="text-gray-500">{step.duration ?? 0}s</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SegmentedControl({ options, value, onChange, readOnly, variantMap = {} }) {
-  return (
-    <div className="flex gap-1.5">
-      {options.map((opt) => {
-        const active = value === opt
-        const variant = variantMap[opt]
-        let cls = 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-        if (active) {
-          if (variant === 'pass') cls = 'border-emerald-500 bg-emerald-50 text-emerald-700'
-          else if (variant === 'fail') cls = 'border-red-400 bg-red-50 text-red-600'
-          else if (variant === 'warn') cls = 'border-amber-400 bg-amber-50 text-amber-700'
-          else cls = 'border-blue-500 bg-blue-50 text-blue-700'
-        }
-        return (
-          <button
-            key={opt}
-            type="button"
-            disabled={readOnly}
-            onClick={() => !readOnly && onChange?.(opt)}
-            className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition ${cls} ${
-              readOnly ? 'cursor-default opacity-90' : 'cursor-pointer'
-            }`}
-          >
-            {opt}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function TagCheckboxDropdown({ value, onChange, readOnly }) {
-  const ref = useRef(null)
-  const [open, setOpen] = useState(false)
-  const tagGroups = getAuditReviewTagGroups()
-
-  useEffect(() => {
-    if (!open) return
-    const onDoc = (e) => {
-      if (!ref.current?.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [open])
-
-  if (readOnly) {
-    return (
-      <div className="min-h-8 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
-        {value.length ? value.join('、') : '—'}
-      </div>
-    )
-  }
-
-  const toggle = (name) => {
-    onChange?.(value.includes(name) ? value.filter((v) => v !== name) : [...value, name])
-  }
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex min-h-8 w-full cursor-pointer items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-      >
-        <span className={value.length ? 'text-gray-700' : 'text-gray-400'}>
-          {value.length ? value.join('、') : '请选择标注标签'}
-        </span>
-        <svg className={`h-4 w-4 shrink-0 text-gray-400 transition ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-gray-200 bg-white p-1.5 shadow-lg">
-          {tagGroups.map((group) => (
-            <div key={group.groupName} className="mb-1 last:mb-0">
-              <p className="px-2 py-1 text-xs font-medium text-gray-400">{group.groupName}</p>
-              {group.tags.map((name) => (
-                <label
-                  key={name}
-                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={value.includes(name)}
-                    onChange={() => toggle(name)}
-                    className="h-4 w-4 cursor-pointer accent-blue-600"
-                  />
-                  {name}
-                </label>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -406,202 +234,12 @@ function TimelinePanel({
   )
 }
 
-function AuditPanel({ mode, entry, form, setForm, onSubmitReview, onSubmitAccept, readOnly = false }) {
-  const showFooter = !readOnly && (mode === 'review' || mode === 'accept')
-  const ctx = useMemo(() => {
-    const task = tasks.find((t) => t.id === entry.taskId)
-    const plan = plans.find((p) => p.id === task?.planId)
-    return {
-      projectName: task?.projectName ?? '—',
-      taskName: task?.name ?? '—',
-      plan: plan ?? null,
-      task: task ?? null,
-    }
-  }, [entry.taskId])
-
-  const durationSec = entry.duration?.includes(':')
-    ? `${parseInt(entry.duration.split(':')[0], 10) * 60 + parseInt(entry.duration.split(':')[1], 10)}s`
-    : entry.duration
-
-  const readOnlyFieldCls = 'cursor-default border-gray-200 bg-gray-50 text-gray-800'
-  const editFieldCls = 'border-gray-300 focus:border-blue-500'
-
-  return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <div className="flex shrink-0 items-center border-b border-gray-100 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-800">{readOnly ? '预览信息' : PANEL_TITLES[mode]}</h3>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        <section>
-          <SectionTitle>基本信息</SectionTitle>
-          <MetaRow label="采集项目" value={ctx.projectName} />
-          <MetaRow label="采集任务" value={ctx.taskName} />
-          <MetaRow label="采集员" value={entry.uploader} />
-          <MetaRow label="设备类型" value={entry.deviceTypeName ?? '—'} />
-          <MetaRow
-            label="采集设备"
-            value={entry.collectDevice}
-            title={entry.collectDeviceSn?.trim() || undefined}
-          />
-          <MetaRow label="采集方式" value={entry.collectMethod} />
-          <MetaRow label="格式·时长" value={`${entry.format} · ${durationSec}`} />
-          <PlanDetailsExpandable
-            plan={ctx.plan}
-            task={ctx.task}
-            sceneFallback={entry.sceneInitialDetail ?? entry.sceneInitialState ?? '—'}
-          />
-        </section>
-
-        <section className="mt-5 border-t border-gray-100 pt-5">
-          <SectionTitle>标注结论</SectionTitle>
-          {readOnly && (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>标注结果</FieldLabel>
-                <div className={`min-h-8 rounded-md border px-3 py-2 text-sm ${readOnlyFieldCls}`}>
-                  {form.auditResult ?? '—'}
-                </div>
-              </div>
-              <div>
-                <FieldLabel>标注标签</FieldLabel>
-                <TagCheckboxDropdown value={form.auditTags} readOnly />
-              </div>
-              <div>
-                <FieldLabel>标注意见</FieldLabel>
-                <textarea
-                  rows={3}
-                  readOnly
-                  value={form.auditComment}
-                  className={`w-full resize-none rounded-md border px-3 py-2 text-sm outline-none ${readOnlyFieldCls}`}
-                />
-              </div>
-            </div>
-          )}
-          {!readOnly && mode === 'play' && <PendingHint>待标注</PendingHint>}
-          {!readOnly && mode === 'review' && (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>标注结果</FieldLabel>
-                <SegmentedControl
-                  options={['通过', '不通过']}
-                  value={form.auditResult}
-                  variantMap={{ 通过: 'pass', 不通过: 'fail' }}
-                  onChange={(v) => setForm((f) => ({ ...f, auditResult: v }))}
-                />
-              </div>
-              <div>
-                <FieldLabel>标注标签</FieldLabel>
-                <TagCheckboxDropdown
-                  value={form.auditTags}
-                  onChange={(tags) => setForm((f) => ({ ...f, auditTags: tags }))}
-                />
-              </div>
-              <div>
-                <FieldLabel>标注意见</FieldLabel>
-                <textarea
-                  rows={3}
-                  value={form.auditComment}
-                  onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
-                  placeholder="补充说明…"
-                  className={`w-full resize-none rounded-md border px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-100 ${editFieldCls}`}
-                />
-              </div>
-            </div>
-          )}
-          {!readOnly && mode === 'accept' && (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>标注结果</FieldLabel>
-                <div className={`min-h-8 rounded-md border px-3 py-2 text-sm ${readOnlyFieldCls}`}>
-                  {form.auditResult ?? '—'}
-                </div>
-              </div>
-              <div>
-                <FieldLabel>标注标签</FieldLabel>
-                <TagCheckboxDropdown value={form.auditTags} readOnly />
-              </div>
-              <div>
-                <FieldLabel>标注意见</FieldLabel>
-                <textarea
-                  rows={3}
-                  readOnly
-                  value={form.auditComment}
-                  className={`w-full resize-none rounded-md border px-3 py-2 text-sm outline-none ${readOnlyFieldCls}`}
-                />
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="mt-5 border-t border-gray-100 pt-5">
-          <SectionTitle>验收结论</SectionTitle>
-          {readOnly && (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>验收结果</FieldLabel>
-                <div className={`min-h-8 rounded-md border px-3 py-2 text-sm ${readOnlyFieldCls}`}>
-                  {form.acceptResult ?? '—'}
-                </div>
-              </div>
-              <div>
-                <FieldLabel>验收意见</FieldLabel>
-                <textarea
-                  rows={3}
-                  readOnly
-                  value={form.acceptComment}
-                  className={`w-full resize-none rounded-md border px-3 py-2 text-sm outline-none ${readOnlyFieldCls}`}
-                />
-              </div>
-            </div>
-          )}
-          {!readOnly && (mode === 'play' || mode === 'review') && <PendingHint>待验收</PendingHint>}
-          {!readOnly && mode === 'accept' && (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>验收结果</FieldLabel>
-                <SegmentedControl
-                  options={['通过', '不通过']}
-                  value={form.acceptResult}
-                  variantMap={{ 通过: 'pass', 不通过: 'fail' }}
-                  onChange={(v) => setForm((f) => ({ ...f, acceptResult: v }))}
-                />
-              </div>
-              <div>
-                <FieldLabel>验收意见</FieldLabel>
-                <textarea
-                  rows={3}
-                  value={form.acceptComment}
-                  onChange={(e) => setForm((f) => ({ ...f, acceptComment: e.target.value }))}
-                  placeholder="补充说明…"
-                  className={`w-full resize-none rounded-md border px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-100 ${editFieldCls}`}
-                />
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-
-      {showFooter && (
-        <div className="shrink-0 border-t border-gray-100 p-4">
-          <Button
-            variant="primary"
-            className="h-10 w-full text-sm font-medium"
-            onClick={mode === 'review' ? onSubmitReview : onSubmitAccept}
-          >
-            {mode === 'review' ? '提交标注 →' : '提交验收 →'}
-          </Button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function Workbench() {
   const { entryId } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { canAccessRoute, user } = useAuth()
+  const { ToastNode, show: showToast } = useToast()
   const mode = parseMode(searchParams.get('mode'))
   const layoutPreviewName = searchParams.get('layoutPreview')
   const isLayoutPreview = Boolean(layoutPreviewName)
@@ -614,15 +252,17 @@ export default function Workbench() {
   const [mainLayout, setMainLayout] = useState('A')
 
   const [form, setForm] = useState({
-    auditResult: null,
+    auditQuality: null,
     auditTags: [],
     auditComment: '',
-    acceptResult: null,
-    acceptComment: '',
   })
 
   const [actionSegments, setActionSegments] = useState([])
   const [regionFrames, setRegionFrames] = useState([])
+  const [draftSaved, setDraftSaved] = useState(false)
+  const [savedSnapshot, setSavedSnapshot] = useState('')
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
 
   const taskEntries = useMemo(
     () => (entry ? getEntriesByTaskId(entry.taskId) : []),
@@ -634,15 +274,18 @@ export default function Workbench() {
   const syncFromEntry = useCallback((e) => {
     if (!e) return
     setEntry(e)
-    setForm({
-      auditResult: e.auditResult ?? null,
+    const nextForm = {
+      auditQuality: normalizeAuditQuality(e.auditQuality),
       auditTags: e.auditTags ?? [],
       auditComment: e.auditComment ?? '',
-      acceptResult: e.acceptResult ?? null,
-      acceptComment: e.acceptComment ?? '',
-    })
-    setActionSegments(e.actionSegments ?? [])
-    setRegionFrames(e.regionFrames ?? [])
+    }
+    const nextActions = e.actionSegments ?? []
+    const nextRegions = e.regionFrames ?? []
+    setForm(nextForm)
+    setActionSegments(nextActions)
+    setRegionFrames(nextRegions)
+    setSavedSnapshot(buildPanelSnapshot(nextForm, nextActions, nextRegions))
+    setDraftSaved(false)
     setCurrentFrame(Math.min(388, (e.totalFrames ?? 3140) - 1))
     setPlaying(false)
   }, [])
@@ -697,11 +340,6 @@ export default function Workbench() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const handleBack = () => {
-    window.close()
-    if (entry?.taskId) navigate(`/collection/task/${entry.taskId}`)
-  }
-
   const goSibling = (delta) => {
     const next = taskEntries[currentIndex + delta]
     if (next) navigate(`/review/${next.id}?mode=${mode}`)
@@ -715,35 +353,107 @@ export default function Workbench() {
     }
   }
 
-  const handleSubmitReview = () => {
-    if (!form.auditResult) return
-    const dataStatus = form.auditResult === '通过' ? '已标注' : '标注不通过'
-    syncFromEntry(updateEntry(entryId, {
-      dataStatus,
-      auditResult: form.auditResult,
+  const currentSnapshot = useMemo(
+    () => buildPanelSnapshot(form, actionSegments, regionFrames),
+    [form, actionSegments, regionFrames],
+  )
+
+  const saveDisabled = draftSaved && currentSnapshot === savedSnapshot
+
+  const ensureReviewSaved = () => {
+    if (!draftSaved || currentSnapshot !== savedSnapshot) {
+      showToast('请先保存标注')
+      return false
+    }
+    return true
+  }
+
+  const handleSaveDraft = () => {
+    if (mode !== 'review') return
+    const updated = updateEntry(entryId, {
+      auditQuality: form.auditQuality,
       auditTags: form.auditTags,
       auditComment: form.auditComment,
       actionSegments,
       regionFrames,
-      reviewClaimedBy: null,
-      reviewClaimedAt: null,
-      reviewTime: nowDateTime(),
-    }))
+    })
+    setEntry(updated)
+    setSavedSnapshot(currentSnapshot)
+    setDraftSaved(true)
+    showToast('保存成功')
+  }
+
+  const handlePass = () => {
+    if (mode === 'play' || isLayoutPreview) return
+    if (mode === 'review') {
+      if (!ensureReviewSaved()) return
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '已标注',
+        auditResult: '通过',
+        auditQuality: form.auditQuality,
+        auditTags: form.auditTags,
+        auditComment: form.auditComment,
+        actionSegments,
+        regionFrames,
+        reviewClaimedBy: null,
+        reviewClaimedAt: null,
+        reviewTime: nowDateTime(),
+      }))
+      goNextAfterSubmit()
+      return
+    }
+    if (mode === 'accept') {
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '已验收',
+        acceptResult: '通过',
+        acceptClaimedBy: null,
+        acceptClaimedAt: null,
+        acceptTime: nowDateTime(),
+      }))
+      goNextAfterSubmit()
+    }
+  }
+
+  const handleRejectOpen = () => {
+    if (mode === 'play' || isLayoutPreview) return
+    if (mode === 'review' && !ensureReviewSaved()) return
+    setRejectReason('')
+    setRejectOpen(true)
+  }
+
+  const handleRejectConfirm = () => {
+    const reason = rejectReason.trim()
+    if (!reason) return
+    if (mode === 'review') {
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '标注不通过',
+        auditResult: '不通过',
+        auditQuality: form.auditQuality,
+        auditTags: form.auditTags,
+        auditComment: form.auditComment,
+        auditRejectReason: reason,
+        actionSegments,
+        regionFrames,
+        reviewClaimedBy: null,
+        reviewClaimedAt: null,
+        reviewTime: nowDateTime(),
+      }))
+    } else if (mode === 'accept') {
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '验收不通过',
+        acceptResult: '不通过',
+        acceptComment: reason,
+        acceptClaimedBy: null,
+        acceptClaimedAt: null,
+        acceptTime: nowDateTime(),
+      }))
+    }
+    setRejectOpen(false)
+    setRejectReason('')
     goNextAfterSubmit()
   }
 
-  const handleSubmitAccept = () => {
-    if (!form.acceptResult) return
-    syncFromEntry(updateEntry(entryId, {
-      dataStatus: form.acceptResult === '通过' ? '已验收' : '验收不通过',
-      acceptResult: form.acceptResult,
-      acceptComment: form.acceptComment,
-      acceptClaimedBy: null,
-      acceptClaimedAt: null,
-      acceptTime: nowDateTime(),
-    }))
-    goNextAfterSubmit()
-  }
+  const passRejectDisabled = mode === 'play' || isLayoutPreview
 
   const totalFrames = entry?.totalFrames ?? 3140
   const signalSeries = useMemo(
@@ -777,21 +487,13 @@ export default function Workbench() {
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-2.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex shrink-0 cursor-pointer items-center gap-0.5 text-sm text-gray-500 transition hover:text-blue-600"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="sr-only">返回</span>
-          </button>
-          <span className="truncate text-sm text-gray-800">
-            {isLayoutPreview ? `布局预览 · ${layoutPreviewName}` : displayName}
-          </span>
+      <header className="relative flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-2.5">
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-sm font-medium text-gray-800">{MODE_LABELS[mode]}</span>
+          <LayoutToggle value={mainLayout} onChange={setMainLayout} />
+        </div>
+        <div className="pointer-events-none absolute left-1/2 max-w-[min(520px,50vw)] -translate-x-1/2 truncate px-4 text-center">
+          <span className="text-sm font-semibold text-gray-900">{displayName}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {!isLayoutPreview && (
@@ -818,6 +520,22 @@ export default function Workbench() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
+              <button
+                type="button"
+                disabled={passRejectDisabled}
+                onClick={handlePass}
+                className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-blue-600 px-3.5 py-1.5 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:hover:bg-gray-100"
+              >
+                通过
+              </button>
+              <button
+                type="button"
+                disabled={passRejectDisabled}
+                onClick={handleRejectOpen}
+                className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-white px-3.5 py-1.5 text-sm text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-white disabled:text-gray-300 disabled:hover:bg-white"
+              >
+                驳回
+              </button>
             </>
           )}
           <button
@@ -829,7 +547,6 @@ export default function Workbench() {
           >
             <IconLayoutSidebarRight className="ti-layout-sidebar-right h-[18px] w-[18px]" />
           </button>
-          <LayoutToggle value={mainLayout} onChange={setMainLayout} />
           <button
             type="button"
             title="布局设置"
@@ -877,18 +594,69 @@ export default function Workbench() {
 
         {!panelCollapsed && (
           <div className="relative shrink-0 overflow-hidden" style={{ width: SIDE_PANEL_WIDTH }}>
-            <AuditPanel
-              mode={mode}
+            <WorkbenchSidePanel
+              mode={isLayoutPreview ? 'play' : mode}
               entry={entry}
               form={form}
               setForm={setForm}
-              onSubmitReview={handleSubmitReview}
-              onSubmitAccept={handleSubmitAccept}
-              readOnly={isLayoutPreview}
+              actionSegments={actionSegments}
+              setActionSegments={setActionSegments}
+              regionFrames={regionFrames}
+              setRegionFrames={setRegionFrames}
+              onSeek={setCurrentFrame}
+              onSave={handleSaveDraft}
+              saveDisabled={saveDisabled}
+              showSave={mode === 'review' && !isLayoutPreview}
             />
           </div>
         )}
       </div>
+
+      {ToastNode}
+
+      <Modal
+        open={rejectOpen}
+        title="驳回"
+        onCancel={() => {
+          setRejectOpen(false)
+          setRejectReason('')
+        }}
+        footer={(
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setRejectOpen(false)
+                setRejectReason('')
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!rejectReason.trim()}
+              onClick={handleRejectConfirm}
+            >
+              确定
+            </Button>
+          </div>
+        )}
+        width={480}
+      >
+        <div>
+          <label className="mb-2 block text-sm text-gray-600">
+            驳回理由
+            <span className="text-red-500"> *</span>
+          </label>
+          <textarea
+            rows={4}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="请输入驳回理由"
+            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+      </Modal>
     </div>
   )
 }
