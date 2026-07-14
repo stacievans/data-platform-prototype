@@ -1,5 +1,6 @@
 import {
   CREATE_BASIS_OPTIONS,
+  recalcBatchAfterProcess,
   summarizeDetailItems,
 } from '../utils/samplingHelpers'
 
@@ -176,6 +177,24 @@ export function deleteSamplingBatch(batchId) {
   const before = batchStore.length
   batchStore = batchStore.filter((b) => b.id !== batchId)
   return batchStore.length < before
+}
+
+/** 查找 entryIds 包含该条目的抽检批次（可多个） */
+export function getBatchesContainingEntry(entryId) {
+  if (!entryId) return []
+  return batchStore.filter((b) => (b.entryIds ?? []).includes(entryId))
+}
+
+/**
+ * 验收工作台提交后：若条目属于抽检批次，按抽中条目重算验收进度 / 通过 / 驳回条数；
+ * 不属于任何批次时无操作。须在 updateEntry 之后调用。
+ */
+export function syncBatchesAfterEntryAccept(entryId, action = 'pass') {
+  const matched = getBatchesContainingEntry(entryId)
+  matched.forEach((batch) => {
+    updateSamplingBatch(batch.id, recalcBatchAfterProcess(batch, action))
+  })
+  return matched.length
 }
 
 export function nextSamplingBatchId() {

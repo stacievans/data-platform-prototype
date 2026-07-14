@@ -1114,7 +1114,7 @@ scripts/
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
 | 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存草稿 / 通过驳回提交** 后更新会话内状态 |
-| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样）；条目批量处理联动 `entries.js` |
+| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样）；**验收工作台**通过/驳回后若条目在 `entryIds` 内则 `syncBatchesAfterEntryAccept` 重算进度/通过/驳回条数，否则不改批次；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
@@ -1145,7 +1145,7 @@ scripts/
 | URDF 上传 | 新建设备类型弹窗「描述」下方拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
 | 任务采集员 | 每任务 **1 名**采集员（`collector` 字符串）；任务列表/详情单人展示，无 `+N` |
 | 用户状态 UI | 用户列表状态列 Toggle；新建/编辑单选「启用/停用」；`updateRuntimeUser` 即时生效 |
-| 标注工作台 | 三模式共用 `WorkbenchSidePanel`；标注模式草稿保存 + 通过/驳回流转；验收只读反显；顶栏模式标识 + 布局切换 + 通过/驳回 |
+| 标注工作台 | 三模式共用 `WorkbenchSidePanel`；标注模式草稿保存 + 通过/驳回流转；验收只读反显；顶栏模式标识 + 布局切换 + 通过/驳回；验收提交时同步所属抽检批次统计（非抽检条目仅改条目） |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 

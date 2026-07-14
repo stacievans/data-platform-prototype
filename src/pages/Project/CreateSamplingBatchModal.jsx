@@ -15,7 +15,6 @@ import {
   calcSampledCount,
   countTaskCandidates,
   defaultSamplingFilters,
-  formatReviewResultLabel,
   listProjectCollectors,
   listProjectReviewers,
 } from '../../utils/samplingHelpers'
@@ -440,7 +439,6 @@ export default function CreateSamplingBatchModal({
                 <tr className="bg-gray-50/80">
                   <td colSpan={4} className="px-3 py-2.5 text-sm text-gray-600">
                     合计：{summary.optionCount} 个任务 · {summary.totalEntries} 条候选条目 · {summary.sampledEntries} 条抽检条目
-                    {' '}标注结果：{formatReviewResultLabel(filters.reviewResult)}
                   </td>
                 </tr>
               </tbody>

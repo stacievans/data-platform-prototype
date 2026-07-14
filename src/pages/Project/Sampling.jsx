@@ -75,6 +75,7 @@ export function createSamplingBatchRecord({ projectId, name, configItems, filter
     totalEntries: summary.totalEntries,
     sampledEntries: summary.sampledEntries,
     passedCount: 0,
+    rejectedCount: 0,
     acceptProgress: 0,
     status: 'pending',
     creator,

@@ -377,6 +377,7 @@ export function recalcBatchAfterProcess(batch, action = 'pass') {
   const sampledEntries = getAllEntries().filter((e) => sampledIds.has(e.id))
   const reviewed = sampledEntries.filter((e) => ['已验收', '验收不通过'].includes(e.dataStatus)).length
   const passed = sampledEntries.filter((e) => e.dataStatus === '已验收').length
+  const rejected = sampledEntries.filter((e) => e.dataStatus === '验收不通过').length
   const acceptProgress = batch.sampledEntries
     ? Math.min(100, Math.round((reviewed / batch.sampledEntries) * 100))
     : 0
@@ -384,6 +385,7 @@ export function recalcBatchAfterProcess(batch, action = 'pass') {
   let status = batch.status
   if (acceptProgress >= 100) status = 'completed'
   else if (acceptProgress > 0) status = 'in_progress'
+  else status = 'pending'
 
   const detailItems = (batch.detailItems ?? []).map((item) => {
     if (acceptProgress < 100) return item
@@ -393,7 +395,13 @@ export function recalcBatchAfterProcess(batch, action = 'pass') {
     return { ...item, passRate }
   })
 
-  return { passedCount: passed, acceptProgress, status, detailItems }
+  return {
+    passedCount: passed,
+    rejectedCount: rejected,
+    acceptProgress,
+    status,
+    detailItems,
+  }
 }
 
 export function applyBatchOptionProcess(batch, selectedKeys, action, remark) {

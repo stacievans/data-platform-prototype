@@ -8,6 +8,7 @@ import {
   getEntriesByTaskId,
   updateEntry,
 } from '../../mock/entries'
+import { syncBatchesAfterEntryAccept } from '../../mock/samplingBatches'
 import { useAuth } from '../../context/AuthContext'
 import { nowDateTime } from '../../utils/formatDateTime'
 import NoPermission from '../System/NoPermission'
@@ -410,6 +411,7 @@ export default function Workbench() {
         acceptClaimedAt: null,
         acceptTime: nowDateTime(),
       }))
+      syncBatchesAfterEntryAccept(entryId, 'pass')
       goNextAfterSubmit()
     }
   }
@@ -447,6 +449,7 @@ export default function Workbench() {
         acceptClaimedAt: null,
         acceptTime: nowDateTime(),
       }))
+      syncBatchesAfterEntryAccept(entryId, 'reject')
     }
     setRejectOpen(false)
     setRejectReason('')
