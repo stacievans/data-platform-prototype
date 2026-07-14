@@ -24,7 +24,6 @@ const INPUT_CLS =
   'h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const SECTION_CLS = 'rounded-lg border border-gray-100 bg-gray-50/60 p-4'
 const LBL = 'mb-1.5 block text-sm text-gray-700'
-const HINT = 'text-xs text-gray-400'
 const SELECT_CLS = `${INPUT_CLS} cursor-pointer`
 
 /** 未选 / 全选 → 不筛选，统一存空数组 */
@@ -353,9 +352,8 @@ export default function CreateSamplingBatchModal({
 
       {/* 筛选条件 */}
       <div className={SECTION_CLS}>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3">
           <span className="text-sm font-medium text-gray-700">筛选条件</span>
-          <p className={HINT}>筛选将缩小候选条目池；未选采集员/标注员视为全部</p>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="min-w-0">
@@ -373,14 +371,14 @@ export default function CreateSamplingBatchModal({
             </select>
           </div>
           <MultiCheckDropdown
-            label="选择采集员"
+            label="采集员"
             options={collectors}
             value={filters.collectors}
             onChange={(v) => setFilters((f) => ({ ...f, collectors: v }))}
             allLabel="全部采集员"
           />
           <MultiCheckDropdown
-            label="选择标注员"
+            label="标注员"
             options={reviewers}
             value={filters.reviewers}
             onChange={(v) => setFilters((f) => ({ ...f, reviewers: v }))}

@@ -172,6 +172,12 @@ export function appendSamplingBatch(batch) {
   return batch
 }
 
+export function deleteSamplingBatch(batchId) {
+  const before = batchStore.length
+  batchStore = batchStore.filter((b) => b.id !== batchId)
+  return batchStore.length < before
+}
+
 export function nextSamplingBatchId() {
   const nums = batchStore.map((b) => parseInt(b.id.replace('SB-', ''), 10) || 0)
   return `SB-${Math.max(...nums, 2000) + 1}`

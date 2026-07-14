@@ -463,8 +463,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### Tab 批次列表（无「+ 新建」）
 
 - **筛选区**：仅 **批次名称**（已去掉「抽样依据」筛选项）
-- **抽检批次列表**（10 条/页）：勾选、批次 ID、批次名称、总条目、抽检条目、通过率、验收进度、创建人、创建时间、操作（**已去掉「抽样依据」列**）
-- **操作**：**验收** / **详情** / **处理**
+- **抽检批次列表**（10 条/页）：勾选、批次 ID、批次名称、**任务数**、总条目、抽检条目、通过率、验收进度、创建人、创建时间、操作（**已去掉「抽样依据」列**）；任务数取自 `configItems.length`
+- **操作**：**验收** / **详情** / **处理** / **删除**（二次确认弹窗）
 - **批量处理**：勾选批次批量，或项目整体验收
 - **高亮**：URL `?highlight={batchId}` 时将对应行置于列表前部并短时高亮（带「新建」badge）
 
@@ -493,7 +493,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 确认后 `createSamplingBatchRecord` → `pickSampleEntryIdsByTasks` 写入 runtime，并跳转「抽样验收」Tab 高亮新批次；批次记录含 `filters`（标注结果 / 采集员 / 标注员）与按任务的 `configItems`。
 
-**运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、`appendSamplingBatch`、`isSamplingBatchNameTaken`、`updateSamplingBatch`、`getProjectProcessStats`；创建逻辑见 `Sampling.jsx` → `createSamplingBatchRecord`（`utils/samplingHelpers.js`）
+**运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、`appendSamplingBatch`、`deleteSamplingBatch`、`isSamplingBatchNameTaken`、`updateSamplingBatch`、`getProjectProcessStats`；创建逻辑见 `Sampling.jsx` → `createSamplingBatchRecord`（`utils/samplingHelpers.js`）
 
 ---
 
@@ -1113,7 +1113,7 @@ scripts/
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
 | 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存草稿 / 通过驳回提交** 后更新会话内状态 |
-| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样）；条目批量处理联动 `entries.js` |
+| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样）；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |

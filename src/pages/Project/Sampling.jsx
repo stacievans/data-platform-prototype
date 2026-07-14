@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
+import Modal from '../../components/common/Modal'
 import Table from '../../components/common/Table'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
@@ -9,6 +10,7 @@ import {
   appendSamplingBatch,
   addProjectProcessedCount,
   calcPassRate,
+  deleteSamplingBatch,
   getProjectProcessStats,
   getSamplingBatchesByProjectId,
   nextSamplingBatchId,
@@ -102,6 +104,7 @@ export default function SamplingPanel({
   const [createOpen, setCreateOpen] = useState(false)
   const [detailTarget, setDetailTarget] = useState(null)
   const [processTarget, setProcessTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [qName, setQName] = useState('')
   const [filters, setFilters] = useState({ name: '' })
@@ -204,6 +207,23 @@ export default function SamplingPanel({
     openAcceptWorkbench(entry.id)
   }
 
+  const handleDeleteBatch = () => {
+    if (!deleteTarget) return
+    const { id, name } = deleteTarget
+    deleteSamplingBatch(id)
+    setDeleteTarget(null)
+    setSelectedIds((prev) => {
+      if (!prev.has(id)) return prev
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+    if (detailTarget?.id === id) setDetailTarget(null)
+    if (processTarget?.id === id) setProcessTarget(null)
+    setBatchTick((t) => t + 1)
+    showToast(`已删除抽检批次「${name}」`)
+  }
+
   const handleBatchProcessConfirm = ({ selectedKeys, action, remark }) => {
     if (!processTarget) return
     const { processed, patch } = applyBatchOptionProcess(processTarget, selectedKeys, action, remark)
@@ -277,6 +297,11 @@ export default function SamplingPanel({
       ),
     },
     { title: '批次名称', dataIndex: 'name', render: (v) => <span className="text-gray-700">{v}</span> },
+    {
+      title: '任务数',
+      key: 'taskCount',
+      render: (_, row) => row.configItems?.length ?? 0,
+    },
     { title: '总条目', dataIndex: 'totalEntries' },
     { title: '抽检条目', dataIndex: 'sampledEntries' },
     {
@@ -302,7 +327,7 @@ export default function SamplingPanel({
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 220,
       render: (_, row) => (
         <div className="flex flex-wrap items-center justify-center gap-2">
           {row.status !== 'completed' && (
@@ -327,6 +352,13 @@ export default function SamplingPanel({
             onClick={() => setProcessTarget(row)}
           >
             处理
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer text-xs text-red-500 hover:text-red-400"
+            onClick={() => setDeleteTarget(row)}
+          >
+            删除
           </button>
         </div>
       ),
@@ -408,6 +440,20 @@ export default function SamplingPanel({
         onCancel={() => setProcessTarget(null)}
         onConfirm={handleBatchProcessConfirm}
       />
+
+      <Modal
+        open={!!deleteTarget}
+        title="删除抽检批次"
+        onCancel={() => setDeleteTarget(null)}
+        onOk={handleDeleteBatch}
+        okText="确定删除"
+        cancelText="取消"
+        width={440}
+      >
+        <p className="text-sm leading-relaxed text-gray-600">
+          确认删除抽检批次「{deleteTarget?.name}」？删除后不可恢复。
+        </p>
+      </Modal>
 
       <BulkAcceptProcessModal
         open={bulkOpen}
