@@ -107,8 +107,10 @@ export default function SamplingPanel({
   const [processTarget, setProcessTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [qId, setQId] = useState('')
   const [qName, setQName] = useState('')
-  const [filters, setFilters] = useState({ name: '' })
+  const [qCreator, setQCreator] = useState('')
+  const [filters, setFilters] = useState({ id: '', name: '', creator: '' })
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [activeHighlight, setActiveHighlight] = useState(highlightBatchId)
 
@@ -131,8 +133,13 @@ export default function SamplingPanel({
   )
 
   const filtered = useMemo(() => {
+    const idQ = filters.id.trim().toLowerCase()
+    const nameQ = filters.name.trim().toLowerCase()
+    const creatorQ = filters.creator.trim().toLowerCase()
     const list = allBatches.filter((b) => {
-      if (filters.name && !b.name.toLowerCase().includes(filters.name.toLowerCase())) return false
+      if (idQ && !String(b.id).toLowerCase().includes(idQ)) return false
+      if (nameQ && !String(b.name ?? '').toLowerCase().includes(nameQ)) return false
+      if (creatorQ && !String(b.creator ?? '').toLowerCase().includes(creatorQ)) return false
       return true
     })
     if (!activeHighlight) return list
@@ -372,20 +379,49 @@ export default function SamplingPanel({
 
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1 basis-40">
+          <div className="min-w-0 flex-1 basis-0">
+            <label className={LBL}>批次 ID</label>
+            <input
+              value={qId}
+              onChange={(e) => setQId(e.target.value)}
+              placeholder="请输入批次 ID"
+              className={INPUT_CLS}
+            />
+          </div>
+          <div className="min-w-0 flex-1 basis-0">
             <label className={LBL}>批次名称</label>
             <input
               value={qName}
               onChange={(e) => setQName(e.target.value)}
-              placeholder="模糊查找"
+              placeholder="请输入批次名称"
+              className={INPUT_CLS}
+            />
+          </div>
+          <div className="min-w-0 flex-1 basis-0">
+            <label className={LBL}>创建人</label>
+            <input
+              value={qCreator}
+              onChange={(e) => setQCreator(e.target.value)}
+              placeholder="请输入创建人"
               className={INPUT_CLS}
             />
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button onClick={() => { setQName(''); setFilters({ name: '' }) }}>
+            <Button
+              onClick={() => {
+                setQId('')
+                setQName('')
+                setQCreator('')
+                setFilters({ id: '', name: '', creator: '' })
+              }}
+            >
               重置
             </Button>
-            <Button variant="primary" icon={<IconSearch />} onClick={() => setFilters({ name: qName })}>
+            <Button
+              variant="primary"
+              icon={<IconSearch />}
+              onClick={() => setFilters({ id: qId, name: qName, creator: qCreator })}
+            >
               查询
             </Button>
           </div>
