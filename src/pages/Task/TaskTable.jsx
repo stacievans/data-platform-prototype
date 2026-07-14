@@ -192,6 +192,10 @@ export default function TaskTable({
   onStatusChange,
   onEditSave,
   onCopy,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
 }) {
   const navigate = useNavigate()
   const { ToastNode, show: showToast } = useToast()
@@ -207,6 +211,10 @@ export default function TaskTable({
     if (type === 'archive') onStatusChange?.(task.id, '已归档')
     closeConfirm()
   }
+
+  const selectedSet = selectedIds instanceof Set ? selectedIds : new Set(selectedIds ?? [])
+  const allSelected = selectable && data.length > 0 && data.every((row) => selectedSet.has(row.id))
+  const someSelected = selectable && data.some((row) => selectedSet.has(row.id))
 
   const goAudit = (taskId, mode) => {
     const entry = findLatestPendingEntry(taskId, mode)
@@ -265,6 +273,29 @@ export default function TaskTable({
   }
 
   const columns = [
+    ...(selectable ? [{
+      title: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={(el) => {
+            if (el) el.indeterminate = someSelected && !allSelected
+          }}
+          onChange={() => onToggleSelectAll?.()}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600"
+        />
+      ),
+      key: 'select',
+      width: 48,
+      render: (_, row) => (
+        <input
+          type="checkbox"
+          checked={selectedSet.has(row.id)}
+          onChange={() => onToggleSelect?.(row.id)}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600"
+        />
+      ),
+    }] : []),
     {
       title: '任务ID',
       dataIndex: 'id',

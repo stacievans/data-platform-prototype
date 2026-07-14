@@ -15,7 +15,6 @@ import { LIST_PAGE_SIZE, usePagination } from '../../hooks/usePagination'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 import { useToast } from '../../components/common/Toast'
 import {
-  canAcceptProject,
   getProjectStatusMeta,
   normalizeProjectStatus,
   PROJECT_STATUS_FILTER_OPTIONS,
@@ -51,7 +50,6 @@ function CardMenu({
   project,
   onViewDetail,
   onEdit,
-  onAccept,
   onClose,
   onOpen,
   onArchive,
@@ -76,9 +74,6 @@ function CardMenu({
   if (status === 'archived') {
     items.push({ permission: 'collection.project.delete', label: '删除', onClick: close(onDeleteClick), danger: true })
   } else {
-    if (canAcceptProject(status)) {
-      items.push({ permission: null, label: '验收', onClick: close(onAccept) })
-    }
     items.push({ permission: 'collection.project.edit', label: '编辑', onClick: close(onEdit) })
     if (status === 'open') {
       items.push({ permission: 'collection.project.edit', label: '关闭', onClick: close(onClose), warn: true })
@@ -243,7 +238,7 @@ function ViewDetailBtn({ onClick }) {
   )
 }
 
-function ProjectListActions({ row, onViewDetail, onAccept, onEdit, onClose, onOpen, onArchive, onDelete }) {
+function ProjectListActions({ row, onViewDetail, onEdit, onClose, onOpen, onArchive, onDelete }) {
   const status = normalizeProjectStatus(row.status)
 
   const linkCls = 'cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500'
@@ -267,9 +262,6 @@ function ProjectListActions({ row, onViewDetail, onAccept, onEdit, onClose, onOp
   return (
     <div className="flex flex-wrap items-center gap-1">
       <ViewDetailBtn onClick={() => onViewDetail(row)} />
-      {canAcceptProject(status) && (
-        <button type="button" className={linkCls} onClick={() => onAccept(row)}>验收</button>
-      )}
       <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onEdit(row)}>编辑</PermAction>
       {status === 'open' ? (
         <PermAction permission="collection.project.edit" className={warnCls} onClick={() => onClose(row)}>关闭</PermAction>
@@ -278,35 +270,6 @@ function ProjectListActions({ row, onViewDetail, onAccept, onEdit, onClose, onOp
       )}
       <PermAction permission="collection.project.archive" className={warnCls} onClick={() => onArchive(row)}>归档</PermAction>
     </div>
-  )
-}
-
-function AcceptChoiceModal({ project, open, onCancel, onFullAccept, onSampleAccept }) {
-  if (!open || !project) return null
-  return (
-    <Modal open={open} title="项目验收" onCancel={onCancel} footer={null}>
-      <p className="mb-4 text-sm text-gray-500">
-        为项目 <span className="font-medium text-gray-800">{project.name}</span> 选择验收方式
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={onFullAccept}
-          className="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/40"
-        >
-          <div className="text-sm font-semibold text-gray-800">全量验收</div>
-          <div className="mt-1 text-xs text-gray-500">进入项目详情，在采集任务中逐条验收</div>
-        </button>
-        <button
-          type="button"
-          onClick={onSampleAccept}
-          className="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/40"
-        >
-          <div className="text-sm font-semibold text-gray-800">抽样验收</div>
-          <div className="mt-1 text-xs text-gray-500">创建抽检批次，按抽样规则验收条目</div>
-        </button>
-      </div>
-    </Modal>
   )
 }
 
@@ -341,7 +304,6 @@ export default function ProjectList() {
   /* delete / archive confirm */
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [archiveTarget, setArchiveTarget] = useState(null)
-  const [acceptTarget, setAcceptTarget] = useState(null)
 
   /* auto-generate next project ID */
   const nextProjectId = useMemo(() => {
@@ -431,18 +393,6 @@ export default function ProjectList() {
 
   const confirmDelete = () => { setProjects(projects.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null) }
 
-  const openAcceptChoice = (project) => setAcceptTarget(project)
-  const handleFullAccept = () => {
-    if (!acceptTarget) return
-    navigate(`/collection/project/${acceptTarget.id}?tab=task`)
-    setAcceptTarget(null)
-  }
-  const handleSampleAccept = () => {
-    if (!acceptTarget) return
-    navigate(`/collection/project/${acceptTarget.id}/sampling`)
-    setAcceptTarget(null)
-  }
-
   /* ── shared project form (edit modal) ── */
   const ProjectForm = () => (
     <div className="space-y-4">
@@ -479,7 +429,6 @@ export default function ProjectList() {
         <ProjectListActions
           row={row}
           onViewDetail={goViewDetail}
-          onAccept={openAcceptChoice}
           onEdit={openEdit}
           onClose={handleCloseProject}
           onOpen={handleOpenProject}
@@ -570,7 +519,6 @@ export default function ProjectList() {
                       project={p}
                       onViewDetail={() => goViewDetail(p)}
                       onEdit={() => openEdit(p)}
-                      onAccept={() => openAcceptChoice(p)}
                       onClose={() => handleCloseProject(p)}
                       onOpen={() => handleOpenProject(p)}
                       onArchive={() => setArchiveTarget(p)}
@@ -690,14 +638,6 @@ export default function ProjectList() {
         open={!!archiveTarget}
         onCancel={() => setArchiveTarget(null)}
         onConfirm={confirmArchive}
-      />
-
-      <AcceptChoiceModal
-        project={acceptTarget}
-        open={!!acceptTarget}
-        onCancel={() => setAcceptTarget(null)}
-        onFullAccept={handleFullAccept}
-        onSampleAccept={handleSampleAccept}
       />
 
       {ToastNode}

@@ -14,6 +14,7 @@ import {
   updateOrganization,
 } from '../../mock/organizations'
 import { dtCol } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -95,6 +96,8 @@ export default function OrgManage() {
     }),
     [orgs, filters],
   )
+
+  const pageResetKey = useMemo(() => `${JSON.stringify(filters)}:${filtered.length}`, [filters, filtered.length])
 
   const applyFilters = () => setFilters({ name: qName.trim(), status: qStatus })
   const resetFilters = () => { setQName(''); setQStatus(''); setFilters({}) }
@@ -229,7 +232,7 @@ export default function OrgManage() {
           </Button>
         </div>
 
-        <Table columns={columns} dataSource={filtered} />
+        <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
       </div>
 
       <OrgFormModal

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
 import {
@@ -6,112 +6,270 @@ import {
   CheckboxListSearchInput,
   CheckboxListSelectAllRow,
   CheckboxListShell,
+  IndeterminateCheckbox,
 } from '../../components/common/CheckboxList'
+import { isSamplingBatchNameTaken } from '../../mock/samplingBatches'
 import {
-  CREATE_BASIS_OPTIONS,
-  buildSamplingOptions,
+  REVIEW_RESULT_FILTER_OPTIONS,
+  buildProjectTaskRows,
   calcSampledCount,
-  summarizeConfigItems,
+  countTaskCandidates,
+  defaultSamplingFilters,
+  formatReviewResultLabel,
+  listProjectCollectors,
+  listProjectReviewers,
 } from '../../utils/samplingHelpers'
 
 const INPUT_CLS =
   'h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
+const SECTION_CLS = 'rounded-lg border border-gray-100 bg-gray-50/60 p-4'
 const LBL = 'mb-1.5 block text-sm text-gray-700'
 const HINT = 'text-xs text-gray-400'
+const SELECT_CLS = `${INPUT_CLS} cursor-pointer`
 
-function emptyForm() {
-  return {
-    name: '',
-    basis: '任务名称',
-    search: '',
-    selected: {},
-  }
+/** 未选 / 全选 → 不筛选，统一存空数组 */
+function normalizePeopleFilter(selected, options) {
+  if (!selected?.length || (options.length > 0 && selected.length === options.length)) return []
+  return [...selected]
 }
 
-export default function CreateSamplingBatchModal({ open, projectId, onCancel, onConfirm }) {
-  const [form, setForm] = useState(emptyForm)
-  const [nameError, setNameError] = useState(false)
+function MultiCheckDropdown({ label, options, value, onChange, allLabel, className = '' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const allSelected = options.length > 0 && value.length === options.length
+  const noneSelected = value.length === 0
+  const someSelected = value.length > 0 && !allSelected
+  const display = noneSelected || allSelected
+    ? allLabel
+    : value.length <= 2
+      ? value.join('、')
+      : `${value[0]}等 ${value.length} 人`
 
   useEffect(() => {
-    if (open) {
-      setForm(emptyForm())
-      setNameError(false)
+    if (!open) return undefined
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
     }
-  }, [open, projectId])
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
 
-  const options = useMemo(
-    () => buildSamplingOptions(projectId, form.basis),
-    [projectId, form.basis],
-  )
-
-  const filteredOptions = useMemo(() => {
-    const q = form.search.trim().toLowerCase()
-    if (!q) return options
-    return options.filter((o) => o.label.toLowerCase().includes(q))
-  }, [options, form.search])
-
-  const selectedList = useMemo(
-    () => Object.values(form.selected),
-    [form.selected],
-  )
-
-  const summary = useMemo(() => summarizeConfigItems(selectedList), [selectedList])
-
-  const allFilteredSelected = filteredOptions.length > 0
-    && filteredOptions.every((o) => form.selected[o.key])
-  const someFilteredSelected = filteredOptions.some((o) => form.selected[o.key])
-
-  const setBasis = (basis) => {
-    setForm({ name: form.name, basis, search: '', selected: {} })
+  const toggle = (name) => {
+    if (value.includes(name)) onChange(value.filter((v) => v !== name))
+    else onChange([...value, name])
   }
 
-  const toggleOption = (opt) => {
-    setForm((prev) => {
-      const next = { ...prev.selected }
-      if (next[opt.key]) delete next[opt.key]
-      else next[opt.key] = { ...opt, ratio: 20 }
-      return { ...prev, selected: next }
+  const toggleAll = () => {
+    onChange(allSelected ? [] : [...options])
+  }
+
+  return (
+    <div ref={ref} className={`relative min-w-0 ${className}`}>
+      <label className={LBL}>{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`${SELECT_CLS} flex items-center justify-between text-left`}
+      >
+        <span className="truncate">{display}</span>
+        <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-1 max-h-52 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+          {options.length === 0 ? (
+            <p className="px-3 py-3 text-xs text-gray-400">暂无可选项</p>
+          ) : (
+            <div className="max-h-52 overflow-y-auto">
+              <CheckboxListSelectAllRow
+                checked={allSelected}
+                indeterminate={someSelected}
+                onToggle={toggleAll}
+                selectedCount={value.length}
+                totalCount={options.length}
+              />
+              {options.map((name) => (
+                <label
+                  key={name}
+                  className="flex cursor-pointer items-center gap-2 border-b border-gray-50 px-3 py-2 last:border-0 hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={value.includes(name)}
+                    onChange={() => toggle(name)}
+                    className={CHECKBOX_LIST_CLS}
+                  />
+                  <span className="truncate text-sm text-gray-700">{name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function CreateSamplingBatchModal({
+  open,
+  projectId,
+  initialTaskIds = [],
+  onCancel,
+  onConfirm,
+}) {
+  const [name, setName] = useState('')
+  const [nameError, setNameError] = useState('')
+  const [search, setSearch] = useState('')
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [ratios, setRatios] = useState({})
+  const [filters, setFilters] = useState(defaultSamplingFilters)
+  const [unifyRatio, setUnifyRatio] = useState(20)
+
+  const taskRows = useMemo(() => buildProjectTaskRows(projectId), [projectId])
+  const collectors = useMemo(() => listProjectCollectors(projectId), [projectId])
+  const reviewers = useMemo(() => listProjectReviewers(projectId), [projectId])
+
+  useEffect(() => {
+    if (!open) return
+    const init = new Set(initialTaskIds ?? [])
+    const nextRatios = {}
+    init.forEach((id) => { nextRatios[id] = 20 })
+    setName('')
+    setNameError('')
+    setSearch('')
+    setSelectedIds(init)
+    setRatios(nextRatios)
+    setFilters(defaultSamplingFilters())
+    setUnifyRatio(20)
+  }, [open, projectId, initialTaskIds])
+
+  const displayTasks = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const filtered = q
+      ? taskRows.filter((t) => (
+        t.name.toLowerCase().includes(q) || String(t.id).toLowerCase().includes(q)
+      ))
+      : taskRows
+    const selected = filtered.filter((t) => selectedIds.has(t.id))
+    const rest = filtered.filter((t) => !selectedIds.has(t.id))
+    return [...selected, ...rest]
+  }, [taskRows, selectedIds, search])
+
+  const selectedTasks = useMemo(
+    () => taskRows.filter((t) => selectedIds.has(t.id)),
+    [taskRows, selectedIds],
+  )
+
+  const configRows = useMemo(
+    () => selectedTasks.map((t) => {
+      const candidateCount = countTaskCandidates(projectId, t.id, filters)
+      const ratio = ratios[t.id] ?? 20
+      return {
+        key: t.id,
+        label: t.name,
+        totalEntries: candidateCount,
+        ratio,
+        sampled: calcSampledCount(candidateCount, ratio),
+      }
+    }),
+    [selectedTasks, projectId, filters, ratios],
+  )
+
+  const summary = useMemo(() => ({
+    optionCount: configRows.length,
+    totalEntries: configRows.reduce((s, r) => s + r.totalEntries, 0),
+    sampledEntries: configRows.reduce((s, r) => s + r.sampled, 0),
+  }), [configRows])
+
+  const visibleAllSelected = displayTasks.length > 0
+    && displayTasks.every((t) => selectedIds.has(t.id))
+  const visibleSomeSelected = displayTasks.some((t) => selectedIds.has(t.id))
+
+  const toggleTask = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+        setRatios((r) => {
+          const copy = { ...r }
+          delete copy[id]
+          return copy
+        })
+      } else {
+        next.add(id)
+        setRatios((r) => ({ ...r, [id]: r[id] ?? 20 }))
+      }
+      return next
     })
   }
 
-  const setRatio = (key, ratio) => {
-    setForm((prev) => ({
-      ...prev,
-      selected: {
-        ...prev.selected,
-        [key]: { ...prev.selected[key], ratio },
-      },
-    }))
-  }
-
-  const toggleSelectAllFiltered = () => {
-    setForm((prev) => {
-      const next = { ...prev.selected }
-      if (allFilteredSelected) {
-        filteredOptions.forEach((o) => delete next[o.key])
+  const toggleVisibleAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (visibleAllSelected) {
+        displayTasks.forEach((t) => next.delete(t.id))
+        setRatios((r) => {
+          const copy = { ...r }
+          displayTasks.forEach((t) => { delete copy[t.id] })
+          return copy
+        })
       } else {
-        filteredOptions.forEach((o) => {
-          if (!next[o.key]) next[o.key] = { ...o, ratio: 20 }
+        displayTasks.forEach((t) => {
+          next.add(t.id)
+          setRatios((r) => ({ ...r, [t.id]: r[t.id] ?? 20 }))
         })
       }
-      return { ...prev, selected: next }
+      return next
+    })
+  }
+
+  const setRatio = (taskId, value) => {
+    const n = Math.max(0, Math.min(100, Number(value) || 0))
+    setRatios((r) => ({ ...r, [taskId]: n }))
+  }
+
+  const applyUnify = () => {
+    const n = Math.max(0, Math.min(100, Number(unifyRatio) || 0))
+    setUnifyRatio(n)
+    setRatios((r) => {
+      const next = { ...r }
+      selectedTasks.forEach((t) => { next[t.id] = n })
+      return next
     })
   }
 
   const handleOk = () => {
-    if (!form.name.trim()) {
-      setNameError(true)
+    const trimmed = name.trim()
+    if (!trimmed) {
+      setNameError('required')
       return
     }
-    if (!selectedList.length) return
-    onConfirm({
-      name: form.name.trim(),
-      basis: form.basis,
-      configItems: selectedList.map((item) => ({
-        key: item.key,
-        label: item.label,
-        totalEntries: item.totalEntries,
-        ratio: Number(item.ratio) || 0,
+    if (isSamplingBatchNameTaken(trimmed)) {
+      setNameError('duplicate')
+      return
+    }
+    if (selectedTasks.length === 0) {
+      window.alert('请至少选择一个任务')
+      return
+    }
+    if (summary.sampledEntries <= 0) {
+      window.alert('当前筛选与比例下无抽检条目，请调整后重试')
+      return
+    }
+    onConfirm?.({
+      name: trimmed,
+      taskIds: selectedTasks.map((t) => t.id),
+      filters: {
+        reviewResult: filters.reviewResult,
+        collectors: normalizePeopleFilter(filters.collectors, collectors),
+        reviewers: normalizePeopleFilter(filters.reviewers, reviewers),
+      },
+      configItems: configRows.map((row) => ({
+        key: row.key,
+        label: row.label,
+        totalEntries: row.totalEntries,
+        ratio: Number(row.ratio) || 0,
       })),
     })
   }
@@ -119,148 +277,172 @@ export default function CreateSamplingBatchModal({ open, projectId, onCancel, on
   return (
     <Modal
       open={open}
-      title="新建"
+      title="新建抽检批次"
       onCancel={onCancel}
       onOk={handleOk}
       okText="确定"
-      width={760}
+      width={820}
       fitViewport
       viewportMaxHeight="90vh"
-      bodyClassName="space-y-5"
+      bodyClassName="space-y-4"
     >
+      {/* 批次名称（无卡片框，单独置顶） */}
       <div>
         <label className={LBL}>
           批次名称 <span className="text-red-500">*</span>
         </label>
         <input
-          value={form.name}
-          onChange={(e) => { setForm({ ...form, name: e.target.value }); setNameError(false) }}
-          placeholder="请输入批次名称，例如：卧室整理·第二轮抽检"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setNameError('') }}
+          placeholder="请输入批次名称，例如：卧室整理第一轮抽检"
           className={`${INPUT_CLS} ${nameError ? 'border-red-400 ring-1 ring-red-100' : ''}`}
         />
-        {nameError && <p className="mt-1 text-xs text-red-500">请填写批次名称</p>}
+        {nameError === 'required' && <p className="mt-1 text-xs text-red-500">请填写批次名称</p>}
+        {nameError === 'duplicate' && <p className="mt-1 text-xs text-red-500">批次名称已存在，请换一个</p>}
       </div>
 
-      <div>
-        <label className={LBL}>抽样依据</label>
-        <div className="flex flex-wrap gap-2">
-          {CREATE_BASIS_OPTIONS.map((opt) => {
-            const active = form.basis === opt
-            return (
+      {/* 选择任务 */}
+      <div className={SECTION_CLS}>
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <span className="text-sm text-gray-700">
+            选择任务 <span className="text-red-500">*</span>
+          </span>
+          <label className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
+            <IndeterminateCheckbox
+              checked={visibleAllSelected}
+              indeterminate={visibleSomeSelected && !visibleAllSelected}
+              onChange={toggleVisibleAll}
+            />
+            全选
+          </label>
+          <CheckboxListSearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="模糊查找任务名称或 ID"
+            className="ml-auto w-56"
+          />
+          <span className="text-xs text-gray-400">
+            已选 {selectedIds.size} / {taskRows.length}
+          </span>
+        </div>
+        <CheckboxListShell className="max-h-52 overflow-y-auto bg-white">
+          {displayTasks.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-gray-400">暂无匹配任务</p>
+          ) : (
+            displayTasks.map((task) => (
               <label
-                key={opt}
-                className={`inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${
-                  active
-                    ? 'border-blue-500 bg-blue-50 text-blue-600'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'
-                }`}
+                key={task.id}
+                className="flex cursor-pointer items-center gap-3 border-b border-gray-50 px-3 py-2.5 last:border-0 hover:bg-gray-50"
               >
                 <input
-                  type="radio"
-                  name="sampling-basis"
-                  checked={active}
-                  onChange={() => setBasis(opt)}
-                  className="text-blue-600"
+                  type="checkbox"
+                  checked={selectedIds.has(task.id)}
+                  onChange={() => toggleTask(task.id)}
+                  className={CHECKBOX_LIST_CLS}
                 />
-                {opt}
+                <span className="min-w-0 flex-1 truncate text-sm text-gray-700">
+                  {task.name}
+                  <span className="text-gray-400"> · {task.id}</span>
+                </span>
+                <span className="shrink-0 text-xs text-gray-400">{task.entryCount} 条</span>
               </label>
-            )
-          })}
-        </div>
-        <p className={`mt-2 ${HINT}`}>单选一类抽样依据；勾选下方选项并配置随机抽检比例。</p>
-      </div>
-
-      <div>
-        <label className={LBL}>选择范围</label>
-        <CheckboxListSearchInput
-          value={form.search}
-          onChange={(e) => setForm({ ...form, search: e.target.value })}
-          placeholder="模糊查找选项"
-          className="mb-2"
-        />
-        <CheckboxListShell
-          className="max-h-44"
-          empty={
-            filteredOptions.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-gray-400">暂无可选范围</p>
-            ) : undefined
-          }
-        >
-          {filteredOptions.length > 0 && (
-            <>
-              <CheckboxListSelectAllRow
-                checked={allFilteredSelected}
-                indeterminate={someFilteredSelected && !allFilteredSelected}
-                onToggle={toggleSelectAllFiltered}
-                selectedCount={filteredOptions.filter((o) => form.selected[o.key]).length}
-                totalCount={filteredOptions.length}
-              />
-              {filteredOptions.map((opt) => {
-                const checked = Boolean(form.selected[opt.key])
-                return (
-                  <label
-                    key={opt.key}
-                    className={`flex cursor-pointer items-center justify-between gap-3 border-b border-gray-50 px-3 py-2.5 last:border-0 hover:bg-gray-50 ${
-                      checked ? 'bg-blue-50/40' : ''
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleOption(opt)}
-                        className={CHECKBOX_LIST_CLS}
-                      />
-                      <span className="truncate text-sm text-gray-700">{opt.label}</span>
-                    </span>
-                    <span className="shrink-0 text-sm text-gray-400">{opt.totalEntries} 条</span>
-                  </label>
-                )
-              })}
-            </>
+            ))
           )}
         </CheckboxListShell>
       </div>
 
-      {selectedList.length > 0 && (
-        <div>
-          <div className="overflow-hidden rounded-lg border border-gray-100">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 font-medium">选项</th>
-                  <th className="px-3 py-2 font-medium text-center">总条目</th>
-                  <th className="px-3 py-2 font-medium text-center">比例</th>
-                  <th className="px-3 py-2 font-medium text-center">抽检条目</th>
+      {/* 筛选条件 */}
+      <div className={SECTION_CLS}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-gray-700">筛选条件</span>
+          <p className={HINT}>筛选将缩小候选条目池；未选采集员/标注员视为全部</p>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="min-w-0">
+            <label className={LBL}>
+              标注结果 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={filters.reviewResult}
+              onChange={(e) => setFilters((f) => ({ ...f, reviewResult: e.target.value }))}
+              className={SELECT_CLS}
+            >
+              {REVIEW_RESULT_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <MultiCheckDropdown
+            label="选择采集员"
+            options={collectors}
+            value={filters.collectors}
+            onChange={(v) => setFilters((f) => ({ ...f, collectors: v }))}
+            allLabel="全部采集员"
+          />
+          <MultiCheckDropdown
+            label="选择标注员"
+            options={reviewers}
+            value={filters.reviewers}
+            onChange={(v) => setFilters((f) => ({ ...f, reviewers: v }))}
+            allLabel="全部标注员"
+          />
+        </div>
+      </div>
+
+      {/* 抽检比例配置 */}
+      {selectedTasks.length > 0 && (
+        <div className={SECTION_CLS}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-medium text-gray-700">抽检比例配置</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">统一比例</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={unifyRatio}
+                onChange={(e) => setUnifyRatio(e.target.value)}
+                className="h-8 w-16 rounded border border-gray-200 bg-white px-2 text-center text-sm outline-none focus:border-blue-400"
+              />
+              <span className="text-xs text-gray-400">%</span>
+              <Button size="sm" variant="secondary" onClick={applyUnify}>应用</Button>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <table className="w-full plain-table text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-left text-xs text-gray-500">
+                  <th className="px-3 py-2.5 font-medium">任务名称</th>
+                  <th className="w-28 px-3 py-2.5 text-center font-medium">候选条目</th>
+                  <th className="w-32 px-3 py-2.5 text-center font-medium">比例</th>
+                  <th className="w-28 px-3 py-2.5 text-center font-medium">抽检条目</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {selectedList.map((item) => {
-                  const sampled = calcSampledCount(item.totalEntries, item.ratio)
-                  return (
-                    <tr key={item.key}>
-                      <td className="px-3 py-2.5 text-gray-700">{item.label}</td>
-                      <td className="px-3 py-2.5 text-center text-gray-600">{item.totalEntries}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className="inline-flex items-center gap-1">
-                          <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={item.ratio}
-                            onChange={(e) => setRatio(item.key, e.target.value)}
-                            className="h-8 w-16 rounded border border-gray-200 px-2 text-center text-sm outline-none focus:border-blue-400"
-                          />
-                          <span className="text-gray-400">%</span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-center font-medium text-gray-700">{sampled}</td>
-                    </tr>
-                  )
-                })}
+                {configRows.map((row) => (
+                  <tr key={row.key}>
+                    <td className="px-3 py-2.5 text-gray-700">{row.label}</td>
+                    <td className="px-3 py-2.5 text-center text-gray-600">{row.totalEntries}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      <span className="inline-flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={row.ratio}
+                          onChange={(e) => setRatio(row.key, e.target.value)}
+                          className="h-8 w-16 rounded border border-gray-200 px-2 text-center text-sm outline-none focus:border-blue-400"
+                        />
+                        <span className="text-gray-400">%</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-center font-medium text-gray-700">{row.sampled}</td>
+                  </tr>
+                ))}
                 <tr className="bg-gray-50/80">
                   <td colSpan={4} className="px-3 py-2.5 text-sm text-gray-600">
-                    合计：{summary.optionCount} 个选项 · {summary.totalEntries} 条目 · {summary.sampledEntries} 条抽检条目
+                    合计：{summary.optionCount} 个任务 · {summary.totalEntries} 条候选条目 · {summary.sampledEntries} 条抽检条目
+                    {' '}标注结果：{formatReviewResultLabel(filters.reviewResult)}
                   </td>
                 </tr>
               </tbody>

@@ -9,6 +9,7 @@ export default function Table({
   pageResetKey,
   scrollVisibleRows,
   bodyRowHeight = 48,
+  getRowClassName,
 }) {
   const [page, setPage] = useState(1)
   const scrollable = scrollVisibleRows != null && scrollVisibleRows > 0
@@ -66,7 +67,7 @@ export default function Table({
               key={row[rowKey] ?? i}
               className={`border-t border-gray-100 transition-colors hover:bg-blue-50/50 ${
                 i % 2 === 1 ? 'bg-gray-50/70' : 'bg-white'
-              }`}
+              } ${getRowClassName?.(row) ?? ''}`}
             >
               {columns.map((col) => {
                 const value = col.render

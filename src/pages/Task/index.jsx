@@ -1,8 +1,10 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
+import CreateSamplingBatchModal from '../Project/CreateSamplingBatchModal'
+import { createSamplingBatchRecord } from '../Project/Sampling'
 import ProjectMutateGate from '../../components/common/ProjectMutateGate'
 import {
   tasks as taskStore,
@@ -15,8 +17,9 @@ import {
 import { getAllDeviceTypes } from '../../mock/devices'
 import { IconSearch, IconChevronDown } from '../../components/common/Icons'
 import { filterTasksByDataScope } from '../../mock/permissions'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { PermButton } from '../../components/common/PermissionAction'
+import { useToast } from '../../components/common/Toast'
 
 const STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 
@@ -92,6 +95,9 @@ export default function TaskList({
 }) {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+  const creatorName = useCurrentNickname()
+  const { ToastNode, show: showToast } = useToast()
   const [internalTasks, setInternalTasks] = useState(() => [...taskStore])
   const tasks = externalTasks ?? internalTasks
 
@@ -110,6 +116,9 @@ export default function TaskList({
   }, [location.pathname, onTasksChange])
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [samplingOpen, setSamplingOpen] = useState(false)
+  const [samplingTaskIds, setSamplingTaskIds] = useState([])
+  const [selectedTaskIds, setSelectedTaskIds] = useState(() => new Set())
   const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   /* ── 筛选输入暂存（未提交） ── */
@@ -191,6 +200,48 @@ export default function TaskList({
 
   const taskPageResetKey = useMemo(() => JSON.stringify(filters), [filters])
 
+  useEffect(() => {
+    setSelectedTaskIds(new Set())
+  }, [filters, fixedProjectId])
+
+  const toggleSelectTask = (taskId) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(taskId)) next.delete(taskId)
+      else next.add(taskId)
+      return next
+    })
+  }
+
+  const toggleSelectAllTasks = () => {
+    setSelectedTaskIds((prev) => {
+      const allOnPage = filtered.every((t) => prev.has(t.id))
+      if (allOnPage) return new Set()
+      return new Set(filtered.map((t) => t.id))
+    })
+  }
+
+  const openSamplingModal = () => {
+    if (!selectedTaskIds.size) return
+    setSamplingTaskIds([...selectedTaskIds])
+    setSamplingOpen(true)
+  }
+
+  const handleSamplingConfirm = ({ name, configItems, filters }) => {
+    if (!fixedProjectId) return
+    const batchId = createSamplingBatchRecord({
+      projectId: fixedProjectId,
+      name,
+      configItems,
+      filters,
+      creator: creatorName,
+    })
+    setSamplingOpen(false)
+    setSelectedTaskIds(new Set())
+    showToast('抽检批次已创建')
+    navigate(`/collection/project/${fixedProjectId}?tab=sampling&highlight=${batchId}`)
+  }
+
   const applyFilters = () => setFilters({
     taskId: qTaskId,
     taskName: qTaskName,
@@ -256,6 +307,7 @@ export default function TaskList({
 
   return (
     <div className="space-y-4">
+      {ToastNode}
       {/* 筛选区 */}
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
         <div className="space-y-3">
@@ -362,11 +414,20 @@ export default function TaskList({
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">任务列表</h2>
         {fixedProjectId && (
-          <ProjectMutateGate projectStatus={projectStatus}>
-            <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
-              + 新建任务
-            </PermButton>
-          </ProjectMutateGate>
+          <div className="flex items-center gap-2">
+            <Button
+              disabled={selectedTaskIds.size === 0}
+              className={selectedTaskIds.size === 0 ? 'cursor-not-allowed opacity-40 hover:border-gray-300 hover:text-gray-700' : ''}
+              onClick={openSamplingModal}
+            >
+              抽样验收
+            </Button>
+            <ProjectMutateGate projectStatus={projectStatus}>
+              <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
+                + 新建任务
+              </PermButton>
+            </ProjectMutateGate>
+          </div>
         )}
       </div>
 
@@ -374,6 +435,10 @@ export default function TaskList({
         data={filtered}
         showProjectColumn={!fixedProjectId}
         pageResetKey={taskPageResetKey}
+        selectable={Boolean(fixedProjectId)}
+        selectedIds={selectedTaskIds}
+        onToggleSelect={toggleSelectTask}
+        onToggleSelectAll={toggleSelectAllTasks}
         onDeleteClick={setDeleteTarget}
         onStatusChange={handleStatusChange}
         onEditSave={handleEditSave}
@@ -388,6 +453,16 @@ export default function TaskList({
             setCreateOpen(false)
             if (task) setTasks((prev) => [task, ...prev])
           }}
+        />
+      )}
+
+      {fixedProjectId && (
+        <CreateSamplingBatchModal
+          open={samplingOpen}
+          projectId={fixedProjectId}
+          initialTaskIds={samplingTaskIds}
+          onCancel={() => setSamplingOpen(false)}
+          onConfirm={handleSamplingConfirm}
         />
       )}
 

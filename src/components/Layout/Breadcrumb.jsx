@@ -3,10 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 const routes = [
   { match: /^\/dashboard/, crumbs: [['运营看板']] },
   {
-    match: /^\/collection\/project\/[^/]+\/sampling$/,
-    crumbs: [['数据采集'], ['采集项目', '/collection/project'], ['抽样验收']],
-  },
-  {
     match: /^\/collection\/project\/.+/,
     crumbs: [['数据采集'], ['采集项目', '/collection/project'], ['项目详情']],
   },

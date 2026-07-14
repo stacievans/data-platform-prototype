@@ -21,6 +21,7 @@ import {
   formatCollectors,
 } from '../../mock/tasks'
 import { dtCol, nowDateTime, formatDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const ROLE_COLLECTOR = '采集员'
 const ROLE_REVIEWER = '标注员'
@@ -799,7 +800,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         </div>
       </div>
 
-      <Table columns={columns} dataSource={members} />
+      <Table columns={columns} dataSource={members} pageSize={LIST_PAGE_SIZE} pageResetKey={members.length} />
 
       <Modal open={addOpen} title="添加成员" onCancel={() => setAddOpen(false)} onOk={handleAddSave} okText="添加">
         {memberFormContent(formTaskList)}
@@ -869,7 +870,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
             批量分配
           </PermButton>
         </div>
-        <Table columns={matrixColumns} dataSource={matrixRows} pageSize={10} />
+        <Table columns={matrixColumns} dataSource={matrixRows} pageSize={LIST_PAGE_SIZE} />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-gray-400">
             当前仍有 {matrixRows.length} 个任务未完成完整分配

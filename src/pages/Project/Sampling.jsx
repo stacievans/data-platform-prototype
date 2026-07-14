@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Table from '../../components/common/Table'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import { projects } from '../../mock/projects'
-import { tasks } from '../../mock/tasks'
 import {
-  SAMPLING_BASIS_OPTIONS,
   appendSamplingBatch,
   addProjectProcessedCount,
   calcPassRate,
@@ -21,22 +18,21 @@ import {
   applyBatchOptionProcess,
   applyBulkBatchProcess,
   applyProjectAcceptProcess,
-  buildDetailItems,
+  buildTaskDetailItems,
+  defaultSamplingFilters,
   findLatestPendingEntryInBatch,
   getPendingAcceptEntries,
   openAcceptWorkbench,
-  pickSampleEntryIds,
+  pickSampleEntryIdsByTasks,
   summarizeConfigItems,
 } from '../../utils/samplingHelpers'
-import { canAccessProject } from '../../mock/permissions'
-import { useAuth, useCurrentNickname } from '../../context/AuthContext'
-import NoPermission from '../System/NoPermission'
+import { useCurrentNickname } from '../../context/AuthContext'
 import CreateSamplingBatchModal from './CreateSamplingBatchModal'
 import SamplingBatchDetailModal from './SamplingBatchDetailModal'
 import BatchAcceptProcessModal from './BatchAcceptProcessModal'
 import BulkAcceptProcessModal from './BulkAcceptProcessModal'
-import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
-import { getProjectStatusMeta } from '../../utils/projectStatus'
+import { dtCol, nowDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const INPUT_CLS =
   'h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
@@ -61,15 +57,46 @@ function passRateTone(rate) {
   return 'text-red-500'
 }
 
-export default function ProjectSampling() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { user } = useAuth()
+/** 创建抽检批次并写入 store，返回新批次 id */
+export function createSamplingBatchRecord({ projectId, name, configItems, filters, creator }) {
+  const resolvedFilters = filters ?? defaultSamplingFilters()
+  const summary = summarizeConfigItems(configItems)
+  const detailItems = buildTaskDetailItems(projectId, configItems, resolvedFilters)
+  const entryIds = pickSampleEntryIdsByTasks(projectId, configItems, resolvedFilters)
+  const id = nextSamplingBatchId()
+  appendSamplingBatch({
+    id,
+    projectId,
+    name,
+    basis: '任务名称',
+    filters: resolvedFilters,
+    totalEntries: summary.totalEntries,
+    sampledEntries: summary.sampledEntries,
+    passedCount: 0,
+    acceptProgress: 0,
+    status: 'pending',
+    creator,
+    createdAt: nowDateTime(),
+    configItems,
+    detailItems,
+    entryIds,
+  })
+  return id
+}
+
+/**
+ * 项目详情「抽样验收」Tab 内容：筛选 + 批次列表 + 批量处理
+ * @param showCreateButton 为 true 时显示「+ 新建」（独立页遗留；Tab 内为 false）
+ */
+export default function SamplingPanel({
+  projectId,
+  showCreateButton = false,
+  highlightBatchId = null,
+  onHighlightConsumed,
+}) {
+  const project = projects.find((p) => p.id === projectId)
   const creatorName = useCurrentNickname()
   const { ToastNode, show: showToast } = useToast()
-
-  const project = projects.find((p) => p.id === id)
-  const taskCount = useMemo(() => tasks.filter((t) => t.projectId === id).length, [id])
 
   const [batchTick, setBatchTick] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
@@ -77,55 +104,69 @@ export default function ProjectSampling() {
   const [processTarget, setProcessTarget] = useState(null)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [qName, setQName] = useState('')
-  const [qBasis, setQBasis] = useState('全部')
-  const [filters, setFilters] = useState({ name: '', basis: '全部' })
+  const [filters, setFilters] = useState({ name: '' })
   const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [activeHighlight, setActiveHighlight] = useState(highlightBatchId)
+
+  useEffect(() => {
+    setActiveHighlight(highlightBatchId)
+  }, [highlightBatchId])
+
+  useEffect(() => {
+    if (!activeHighlight) return undefined
+    const timer = setTimeout(() => {
+      setActiveHighlight(null)
+      onHighlightConsumed?.()
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [activeHighlight, onHighlightConsumed])
 
   const allBatches = useMemo(
-    () => getSamplingBatchesByProjectId(id),
-    [id, batchTick],
+    () => getSamplingBatchesByProjectId(projectId),
+    [projectId, batchTick],
   )
 
   const filtered = useMemo(() => {
-    return allBatches.filter((b) => {
+    const list = allBatches.filter((b) => {
       if (filters.name && !b.name.toLowerCase().includes(filters.name.toLowerCase())) return false
-      if (filters.basis && filters.basis !== '全部' && b.basis !== filters.basis) return false
       return true
     })
-  }, [allBatches, filters])
+    if (!activeHighlight) return list
+    const idx = list.findIndex((b) => b.id === activeHighlight)
+    if (idx <= 0) return list
+    const next = [...list]
+    const [hit] = next.splice(idx, 1)
+    return [hit, ...next]
+  }, [allBatches, filters, activeHighlight])
+
+  const pageResetKey = useMemo(
+    () => `${JSON.stringify(filters)}:${filtered.length}:${batchTick}`,
+    [filters, filtered.length, batchTick],
+  )
 
   const pendingCount = useMemo(
-    () => getPendingAcceptEntries(id).length,
-    [id, batchTick],
+    () => getPendingAcceptEntries(projectId).length,
+    [projectId, batchTick],
   )
 
   const projectProcessedCount = useMemo(
-    () => getProjectProcessStats(id).processedCount,
-    [id, batchTick],
+    () => getProjectProcessStats(projectId).processedCount,
+    [projectId, batchTick],
   )
 
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [filters, id])
+  }, [filters, projectId])
 
   if (!project) {
     return (
-      <div className="rounded-lg border border-gray-100 bg-white py-20 text-center text-gray-400">
+      <div className="rounded-lg border border-gray-100 bg-white py-16 text-center text-sm text-gray-400">
         项目不存在
-        <div className="mt-4">
-          <Button onClick={() => navigate('/collection/project')}>返回项目列表</Button>
-        </div>
       </div>
     )
   }
 
-  if (!canAccessProject(id, user.nickname, user.role)) {
-    return <NoPermission />
-  }
-
-  const status = getProjectStatusMeta(project.status)
   const allSelected = filtered.length > 0 && filtered.every((b) => selectedIds.has(b.id))
-  const hasSelection = selectedIds.size > 0
 
   const toggleAll = () => {
     if (allSelected) setSelectedIds(new Set())
@@ -141,29 +182,14 @@ export default function ProjectSampling() {
     })
   }
 
-  const handleCreateBatch = ({ name, basis, configItems }) => {
-    const summary = summarizeConfigItems(configItems)
-    const detailItems = buildDetailItems(id, basis, configItems)
-    const entryIds = pickSampleEntryIds(id, basis, configItems)
-    const now = nowDateTime()
-
-    appendSamplingBatch({
-      id: nextSamplingBatchId(),
-      projectId: id,
+  const handleCreateBatch = ({ name, configItems, filters: batchFilters }) => {
+    createSamplingBatchRecord({
+      projectId,
       name,
-      basis,
-      totalEntries: summary.totalEntries,
-      sampledEntries: summary.sampledEntries,
-      passedCount: 0,
-      acceptProgress: 0,
-      status: 'pending',
-      creator: creatorName,
-      createdAt: now,
       configItems,
-      detailItems,
-      entryIds,
+      filters: batchFilters,
+      creator: creatorName,
     })
-
     setCreateOpen(false)
     setBatchTick((t) => t + 1)
     showToast('抽检批次已创建')
@@ -206,8 +232,8 @@ export default function ProjectSampling() {
       return
     }
 
-    const count = applyProjectAcceptProcess(id, action, remark)
-    addProjectProcessedCount(id, count)
+    const count = applyProjectAcceptProcess(projectId, action, remark)
+    addProjectProcessedCount(projectId, count)
     setBulkOpen(false)
     setBatchTick((t) => t + 1)
     showToast(
@@ -238,9 +264,19 @@ export default function ProjectSampling() {
         />
       ),
     },
-    { title: '批次ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    {
+      title: '批次ID',
+      dataIndex: 'id',
+      render: (v, row) => (
+        <span className={`font-medium ${row.id === activeHighlight ? 'text-blue-700' : 'text-gray-700'}`}>
+          {v}
+          {row.id === activeHighlight && (
+            <span className="ml-2 align-middle"><Badge color="blue">新建</Badge></span>
+          )}
+        </span>
+      ),
+    },
     { title: '批次名称', dataIndex: 'name', render: (v) => <span className="text-gray-700">{v}</span> },
-    { title: '抽样依据', dataIndex: 'basis' },
     { title: '总条目', dataIndex: 'totalEntries' },
     { title: '抽检条目', dataIndex: 'sampledEntries' },
     {
@@ -268,73 +304,38 @@ export default function ProjectSampling() {
       key: 'actions',
       width: 180,
       render: (_, row) => (
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {row.status !== 'completed' && (
-              <button
-                type="button"
-                className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
-                onClick={() => handleAcceptBatch(row)}
-              >
-                验收
-              </button>
-            )}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {row.status !== 'completed' && (
             <button
               type="button"
               className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
-              onClick={() => setDetailTarget(row)}
+              onClick={() => handleAcceptBatch(row)}
             >
-              详情
+              验收
             </button>
-            <button
-              type="button"
-              className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
-              onClick={() => setProcessTarget(row)}
-            >
-              处理
-            </button>
-          </div>
-        )
+          )}
+          <button
+            type="button"
+            className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
+            onClick={() => setDetailTarget(row)}
+          >
+            详情
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
+            onClick={() => setProcessTarget(row)}
+          >
+            处理
+          </button>
+        </div>
+      ),
     },
   ]
 
   return (
     <div className="space-y-4">
       {ToastNode}
-
-      <div className="rounded-lg border border-gray-100 bg-white px-6 py-6 shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-lg font-semibold text-white">
-            {project.name.slice(0, 1)}
-          </div>
-          <div className="flex min-w-0 flex-1 items-start justify-between gap-6 lg:gap-10">
-            <div className="min-w-0 flex-1 pr-2">
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-lg font-semibold text-gray-800">{project.name}</h2>
-                <Badge color={status.color} dot>{status.label}</Badge>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-gray-500">{project.description}</p>
-            </div>
-            <div className="flex shrink-0 gap-6 text-sm lg:gap-10">
-              <div>
-                <div className="text-gray-400">项目ID</div>
-                <div className="mt-1 font-medium text-gray-700">{project.id}</div>
-              </div>
-              <div>
-                <div className="text-gray-400">任务数</div>
-                <div className="mt-1 font-medium text-gray-700">{taskCount}</div>
-              </div>
-              <div>
-                <div className="text-gray-400">创建人</div>
-                <div className="mt-1 font-medium text-gray-700">{project.creator}</div>
-              </div>
-              <div>
-                <div className="text-gray-400">创建时间</div>
-                <div className="mt-1 font-medium whitespace-nowrap text-gray-700">{formatDateTime(project.createdAt)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-end gap-3">
@@ -347,23 +348,11 @@ export default function ProjectSampling() {
               className={INPUT_CLS}
             />
           </div>
-          <div className="min-w-0 flex-1 basis-40">
-            <label className={LBL}>抽样依据</label>
-            <select
-              value={qBasis}
-              onChange={(e) => setQBasis(e.target.value)}
-              className={`${INPUT_CLS} cursor-pointer`}
-            >
-              {SAMPLING_BASIS_OPTIONS.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
           <div className="flex shrink-0 gap-2">
-            <Button onClick={() => { setQName(''); setQBasis('全部'); setFilters({ name: '', basis: '全部' }) }}>
+            <Button onClick={() => { setQName(''); setFilters({ name: '' }) }}>
               重置
             </Button>
-            <Button variant="primary" icon={<IconSearch />} onClick={() => setFilters({ name: qName, basis: qBasis })}>
+            <Button variant="primary" icon={<IconSearch />} onClick={() => setFilters({ name: qName })}>
               查询
             </Button>
           </div>
@@ -377,20 +366,35 @@ export default function ProjectSampling() {
             <Button onClick={() => setBulkOpen(true)}>
               批量处理
             </Button>
-            <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
-              新建
-            </Button>
+            {showCreateButton && (
+              <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
+                新建
+              </Button>
+            )}
           </div>
         </div>
-        <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={10} />
+        <Table
+          columns={columns}
+          dataSource={filtered}
+          rowKey="id"
+          pageSize={LIST_PAGE_SIZE}
+          pageResetKey={pageResetKey}
+          getRowClassName={(row) => (
+            row.id === activeHighlight
+              ? 'bg-blue-50 ring-1 ring-inset ring-blue-200'
+              : ''
+          )}
+        />
       </div>
 
-      <CreateSamplingBatchModal
-        open={createOpen}
-        projectId={id}
-        onCancel={() => setCreateOpen(false)}
-        onConfirm={handleCreateBatch}
-      />
+      {showCreateButton && (
+        <CreateSamplingBatchModal
+          open={createOpen}
+          projectId={projectId}
+          onCancel={() => setCreateOpen(false)}
+          onConfirm={handleCreateBatch}
+        />
+      )}
 
       <SamplingBatchDetailModal
         open={!!detailTarget}

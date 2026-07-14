@@ -37,6 +37,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 
 import { dtCol, formatRelativeTime, nowDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 
 
@@ -462,7 +463,7 @@ export default function UserListPanel({
 
   )
 
-
+  const pageResetKey = useMemo(() => `${JSON.stringify(filters)}:${filtered.length}`, [filters, filtered.length])
 
   const applyFilters = () => setFilters({
 
@@ -1107,7 +1108,7 @@ export default function UserListPanel({
 
       </div>
 
-      <Table columns={columns} dataSource={filtered} />
+      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
 
 

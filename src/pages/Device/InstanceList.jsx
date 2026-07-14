@@ -13,6 +13,7 @@ import {
   setDeviceInstances,
 } from '../../mock/devices'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
@@ -303,6 +304,8 @@ export default function InstanceList() {
     })
   }, [instances, applied])
 
+  const pageResetKey = useMemo(() => `${JSON.stringify(applied)}:${filtered.length}`, [applied, filtered.length])
+
   const resetFilters = () => {
     setTypeFilter('全部')
     setStatusFilter('全部')
@@ -469,7 +472,7 @@ export default function InstanceList() {
         </PermButton>
       </div>
 
-      <Table columns={columns} dataSource={filtered} />
+      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
       <InstanceModal
         open={modalOpen}

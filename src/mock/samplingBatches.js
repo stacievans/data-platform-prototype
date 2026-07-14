@@ -3,7 +3,7 @@ import {
   summarizeDetailItems,
 } from '../utils/samplingHelpers'
 
-/** 列表筛选：抽样依据 */
+/** @deprecated 列表已移除抽样依据筛选；保留常量供历史数据兼容 */
 export const SAMPLING_BASIS_OPTIONS = ['全部', ...CREATE_BASIS_OPTIONS]
 
 const initialBatches = [
@@ -175,6 +175,14 @@ export function appendSamplingBatch(batch) {
 export function nextSamplingBatchId() {
   const nums = batchStore.map((b) => parseInt(b.id.replace('SB-', ''), 10) || 0)
   return `SB-${Math.max(...nums, 2000) + 1}`
+}
+
+export function isSamplingBatchNameTaken(projectId, name) {
+  const n = String(name ?? '').trim().toLowerCase()
+  if (!n) return false
+  return batchStore.some(
+    (b) => b.projectId === projectId && String(b.name ?? '').trim().toLowerCase() === n,
+  )
 }
 
 export function calcPassRate(batch) {

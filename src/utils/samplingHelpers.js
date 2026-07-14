@@ -1,15 +1,24 @@
-import { tasks } from '../mock/tasks'
+import { tasks, formatReviewer } from '../mock/tasks'
 import { getAllEntries, updateEntry } from '../mock/entries'
 import { deriveProcessStatuses } from './entryProcess'
 
 export const CREATE_BASIS_OPTIONS = ['任务名称', '采集员', '标注员', '标注结果']
 
+export const REVIEW_RESULT_FILTER_OPTIONS = [
+  { value: 'all', label: '全选' },
+  { value: 'passed', label: '已通过' },
+  { value: 'rejected', label: '已驳回' },
+]
+
 const ACCEPT_PENDING = ['已标注', '验收不通过']
 
+/** 抽检条目数：比例 × 候选，四舍五入；候选≥1 时至少 1 条，候选为 0 则为 0 */
 export function calcSampledCount(total, ratio) {
+  const totalN = Number(total) || 0
+  if (totalN <= 0) return 0
   const r = Number(ratio)
-  if (!total || !r || r <= 0) return 0
-  return Math.ceil((total * r) / 100)
+  const n = (!r || r <= 0) ? 0 : Math.round((totalN * r) / 100)
+  return Math.max(1, n)
 }
 
 export function getProjectEntries(projectId) {
@@ -25,7 +34,125 @@ function taskById(taskId) {
   return tasks.find((t) => t.id === taskId)
 }
 
-/** 构建「新建批次」可选范围列表 */
+function matchesReviewResult(entry, reviewResult) {
+  if (!reviewResult || reviewResult === 'all') return true
+  const review = deriveProcessStatuses(entry).review
+  if (reviewResult === 'passed') return review === 'passed'
+  if (reviewResult === 'rejected') return review === 'rejected'
+  return true
+}
+
+/** 默认筛选：标注已通过、采集员/标注员全部 */
+export function defaultSamplingFilters() {
+  return {
+    reviewResult: 'passed',
+    collectors: [],
+    reviewers: [],
+  }
+}
+
+export function formatReviewResultLabel(value) {
+  return REVIEW_RESULT_FILTER_OPTIONS.find((o) => o.value === value)?.label ?? '已通过'
+}
+
+export function formatSamplingFiltersSummary(filters) {
+  if (!filters) return '—'
+  const parts = [`标注结果：${formatReviewResultLabel(filters.reviewResult)}`]
+  if (filters.collectors?.length) parts.push(`采集员：${filters.collectors.join('、')}`)
+  else parts.push('采集员：全部')
+  if (filters.reviewers?.length) parts.push(`标注员：${filters.reviewers.join('、')}`)
+  else parts.push('标注员：全部')
+  return parts.join(' · ')
+}
+
+/** 项目下可选任务行（含采集员/标注员/条目数） */
+export function buildProjectTaskRows(projectId) {
+  const projectTasks = tasks.filter((t) => t.projectId === projectId)
+  const entries = getProjectEntries(projectId)
+  return projectTasks.map((t) => ({
+    id: t.id,
+    name: t.name,
+    collector: formatReviewer(t.collector) || '—',
+    reviewer: formatReviewer(t.reviewer) || '—',
+    entryCount: entries.filter((e) => e.taskId === t.id).length,
+  }))
+}
+
+export function listProjectCollectors(projectId) {
+  const names = new Set()
+  getProjectEntries(projectId).forEach((e) => {
+    if (e.uploader) names.add(e.uploader)
+  })
+  tasks.filter((t) => t.projectId === projectId).forEach((t) => {
+    const name = formatReviewer(t.collector)
+    if (name && name !== '—') names.add(name)
+  })
+  return [...names].sort()
+}
+
+export function listProjectReviewers(projectId) {
+  const names = new Set()
+  tasks.filter((t) => t.projectId === projectId).forEach((t) => {
+    const name = formatReviewer(t.reviewer)
+    if (name && name !== '—') names.add(name)
+  })
+  return [...names].sort()
+}
+
+/** 按筛选条件缩小单任务候选条目 */
+export function filterTaskCandidateEntries(projectId, taskId, filters = defaultSamplingFilters()) {
+  const { reviewResult = 'passed', collectors = [], reviewers = [] } = filters
+  const task = taskById(taskId)
+  const taskReviewer = formatReviewer(task?.reviewer) || '—'
+
+  return getProjectEntries(projectId).filter((e) => {
+    if (e.taskId !== taskId) return false
+    if (!matchesReviewResult(e, reviewResult)) return false
+    if (collectors.length && !collectors.includes(e.uploader)) return false
+    if (reviewers.length && !reviewers.includes(taskReviewer)) return false
+    return true
+  })
+}
+
+export function countTaskCandidates(projectId, taskId, filters) {
+  return filterTaskCandidateEntries(projectId, taskId, filters).length
+}
+
+/** 按任务 + 筛选在候选池中抽样 */
+export function pickSampleEntryIdsByTasks(projectId, configItems, filters = defaultSamplingFilters()) {
+  const ids = []
+  configItems.forEach((item) => {
+    const entries = filterTaskCandidateEntries(projectId, item.key, filters)
+    const count = calcSampledCount(item.totalEntries ?? entries.length, item.ratio)
+    const pending = entries.filter((e) => ACCEPT_PENDING.includes(e.dataStatus))
+    const pool = pending.length ? pending : entries
+    const sorted = [...pool].sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
+    ids.push(...sorted.slice(0, count).map((e) => e.id))
+  })
+  return [...new Set(ids)]
+}
+
+/** 任务维度明细行 */
+export function buildTaskDetailItems(projectId, configItems, filters = defaultSamplingFilters()) {
+  return configItems.map((item) => {
+    const candidates = filterTaskCandidateEntries(projectId, item.key, filters)
+    const totalEntries = item.totalEntries ?? candidates.length
+    const sampledEntries = calcSampledCount(totalEntries, item.ratio)
+    const accepted = candidates.filter((e) => e.dataStatus === '已验收').length
+    const passRate = candidates.length
+      ? Math.round((accepted / candidates.length) * 1000) / 10
+      : 0
+    return {
+      label: item.label,
+      totalEntries,
+      ratio: item.ratio,
+      sampledEntries,
+      passRate,
+    }
+  })
+}
+
+/** 构建「新建批次」可选范围列表（旧 API，处理历史批次仍可用） */
 export function buildSamplingOptions(projectId, basis) {
   const projectTasks = tasks.filter((t) => t.projectId === projectId)
   const entries = getProjectEntries(projectId)
@@ -104,8 +231,12 @@ function entriesForOption(projectId, basis, optionKey) {
   return []
 }
 
-/** 详情弹窗：按维度值拆分展示 */
+/** 详情弹窗：按维度值拆分展示（兼容旧批次） */
 export function buildDetailItems(projectId, basis, configItems) {
+  if (basis === '任务名称' || !basis) {
+    return buildTaskDetailItems(projectId, configItems)
+  }
+
   if (basis === '标注结果') {
     return configItems.map((item) => {
       const sampled = calcSampledCount(item.totalEntries, item.ratio)
@@ -123,10 +254,7 @@ export function buildDetailItems(projectId, basis, configItems) {
   const rows = []
   configItems.forEach((item) => {
     const baseLabel = item.label.split(' · ')[0]
-    const taskId = basis === '任务名称' ? item.key : null
-    const scoped = taskId
-      ? getProjectEntries(projectId).filter((e) => e.taskId === taskId)
-      : entriesForOption(projectId, basis, item.key)
+    const scoped = entriesForOption(projectId, basis, item.key)
 
     const subs = [
       { sub: '标注通过', match: (e) => e.dataStatus !== '标注不通过' },
@@ -167,6 +295,9 @@ function estimatePassRate(projectId, basis, optionKey, sampled) {
 }
 
 export function pickSampleEntryIds(projectId, basis, configItems) {
+  if (!basis || basis === '任务名称') {
+    return pickSampleEntryIdsByTasks(projectId, configItems)
+  }
   const ids = []
   configItems.forEach((item) => {
     const entries = entriesForOption(projectId, basis, item.key)
@@ -222,7 +353,7 @@ export function getPendingAcceptEntries(projectId) {
 export function collectEntriesForConfigItems(projectId, basis, configItems) {
   const map = new Map()
   configItems.forEach((item) => {
-    entriesForOption(projectId, basis, item.key).forEach((e) => map.set(e.id, e))
+    entriesForOption(projectId, basis ?? '任务名称', item.key).forEach((e) => map.set(e.id, e))
   })
   return [...map.values()]
 }
@@ -267,7 +398,8 @@ export function recalcBatchAfterProcess(batch, action = 'pass') {
 
 export function applyBatchOptionProcess(batch, selectedKeys, action, remark) {
   const items = (batch.configItems ?? []).filter((i) => selectedKeys.includes(i.key))
-  const entries = collectEntriesForConfigItems(batch.projectId, batch.basis, items)
+  const basis = batch.basis || '任务名称'
+  const entries = collectEntriesForConfigItems(batch.projectId, basis, items)
   const processed = processAcceptEntries(entries, action, remark)
   const patch = recalcBatchAfterProcess(batch, action)
   return { processed, patch }

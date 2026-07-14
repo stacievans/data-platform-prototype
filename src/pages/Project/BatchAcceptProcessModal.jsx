@@ -5,7 +5,7 @@ import {
   CheckboxListSelectAllRow,
   CheckboxListShell,
 } from '../../components/common/CheckboxList'
-import { calcSampledCount } from '../../utils/samplingHelpers'
+import { calcSampledCount, formatSamplingFiltersSummary } from '../../utils/samplingHelpers'
 
 const LBL = 'mb-1.5 block text-sm text-gray-700'
 const HINT = 'text-xs text-gray-400'
@@ -94,7 +94,8 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
       <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-4 py-3">
         <div className="text-sm font-semibold text-gray-800">{batch.name}</div>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          抽样依据：{batch.basis}。下方为创建批次时勾选的选项，可选择其中部分或全部选项进行整体验收。
+          下方为创建批次时勾选的任务，可选择其中部分或全部进行整体验收。
+          {batch.filters ? `（${formatSamplingFiltersSummary(batch.filters)}）` : batch.basis ? `（${batch.basis}）` : ''}
         </p>
       </div>
 

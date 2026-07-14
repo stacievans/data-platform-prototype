@@ -18,6 +18,7 @@ import {
 } from '../../mock/tags'
 import { buildTypeNameReference } from '../../utils/deviceTypeName'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import urdfImg from '../../assets/review/urdf-robot.png'
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -452,6 +453,8 @@ export default function TypeList() {
     })
   }, [types, applied])
 
+  const pageResetKey = useMemo(() => `${JSON.stringify(applied)}:${filtered.length}`, [applied, filtered.length])
+
   const resetFilters = () => {
     setBodyFilter('全部')
     setNameQuery('')
@@ -602,7 +605,7 @@ export default function TypeList() {
         </PermButton>
       </div>
 
-      <Table columns={columns} dataSource={filtered} />
+      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
       <TypeModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} />
 

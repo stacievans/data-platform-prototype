@@ -58,6 +58,7 @@ import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 import { getProjectStatusMeta, normalizeProjectStatus, canProjectMutate } from '../../utils/projectStatus'
 import ProjectMutateGate from '../../components/common/ProjectMutateGate'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
+import SamplingPanel from './Sampling'
 
 const PLAN_STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 const PLAN_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
@@ -67,6 +68,7 @@ const TABS = [
   { key: 'task',      label: '采集任务' },
   { key: 'scheme',    label: '采标方案' },
   { key: 'members',   label: '项目成员' },
+  { key: 'sampling',  label: '抽样验收' },
   { key: 'dashboard', label: '运营看板' },
 ]
 
@@ -571,6 +573,8 @@ function QcTab({ projectId, projectStatus }) {
     })
   }, [items, filters])
 
+  const pageResetKey = useMemo(() => `${JSON.stringify(filters)}:${filtered.length}`, [filters, filtered.length])
+
   const applyFilters = () => setFilters({ name: qName.trim(), type: qType, enabled: qEnabled })
   const resetFilters = () => {
     setQName('')
@@ -699,7 +703,7 @@ function QcTab({ projectId, projectStatus }) {
         </div>
       </div>
 
-      <Table columns={columns} dataSource={filtered} />
+      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
       <Modal
         open={!!viewTarget}
@@ -1084,11 +1088,28 @@ export default function ProjectDetail() {
   const tabFromUrl = searchParams.get('tab')
   const initialTab = TABS.some((t) => t.key === tabFromUrl) ? tabFromUrl : 'task'
   const [tab, setTab] = useState(initialTab)
+  const highlightBatchId = searchParams.get('highlight')
 
   useEffect(() => {
     const next = searchParams.get('tab')
     if (next && TABS.some((t) => t.key === next)) setTab(next)
   }, [searchParams])
+
+  const handleTabChange = (key) => {
+    setTab(key)
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', key)
+    if (key !== 'sampling') params.delete('highlight')
+    navigate(`/collection/project/${id}?${params.toString()}`, { replace: true })
+  }
+
+  const clearHighlightParam = useCallback(() => {
+    const params = new URLSearchParams(searchParams)
+    if (!params.has('highlight')) return
+    params.delete('highlight')
+    navigate(`/collection/project/${id}?${params.toString()}`, { replace: true })
+  }, [id, navigate, searchParams])
+
   const [tasks, setTasksState] = useState(() => [...taskStore])
   const [taskMemberFilter, setTaskMemberFilter] = useState(null)
 
@@ -1164,7 +1185,7 @@ export default function ProjectDetail() {
             </div>
           </div>
         </div>
-        <Tabs items={TABS} activeKey={tab} onChange={setTab} className="mt-4" />
+        <Tabs items={TABS} activeKey={tab} onChange={handleTabChange} className="mt-4" />
       </div>
 
       {tab === 'task' && (
@@ -1185,8 +1206,15 @@ export default function ProjectDetail() {
           onTasksChange={setTasks}
           onViewMemberTasks={(name, role) => {
             setTaskMemberFilter({ name, role })
-            setTab('task')
+            handleTabChange('task')
           }}
+        />
+      )}
+      {tab === 'sampling' && (
+        <SamplingPanel
+          projectId={id}
+          highlightBatchId={highlightBatchId}
+          onHighlightConsumed={clearHighlightParam}
         />
       )}
       {tab === 'dashboard' && <RealDataTab fixedProjectId={id} />}
