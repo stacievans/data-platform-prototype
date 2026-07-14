@@ -1215,6 +1215,7 @@ export default function ProjectDetail() {
           projectId={id}
           highlightBatchId={highlightBatchId}
           onHighlightConsumed={clearHighlightParam}
+          onGoToTaskTab={() => handleTabChange('task')}
         />
       )}
       {tab === 'dashboard' && <RealDataTab fixedProjectId={id} />}

@@ -95,6 +95,7 @@ export default function SamplingPanel({
   showCreateButton = false,
   highlightBatchId = null,
   onHighlightConsumed,
+  onGoToTaskTab,
 }) {
   const project = projects.find((p) => p.id === projectId)
   const creatorName = useCurrentNickname()
@@ -394,7 +395,20 @@ export default function SamplingPanel({
       <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-gray-800">抽检批次列表</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {onGoToTaskTab && (
+              <p className="text-xs text-gray-400">
+                新建抽检批次请前往
+                <button
+                  type="button"
+                  onClick={onGoToTaskTab}
+                  className="mx-0.5 cursor-pointer text-blue-600 hover:text-blue-500 hover:underline"
+                >
+                  采集任务 Tab
+                </button>
+                勾选任务后发起
+              </p>
+            )}
             <Button onClick={() => setBulkOpen(true)}>
               批量处理
             </Button>
