@@ -31,6 +31,14 @@ function normalizePeopleFilter(selected, options) {
   return [...selected]
 }
 
+function cloneSamplingFilters(filters) {
+  return {
+    reviewResult: filters.reviewResult,
+    collectors: [...(filters.collectors ?? [])],
+    reviewers: [...(filters.reviewers ?? [])],
+  }
+}
+
 function MultiCheckDropdown({ label, options, value, onChange, allLabel, className = '' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -121,7 +129,8 @@ export default function CreateSamplingBatchModal({
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [ratios, setRatios] = useState({})
-  const [filters, setFilters] = useState(defaultSamplingFilters)
+  const [draftFilters, setDraftFilters] = useState(defaultSamplingFilters)
+  const [appliedFilters, setAppliedFilters] = useState(defaultSamplingFilters)
   const [unifyRatio, setUnifyRatio] = useState(20)
 
   const taskRows = useMemo(() => buildProjectTaskRows(projectId), [projectId])
@@ -138,7 +147,9 @@ export default function CreateSamplingBatchModal({
     setSearch('')
     setSelectedIds(init)
     setRatios(nextRatios)
-    setFilters(defaultSamplingFilters())
+    const defaults = defaultSamplingFilters()
+    setDraftFilters(defaults)
+    setAppliedFilters(defaults)
     setUnifyRatio(20)
   }, [open, projectId, initialTaskIds])
 
@@ -161,7 +172,7 @@ export default function CreateSamplingBatchModal({
 
   const configRows = useMemo(
     () => selectedTasks.map((t) => {
-      const candidateCount = countTaskCandidates(projectId, t.id, filters)
+      const candidateCount = countTaskCandidates(projectId, t.id, appliedFilters)
       const ratio = ratios[t.id] ?? 20
       return {
         key: t.id,
@@ -171,7 +182,7 @@ export default function CreateSamplingBatchModal({
         sampled: calcSampledCount(candidateCount, ratio),
       }
     }),
-    [selectedTasks, projectId, filters, ratios],
+    [selectedTasks, projectId, appliedFilters, ratios],
   )
 
   const summary = useMemo(() => ({
@@ -237,6 +248,16 @@ export default function CreateSamplingBatchModal({
     })
   }
 
+  const applyFilters = () => {
+    setAppliedFilters(cloneSamplingFilters(draftFilters))
+  }
+
+  const resetFilters = () => {
+    const defaults = defaultSamplingFilters()
+    setDraftFilters(defaults)
+    setAppliedFilters(defaults)
+  }
+
   const handleOk = () => {
     const trimmed = name.trim()
     if (!trimmed) {
@@ -259,9 +280,9 @@ export default function CreateSamplingBatchModal({
       name: trimmed,
       taskIds: selectedTasks.map((t) => t.id),
       filters: {
-        reviewResult: filters.reviewResult,
-        collectors: normalizePeopleFilter(filters.collectors, collectors),
-        reviewers: normalizePeopleFilter(filters.reviewers, reviewers),
+        reviewResult: appliedFilters.reviewResult,
+        collectors: normalizePeopleFilter(appliedFilters.collectors, collectors),
+        reviewers: normalizePeopleFilter(appliedFilters.reviewers, reviewers),
       },
       configItems: configRows.map((row) => ({
         key: row.key,
@@ -351,8 +372,12 @@ export default function CreateSamplingBatchModal({
 
       {/* 筛选条件 */}
       <div className={SECTION_CLS}>
-        <div className="mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">筛选条件</span>
+          <div className="flex gap-2">
+            <Button onClick={resetFilters}>重置</Button>
+            <Button variant="primary" onClick={applyFilters}>查询</Button>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="min-w-0">
@@ -360,8 +385,8 @@ export default function CreateSamplingBatchModal({
               标注结果 <span className="text-red-500">*</span>
             </label>
             <select
-              value={filters.reviewResult}
-              onChange={(e) => setFilters((f) => ({ ...f, reviewResult: e.target.value }))}
+              value={draftFilters.reviewResult}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, reviewResult: e.target.value }))}
               className={SELECT_CLS}
             >
               {REVIEW_RESULT_FILTER_OPTIONS.map((opt) => (
@@ -372,15 +397,15 @@ export default function CreateSamplingBatchModal({
           <MultiCheckDropdown
             label="采集员"
             options={collectors}
-            value={filters.collectors}
-            onChange={(v) => setFilters((f) => ({ ...f, collectors: v }))}
+            value={draftFilters.collectors}
+            onChange={(v) => setDraftFilters((f) => ({ ...f, collectors: v }))}
             allLabel="全部采集员"
           />
           <MultiCheckDropdown
             label="标注员"
             options={reviewers}
-            value={filters.reviewers}
-            onChange={(v) => setFilters((f) => ({ ...f, reviewers: v }))}
+            value={draftFilters.reviewers}
+            onChange={(v) => setDraftFilters((f) => ({ ...f, reviewers: v }))}
             allLabel="全部标注员"
           />
         </div>
@@ -444,6 +469,9 @@ export default function CreateSamplingBatchModal({
               </tbody>
             </table>
           </div>
+          <p className="mt-2 text-xs text-gray-400">
+            页面为数据快照，已删除条目提交时将自动剔除，不纳入抽检
+          </p>
         </div>
       )}
     </Modal>
