@@ -27,7 +27,7 @@ function MiddleSlot({ entry, onOpen }) {
     )
   }
 
-  if (dataStatus === '已解析' || dataStatus === '标注不通过') {
+  if (dataStatus === '已解析' || dataStatus === '验收不通过') {
     return (
       <Button variant="link" size="sm" onClick={() => onOpen('review')} className="justify-center">
         标注
@@ -35,7 +35,7 @@ function MiddleSlot({ entry, onOpen }) {
     )
   }
 
-  if (dataStatus === '已标注' || dataStatus === '验收不通过') {
+  if (dataStatus === '已标注' || dataStatus === '标注不通过') {
     return (
       <Button variant="link" size="sm" onClick={() => onOpen('accept')} className="justify-center">
         验收

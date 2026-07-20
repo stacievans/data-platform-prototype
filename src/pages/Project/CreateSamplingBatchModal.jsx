@@ -25,10 +25,19 @@ const SECTION_CLS = 'rounded-lg border border-gray-100 bg-gray-50/60 p-4'
 const LBL = 'mb-1.5 block text-sm text-gray-700'
 const SELECT_CLS = `${INPUT_CLS} cursor-pointer`
 
-/** 未选 / 全选 → 不筛选，统一存空数组 */
+/** 全选 / 未选 → 不筛选，统一存空数组 */
 function normalizePeopleFilter(selected, options) {
   if (!selected?.length || (options.length > 0 && selected.length === options.length)) return []
   return [...selected]
+}
+
+/** 弹窗 UI 默认：标注已通过 + 采集员/标注员全选（视觉全勾，语义仍=不筛选） */
+function buildDefaultUiFilters(collectors = [], reviewers = []) {
+  return {
+    reviewResult: 'passed',
+    collectors: [...collectors],
+    reviewers: [...reviewers],
+  }
 }
 
 function cloneSamplingFilters(filters) {
@@ -129,8 +138,8 @@ export default function CreateSamplingBatchModal({
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [ratios, setRatios] = useState({})
-  const [draftFilters, setDraftFilters] = useState(defaultSamplingFilters)
-  const [appliedFilters, setAppliedFilters] = useState(defaultSamplingFilters)
+  const [draftFilters, setDraftFilters] = useState(() => defaultSamplingFilters())
+  const [appliedFilters, setAppliedFilters] = useState(() => defaultSamplingFilters())
   const [unifyRatio, setUnifyRatio] = useState(20)
 
   const taskRows = useMemo(() => buildProjectTaskRows(projectId), [projectId])
@@ -147,11 +156,11 @@ export default function CreateSamplingBatchModal({
     setSearch('')
     setSelectedIds(init)
     setRatios(nextRatios)
-    const defaults = defaultSamplingFilters()
+    const defaults = buildDefaultUiFilters(collectors, reviewers)
     setDraftFilters(defaults)
     setAppliedFilters(defaults)
     setUnifyRatio(20)
-  }, [open, projectId, initialTaskIds])
+  }, [open, projectId, initialTaskIds, collectors, reviewers])
 
   const displayTasks = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -170,9 +179,16 @@ export default function CreateSamplingBatchModal({
     [taskRows, selectedIds],
   )
 
+  /** 全选人员按不筛选计，避免与空数组语义不一致 */
+  const effectiveFilters = useMemo(() => ({
+    reviewResult: appliedFilters.reviewResult,
+    collectors: normalizePeopleFilter(appliedFilters.collectors, collectors),
+    reviewers: normalizePeopleFilter(appliedFilters.reviewers, reviewers),
+  }), [appliedFilters, collectors, reviewers])
+
   const configRows = useMemo(
     () => selectedTasks.map((t) => {
-      const candidateCount = countTaskCandidates(projectId, t.id, appliedFilters)
+      const candidateCount = countTaskCandidates(projectId, t.id, effectiveFilters)
       const ratio = ratios[t.id] ?? 20
       return {
         key: t.id,
@@ -182,7 +198,7 @@ export default function CreateSamplingBatchModal({
         sampled: calcSampledCount(candidateCount, ratio),
       }
     }),
-    [selectedTasks, projectId, appliedFilters, ratios],
+    [selectedTasks, projectId, effectiveFilters, ratios],
   )
 
   const summary = useMemo(() => ({
@@ -253,7 +269,7 @@ export default function CreateSamplingBatchModal({
   }
 
   const resetFilters = () => {
-    const defaults = defaultSamplingFilters()
+    const defaults = buildDefaultUiFilters(collectors, reviewers)
     setDraftFilters(defaults)
     setAppliedFilters(defaults)
   }
@@ -280,9 +296,9 @@ export default function CreateSamplingBatchModal({
       name: trimmed,
       taskIds: selectedTasks.map((t) => t.id),
       filters: {
-        reviewResult: appliedFilters.reviewResult,
-        collectors: normalizePeopleFilter(appliedFilters.collectors, collectors),
-        reviewers: normalizePeopleFilter(appliedFilters.reviewers, reviewers),
+        reviewResult: effectiveFilters.reviewResult,
+        collectors: effectiveFilters.collectors,
+        reviewers: effectiveFilters.reviewers,
       },
       configItems: configRows.map((row) => ({
         key: row.key,

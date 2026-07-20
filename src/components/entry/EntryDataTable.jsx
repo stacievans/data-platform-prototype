@@ -7,7 +7,6 @@ import Modal from '../common/Modal'
 import { IconSearch, IconChevronDown } from '../common/Icons'
 import { useToast } from '../common/Toast'
 import { getQcItemsByProjectId } from '../../mock/plans'
-import { getAuditReviewTagGroups } from '../../mock/tags'
 import { resolveQcRowResult } from '../../utils/qcResults'
 import { formatReviewer } from '../../mock/tasks'
 import EntryActions from '../common/EntryActions'
@@ -28,6 +27,7 @@ import {
 } from '../../utils/entryProcess'
 import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { formatDateTime } from '../../utils/formatDateTime'
+import { normalizeAuditQuality } from '../../pages/Review/constants/workbenchTags'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -239,33 +239,46 @@ function DetailField({ label, children }) {
   )
 }
 
-function GroupedAuditTags({ tags = [] }) {
-  const groups = useMemo(() => getAuditReviewTagGroups(), [])
-  const grouped = useMemo(() => {
-    const tagSet = new Set(tags)
-    const result = groups
-      .map((g) => ({ groupName: g.groupName, tags: g.tags.filter((t) => tagSet.has(t)) }))
-      .filter((g) => g.tags.length > 0)
-    const known = new Set(groups.flatMap((g) => g.tags))
-    const other = tags.filter((t) => !known.has(t))
-    if (other.length) result.push({ groupName: '其他', tags: other })
-    return result
-  }, [groups, tags])
+/** 通过 / 不通过 → 通过 / 驳回 */
+function formatPassRejectLabel(result) {
+  if (result === '通过') return '通过'
+  if (result === '不通过') return '驳回'
+  return result?.trim() ? result : '—'
+}
 
-  if (!tags.length) return <span className="text-gray-400">—</span>
+/** 标注分类行：仅展示已填写项 */
+function buildAuditClassifyRows(entry) {
+  const rows = []
+  const quality = normalizeAuditQuality(entry.auditQuality) ?? entry.auditQuality
+  if (quality) rows.push({ category: '质量评分', detail: quality })
+  const tags = (entry.auditTags ?? []).filter(Boolean)
+  if (tags.length) rows.push({ category: '问题标签', detail: tags.join('、') })
+  return rows
+}
 
+function AuditClassifyTable({ rows }) {
+  if (!rows.length) return null
   return (
-    <div className="space-y-3">
-      {grouped.map(({ groupName, tags: groupTags }) => (
-        <div key={groupName}>
-          <div className="mb-1.5 text-xs font-medium text-gray-400">{groupName}</div>
-          <div className="flex flex-wrap gap-1.5">
-            {groupTags.map((t) => (
-              <Badge key={t} color="blue">{t}</Badge>
+    <div>
+      <div className="mb-1.5 text-xs text-gray-500">标注分类</div>
+      <div className="overflow-hidden rounded-lg border border-gray-200">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 text-left text-xs text-gray-500">
+              <th className="w-28 px-3 py-2 font-medium">标注分类</th>
+              <th className="px-3 py-2 font-medium">详情</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((row) => (
+              <tr key={row.category}>
+                <td className="px-3 py-2.5 text-gray-600">{row.category}</td>
+                <td className="px-3 py-2.5 text-gray-800">{row.detail}</td>
+              </tr>
             ))}
-          </div>
-        </div>
-      ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -293,12 +306,14 @@ function formatOperatorDisplay(operator) {
 function ReviewDetailModal({ open, entry, task, onClose }) {
   if (!open || !entry) return null
   const operator = resolveReviewOperator(entry, task)
-  const conclusion = entry.auditAbnormal ? '异常数据' : (entry.auditResult ?? '—')
+  const conclusionRaw = entry.auditAbnormal ? '异常数据' : (entry.auditResult ?? '—')
+  const conclusion = conclusionRaw === '异常数据' ? '异常数据' : formatPassRejectLabel(conclusionRaw)
   const conclusionCls = entry.auditAbnormal || entry.auditResult === '不通过'
     ? 'font-medium text-red-600'
     : entry.auditResult === '通过'
       ? 'font-medium text-emerald-700'
       : ''
+  const classifyRows = buildAuditClassifyRows(entry)
 
   return (
     <Modal
@@ -312,17 +327,15 @@ function ReviewDetailModal({ open, entry, task, onClose }) {
         <DetailField label="标注结论">
           <span className={conclusionCls}>{conclusion}</span>
         </DetailField>
-        <DetailField label="标注标签">
-          <GroupedAuditTags tags={entry.auditTags ?? []} />
-        </DetailField>
-        <DetailField label="标注意见">
+        <AuditClassifyTable rows={classifyRows} />
+        <DetailField label="备注">
           {entry.auditComment?.trim() ? entry.auditComment : '—'}
         </DetailField>
-        <DetailField label="操作人">
-          {formatOperatorDisplay(operator)}
-        </DetailField>
-        <DetailField label="操作时间">
+        <DetailField label="标注时间">
           {formatDateTime(resolveReviewTime(entry))}
+        </DetailField>
+        <DetailField label="标注员">
+          {formatOperatorDisplay(operator)}
         </DetailField>
       </div>
     </Modal>
@@ -332,9 +345,7 @@ function ReviewDetailModal({ open, entry, task, onClose }) {
 function AcceptDetailModal({ open, entry, onClose }) {
   if (!open || !entry) return null
   const operator = resolveAcceptOperator(entry)
-  const ps = deriveProcessStatuses(entry)
-  const isRejected = ps.accept === 'rejected'
-  const conclusion = entry.acceptResult ?? '—'
+  const conclusion = formatPassRejectLabel(entry.acceptResult)
   const conclusionCls = entry.acceptResult === '不通过'
     ? 'font-medium text-red-600'
     : entry.acceptResult === '通过'
@@ -353,16 +364,14 @@ function AcceptDetailModal({ open, entry, onClose }) {
         <DetailField label="验收结论">
           <span className={conclusionCls}>{conclusion}</span>
         </DetailField>
-        {isRejected && (
-          <DetailField label="驳回理由">
-            {entry.acceptComment?.trim() ? entry.acceptComment : '—'}
-          </DetailField>
-        )}
-        <DetailField label="操作人">
-          {formatOperatorDisplay(operator)}
+        <DetailField label="备注">
+          {entry.acceptComment?.trim() ? entry.acceptComment : '—'}
         </DetailField>
-        <DetailField label="操作时间">
+        <DetailField label="验收时间">
           {formatDateTime(resolveAcceptTime(entry))}
+        </DetailField>
+        <DetailField label="验收员">
+          {formatOperatorDisplay(operator)}
         </DetailField>
       </div>
     </Modal>
