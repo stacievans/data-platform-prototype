@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
 import { CreatorReadonlyField } from '../../components/common/FormField'
+import { nativeSelectChevronCls } from '../../components/common/SelectControl'
+import { APPLICATION_SCOPE_OPTIONS } from '../../mock/tags'
 
-const inputCls = (err) =>
+const inputCls = (err, disabled = false) =>
   `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${
-    err
-      ? 'border-red-400 focus:ring-red-100'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
+    disabled
+      ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500'
+      : err
+        ? 'border-red-400 focus:ring-red-100'
+        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
 
 function TrashButton({ disabled, onClick, title, className = '' }) {
@@ -40,6 +44,7 @@ const emptyChild = () => ({
 const emptyForm = () => ({
   name: '',
   description: '',
+  applicationScope: '全局',
   children: [emptyChild()],
 })
 
@@ -48,6 +53,7 @@ function groupToForm(group) {
   return {
     name: group.name,
     description: group.description ?? '',
+    applicationScope: group.applicationScope ?? '全局',
     children: (group.children ?? []).map((c) => ({
       id: c.id,
       name: c.name,
@@ -93,11 +99,14 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
   }
 
   const setDescription = (v) => setForm((f) => ({ ...f, description: v }))
+  const setScope = (v) => setForm((f) => ({ ...f, applicationScope: v }))
 
   const updateChild = (ci, patch) => {
     setForm((f) => {
       const children = [...f.children]
-      children[ci] = { ...children[ci], ...patch }
+      const next = { ...children[ci], ...patch }
+      if (patch.name !== undefined) next.value = patch.name
+      children[ci] = next
       return { ...f, children }
     })
     if (patch.name !== undefined) {
@@ -129,6 +138,8 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
     onOk(form)
   }
 
+  const selectCls = `h-8 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${nativeSelectChevronCls}`
+
   return (
     <Modal
       open={open}
@@ -143,7 +154,8 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
         {!isEdit && <CreatorReadonlyField />}
         <div>
           <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
-            一级标签名称<span className="text-red-500">*</span>
+            一级标签名称
+            <span className="text-red-500">*</span>
           </label>
           <input
             value={form.name}
@@ -165,54 +177,59 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
           />
         </div>
 
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">应用范围</label>
+          <select
+            value={form.applicationScope}
+            onChange={(e) => setScope(e.target.value)}
+            className={selectCls}
+          >
+            {APPLICATION_SCOPE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="space-y-3 border-t border-gray-100 pt-4">
           <div className="text-sm font-medium text-gray-700">二级标签</div>
           {form.children.map((child, ci) => (
-            <div key={child.id} className="rounded-lg border border-gray-100 bg-gray-50/80 p-3">
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">
-                      标签名称<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={child.name}
-                      onChange={(e) => updateChild(ci, { name: e.target.value })}
-                      placeholder="请输入标签名称"
-                      className={inputCls(errs.children[ci]?.name)}
-                    />
-                    {errs.children[ci]?.name && (
-                      <p className="mt-1 text-xs text-red-500">标签名称不能为空</p>
-                    )}
+              <div key={child.id} className="rounded-lg border border-gray-100 bg-gray-50/80 p-3">
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">
+                        标签名称
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        value={child.name}
+                        onChange={(e) => updateChild(ci, { name: e.target.value })}
+                        placeholder="请输入标签名称"
+                        className={inputCls(errs.children[ci]?.name)}
+                      />
+                      {errs.children[ci]?.name && (
+                        <p className="mt-1 text-xs text-red-500">标签名称不能为空</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">描述</label>
+                      <input
+                        value={child.description}
+                        onChange={(e) => updateChild(ci, { description: e.target.value })}
+                        placeholder="请输入描述（选填）"
+                        className={inputCls(false)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">标签值</label>
-                    <input
-                      value={child.value}
-                      onChange={(e) => updateChild(ci, { value: e.target.value })}
-                      placeholder="默认同标签名称"
-                      className={inputCls(false)}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">描述</label>
-                    <input
-                      value={child.description}
-                      onChange={(e) => updateChild(ci, { description: e.target.value })}
-                      placeholder="请输入描述（选填）"
-                      className={inputCls(false)}
-                    />
-                  </div>
+                  <TrashButton
+                    className="mt-5"
+                    disabled={form.children.length <= 1}
+                    onClick={() => removeChild(ci)}
+                    title="删除标签"
+                  />
                 </div>
-                <TrashButton
-                  className="mt-5"
-                  disabled={form.children.length <= 1}
-                  onClick={() => removeChild(ci)}
-                  title="删除标签"
-                />
               </div>
-            </div>
-          ))}
+            ))}
           <Button onClick={addChild}>+ 添加标签</Button>
         </div>
       </div>

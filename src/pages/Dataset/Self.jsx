@@ -51,10 +51,6 @@ function CardMenu({ onViewDetail, onDeleteClick }) {
 
 /* ── 删除确认弹窗 ── */
 function DeleteConfirmModal({ dataset, open, onCancel, onConfirm }) {
-  const [input, setInput] = useState('')
-  const match = input === dataset?.name
-  const reset = () => setInput('')
-
   if (!open || !dataset) return null
 
   return (
@@ -66,31 +62,20 @@ function DeleteConfirmModal({ dataset, open, onCancel, onConfirm }) {
             <span className="text-lg">⚠️</span>
             <h2 className="text-base font-semibold text-red-600">删除数据集</h2>
           </div>
-          <p className="mb-2 text-sm leading-relaxed text-gray-500">
-            此操作不可逆。如果确定要删除，请在下方输入{' '}
-            <strong className="text-gray-800">{dataset.name}</strong>{' '}以确认。
+          <p className="text-sm leading-relaxed text-gray-500">
+            确定删除数据集「<strong className="text-gray-800">{dataset.name}</strong>」？此操作不可逆。
           </p>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="请输入名称以确认"
-            className="mt-3 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
-            autoFocus
-          />
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
           <button
-            onClick={() => { reset(); onCancel() }}
+            onClick={onCancel}
             className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
           >
             取消
           </button>
           <button
-            disabled={!match}
-            onClick={() => { reset(); onConfirm() }}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition ${
-              match ? 'cursor-pointer bg-red-500 hover:bg-red-600' : 'cursor-not-allowed bg-red-200'
-            }`}
+            onClick={onConfirm}
+            className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
           >
             确定删除
           </button>

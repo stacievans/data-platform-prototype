@@ -11,6 +11,7 @@ import SelfDataset from '../pages/Dataset/Self'
 import SelfDatasetDetail from '../pages/Dataset/SelfDetail'
 import SelfDatasetDownload from '../pages/Dataset/SelfDownload'
 import TagManage from '../pages/Tag'
+import AuditTemplateDetail from '../pages/Tag/AuditTemplateDetail'
 import DeviceManage from '../pages/Device'
 import UserManage from '../pages/System/UserManage'
 import RoleManage from '../pages/System/RoleManage'
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
       { path: 'dataset/open', element: <Navigate to="/dataset/self" replace /> },
       { path: 'dataset/open/*', element: <Navigate to="/dataset/self" replace /> },
       { path: 'tag', element: <TagManage /> },
+      { path: 'tag/audit-template/:templateId', element: <AuditTemplateDetail /> },
       { path: 'device', element: <DeviceManage /> },
       { path: 'device/:typeId', element: <Navigate to="/device" replace /> },
       { path: 'system', element: <Navigate to="/system/user" replace /> },

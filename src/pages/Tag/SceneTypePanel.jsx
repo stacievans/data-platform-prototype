@@ -25,20 +25,12 @@ function deepCloneTree(tree) {
   }))
 }
 
-function sceneMatches(scene, nameQ, valueQ) {
-  if (!nameQ && !valueQ) return true
-  const hitName = nameQ && scene.name.includes(nameQ)
-  const hitValue = valueQ && scene.name.includes(valueQ)
-  if (hitName || hitValue) return true
+function sceneMatches(scene, nameQ) {
+  if (!nameQ) return true
+  if (nameQ && scene.name.includes(nameQ)) return true
   return scene.subScenes.some((sub) => {
     if (nameQ && sub.name.includes(nameQ)) return true
-    if (valueQ && sub.name.includes(valueQ)) return true
-    return sub.tags.some((tag) => {
-      const val = tag.name
-      if (nameQ && tag.name.includes(nameQ)) return true
-      if (valueQ && val.includes(valueQ)) return true
-      return false
-    })
+    return sub.tags.some((tag) => tag.name.includes(nameQ))
   })
 }
 
@@ -139,10 +131,10 @@ function formToScene(form, existingScene, currentUser) {
   }
 }
 
-function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
+function buildVisibleRows(scenes, expanded, nameQ) {
   const rows = []
-  const filtered = nameQ || valueQ ? scenes.filter((s) => sceneMatches(s, nameQ, valueQ)) : scenes
-  const autoExpand = Boolean(nameQ || valueQ)
+  const filtered = nameQ ? scenes.filter((s) => sceneMatches(s, nameQ)) : scenes
+  const autoExpand = Boolean(nameQ)
 
   filtered.forEach((scene) => {
     rows.push({
@@ -150,7 +142,6 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
       level: 1,
       rowType: 'scene',
       name: scene.name,
-      value: '—',
       description: scene.description,
       creator: scene.creator,
       createdAt: scene.createdAt,
@@ -163,10 +154,10 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
     if (!sceneExpanded) return
 
     scene.subScenes.forEach((sub) => {
-      if (nameQ || valueQ) {
-        const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && scene.name.includes(valueQ))
-        const subHit = (nameQ && sub.name.includes(nameQ)) || (valueQ && sub.name.includes(valueQ))
-        const tagHit = sub.tags.some((t) => (nameQ && t.name.includes(nameQ)) || (valueQ && t.name.includes(valueQ)))
+      if (nameQ) {
+        const sceneHit = scene.name.includes(nameQ)
+        const subHit = sub.name.includes(nameQ)
+        const tagHit = sub.tags.some((t) => t.name.includes(nameQ))
         if (!sceneHit && !subHit && !tagHit) return
       }
 
@@ -175,7 +166,6 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
         level: 2,
         rowType: 'subScene',
         name: sub.name,
-        value: '—',
         description: '—',
         creator: sub.creator,
         createdAt: sub.createdAt,
@@ -188,10 +178,10 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
       if (!subExpanded) return
 
       sub.tags.forEach((tag) => {
-        if (nameQ || valueQ) {
-          const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && scene.name.includes(valueQ))
-          const subHit = (nameQ && sub.name.includes(nameQ)) || (valueQ && sub.name.includes(valueQ))
-          const tagHit = (nameQ && tag.name.includes(nameQ)) || (valueQ && tag.name.includes(valueQ))
+        if (nameQ) {
+          const sceneHit = scene.name.includes(nameQ)
+          const subHit = sub.name.includes(nameQ)
+          const tagHit = tag.name.includes(nameQ)
           if (!sceneHit && !subHit && !tagHit) return
         }
         rows.push({
@@ -199,7 +189,6 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
           level: 3,
           rowType: 'tag',
           name: tag.name,
-          value: tag.name,
           description: '—',
           creator: tag.creator,
           createdAt: tag.createdAt,
@@ -232,9 +221,7 @@ export default function SceneTypePanel() {
   const [tree, setTree] = useState(() => deepCloneTree(getSceneTypeTree()))
   const [expanded, setExpanded] = useState(() => new Set())
   const [nameQuery, setNameQuery] = useState('')
-  const [valueQuery, setValueQuery] = useState('')
   const [appliedName, setAppliedName] = useState('')
-  const [appliedValue, setAppliedValue] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingScene, setEditingScene] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -245,11 +232,11 @@ export default function SceneTypePanel() {
   }
 
   const visibleRows = useMemo(
-    () => buildVisibleRows(tree, expanded, appliedName, appliedValue),
-    [tree, expanded, appliedName, appliedValue],
+    () => buildVisibleRows(tree, expanded, appliedName),
+    [tree, expanded, appliedName],
   )
 
-  const pageResetKey = `${appliedName}|${appliedValue}|${tree.length}`
+  const pageResetKey = `${appliedName}|${tree.length}`
 
   const toggleExpand = (id) => {
     setExpanded((prev) => {
@@ -306,11 +293,6 @@ export default function SceneTypePanel() {
       },
     },
     {
-      title: '标签值',
-      dataIndex: 'value',
-      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
-    },
-    {
       title: '描述',
       dataIndex: 'description',
       wrap: true,
@@ -356,17 +338,8 @@ export default function SceneTypePanel() {
               className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">标签值</label>
-            <input
-              value={valueQuery}
-              onChange={(e) => setValueQuery(e.target.value)}
-              placeholder="输入标签值"
-              className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-            />
-          </div>
-          <Button onClick={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}>重置</Button>
-          <Button variant="primary" onClick={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}>查询</Button>
+          <Button onClick={() => { setNameQuery(''); setAppliedName('') }}>重置</Button>
+          <Button variant="primary" onClick={() => { setAppliedName(nameQuery) }}>查询</Button>
         </div>
         <PermButton permission="tag.create" variant="primary" onClick={openCreate}>+ 新建标签</PermButton>
       </div>

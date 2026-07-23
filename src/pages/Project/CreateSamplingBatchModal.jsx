@@ -280,7 +280,7 @@ export default function CreateSamplingBatchModal({
       setNameError('required')
       return
     }
-    if (isSamplingBatchNameTaken(trimmed)) {
+    if (isSamplingBatchNameTaken(projectId, trimmed)) {
       setNameError('duplicate')
       return
     }

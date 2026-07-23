@@ -20,7 +20,8 @@ import {
   getTaskPurposeTags,
   setTaskPurposeTags,
 } from '../../mock/tags'
-import AuditReviewTagPanel from './AuditReviewTagPanel'
+import { useSearchParams } from 'react-router-dom'
+import AuditTemplateListPanel from './AuditTemplateListPanel'
 import SceneTypePanel from './SceneTypePanel'
 import { useTagRowActions } from './TagTableActions'
 
@@ -46,7 +47,7 @@ const inputCls = (err) =>
       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
 
-function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset, onSearch, onNew }) {
+function FilterBar({ nameQuery, onNameChange, onReset, onSearch, onNew }) {
   return (
     <div className="flex items-end gap-3">
       <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
@@ -56,15 +57,6 @@ function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset
             value={nameQuery}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="输入标签名称"
-            className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">标签值</label>
-          <input
-            value={valueQuery}
-            onChange={(e) => onValueChange(e.target.value)}
-            placeholder="输入标签值"
             className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           />
         </div>
@@ -78,24 +70,22 @@ function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset
 
 const baseColumns = [
   { title: '标签名称', dataIndex: 'name', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
-  { title: '标签值', dataIndex: 'value', render: (v, row) => <span className="text-gray-600">{v ?? row.name ?? '—'}</span> },
   { title: '描述', dataIndex: 'description', render: (v) => <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span> },
   { title: '创建人', dataIndex: 'creator' },
   dtCol('创建时间', 'createdAt'),
   dtCol('最后更新', 'updatedAt'),
 ]
 
-function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG', showValue = true }) {
+function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
   const isEdit = Boolean(editing)
   const creatorName = useCurrentNickname()
-  const [form, setForm] = useState({ name: '', value: '', description: '' })
+  const [form, setForm] = useState({ name: '', description: '' })
   const [errs, setErrs] = useState({})
 
   useEffect(() => {
     if (!open) return
     setForm({
       name: editing?.name ?? '',
-      value: editing?.value ?? editing?.name ?? '',
       description: editing?.description ?? '',
     })
     setErrs({})
@@ -106,17 +96,17 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG', showVal
   const handleOk = () => {
     const nextErrs = {}
     if (!form.name.trim()) nextErrs.name = true
-    if (showValue && !form.value.trim()) nextErrs.value = true
     if (Object.keys(nextErrs).length) { setErrs(nextErrs); return }
 
     const ts = now()
-    const value = showValue ? form.value.trim() : form.name.trim()
+    const name = form.name.trim()
+    const value = name
     if (isEdit) {
-      onOk({ ...editing, name: form.name.trim(), value, description: form.description.trim(), updatedAt: ts })
+      onOk({ ...editing, name, value, description: form.description.trim(), updatedAt: ts })
     } else {
       onOk({
         id: `${idPrefix}-${Date.now()}`,
-        name: form.name.trim(),
+        name,
         value,
         description: form.description.trim(),
         creator: creatorName,
@@ -133,11 +123,6 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG', showVal
         <Field label="标签名称" required error={errs.name}>
           <input placeholder="请输入标签名称" value={form.name} onChange={(e) => set('name', e.target.value)} className={inputCls(errs.name)} />
         </Field>
-        {showValue && (
-          <Field label="标签值" required error={errs.value}>
-            <input placeholder="请输入标签值" value={form.value} onChange={(e) => set('value', e.target.value)} className={inputCls(errs.value)} />
-          </Field>
-        )}
         <Field label="描述">
           <textarea
             rows={2}
@@ -152,14 +137,20 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG', showVal
   )
 }
 
-function FlatTagPanel({ getData, setData, idPrefix, showValue = true }) {
+function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
   const [data, setLocalData] = useState(() => [...getData()])
   const [nameQuery, setNameQuery] = useState('')
-  const [valueQuery, setValueQuery] = useState('')
   const [appliedName, setAppliedName] = useState('')
-  const [appliedValue, setAppliedValue] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRow, setEditingRow] = useState(null)
+
+  useEffect(() => {
+    setLocalData([...getData()])
+    setNameQuery('')
+    setAppliedName('')
+    setModalOpen(false)
+    setEditingRow(null)
+  }, [panelKey, getData])
 
   const sync = (next) => {
     setLocalData(next)
@@ -168,12 +159,10 @@ function FlatTagPanel({ getData, setData, idPrefix, showValue = true }) {
 
   const filtered = useMemo(() => data.filter((r) => {
     if (appliedName && !r.name.includes(appliedName)) return false
-    const val = String(r.value ?? r.name ?? '')
-    if (appliedValue && !val.includes(appliedValue)) return false
     return true
-  }), [data, appliedName, appliedValue])
+  }), [data, appliedName])
 
-  const pageResetKey = `${appliedName}|${appliedValue}|${data.length}`
+  const pageResetKey = `${appliedName}|${data.length}`
 
   const closeModal = () => {
     setModalOpen(false)
@@ -200,57 +189,168 @@ function FlatTagPanel({ getData, setData, idPrefix, showValue = true }) {
     <div className="space-y-3">
       <FilterBar
         nameQuery={nameQuery}
-        valueQuery={valueQuery}
         onNameChange={setNameQuery}
-        onValueChange={setValueQuery}
-        onReset={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}
-        onSearch={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}
+        onReset={() => { setNameQuery(''); setAppliedName('') }}
+        onSearch={() => { setAppliedName(nameQuery) }}
         onNew={() => { setEditingRow(null); setModalOpen(true) }}
       />
       <Table columns={cols} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
-      <FlatTagModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} idPrefix={idPrefix} showValue={showValue} />
+      <FlatTagModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} idPrefix={idPrefix} />
       {deleteConfirmModal}
     </div>
   )
 }
 
-const outerTabs = [
-  { key: 'audit', label: '审核标签' },
-  { key: 'scene', label: '场景标签' },
-  { key: 'atomicSkill', label: '原子技能标签' },
-  { key: 'bodyType', label: '本体机型标签' },
-  { key: 'endType', label: '末端类型标签' },
-  { key: 'collectionMethod', label: '采集方式标签' },
-  { key: 'taskPurpose', label: '任务用途标签' },
+const PRIMARY_TABS = [
+  { key: 'collect', label: '采集标签' },
+  { key: 'device', label: '设备标签' },
+  { key: 'audit', label: '审核模板' },
 ]
 
+const COLLECT_SUB_TABS = [
+  { key: 'taskPurpose', label: '任务用途标签' },
+  { key: 'collectionMethod', label: '采集方式标签' },
+  { key: 'scene', label: '场景标签' },
+  { key: 'atomicSkill', label: '原子技能标签' },
+]
+
+const DEVICE_SUB_TABS = [
+  { key: 'bodyType', label: '本体机型标签' },
+  { key: 'endType', label: '末端类型标签' },
+]
+
+function SubTabBar({ items, activeKey, onChange }) {
+  return (
+    <div className="mb-4 flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+      {items.map((item) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => onChange(item.key)}
+          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+            activeKey === item.key
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function CollectTagPanel({ subTab }) {
+  if (subTab === 'scene') return <SceneTypePanel key="scene" />
+  if (subTab === 'atomicSkill') {
+    return (
+      <FlatTagPanel
+        key="atomicSkill"
+        panelKey="atomicSkill"
+        getData={getAtomicSkillTags}
+        setData={setAtomicSkillTags}
+        idPrefix="SK"
+      />
+    )
+  }
+  if (subTab === 'collectionMethod') {
+    return (
+      <FlatTagPanel
+        key="collectionMethod"
+        panelKey="collectionMethod"
+        getData={getCollectionMethodTags}
+        setData={setCollectionMethodTags}
+        idPrefix="CM"
+      />
+    )
+  }
+  return (
+    <FlatTagPanel
+      key="taskPurpose"
+      panelKey="taskPurpose"
+      getData={getTaskPurposeTags}
+      setData={setTaskPurposeTags}
+      idPrefix="TP"
+    />
+  )
+}
+
+function DeviceTagPanel({ subTab }) {
+  if (subTab === 'endType') {
+    return (
+      <FlatTagPanel
+        key="endType"
+        panelKey="endType"
+        getData={getEndTypeTags}
+        setData={setEndTypeTags}
+        idPrefix="ET"
+      />
+    )
+  }
+  return (
+    <FlatTagPanel
+      key="bodyType"
+      panelKey="bodyType"
+      getData={getBodyTypeTags}
+      setData={setBodyTypeTags}
+      idPrefix="BT"
+    />
+  )
+}
+
 export default function TagManage() {
-  const [outerTab, setOuterTab] = useState('audit')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const initialPrimary = ['collect', 'device', 'audit'].includes(tabFromUrl) ? tabFromUrl : 'collect'
+  const [primaryTab, setPrimaryTab] = useState(initialPrimary)
+  const [collectSub, setCollectSub] = useState('taskPurpose')
+  const [deviceSub, setDeviceSub] = useState('bodyType')
+
+  useEffect(() => {
+    if (tabFromUrl && ['collect', 'device', 'audit'].includes(tabFromUrl)) {
+      setPrimaryTab(tabFromUrl)
+    }
+  }, [tabFromUrl])
+
+  const handlePrimaryChange = (key) => {
+    setPrimaryTab(key)
+    const next = new URLSearchParams(searchParams)
+    if (key === 'collect') next.delete('tab')
+    else next.set('tab', key)
+    setSearchParams(next, { replace: true })
+  }
+
+  const contentKey = primaryTab === 'audit'
+    ? 'audit'
+    : primaryTab === 'collect'
+      ? `collect-${collectSub}`
+      : `device-${deviceSub}`
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-gray-100 bg-white px-5 pt-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold text-gray-800">标签管理</h2>
-        <Tabs items={outerTabs} activeKey={outerTab} onChange={setOuterTab} />
+        <Tabs items={PRIMARY_TABS} activeKey={primaryTab} onChange={handlePrimaryChange} />
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-        {outerTab === 'audit' && <AuditReviewTagPanel />}
-        {outerTab === 'scene' && <SceneTypePanel />}
-        {outerTab === 'atomicSkill' && (
-          <FlatTagPanel getData={getAtomicSkillTags} setData={setAtomicSkillTags} idPrefix="SK" showValue />
+      <div key={contentKey} className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+        {primaryTab === 'audit' && (
+          <>
+            <h3 className="mb-4 text-base font-semibold text-gray-800">标注标签模板列表</h3>
+            <AuditTemplateListPanel />
+          </>
         )}
-        {outerTab === 'bodyType' && (
-          <FlatTagPanel getData={getBodyTypeTags} setData={setBodyTypeTags} idPrefix="BT" showValue />
+        {primaryTab === 'collect' && (
+          <>
+            <SubTabBar items={COLLECT_SUB_TABS} activeKey={collectSub} onChange={setCollectSub} />
+            <CollectTagPanel subTab={collectSub} />
+          </>
         )}
-        {outerTab === 'endType' && (
-          <FlatTagPanel getData={getEndTypeTags} setData={setEndTypeTags} idPrefix="ET" showValue />
-        )}
-        {outerTab === 'collectionMethod' && (
-          <FlatTagPanel getData={getCollectionMethodTags} setData={setCollectionMethodTags} idPrefix="CM" showValue />
-        )}
-        {outerTab === 'taskPurpose' && (
-          <FlatTagPanel getData={getTaskPurposeTags} setData={setTaskPurposeTags} idPrefix="TP" showValue />
+        {primaryTab === 'device' && (
+          <>
+            <SubTabBar items={DEVICE_SUB_TABS} activeKey={deviceSub} onChange={setDeviceSub} />
+            <DeviceTagPanel subTab={deviceSub} />
+          </>
         )}
       </div>
     </div>

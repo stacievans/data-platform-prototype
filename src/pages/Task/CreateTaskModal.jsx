@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
+import { IconChevronLeft } from '../../components/common/Icons'
 import { SelectChevronWrap } from '../../components/common/SelectControl'
 import {
   EMPTY_STEP,
@@ -27,8 +28,7 @@ import {
 } from '../../mock/plans'
 import { projects } from '../../mock/projects'
 import { getTaskPurposeTags } from '../../mock/tags'
-import { getAllDeviceTypes, getAllDeviceInstances, getInStockInstancesByTypeId } from '../../mock/devices'
-import { formatDeviceSelectLabel } from '../../utils/deviceDisplay'
+import { getAllDeviceTypes, getAllDeviceInstances } from '../../mock/devices'
 import { useCurrentNickname } from '../../context/AuthContext'
 
 const PURPOSE_OPTIONS = getTaskPurposeTags().map((t) => ({
@@ -36,7 +36,7 @@ const PURPOSE_OPTIONS = getTaskPurposeTags().map((t) => ({
   label: t.name,
 }))
 
-/** 新建任务 / 配置采集方案二级弹窗共用固定面板尺寸 */
+/** 新建任务 / 配置采集方案共用固定面板尺寸 */
 const TASK_MODAL_WIDTH = 520
 const TASK_MODAL_PANEL_HEIGHT = 'min(85vh, 560px)'
 const emptyTaskForm = () => ({
@@ -124,8 +124,8 @@ function SearchablePlanSelect({ plans, value, onChange, error }) {
       </SelectChevronWrap>
       {open && (
         <>
-          <div className="fixed inset-0 z-[65]" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 top-full z-[66] mt-1 max-h-52 overflow-y-auto rounded-md border border-gray-100 bg-white py-1 shadow-lg">
+          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 top-full z-[56] mt-1 max-h-52 overflow-y-auto rounded-md border border-gray-100 bg-white py-1 shadow-lg">
             {filtered.length === 0 && (
               <p className="px-3 py-2 text-sm text-gray-400">无匹配方案</p>
             )}
@@ -146,6 +146,142 @@ function SearchablePlanSelect({ plans, value, onChange, error }) {
               </button>
             ))}
           </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function SearchableDeviceSelect({ instances, value, onChange, error }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const selected = instances.find((i) => i.id === value)
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return instances
+    return instances.filter((i) => {
+      const haystack = [i.code, i.sn, i.typeName, i.description]
+        .filter(Boolean).join(' ').toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [instances, query])
+
+  useEffect(() => {
+    if (selected) setQuery(selected.code ?? '')
+    else if (!value) setQuery('')
+  }, [selected, value])
+
+  return (
+    <div className="relative">
+      <SelectChevronWrap>
+        <input
+          value={query}
+          placeholder="请选择采集设备"
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange('') }}
+          onFocus={() => setOpen(true)}
+          className={`${inputCls(error)} pr-8`}
+        />
+      </SelectChevronWrap>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 top-full z-[56] mt-1 max-h-52 overflow-y-auto rounded-md border border-gray-100 bg-white py-1 shadow-lg">
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-sm text-gray-400">无匹配设备</p>
+            )}
+            {filtered.map((i) => (
+              <button
+                key={i.id}
+                type="button"
+                className="block w-full cursor-pointer px-3 py-2 text-left text-sm font-medium text-gray-800 hover:bg-gray-50"
+                onClick={() => {
+                  onChange(i.id)
+                  setQuery(i.code ?? '')
+                  setOpen(false)
+                }}
+              >
+                {i.code ?? '—'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function PlanConfigPanel({
+  projectPlans,
+  deviceTypes,
+  lockExistingPlan,
+  planMode,
+  onPlanModeChange,
+  existingPlanId,
+  onExistingPlanIdChange,
+  createPlan,
+  onCreatePlanChange,
+  errors,
+}) {
+  const selectedExistingPlan = useMemo(
+    () => projectPlans.find((p) => p.id === existingPlanId) ?? null,
+    [projectPlans, existingPlanId],
+  )
+
+  const createDurationMeta = useMemo(
+    () => calcPlanDurationMeta(createPlan.steps, createPlan.totalDeviation),
+    [createPlan.steps, createPlan.totalDeviation],
+  )
+
+  const setCreate = (patch) => {
+    onCreatePlanChange({ ...createPlan, ...patch })
+  }
+
+  const updateStep = (i, field, value) =>
+    onCreatePlanChange({
+      ...createPlan,
+      steps: createPlan.steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)),
+    })
+
+  const addStep = () =>
+    onCreatePlanChange({ ...createPlan, steps: [...createPlan.steps, { ...EMPTY_STEP }] })
+
+  const removeStep = (i) =>
+    onCreatePlanChange({ ...createPlan, steps: createPlan.steps.filter((_, idx) => idx !== i) })
+
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+      {lockExistingPlan ? (
+        <PlanReadonlySection plan={selectedExistingPlan} deviceTypes={deviceTypes} />
+      ) : (
+        <>
+          <ModeToggle value={planMode} onChange={onPlanModeChange} disabled={false} />
+          {planMode === 'create' ? (
+            <CollectPlanFormFields
+              form={createPlan}
+              errors={errors}
+              deviceTypes={deviceTypes}
+              durationMeta={createDurationMeta}
+              onChange={setCreate}
+              updateStep={updateStep}
+              addStep={addStep}
+              removeStep={removeStep}
+            />
+          ) : (
+            <div className="space-y-3">
+              <Field label="采集方案名称" required error={errors.existingPlanId}>
+                <SearchablePlanSelect
+                  plans={projectPlans}
+                  value={existingPlanId}
+                  onChange={onExistingPlanIdChange}
+                  error={errors.existingPlanId}
+                />
+              </Field>
+              {selectedExistingPlan && (
+                <PlanReadonlyDetails plan={selectedExistingPlan} deviceTypes={deviceTypes} />
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -182,157 +318,38 @@ function buildPlanSummaryLines({ planMode, existingPlanId, createPlan, projectPl
   }
 }
 
-function PlanSummaryBlock({ lines, action }) {
-  if (!lines) return null
+function PlanConfigSection({ lines, onConfigure, showAction = true }) {
+  const configured = !!lines
   return (
     <div className="relative rounded-md bg-gray-50 px-3 py-2.5">
-      {action && (
-        <div className="absolute right-3 top-2.5">{action}</div>
+      {showAction && onConfigure && (
+        <div className="absolute right-3 top-2.5">
+          <Button variant="primary" size="sm" onClick={onConfigure}>
+            配置
+          </Button>
+        </div>
       )}
-      <div className={`space-y-1 text-sm ${action ? 'pr-24' : ''}`}>
-        <p>
-          <span className="text-gray-500">方案名称：</span>
-          <span className="text-gray-700">{lines.name}</span>
-        </p>
-        <p>
-          <span className="text-gray-500">设备类型：</span>
-          <span className="text-gray-700">{lines.deviceType}</span>
-        </p>
-        <p>
-          <span className="text-gray-500">采集方式：</span>
-          <span className="text-gray-700">{lines.method}</span>
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function PlanConfigModal({
-  open,
-  projectPlans,
-  deviceTypes,
-  lockExistingPlan,
-  initialPlanMode,
-  initialExistingPlanId,
-  initialCreatePlan,
-  onCancel,
-  onConfirm,
-}) {
-  const [planMode, setPlanMode] = useState('existing')
-  const [existingPlanId, setExistingPlanId] = useState('')
-  const [createPlan, setCreatePlan] = useState(emptyCreatePlan)
-  const [errors, setErrors] = useState({})
-
-  const selectedExistingPlan = useMemo(
-    () => projectPlans.find((p) => p.id === existingPlanId) ?? null,
-    [projectPlans, existingPlanId],
-  )
-
-  const createDurationMeta = useMemo(
-    () => calcPlanDurationMeta(createPlan.steps, createPlan.totalDeviation),
-    [createPlan.steps, createPlan.totalDeviation],
-  )
-
-  useEffect(() => {
-    if (!open) return
-    setPlanMode(initialPlanMode)
-    setExistingPlanId(initialExistingPlanId)
-    setCreatePlan(cloneCreatePlan(initialCreatePlan))
-    setErrors({})
-  }, [open, initialPlanMode, initialExistingPlanId, initialCreatePlan])
-
-  const setCreate = (patch) => {
-    setCreatePlan((f) => ({ ...f, ...patch }))
-    setErrors((e) => {
-      const next = { ...e }
-      Object.keys(patch).forEach((k) => { delete next[`plan_${k}`] })
-      if ('sceneId' in patch || 'subSceneId' in patch || 'tagId' in patch) delete next.scene
-      return next
-    })
-  }
-
-  const updateStep = (i, field, value) =>
-    setCreatePlan((f) => ({
-      ...f,
-      steps: f.steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)),
-    }))
-
-  const addStep = () =>
-    setCreatePlan((f) => ({ ...f, steps: [...f.steps, { ...EMPTY_STEP }] }))
-
-  const removeStep = (i) =>
-    setCreatePlan((f) => ({ ...f, steps: f.steps.filter((_, idx) => idx !== i) }))
-
-  const handleConfirm = () => {
-    const nextErrs = {}
-    if (planMode === 'create') {
-      Object.assign(nextErrs, validatePlanForm(createPlan))
-    } else if (!existingPlanId) {
-      nextErrs.existingPlanId = true
-    }
-    if (Object.keys(nextErrs).length) {
-      setErrors(nextErrs)
-      return
-    }
-    onConfirm({
-      planMode,
-      existingPlanId: planMode === 'existing' ? existingPlanId : '',
-      createPlan: planMode === 'create' ? cloneCreatePlan(createPlan) : emptyCreatePlan(),
-    })
-  }
-
-  return (
-    <Modal
-      open={open}
-      title="配置采集方案"
-      onCancel={onCancel}
-      onOk={handleConfirm}
-      okText="确定"
-      cancelText="取消"
-      width={TASK_MODAL_WIDTH}
-      fitViewport
-      panelHeight={TASK_MODAL_PANEL_HEIGHT}
-      align="nested"
-      offsetX={40}
-      offsetY={40}
-      zIndex={60}
-    >
-      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-        {lockExistingPlan ? (
-          <PlanReadonlySection plan={selectedExistingPlan} deviceTypes={deviceTypes} />
-        ) : (
+      <div className={`space-y-1 text-sm ${showAction ? 'pr-24' : ''}`}>
+        {configured ? (
           <>
-            <ModeToggle value={planMode} onChange={setPlanMode} disabled={false} />
-            {planMode === 'create' ? (
-              <CollectPlanFormFields
-                form={createPlan}
-                errors={errors}
-                deviceTypes={deviceTypes}
-                durationMeta={createDurationMeta}
-                onChange={setCreate}
-                updateStep={updateStep}
-                addStep={addStep}
-                removeStep={removeStep}
-              />
-            ) : (
-              <div className="space-y-3">
-                <Field label="采集方案名称" required error={errors.existingPlanId}>
-                  <SearchablePlanSelect
-                    plans={projectPlans}
-                    value={existingPlanId}
-                    onChange={setExistingPlanId}
-                    error={errors.existingPlanId}
-                  />
-                </Field>
-                {selectedExistingPlan && (
-                  <PlanReadonlyDetails plan={selectedExistingPlan} deviceTypes={deviceTypes} />
-                )}
-              </div>
-            )}
+            <p>
+              <span className="text-gray-500">方案名称：</span>
+              <span className="text-gray-700">{lines.name}</span>
+            </p>
+            <p>
+              <span className="text-gray-500">设备类型：</span>
+              <span className="text-gray-700">{lines.deviceType}</span>
+            </p>
+            <p>
+              <span className="text-gray-500">采集方式：</span>
+              <span className="text-gray-700">{lines.method}</span>
+            </p>
           </>
+        ) : (
+          <p className="text-gray-400">点击配置按钮选择或新建采集方案</p>
         )}
       </div>
-    </Modal>
+    </div>
   )
 }
 
@@ -361,7 +378,9 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   const [createPlan, setCreatePlan] = useState(emptyCreatePlan)
   const [existingPlanId, setExistingPlanId] = useState('')
   const [planConfigured, setPlanConfigured] = useState(false)
-  const [planConfigOpen, setPlanConfigOpen] = useState(false)
+  const [modalView, setModalView] = useState('task')
+  const [planDraft, setPlanDraft] = useState(null)
+  const [planErrors, setPlanErrors] = useState({})
   const [errors, setErrors] = useState({})
 
   const selectedExistingPlan = useMemo(
@@ -370,20 +389,25 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   )
 
   const activeDeviceTypeId = useMemo(() => {
+    if (taskForm.deviceInstanceId) {
+      return allInstances.find((i) => i.id === taskForm.deviceInstanceId)?.typeId ?? ''
+    }
     if (isEdit) return editBoundPlan ? resolvePlanDeviceTypeId(editBoundPlan) : ''
     if (!planConfigured) return ''
     if (planMode === 'existing') {
       return selectedExistingPlan ? resolvePlanDeviceTypeId(selectedExistingPlan) : ''
     }
     return createPlan.deviceTypeId
-  }, [isEdit, editBoundPlan, planConfigured, planMode, selectedExistingPlan, createPlan.deviceTypeId])
-
-  const filteredInstances = useMemo(
-    () => (activeDeviceTypeId ? getInStockInstancesByTypeId(activeDeviceTypeId) : []),
-    [activeDeviceTypeId],
-  )
-
-  const deviceSelectDisabled = !activeDeviceTypeId
+  }, [
+    taskForm.deviceInstanceId,
+    allInstances,
+    isEdit,
+    editBoundPlan,
+    planConfigured,
+    planMode,
+    selectedExistingPlan,
+    createPlan.deviceTypeId,
+  ])
 
   const activeDeviceTypeName = useMemo(
     () => deviceTypes.find((t) => t.id === activeDeviceTypeId)?.name ?? '',
@@ -415,13 +439,16 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     deviceTypes,
   ])
 
-  const showPlanReconfigure = !isEdit && !initialPlan
+  const showPlanConfigAction = !isEdit
+  const isPlanView = modalView === 'plan'
 
   useEffect(() => {
     if (!open) return
     if (isEdit && editTask) {
       setTaskForm(taskFormFromTask(editTask, allInstances))
-      setPlanConfigOpen(false)
+      setModalView('task')
+      setPlanDraft(null)
+      setPlanErrors({})
       setErrors({})
       return
     }
@@ -430,15 +457,83 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     setCreatePlan(emptyCreatePlan())
     setExistingPlanId(initialPlan?.id ?? '')
     setPlanConfigured(!!initialPlan)
-    setPlanConfigOpen(false)
+    setModalView('task')
+    setPlanDraft(null)
+    setPlanErrors({})
     setErrors({})
   }, [open, isEdit, editTask, initialPlan?.id, allInstances])
 
-  useEffect(() => {
-    if (!activeDeviceTypeId || !taskForm.deviceInstanceId) return
-    const ok = filteredInstances.some((i) => i.id === taskForm.deviceInstanceId)
-    if (!ok) setTaskForm((f) => ({ ...f, deviceInstanceId: '' }))
-  }, [activeDeviceTypeId, filteredInstances, taskForm.deviceInstanceId])
+  const openPlanConfig = () => {
+    setPlanDraft({
+      planMode,
+      existingPlanId,
+      createPlan: cloneCreatePlan(createPlan),
+    })
+    setPlanErrors({})
+    setModalView('plan')
+  }
+
+  const handlePlanBack = () => {
+    setModalView('task')
+    setPlanDraft(null)
+    setPlanErrors({})
+  }
+
+  const patchPlanDraft = (patch) => {
+    setPlanDraft((draft) => {
+      if (!draft) return draft
+      const next = { ...draft, ...patch }
+      if (patch.createPlan) {
+        next.createPlan = patch.createPlan
+      }
+      return next
+    })
+    setPlanErrors((e) => {
+      const next = { ...e }
+      Object.keys(patch).forEach((k) => {
+        if (k === 'createPlan' && patch.createPlan) {
+          Object.keys(patch.createPlan).forEach((pk) => { delete next[`plan_${pk}`] })
+          if ('sceneId' in patch.createPlan || 'subSceneId' in patch.createPlan || 'tagId' in patch.createPlan) {
+            delete next.scene
+          }
+        } else {
+          delete next[k]
+          delete next.existingPlanId
+        }
+      })
+      return next
+    })
+  }
+
+  const handlePlanConfirm = () => {
+    if (!planDraft) return
+    const nextErrs = {}
+    if (planDraft.planMode === 'create') {
+      Object.assign(nextErrs, validatePlanForm(planDraft.createPlan))
+    } else if (!planDraft.existingPlanId) {
+      nextErrs.existingPlanId = true
+    }
+    if (Object.keys(nextErrs).length) {
+      setPlanErrors(nextErrs)
+      return
+    }
+    setPlanMode(planDraft.planMode)
+    setExistingPlanId(planDraft.existingPlanId)
+    setCreatePlan(
+      planDraft.planMode === 'create'
+        ? cloneCreatePlan(planDraft.createPlan)
+        : emptyCreatePlan(),
+    )
+    setPlanConfigured(true)
+    setModalView('task')
+    setPlanDraft(null)
+    setPlanErrors({})
+    setErrors((e) => {
+      const next = { ...e }
+      delete next.plan
+      return next
+    })
+  }
 
   const setTask = (patch) => {
     setTaskForm((f) => ({ ...f, ...patch }))
@@ -447,28 +542,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       Object.keys(patch).forEach((k) => { delete next[k] })
       return next
     })
-  }
-
-  const handlePlanConfigConfirm = ({ planMode: nextMode, existingPlanId: nextExistingId, createPlan: nextCreatePlan }) => {
-    const prevTypeId = activeDeviceTypeId
-    setPlanMode(nextMode)
-    setExistingPlanId(nextExistingId)
-    setCreatePlan(nextCreatePlan)
-    setPlanConfigured(true)
-    setPlanConfigOpen(false)
-    setErrors((e) => {
-      const next = { ...e }
-      delete next.plan
-      return next
-    })
-
-    const nextTypeId = nextMode === 'existing'
-      ? resolvePlanDeviceTypeId(projectPlans.find((p) => p.id === nextExistingId))
-      : nextCreatePlan.deviceTypeId
-
-    if (prevTypeId && nextTypeId && prevTypeId !== nextTypeId) {
-      setTaskForm((f) => ({ ...f, deviceInstanceId: '' }))
-    }
   }
 
   const buildPlanFromCreate = () => ({
@@ -484,16 +557,18 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     if (!taskForm.name.trim()) errs.name = true
     if (!taskForm.purpose) errs.purpose = true
     if (!taskForm.target || isNaN(+taskForm.target) || +taskForm.target < 1) errs.target = true
-    if (!taskForm.deviceInstanceId) errs.deviceInstanceId = true
+
+    const instance = taskForm.deviceInstanceId
+      ? allInstances.find((i) => i.id === taskForm.deviceInstanceId)
+      : null
 
     if (isEdit) {
       if (Object.keys(errs).length) { setErrors(errs); return }
-      const instance = allInstances.find((i) => i.id === taskForm.deviceInstanceId)
       onClose({
         name: taskForm.name.trim(),
         purpose: taskForm.purpose,
         collectTotal: +taskForm.target,
-        deviceInstanceId: taskForm.deviceInstanceId,
+        deviceInstanceId: taskForm.deviceInstanceId || '',
         device: instance?.code ?? '—',
         layoutId: taskForm.layoutId || null,
       })
@@ -522,7 +597,10 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       boundPlan = planSnapshot
     }
 
-    const instance = allInstances.find((i) => i.id === taskForm.deviceInstanceId)
+    const instanceTypeName = instance
+      ? deviceTypes.find((t) => t.id === instance.typeId)?.name ?? '—'
+      : ''
+
     const now = nowDatetime()
     const sceneLabel = boundPlan?.sceneLabel
       ?? formatSceneLabel(boundPlan?.scenePath?.sceneId, boundPlan?.scenePath?.subSceneId, boundPlan?.scenePath?.tagId)
@@ -534,9 +612,9 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       name: taskForm.name.trim(),
       purpose: taskForm.purpose,
       device: instance?.code ?? '—',
-      deviceInstanceId: taskForm.deviceInstanceId,
-      deviceTypeId: activeDeviceTypeId || resolvePlanDeviceTypeId(boundPlan),
-      deviceTypeName: activeDeviceTypeName || boundPlan?.deviceTypeName || '—',
+      deviceInstanceId: taskForm.deviceInstanceId || '',
+      deviceTypeId: instance?.typeId || activeDeviceTypeId || resolvePlanDeviceTypeId(boundPlan),
+      deviceTypeName: instanceTypeName || activeDeviceTypeName || boundPlan?.deviceTypeName || '—',
       method: boundPlan?.method ?? '',
       scene: sceneLabel,
       projectId: effectiveProjectId,
@@ -557,17 +635,55 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   }
 
   return (
-    <>
-      <Modal
-        open={open}
-        title={isEdit ? '编辑任务' : '新建采集任务'}
-        onCancel={() => onClose(null)}
-        onOk={handleOk}
-        okText={isEdit ? '保存' : '确定'}
-        width={TASK_MODAL_WIDTH}
-        fitViewport
-        panelHeight={TASK_MODAL_PANEL_HEIGHT}
-      >
+    <Modal
+      open={open}
+      title={
+        isPlanView ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="返回"
+              onClick={handlePlanBack}
+              className="-ml-2 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md font-normal text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+            >
+              <IconChevronLeft />
+            </button>
+            <span>配置采集方案</span>
+          </div>
+        ) : (
+          isEdit ? '编辑任务' : '新建采集任务'
+        )
+      }
+      onCancel={() => onClose(null)}
+      onOk={isPlanView ? handlePlanConfirm : handleOk}
+      okText={isPlanView ? '确定' : (isEdit ? '保存' : '确定')}
+      cancelText="取消"
+      footer={
+        isPlanView ? (
+          <>
+            <Button onClick={handlePlanBack}>取消</Button>
+            <Button variant="primary" onClick={handlePlanConfirm}>确定</Button>
+          </>
+        ) : undefined
+      }
+      width={TASK_MODAL_WIDTH}
+      fitViewport
+      panelHeight={TASK_MODAL_PANEL_HEIGHT}
+    >
+      {isPlanView && planDraft ? (
+        <PlanConfigPanel
+          projectPlans={projectPlans}
+          deviceTypes={deviceTypes}
+          lockExistingPlan={!!initialPlan}
+          planMode={planDraft.planMode}
+          onPlanModeChange={(mode) => patchPlanDraft({ planMode: mode })}
+          existingPlanId={planDraft.existingPlanId}
+          onExistingPlanIdChange={(id) => patchPlanDraft({ existingPlanId: id })}
+          createPlan={planDraft.createPlan}
+          onCreatePlanChange={(form) => patchPlanDraft({ createPlan: form })}
+          errors={planErrors}
+        />
+      ) : (
         <div className="space-y-3">
           <Field label="任务名称" required error={errors.name}>
             <div className="flex overflow-hidden rounded-md border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
@@ -608,42 +724,22 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
           </Field>
 
           <Field label="配置采集方案" required={!isEdit} error={errors.plan}>
-            {(isEdit ? editBoundPlan : planConfigured) ? (
-              <PlanSummaryBlock
-                lines={planSummaryLines}
-                action={showPlanReconfigure ? (
-                  <Button variant="primary" size="sm" onClick={() => setPlanConfigOpen(true)}>
-                    重新配置
-                  </Button>
-                ) : null}
-              />
-            ) : (
-              <div className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2.5">
-                <span className="text-sm text-gray-400">未配置</span>
-                <Button variant="primary" size="sm" onClick={() => setPlanConfigOpen(true)}>
-                  配置
-                </Button>
-              </div>
-            )}
+            <PlanConfigSection
+              lines={isEdit ? planSummaryLines : (planConfigured ? planSummaryLines : null)}
+              onConfigure={showPlanConfigAction ? openPlanConfig : undefined}
+              showAction={showPlanConfigAction}
+            />
           </Field>
 
-          <Field label="指定采集设备" required error={errors.deviceInstanceId}>
-            <select
+          <Field label="指定采集设备">
+            <SearchableDeviceSelect
+              instances={allInstances}
               value={taskForm.deviceInstanceId}
-              disabled={deviceSelectDisabled}
-              onChange={(e) => setTask({ deviceInstanceId: e.target.value })}
-              className={`${selectCls(errors.deviceInstanceId)} disabled:cursor-not-allowed disabled:bg-gray-100`}
-            >
-              <option value="" disabled hidden>
-                {deviceSelectDisabled ? '请先配置采集方案' : '请选择设备实例'}
-              </option>
-              {filteredInstances.map((i) => (
-                <option key={i.id} value={i.id}>{formatDeviceSelectLabel(i)}</option>
-              ))}
-            </select>
+              onChange={(id) => setTask({ deviceInstanceId: id })}
+            />
           </Field>
 
-          <Field label="标注布局">
+          <Field label="布局配置">
             <select
               value={taskForm.layoutId}
               onChange={(e) => setTask({ layoutId: e.target.value })}
@@ -656,19 +752,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
             </select>
           </Field>
         </div>
-      </Modal>
-
-      <PlanConfigModal
-        open={planConfigOpen}
-        projectPlans={projectPlans}
-        deviceTypes={deviceTypes}
-        lockExistingPlan={!!initialPlan}
-        initialPlanMode={planMode}
-        initialExistingPlanId={existingPlanId}
-        initialCreatePlan={createPlan}
-        onCancel={() => setPlanConfigOpen(false)}
-        onConfirm={handlePlanConfigConfirm}
-      />
-    </>
+      )}
+    </Modal>
   )
 }

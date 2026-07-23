@@ -453,9 +453,6 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
 }
 
 function DeleteEntryConfirmModal({ entry, open, onCancel, onConfirm, title = '删除采集条目' }) {
-  const [input, setInput] = useState('')
-  const match = input === entry?.fileName
-  const reset = () => setInput('')
   if (!open || !entry) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -466,21 +463,13 @@ function DeleteEntryConfirmModal({ entry, open, onCancel, onConfirm, title = '�
             <span className="text-lg">⚠️</span>
             <h2 className="text-base font-semibold text-red-600">{title}</h2>
           </div>
-          <p className="mb-2 text-sm leading-relaxed text-gray-500">
-            此操作不可逆。如果确定要删除，请在下方输入{' '}
-            <strong className="font-mono text-xs text-gray-800">{entry.fileName}</strong>{' '}以确认。
+          <p className="text-sm leading-relaxed text-gray-500">
+            确定删除条目「<strong className="font-mono text-xs text-gray-800">{entry.fileName}</strong>」？此操作不可逆。
           </p>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="请输入文件名以确认"
-            className="mt-3 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
-            autoFocus
-          />
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button type="button" onClick={() => { reset(); onCancel() }} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">取消</button>
-          <button type="button" disabled={!match} onClick={() => { reset(); onConfirm() }} className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition ${match ? 'cursor-pointer bg-red-500 hover:bg-red-600' : 'cursor-not-allowed bg-red-200'}`}>确定删除</button>
+          <button type="button" onClick={onCancel} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">取消</button>
+          <button type="button" onClick={onConfirm} className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600">确定删除</button>
         </div>
       </div>
     </div>

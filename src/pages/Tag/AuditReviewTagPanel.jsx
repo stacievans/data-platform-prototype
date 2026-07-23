@@ -6,13 +6,18 @@ import Modal from '../../components/common/Modal'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
-import { getAuditReviewTagTree, setAuditReviewTagTree } from '../../mock/tags'
+import {
+  APPLICATION_SCOPE_OPTIONS,
+  getAuditTemplateById,
+  saveAuditTemplateTagTree,
+} from '../../mock/tags'
+import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import AuditReviewTagModal from './AuditReviewTagModal'
 import TagTableActions from './TagTableActions'
 
 const saveMoment = () => nowDateTime()
-
 const isNewId = (id) => String(id).startsWith('child-')
+const filterSelectCls = `h-8 w-40 cursor-pointer rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 ${nativeSelectChevronCls}`
 
 function deepCloneTree(tree) {
   return tree.map((g) => ({
@@ -38,9 +43,11 @@ function formToGroup(form, existingGroup, currentUser) {
 
   const groupName = form.name.trim()
   const groupDesc = form.description.trim()
+  const applicationScope = form.applicationScope ?? '全局'
   const groupMetaChanged = isNewGroup
     || existingGroup.name !== groupName
     || (existingGroup.description ?? '') !== groupDesc
+    || (existingGroup.applicationScope ?? '全局') !== applicationScope
 
   const oldChildMap = new Map()
   existingGroup?.children?.forEach((c) => oldChildMap.set(c.id, c))
@@ -66,13 +73,20 @@ function formToGroup(form, existingGroup, currentUser) {
       saveTime,
       currentUser,
     })
-    return { id: childId, name: childName, value: childValue, description: childDesc, ...meta }
+    return {
+      id: childId,
+      name: childName,
+      value: childValue,
+      description: childDesc,
+      ...meta,
+    }
   })
 
   return {
     id: groupId,
     name: groupName,
     description: groupDesc,
+    applicationScope,
     creator: isNewGroup ? currentUser : existingGroup.creator,
     createdAt: isNewGroup ? saveTime : existingGroup.createdAt,
     updatedAt: isNewGroup || groupMetaChanged ? saveTime : existingGroup.updatedAt,
@@ -80,23 +94,24 @@ function formToGroup(form, existingGroup, currentUser) {
   }
 }
 
-function matchesQuery(row, nameQ, valueQ) {
+function matchesQuery(row, nameQ) {
   if (nameQ && !row.name.includes(nameQ)) return false
-  const val = row.value ?? row.name ?? ''
-  if (valueQ && !String(val).includes(valueQ)) return false
   return true
 }
 
-function groupMatches(group, nameQ, valueQ) {
-  if (!nameQ && !valueQ) return true
-  if (matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)) return true
-  return (group.children ?? []).some((c) => matchesQuery(c, nameQ, valueQ))
+function groupMatches(group, nameQ, scopeQ) {
+  if (scopeQ && (group.applicationScope ?? '全局') !== scopeQ) return false
+  if (!nameQ) return true
+  if (matchesQuery({ name: group.name }, nameQ)) return true
+  return (group.children ?? []).some((c) => matchesQuery(c, nameQ))
 }
 
-function buildVisibleRows(groups, expanded, nameQ, valueQ) {
+function buildVisibleRows(groups, expanded, nameQ, scopeQ) {
   const rows = []
-  const filtered = nameQ || valueQ ? groups.filter((g) => groupMatches(g, nameQ, valueQ)) : groups
-  const autoExpand = Boolean(nameQ || valueQ)
+  const filtered = (nameQ || scopeQ)
+    ? groups.filter((g) => groupMatches(g, nameQ, scopeQ))
+    : groups
+  const autoExpand = Boolean(nameQ)
 
   filtered.forEach((group) => {
     rows.push({
@@ -104,8 +119,8 @@ function buildVisibleRows(groups, expanded, nameQ, valueQ) {
       level: 1,
       rowType: 'group',
       name: group.name,
-      value: '—',
       description: group.description,
+      applicationScope: group.applicationScope ?? '全局',
       creator: group.creator,
       createdAt: group.createdAt,
       updatedAt: group.updatedAt,
@@ -117,22 +132,23 @@ function buildVisibleRows(groups, expanded, nameQ, valueQ) {
     if (!groupExpanded) return
 
     ;(group.children ?? []).forEach((child) => {
-      if (nameQ || valueQ) {
-        const parentHit = matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)
-        if (!parentHit && !matchesQuery(child, nameQ, valueQ)) return
+      if (nameQ) {
+        const parentHit = matchesQuery({ name: group.name }, nameQ)
+        if (!parentHit && !matchesQuery(child, nameQ)) return
       }
       rows.push({
         id: child.id,
         level: 2,
         rowType: 'leaf',
         name: child.name,
-        value: child.value ?? child.name,
         description: child.description,
+        applicationScope: group.applicationScope ?? '全局',
         creator: child.creator,
         createdAt: child.createdAt,
         updatedAt: child.updatedAt,
         hasChildren: false,
         groupRef: group,
+        childRef: child,
       })
     })
   })
@@ -153,29 +169,30 @@ function ExpandToggle({ expanded, hasChildren, onClick }) {
   )
 }
 
-export default function AuditReviewTagPanel() {
+export default function AuditReviewTagPanel({ templateId }) {
   const creatorName = useCurrentNickname()
-  const [tree, setTree] = useState(() => deepCloneTree(getAuditReviewTagTree()))
+  const template = getAuditTemplateById(templateId)
+  const [tree, setTree] = useState(() => deepCloneTree(template?.tagTree ?? []))
   const [expanded, setExpanded] = useState(() => new Set())
   const [nameQuery, setNameQuery] = useState('')
-  const [valueQuery, setValueQuery] = useState('')
+  const [scopeQuery, setScopeQuery] = useState(APPLICATION_SCOPE_OPTIONS[0])
   const [appliedName, setAppliedName] = useState('')
-  const [appliedValue, setAppliedValue] = useState('')
+  const [appliedScope, setAppliedScope] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const syncStore = (next) => {
     setTree(next)
-    setAuditReviewTagTree(next)
+    saveAuditTemplateTagTree(templateId, next)
   }
 
   const visibleRows = useMemo(
-    () => buildVisibleRows(tree, expanded, appliedName, appliedValue),
-    [tree, expanded, appliedName, appliedValue],
+    () => buildVisibleRows(tree, expanded, appliedName, appliedScope),
+    [tree, expanded, appliedName, appliedScope],
   )
 
-  const pageResetKey = `${appliedName}|${appliedValue}|${tree.length}`
+  const pageResetKey = `${appliedName}|${appliedScope}|${tree.length}`
 
   const toggleExpand = (id) => {
     setExpanded((prev) => {
@@ -232,16 +249,16 @@ export default function AuditReviewTagPanel() {
       },
     },
     {
-      title: '标签值',
-      dataIndex: 'value',
-      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
-    },
-    {
       title: '描述',
       dataIndex: 'description',
       render: (v) => (
         <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>
       ),
+    },
+    {
+      title: '应用范围',
+      dataIndex: 'applicationScope',
+      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
     },
     { title: '创建人', dataIndex: 'creator' },
     dtCol('创建时间', 'createdAt'),
@@ -261,6 +278,10 @@ export default function AuditReviewTagPanel() {
     },
   ]
 
+  if (!template) {
+    return <div className="py-12 text-center text-gray-400">模板不存在</div>
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-end gap-3">
@@ -275,16 +296,33 @@ export default function AuditReviewTagPanel() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-500">标签值</label>
-            <input
-              value={valueQuery}
-              onChange={(e) => setValueQuery(e.target.value)}
-              placeholder="输入标签值"
-              className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-            />
+            <label className="mb-1 block text-xs text-gray-500">应用范围</label>
+            <select
+              value={scopeQuery}
+              onChange={(e) => setScopeQuery(e.target.value)}
+              className={filterSelectCls}
+            >
+              {APPLICATION_SCOPE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
-          <Button onClick={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}>重置</Button>
-          <Button variant="primary" onClick={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}>查询</Button>
+          <Button onClick={() => {
+            setNameQuery('')
+            setScopeQuery(APPLICATION_SCOPE_OPTIONS[0])
+            setAppliedName('')
+            setAppliedScope('')
+          }}
+          >
+            重置
+          </Button>
+          <Button variant="primary" onClick={() => {
+            setAppliedName(nameQuery.trim())
+            setAppliedScope(scopeQuery)
+          }}
+          >
+            查询
+          </Button>
         </div>
         <PermButton permission="tag.create" variant="primary" onClick={openCreate}>
           + 新建标签
@@ -310,7 +348,7 @@ export default function AuditReviewTagPanel() {
       >
         <p className="text-sm leading-relaxed text-gray-600">
           确定删除标签组「<strong className="text-gray-800">{deleteTarget?.name}</strong>」及其下{' '}
-          <strong className="text-red-600">{deleteTarget?.children?.length ?? 0}</strong> 个子标签？此操作不可恢复。
+          <strong className="text-red-600">{deleteTarget?.children?.length ?? 0}</strong> 个子标签？
         </p>
       </Modal>
     </div>

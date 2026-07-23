@@ -71,6 +71,12 @@ export const IconChevronDown = (props) => (
   </svg>
 )
 
+export const IconChevronLeft = (props) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" {...base} {...props}>
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+)
+
 export const IconCollapse = ({ collapsed, ...props }) => (
   <svg
     viewBox="0 0 24 24"

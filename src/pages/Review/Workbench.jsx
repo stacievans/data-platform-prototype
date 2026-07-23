@@ -250,20 +250,21 @@ export default function Workbench() {
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [panelCollapsed, setPanelCollapsed] = useState(false)
-  const [mainLayout, setMainLayout] = useState('A')
+  const [mainLayout, setMainLayout] = useState('B')
 
   const [form, setForm] = useState({
+    auditConclusion: null,
     auditQuality: null,
     auditTags: [],
     auditComment: '',
+    auditRejectReason: '',
   })
 
   const [actionSegments, setActionSegments] = useState([])
   const [regionFrames, setRegionFrames] = useState([])
-  const [draftSaved, setDraftSaved] = useState(false)
   const [savedSnapshot, setSavedSnapshot] = useState('')
-  const [rejectOpen, setRejectOpen] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
+  const [acceptRejectOpen, setAcceptRejectOpen] = useState(false)
+  const [acceptRejectReason, setAcceptRejectReason] = useState('')
 
   const taskEntries = useMemo(
     () => (entry ? getEntriesByTaskId(entry.taskId) : []),
@@ -276,9 +277,16 @@ export default function Workbench() {
     if (!e) return
     setEntry(e)
     const nextForm = {
+      auditConclusion: e.auditResult === '通过'
+        ? 'pass'
+        : e.auditResult === '不通过' || e.auditResult === '异常数据'
+          ? 'reject'
+          : null,
       auditQuality: normalizeAuditQuality(e.auditQuality),
       auditTags: e.auditTags ?? [],
       auditComment: e.auditComment ?? '',
+      auditRejectReason: e.auditRejectReason
+        ?? (e.auditResult && e.auditResult !== '通过' ? (e.auditComment ?? '') : ''),
     }
     const nextActions = e.actionSegments ?? []
     const nextRegions = e.regionFrames ?? []
@@ -286,7 +294,6 @@ export default function Workbench() {
     setActionSegments(nextActions)
     setRegionFrames(nextRegions)
     setSavedSnapshot(buildPanelSnapshot(nextForm, nextActions, nextRegions))
-    setDraftSaved(false)
     setCurrentFrame(Math.min(388, (e.totalFrames ?? 3140) - 1))
     setPlaying(false)
   }, [])
@@ -359,10 +366,11 @@ export default function Workbench() {
     [form, actionSegments, regionFrames],
   )
 
-  const saveDisabled = draftSaved && currentSnapshot === savedSnapshot
+  const isDirty = currentSnapshot !== savedSnapshot
+  const saveDisabled = !isDirty
 
   const ensureReviewSaved = () => {
-    if (!draftSaved || currentSnapshot !== savedSnapshot) {
+    if (isDirty) {
       showToast('请先保存标注')
       return false
     }
@@ -375,12 +383,12 @@ export default function Workbench() {
       auditQuality: form.auditQuality,
       auditTags: form.auditTags,
       auditComment: form.auditComment,
+      auditRejectReason: form.auditRejectReason,
       actionSegments,
       regionFrames,
     })
     setEntry(updated)
     setSavedSnapshot(currentSnapshot)
-    setDraftSaved(true)
     showToast('保存成功')
   }
 
@@ -388,6 +396,13 @@ export default function Workbench() {
     if (mode === 'play' || isLayoutPreview) return
     if (mode === 'review') {
       if (!ensureReviewSaved()) return
+      if (form.auditConclusion !== 'pass') {
+        setForm((f) => ({ ...f, auditConclusion: 'pass' }))
+      }
+      if (!form.auditQuality) {
+        showToast('请选择质量标签')
+        return
+      }
       syncFromEntry(updateEntry(entryId, {
         dataStatus: '已标注',
         auditResult: '通过',
@@ -416,17 +431,41 @@ export default function Workbench() {
     }
   }
 
-  const handleRejectOpen = () => {
-    if (mode === 'play' || isLayoutPreview) return
-    if (mode === 'review' && !ensureReviewSaved()) return
-    setRejectReason('')
-    setRejectOpen(true)
+  const handleAcceptRejectOpen = () => {
+    if (mode !== 'accept' || isLayoutPreview) return
+    setAcceptRejectReason('')
+    setAcceptRejectOpen(true)
   }
 
-  const handleRejectConfirm = () => {
-    const reason = rejectReason.trim()
+  const handleAcceptRejectConfirm = () => {
+    const reason = acceptRejectReason.trim()
     if (!reason) return
+    syncFromEntry(updateEntry(entryId, {
+      dataStatus: '验收不通过',
+      acceptResult: '不通过',
+      acceptComment: reason,
+      acceptClaimedBy: null,
+      acceptClaimedAt: null,
+      acceptTime: nowDateTime(),
+    }))
+    syncBatchesAfterEntryAccept(entryId, 'reject')
+    setAcceptRejectOpen(false)
+    setAcceptRejectReason('')
+    goNextAfterSubmit()
+  }
+
+  const handleReject = () => {
+    if (mode === 'play' || isLayoutPreview || mode === 'accept') return
     if (mode === 'review') {
+      if (!ensureReviewSaved()) return
+      if (form.auditConclusion !== 'reject') {
+        setForm((f) => ({ ...f, auditConclusion: 'reject' }))
+      }
+      const reason = form.auditRejectReason.trim()
+      if (!reason) {
+        showToast('请填写驳回理由')
+        return
+      }
       syncFromEntry(updateEntry(entryId, {
         dataStatus: '标注不通过',
         auditResult: '不通过',
@@ -440,20 +479,9 @@ export default function Workbench() {
         reviewClaimedAt: null,
         reviewTime: nowDateTime(),
       }))
-    } else if (mode === 'accept') {
-      syncFromEntry(updateEntry(entryId, {
-        dataStatus: '验收不通过',
-        acceptResult: '不通过',
-        acceptComment: reason,
-        acceptClaimedBy: null,
-        acceptClaimedAt: null,
-        acceptTime: nowDateTime(),
-      }))
-      syncBatchesAfterEntryAccept(entryId, 'reject')
+      goNextAfterSubmit()
+      return
     }
-    setRejectOpen(false)
-    setRejectReason('')
-    goNextAfterSubmit()
   }
 
   const passRejectDisabled = mode === 'play' || isLayoutPreview
@@ -501,6 +529,24 @@ export default function Workbench() {
         <div className="flex shrink-0 items-center gap-2">
           {!isLayoutPreview && (
             <>
+              {mode === 'accept' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePass}
+                    className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-blue-600 px-3.5 py-1.5 text-sm text-white transition hover:bg-blue-700"
+                  >
+                    通过
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAcceptRejectOpen}
+                    className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-white px-3.5 py-1.5 text-sm text-blue-600 transition hover:bg-blue-50"
+                  >
+                    驳回
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 disabled={currentIndex <= 0}
@@ -522,22 +568,6 @@ export default function Workbench() {
                 <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
-              <button
-                type="button"
-                disabled={passRejectDisabled}
-                onClick={handlePass}
-                className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-blue-600 px-3.5 py-1.5 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:hover:bg-gray-100"
-              >
-                通过
-              </button>
-              <button
-                type="button"
-                disabled={passRejectDisabled}
-                onClick={handleRejectOpen}
-                className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-white px-3.5 py-1.5 text-sm text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-white disabled:text-gray-300 disabled:hover:bg-white"
-              >
-                驳回
               </button>
             </>
           )}
@@ -610,6 +640,9 @@ export default function Workbench() {
               onSave={handleSaveDraft}
               saveDisabled={saveDisabled}
               showSave={mode === 'review' && !isLayoutPreview}
+              onPass={mode === 'review' ? handlePass : undefined}
+              onReject={mode === 'review' ? handleReject : undefined}
+              passRejectDisabled={passRejectDisabled}
             />
           </div>
         )}
@@ -618,29 +651,29 @@ export default function Workbench() {
       {ToastNode}
 
       <Modal
-        open={rejectOpen}
-        title="驳回"
+        open={acceptRejectOpen}
+        title="驳回理由"
         onCancel={() => {
-          setRejectOpen(false)
-          setRejectReason('')
+          setAcceptRejectOpen(false)
+          setAcceptRejectReason('')
         }}
         footer={(
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"
               onClick={() => {
-                setRejectOpen(false)
-                setRejectReason('')
+                setAcceptRejectOpen(false)
+                setAcceptRejectReason('')
               }}
             >
               取消
             </Button>
             <Button
               variant="primary"
-              disabled={!rejectReason.trim()}
-              onClick={handleRejectConfirm}
+              disabled={!acceptRejectReason.trim()}
+              onClick={handleAcceptRejectConfirm}
             >
-              确定
+              确认
             </Button>
           </div>
         )}
@@ -653,8 +686,8 @@ export default function Workbench() {
           </label>
           <textarea
             rows={4}
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
+            value={acceptRejectReason}
+            onChange={(e) => setAcceptRejectReason(e.target.value)}
             placeholder="请输入驳回理由"
             className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />

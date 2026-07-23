@@ -16,6 +16,7 @@ const routes = [
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
   { match: /^\/dataset\/self\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情']] },
   { match: /^\/dataset\/self/, crumbs: [['数据集管理'], ['真机数据集']] },
+  { match: /^\/tag\/audit-template\/.+/, crumbs: [['标签管理', '/tag?tab=audit'], ['模板详情']] },
   { match: /^\/tag/, crumbs: [['标签管理']] },
   { match: /^\/device/, crumbs: [['设备管理']] },
   { match: /^\/system\/user/, crumbs: [['系统管理'], ['用户管理']] },

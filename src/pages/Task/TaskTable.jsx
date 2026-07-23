@@ -11,25 +11,28 @@ import { PermButton, PermAction } from '../../components/common/PermissionAction
 import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
-import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import CreateTaskModal from './CreateTaskModal'
 
 const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
 
-function PeopleCell({ value, multi = true }) {
+function PeopleCell({ value }) {
   const people = toPeopleArray(value).filter(Boolean)
   if (!people.length) return <span className="text-red-500">未分配</span>
-  if (!multi) return <span className="text-gray-700">{people[0]}</span>
-  const extra = people.length - 1
-  return (
-    <span title={people.join('、')} className="inline-flex h-6 items-center gap-1.5 align-middle text-gray-700">
+  if (people.length === 1) {
+    return <span className="text-gray-700">{people[0]}</span>
+  }
+  const content = (
+    <span className="inline-flex h-6 cursor-default items-center gap-1.5 align-middle text-gray-700">
       <span className="truncate">{people[0]}</span>
-      {extra > 0 && (
-        <span className="inline-flex h-5 items-center rounded-full bg-blue-50 px-1.5 text-[11px] leading-none text-blue-600">
-          +{extra}
-        </span>
-      )}
+      <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-blue-50 px-1.5 text-[11px] leading-none text-blue-600">
+        +{people.length - 1}
+      </span>
     </span>
+  )
+  return (
+    <TooltipWrap label={people.join('、')}>
+      {content}
+    </TooltipWrap>
   )
 }
 
@@ -321,11 +324,6 @@ export default function TaskTable({
     }] : []),
     { title: '任务用途', dataIndex: 'purpose', render: (v) => v ?? '—' },
     { title: '设备类型', dataIndex: 'robotBody', render: (v) => v ?? '—' },
-    {
-      title: '采集设备',
-      dataIndex: 'device',
-      render: (v, row) => <CollectDeviceCell code={v} sn={row.deviceSn} />,
-    },
     { title: '采集方案ID', dataIndex: 'planId' },
     { title: '所属场景', dataIndex: 'scene', render: (v) => v ?? '—' },
     { title: '采集方式', dataIndex: 'method' },
@@ -354,8 +352,8 @@ export default function TaskTable({
       dataIndex: 'acceptDone',
       render: (v, row) => progressCell(row.acceptDone ?? 0, row.collectTotal, 'bg-emerald-500'),
     },
-    { title: '采集员', dataIndex: 'collector', render: (v) => <PeopleCell value={v} multi={false} /> },
-    { title: '标注员', dataIndex: 'reviewer', render: (v) => <PeopleCell value={v} multi={false} /> },
+    { title: '采集员', dataIndex: 'collectors', render: (v) => <PeopleCell value={v} /> },
+    { title: '标注员', dataIndex: 'annotators', render: (v) => <PeopleCell value={v} /> },
     { title: '创建人', dataIndex: 'creator', render: (v) => v ?? '—' },
     dtCol('创建时间', 'createdAt'),
     dtCol('更新时间', 'updatedAt', { fallbackKey: 'createdAt' }),

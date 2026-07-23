@@ -2,11 +2,14 @@
 
 const ts = (d) => `${d} 00:00:00`
 
+export const APPLICATION_SCOPE_OPTIONS = ['全局', '通过', '驳回']
+
 export const auditReviewTagTreeSeed = [
   {
     id: 'AT-G-001',
     name: '质量评分',
     description: '对采集轨迹整体质量的分档评价',
+    applicationScope: '通过',
     creator: '孙丽',
     createdAt: ts('2026-04-01'),
     updatedAt: ts('2026-04-01'),
@@ -20,6 +23,7 @@ export const auditReviewTagTreeSeed = [
     id: 'AT-G-002',
     name: '问题标签',
     description: '标注过程中发现的具体问题类型',
+    applicationScope: '驳回',
     creator: '孙丽',
     createdAt: ts('2026-04-01'),
     updatedAt: ts('2026-04-01'),
@@ -32,6 +36,19 @@ export const auditReviewTagTreeSeed = [
       { id: 'AT-106', name: '夹爪延迟过多', value: '夹爪延迟过多', description: '开合指令相对轨迹明显滞后', creator: '钱琳', createdAt: ts('2026-04-06'), updatedAt: ts('2026-04-06') },
       { id: 'AT-107', name: '夹爪值异常波动', value: '夹爪值异常波动', description: '夹爪开合度信号异常跳变', creator: '孙丽', createdAt: ts('2026-04-07'), updatedAt: ts('2026-04-07') },
       { id: 'AT-108', name: '帧率检查不合格', value: '帧率检查不合格', description: '多模态帧率不一致或低于阈值', creator: '钱琳', createdAt: ts('2026-04-08'), updatedAt: ts('2026-04-08') },
+    ],
+  },
+  {
+    id: 'AT-G-003',
+    name: '通用备注',
+    description: '适用于任意标注结论的补充说明标签',
+    applicationScope: '全局',
+    creator: '钱琳',
+    createdAt: ts('2026-04-10'),
+    updatedAt: ts('2026-04-10'),
+    children: [
+      { id: 'AT-201', name: '需复核', value: '需复核', description: '建议二次人工复核', creator: '钱琳', createdAt: ts('2026-04-10'), updatedAt: ts('2026-04-10') },
+      { id: 'AT-202', name: '边界模糊', value: '边界模糊', description: '分段边界存在争议', creator: '钱琳', createdAt: ts('2026-04-11'), updatedAt: ts('2026-04-11') },
     ],
   },
 ]
@@ -177,6 +194,127 @@ let auditReviewTagTreeStore = cloneDeep(auditReviewTagTreeSeed)
 let bodyTypeTagStore = cloneDeep(bodyTypeSeed)
 let endTypeTagStore = cloneDeep(endTypeSeed)
 
+/** 已被数据条目勾选的审核模板子标签 ID（mock） */
+const usedAuditTagChildIds = new Set(['AT-001', 'AT-003', 'AT-102', 'AT-104'])
+
+const trialTemplateTagTree = [
+  {
+    id: 'AT-G-T01',
+    name: '试采集质量',
+    description: '试采集任务质量快速评估',
+    applicationScope: '通过',
+    creator: '何敏',
+    createdAt: ts('2026-05-10'),
+    updatedAt: ts('2026-05-10'),
+    children: [
+      { id: 'AT-T01', name: '可用', value: '可用', description: '可用于内部参考', creator: '何敏', createdAt: ts('2026-05-10'), updatedAt: ts('2026-05-10') },
+      { id: 'AT-T02', name: '不可用', value: '不可用', description: '不建议继续使用', creator: '何敏', createdAt: ts('2026-05-10'), updatedAt: ts('2026-05-10') },
+    ],
+  },
+  {
+    id: 'AT-G-T02',
+    name: '试采集问题',
+    description: '试采集驳回常用问题',
+    applicationScope: '驳回',
+    creator: '何敏',
+    createdAt: ts('2026-05-10'),
+    updatedAt: ts('2026-05-10'),
+    children: [
+      { id: 'AT-T03', name: '轨迹不完整', value: '轨迹不完整', description: '试采阶段轨迹缺失', creator: '何敏', createdAt: ts('2026-05-10'), updatedAt: ts('2026-05-10') },
+    ],
+  },
+]
+
+export const auditTemplateSeed = [
+  {
+    id: 'ATM-001',
+    name: '标准标注模板',
+    description: '适用于常规采集任务的标注与验收标签配置',
+    taskCount: 3,
+    creator: '孙丽',
+    createdAt: ts('2026-04-01'),
+    updatedAt: ts('2026-04-15'),
+    deleted: false,
+    tagTree: cloneDeep(auditReviewTagTreeSeed),
+  },
+  {
+    id: 'ATM-002',
+    name: '试采集专用模板',
+    description: '试采集任务使用的精简标签模板',
+    taskCount: 0,
+    creator: '何敏',
+    createdAt: ts('2026-05-10'),
+    updatedAt: ts('2026-05-10'),
+    deleted: false,
+    tagTree: cloneDeep(trialTemplateTagTree),
+  },
+  {
+    id: 'ATM-003',
+    name: '工业场景模板',
+    description: '工业分拣与装配场景标注标签',
+    taskCount: 5,
+    creator: '钱琳',
+    createdAt: ts('2026-04-20'),
+    updatedAt: ts('2026-06-01'),
+    deleted: false,
+    tagTree: cloneDeep(auditReviewTagTreeSeed.filter((g) => g.id !== 'AT-G-003')),
+  },
+]
+
+let auditTemplateStore = cloneDeep(auditTemplateSeed)
+const auditTemplateRuntimePatches = {}
+
+export function isAuditTagChildInUse(childId) {
+  return usedAuditTagChildIds.has(childId)
+}
+
+export function getAuditTemplates({ includeDeleted = false } = {}) {
+  return auditTemplateStore
+    .map((t) => ({ ...t, ...(auditTemplateRuntimePatches[t.id] ?? {}) }))
+    .filter((t) => includeDeleted || !t.deleted)
+}
+
+export function getAuditTemplateById(id) {
+  const base = auditTemplateStore.find((t) => t.id === id)
+  if (!base) return null
+  return { ...base, ...(auditTemplateRuntimePatches[id] ?? {}) }
+}
+
+export function isAuditTemplateNameTaken(name, excludeId = null) {
+  const trimmed = name.trim()
+  return getAuditTemplates().some((t) => t.id !== excludeId && t.name === trimmed)
+}
+
+export function upsertAuditTemplate(template) {
+  const idx = auditTemplateStore.findIndex((t) => t.id === template.id)
+  if (idx >= 0) auditTemplateStore[idx] = { ...auditTemplateStore[idx], ...template }
+  else auditTemplateStore.unshift(template)
+  auditTemplateRuntimePatches[template.id] = {
+    ...(auditTemplateRuntimePatches[template.id] ?? {}),
+    ...template,
+  }
+  return getAuditTemplateById(template.id)
+}
+
+export function softDeleteAuditTemplate(id) {
+  return upsertAuditTemplate({ ...getAuditTemplateById(id), deleted: true })
+}
+
+export function saveAuditTemplateTagTree(templateId, tagTree) {
+  const tpl = getAuditTemplateById(templateId)
+  if (!tpl) return null
+  const ts = new Date().toISOString().slice(0, 19).replace('T', ' ')
+  return upsertAuditTemplate({ ...tpl, tagTree, updatedAt: ts })
+}
+
+export function nextAuditTemplateId() {
+  const nums = getAuditTemplates({ includeDeleted: true })
+    .map((t) => parseInt(String(t.id).replace(/\D/g, ''), 10))
+    .filter((n) => !Number.isNaN(n))
+  const next = (nums.length ? Math.max(...nums) : 0) + 1
+  return `ATM-${String(next).padStart(3, '0')}`
+}
+
 export function getBodyTypeTags() {
   return bodyTypeTagStore
 }
@@ -208,11 +346,14 @@ let collectionMethodStore = cloneDeep(collectionMethodSeed)
 let taskPurposeStore = cloneDeep(taskPurposeSeed)
 
 export function getAuditReviewTagTree() {
-  return auditReviewTagTreeStore
+  const defaultTpl = getAuditTemplateById('ATM-001')
+  return defaultTpl?.tagTree ?? auditReviewTagTreeStore
 }
 
 export function setAuditReviewTagTree(next) {
   auditReviewTagTreeStore = next
+  const tpl = getAuditTemplateById('ATM-001')
+  if (tpl) upsertAuditTemplate({ ...tpl, tagTree: next })
 }
 
 export function getSceneTypeTree() {

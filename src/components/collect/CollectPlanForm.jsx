@@ -4,7 +4,7 @@ import Badge from '../common/Badge'
 import Button from '../common/Button'
 import { IconTrash, IconChevronDown } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
-import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags } from '../../mock/tags'
+import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags, getAuditTemplates, getAuditTemplateById } from '../../mock/tags'
 import { resolvePlanDeviceTypeId } from '../../mock/plans'
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
@@ -19,6 +19,7 @@ export const emptyCreatePlan = () => ({
   initialScene: '',
   steps: [{ ...EMPTY_STEP }],
   totalDeviation: '',
+  annotTemplateId: '',
   annotGenConfig: true,
   annotPreLabel: true,
 })
@@ -214,6 +215,125 @@ export function SceneCascadeFields({ form, onChange, readonly = false, errors = 
         </select>
       </div>
     </Field>
+  )
+}
+
+function SearchableAuditTemplateSelect({ templates, value, onChange, error }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const selected = templates.find((t) => t.id === value)
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return templates
+    return templates.filter((t) => t.name.toLowerCase().includes(q))
+  }, [templates, query])
+
+  useEffect(() => {
+    if (selected) setQuery(selected.name)
+    else if (!value) setQuery('')
+  }, [selected, value])
+
+  return (
+    <div className="relative">
+      <SelectChevronWrap>
+        <input
+          value={query}
+          placeholder="请选择标注标签模板"
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange('') }}
+          onFocus={() => setOpen(true)}
+          className={`${inputCls(error)} pr-8`}
+        />
+      </SelectChevronWrap>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 top-full z-[56] mt-1 max-h-52 overflow-y-auto rounded-md border border-gray-100 bg-white py-1 shadow-lg">
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-sm text-gray-400">无匹配模板</p>
+            )}
+            {filtered.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  onChange(t.id)
+                  setQuery(t.name)
+                  setOpen(false)
+                }}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AnnotationManagementBlock({ form, errors, onChange, readonly = false }) {
+  const auditTemplates = useMemo(() => getAuditTemplates(), [])
+  const templateName = getAuditTemplateById(form.annotTemplateId)?.name ?? '—'
+
+  if (readonly) {
+    return (
+      <div className="rounded-md border border-gray-200 bg-white p-4">
+        <p className="mb-3 text-sm font-medium text-gray-700">标注管理</p>
+        <div className="space-y-3">
+          <Field label="整体标签模板">
+            <input readOnly value={templateName} className={readonlyCls} />
+          </Field>
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
+            <div className="space-y-1 text-sm text-gray-600">
+              <p>{form.annotGenConfig !== false ? '☑' : '☐'} 基于采集方案生成标注配置</p>
+              <p>{form.annotPreLabel !== false ? '☑' : '☐'} 基于采集方案预标注</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-4">
+      <p className="mb-3 text-sm font-medium text-gray-700">标注管理</p>
+      <div className="space-y-3">
+        <Field label="整体标签模板" required error={errors.plan_annotTemplateId}>
+          <SearchableAuditTemplateSelect
+            templates={auditTemplates}
+            value={form.annotTemplateId}
+            onChange={(annotTemplateId) => onChange({ annotTemplateId })}
+            error={errors.plan_annotTemplateId}
+          />
+        </Field>
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={form.annotGenConfig}
+                onChange={(e) => onChange({ annotGenConfig: e.target.checked })}
+                className="h-4 w-4 accent-blue-600"
+              />
+              基于采集方案生成标注配置
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={form.annotPreLabel}
+                onChange={(e) => onChange({ annotPreLabel: e.target.checked })}
+                className="h-4 w-4 accent-blue-600"
+              />
+              基于采集方案预标注
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -431,12 +551,15 @@ export function PlanReadonlyDetails({ plan, deviceTypes }) {
           totalDeviation={durationMeta.totalDeviation}
         />
       )}
-      <Field label="标注管理">
-        <div className="space-y-1 text-sm text-gray-600">
-          <p>{plan.annotGenConfig !== false ? '☑' : '☐'} 基于采集方案生成标注配置</p>
-          <p>{plan.annotPreLabel !== false ? '☑' : '☐'} 基于采集方案预标注</p>
-        </div>
-      </Field>
+      <AnnotationManagementBlock
+        readonly
+        form={{
+          annotTemplateId: plan.annotTemplateId ?? '',
+          annotGenConfig: plan.annotGenConfig,
+          annotPreLabel: plan.annotPreLabel,
+        }}
+        onChange={() => {}}
+      />
     </div>
   )
 }
@@ -459,6 +582,7 @@ export function validatePlanForm(form) {
   if (!form.sceneId || !form.subSceneId || !form.tagId) errs.scene = true
   if (!form.deviceTypeId) errs.plan_deviceTypeId = true
   if (!form.method) errs.plan_method = true
+  if (!form.annotTemplateId) errs.plan_annotTemplateId = true
   return errs
 }
 
@@ -484,6 +608,7 @@ export function planToForm(plan) {
     initialScene: plan.initialScene ?? '',
     steps,
     totalDeviation,
+    annotTemplateId: plan.annotTemplateId ?? '',
     annotGenConfig: plan.annotGenConfig !== false,
     annotPreLabel: plan.annotPreLabel !== false,
   }
@@ -507,6 +632,7 @@ export function buildPlanPayloadFromForm(form) {
     durationMin,
     durationMax,
     steps: normalizeStepsForSave(form.steps),
+    annotTemplateId: form.annotTemplateId,
     annotGenConfig: form.annotGenConfig,
     annotPreLabel: form.annotPreLabel,
   }
@@ -632,27 +758,7 @@ export function CollectPlanFormFields({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">标注管理</p>
-        <label className="mb-1 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={form.annotGenConfig}
-            onChange={(e) => onChange({ annotGenConfig: e.target.checked })}
-            className="h-4 w-4 accent-blue-600"
-          />
-          基于采集方案生成标注配置
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={form.annotPreLabel}
-            onChange={(e) => onChange({ annotPreLabel: e.target.checked })}
-            className="h-4 w-4 accent-blue-600"
-          />
-          基于采集方案预标注
-        </label>
-      </div>
+      <AnnotationManagementBlock form={form} errors={errors} onChange={onChange} />
     </div>
   )
 }

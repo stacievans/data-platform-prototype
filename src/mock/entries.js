@@ -7,6 +7,7 @@ import {
 } from './tasks'
 import { plans } from './plans'
 import { buildEntryQcResults, entryQcSeed } from '../utils/qcResults'
+import { PROBLEM_TAG_OPTIONS, QUALITY_OPTIONS, normalizeAuditQuality } from '../pages/Review/constants/workbenchTags'
 
 /** 采集条目数据状态（平台主流程） */
 export const DATA_STATUSES = [
@@ -77,6 +78,7 @@ function buildEntryExtras(task) {
     auditQuality: null,
     auditTags: [],
     auditComment: '',
+    auditRejectReason: '',
     auditAbnormal: false,
     acceptResult: null,
     acceptComment: '',
@@ -121,8 +123,8 @@ const DEMO_OVERRIDES = {
     dataStatus: '已验收',
     auditScore: 5,
     auditResult: '通过',
-    auditQuality: '优秀',
-    auditTags: ['动作流畅'],
+    auditQuality: '高质量',
+    auditTags: [],
     auditComment: '轨迹完整，动作语义清晰。',
     acceptResult: '通过',
     acceptComment: '同意入库。',
@@ -141,9 +143,10 @@ const DEMO_OVERRIDES = {
     ],
     auditScore: 2,
     auditResult: '不通过',
-    auditQuality: '差',
-    auditTags: ['动作不完整', '碰撞风险'],
-    auditComment: '抓取阶段轨迹抖动明显，需重采。',
+    auditQuality: '低质量',
+    auditTags: ['未按步骤执行', '剧烈碰撞'],
+    auditComment: '',
+    auditRejectReason: '抓取阶段轨迹抖动明显，需重采。',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
@@ -167,8 +170,8 @@ const DEMO_OVERRIDES = {
     dataStatus: '已标注',
     auditScore: 4,
     auditResult: '通过',
-    auditQuality: '可接受',
-    auditTags: ['动作流畅'],
+    auditQuality: '中质量',
+    auditTags: [],
     auditComment: '整体可用，部分帧可再优化。',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
@@ -187,8 +190,8 @@ const DEMO_OVERRIDES = {
     ],
     auditScore: 4,
     auditResult: '通过',
-    auditQuality: '可接受',
-    auditTags: ['动作流畅'],
+    auditQuality: '中质量',
+    auditTags: [],
     auditComment: '标注通过。',
     acceptResult: '不通过',
     acceptComment: '与任务指令不符，请复核场景初始状态。',
@@ -199,7 +202,7 @@ const DEMO_OVERRIDES = {
     dataStatus: '已验收',
     auditScore: 5,
     auditResult: '通过',
-    auditQuality: '优秀',
+    auditQuality: '高质量',
     auditComment: '质检通过。',
     acceptResult: '通过',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
@@ -211,7 +214,9 @@ const DEMO_OVERRIDES = {
     reviewTime: '2026-06-10 15:22:00',
     auditResult: '异常数据',
     auditAbnormal: true,
-    auditComment: '传感器时间戳异常，暂按不通过处理。',
+    auditTags: ['帧率检查不合格', '数据对齐检查不合格'],
+    auditComment: '',
+    auditRejectReason: '传感器时间戳异常，暂按不通过处理。',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
@@ -230,7 +235,9 @@ const DEMO_OVERRIDES = {
     ],
     auditScore: 3,
     auditResult: '通过',
-    auditQuality: '可接受',
+    auditQuality: '中质量',
+    auditTags: [],
+    auditComment: '标注完成，分段清晰。',
     acceptResult: '不通过',
     acceptComment: '需补充末端位姿标注。',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
@@ -263,9 +270,9 @@ const DEMO_OVERRIDES = {
     ],
     auditScore: 4,
     auditResult: '通过',
-    auditQuality: '可接受',
-    auditTags: ['动作流畅'],
-    auditComment: '标注进行中，等待验收领取。',
+    auditQuality: '中质量',
+    auditTags: [],
+    auditComment: '标注通过，等待验收。',
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
@@ -308,6 +315,55 @@ const ACCEPT_REJECT_REASONS = [
   '验收抽检发现动作标签与轨迹不匹配。',
 ]
 
+const ANNOTATION_PASS_COMMENTS = [
+  '轨迹完整，动作语义清晰。',
+  '整体可用，部分帧可再优化。',
+  '标注通过，分段边界准确。',
+  '动作连贯，符合任务要求。',
+  '关键步骤均已覆盖，质量良好。',
+]
+
+function entryHash(id) {
+  let h = 0
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
+
+function pickProblemTags(id, count = 2) {
+  const start = entryHash(id) % PROBLEM_TAG_OPTIONS.length
+  const tags = []
+  for (let i = 0; i < count; i += 1) {
+    tags.push(PROBLEM_TAG_OPTIONS[(start + i) % PROBLEM_TAG_OPTIONS.length])
+  }
+  return [...new Set(tags)]
+}
+
+function enrichAnnotationData(entry) {
+  const annotated = ['已标注', '验收不通过', '已验收'].includes(entry.dataStatus)
+  if (!annotated) return
+
+  if (!entry.actionSegments?.length) entry.actionSegments = DEFAULT_ACTION_SEGMENTS
+  if (!entry.regionFrames?.length) entry.regionFrames = DEFAULT_REGION_FRAMES
+
+  if (!entry.auditResult) entry.auditResult = '通过'
+
+  if (entry.auditResult === '通过') {
+    entry.auditQuality = normalizeAuditQuality(entry.auditQuality)
+      ?? QUALITY_OPTIONS[entryHash(entry.id) % QUALITY_OPTIONS.length]
+    if (!entry.auditComment?.trim()) {
+      entry.auditComment = ANNOTATION_PASS_COMMENTS[entryHash(entry.id) % ANNOTATION_PASS_COMMENTS.length]
+    }
+  } else {
+    if (!entry.auditTags?.length) entry.auditTags = pickProblemTags(entry.id)
+    if (!entry.auditRejectReason?.trim()) {
+      entry.auditRejectReason = entry.auditComment?.trim() || pickRejectReason(entry.id, REVIEW_REJECT_REASONS)
+    }
+    if (entry.auditResult !== '通过' && entry.auditComment?.trim() === entry.auditRejectReason?.trim()) {
+      entry.auditComment = ''
+    }
+  }
+}
+
 function pickRejectReason(id, list) {
   let h = 0
   for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) | 0
@@ -317,12 +373,16 @@ function pickRejectReason(id, list) {
 for (const entry of entries) {
   if (entry.dataStatus === '标注不通过') {
     if (!entry.auditResult) entry.auditResult = entry.auditAbnormal ? '异常数据' : '不通过'
-    if (!entry.auditComment?.trim()) entry.auditComment = pickRejectReason(entry.id, REVIEW_REJECT_REASONS)
+    if (!entry.auditRejectReason?.trim()) {
+      entry.auditRejectReason = entry.auditComment?.trim() || pickRejectReason(entry.id, REVIEW_REJECT_REASONS)
+    }
+    if (!entry.auditTags?.length) entry.auditTags = pickProblemTags(entry.id)
   }
   if (entry.dataStatus === '验收不通过') {
     if (!entry.acceptResult) entry.acceptResult = '不通过'
     if (!entry.acceptComment?.trim()) entry.acceptComment = pickRejectReason(entry.id, ACCEPT_REJECT_REASONS)
   }
+  enrichAnnotationData(entry)
 }
 
 /** 会话内条目补丁（标注/验收提交等） */
