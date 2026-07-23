@@ -357,7 +357,7 @@ export default function TaskList({
                 <input
                   value={qDeviceCode}
                   onChange={(e) => setQDeviceCode(e.target.value)}
-                  placeholder="请输入编号"
+                  placeholder="请输入设备名称"
                   className={INPUT_CLS}
                 />
               </div>

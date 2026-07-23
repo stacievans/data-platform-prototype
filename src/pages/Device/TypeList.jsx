@@ -1,16 +1,14 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Table from '../../components/common/Table'
 import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
-import { useCurrentNickname, useAuth } from '../../context/AuthContext'
+import { useCurrentNickname } from '../../context/AuthContext'
 import { IconPlus, IconUpload, IconClose } from '../../components/common/Icons'
 import {
   getAllDeviceTypes,
   isDeviceTypeNameTaken,
   setDeviceTypes,
-  countInstancesByTypeId,
 } from '../../mock/devices'
 import {
   getBodyTypeTagNames,
@@ -153,7 +151,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         leftEnd: editing.leftEnd,
         rightEnd: editing.rightEnd,
         description: editing.description ?? '',
-        urdfFileName: '',
+        urdfFileName: editing.hasUrdf ? '当前 URDF 文件' : '',
       })
     } else {
       setForm(emptyTypeForm())
@@ -190,6 +188,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         ...editing,
         name: trimmedName,
         description: form.description.trim(),
+        hasUrdf: Boolean(form.urdfFileName),
         updatedAt: ts,
       })
     } else {
@@ -271,125 +270,22 @@ function TypeModal({ open, editing, onCancel, onOk }) {
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </Field>
-        {!isEdit && (
-          <Field label="URDF">
-            <UrdfFileUpload
-              fileName={form.urdfFileName}
-              error={urdfError}
-              onSelect={(name, err) => {
-                setForm((f) => ({ ...f, urdfFileName: name }))
-                setUrdfError(err)
-              }}
-              onClear={() => {
-                setForm((f) => ({ ...f, urdfFileName: '' }))
-                setUrdfError('')
-              }}
-            />
-          </Field>
-        )}
+        <Field label="URDF">
+          <UrdfFileUpload
+            fileName={form.urdfFileName}
+            error={urdfError}
+            onSelect={(name, err) => {
+              setForm((f) => ({ ...f, urdfFileName: name }))
+              setUrdfError(err)
+            }}
+            onClear={() => {
+              setForm((f) => ({ ...f, urdfFileName: '' }))
+              setUrdfError('')
+            }}
+          />
+        </Field>
       </div>
     </Modal>
-  )
-}
-
-function DeleteTypeAction({ row, onDelete }) {
-  const { can } = useAuth()
-  const allowed = can('device.delete')
-  const count = row.instanceCount ?? 0
-  const blocked = count > 0
-  const tip = `该类型下仍有 ${count} 个实例，请先变更实例类型或删除实例`
-  const anchorRef = useRef(null)
-  const tipRef = useRef(null)
-  const [tipVisible, setTipVisible] = useState(false)
-  const [tipStyle, setTipStyle] = useState({ left: 0, top: 0, opacity: 0 })
-
-  const repositionTip = () => {
-    const anchor = anchorRef.current
-    const tipEl = tipRef.current
-    if (!anchor || !tipEl) return
-
-    const rect = anchor.getBoundingClientRect()
-    const tipW = tipEl.offsetWidth
-    const tipH = tipEl.offsetHeight
-    const gap = 6
-    const pad = 8
-    const vw = window.innerWidth
-
-    let left = rect.right - tipW
-    if (left + tipW > vw - pad) left = vw - pad - tipW
-    if (left < pad) left = pad
-
-    let top = rect.top - gap - tipH
-    if (top < pad) top = rect.bottom + gap
-
-    setTipStyle({ left, top, opacity: 1 })
-  }
-
-  useLayoutEffect(() => {
-    if (!tipVisible) return
-    repositionTip()
-    const onMove = () => repositionTip()
-    window.addEventListener('scroll', onMove, true)
-    window.addEventListener('resize', onMove)
-    return () => {
-      window.removeEventListener('scroll', onMove, true)
-      window.removeEventListener('resize', onMove)
-    }
-  }, [tipVisible, tip])
-
-  const showTip = () => {
-    setTipStyle({ left: 0, top: 0, opacity: 0 })
-    setTipVisible(true)
-  }
-
-  if (!allowed) {
-    return (
-      <PermAction permission="device.delete" mode="disable" className="text-sm text-red-500">
-        删除
-      </PermAction>
-    )
-  }
-
-  if (blocked) {
-    return (
-      <>
-        <span
-          ref={anchorRef}
-          className="inline-flex"
-          onMouseEnter={showTip}
-          onMouseLeave={() => setTipVisible(false)}
-        >
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed text-sm text-red-500 opacity-40"
-          >
-            删除
-          </button>
-        </span>
-        {tipVisible && createPortal(
-          <div
-            ref={tipRef}
-            role="tooltip"
-            className="pointer-events-none fixed z-[9999] w-max max-w-[calc(100vw-16px)] whitespace-normal rounded bg-gray-800 px-2.5 py-1.5 text-left text-xs leading-relaxed text-white shadow-lg"
-            style={{ left: tipStyle.left, top: tipStyle.top, opacity: tipStyle.opacity }}
-          >
-            {tip}
-          </div>,
-          document.body,
-        )}
-      </>
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      className="cursor-pointer text-sm text-red-500 hover:text-red-400"
-      onClick={() => onDelete(row)}
-    >
-      删除
-    </button>
   )
 }
 
@@ -491,7 +387,6 @@ export default function TypeList() {
   const confirmDelete = () => {
     if (!deleteTarget) return
     const typeId = deleteTarget.id
-    if (countInstancesByTypeId(typeId) > 0) return
     setDeviceTypes((prev) => prev.filter((t) => t.id !== typeId))
     setDeleteTarget(null)
     refresh()
@@ -517,7 +412,6 @@ export default function TypeList() {
         )
       ),
     },
-    { title: '实例数量', dataIndex: 'instanceCount' },
     {
       title: '描述',
       dataIndex: 'description',
@@ -537,7 +431,13 @@ export default function TypeList() {
           >
             编辑
           </PermAction>
-          <DeleteTypeAction row={row} onDelete={setDeleteTarget} />
+          <PermAction
+            permission="device.delete"
+            className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+            onClick={() => setDeleteTarget(row)}
+          >
+            删除
+          </PermAction>
         </div>
       ),
     },
@@ -549,6 +449,15 @@ export default function TypeList() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-0 flex-1 items-end gap-3">
             <div className="min-w-0 flex-1 basis-0">
+              <label className={LBL}>类型名称</label>
+              <input
+                value={nameQuery}
+                onChange={(e) => setNameQuery(e.target.value)}
+                placeholder="输入类型名称搜索"
+                className={FILTER_CLS}
+              />
+            </div>
+            <div className="min-w-0 flex-1 basis-0">
               <label className={LBL}>本体</label>
               <select
                 value={bodyFilter}
@@ -558,15 +467,6 @@ export default function TypeList() {
                 <option value="全部">全部</option>
                 {bodyOptions.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
-            </div>
-            <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>类型名称</label>
-              <input
-                value={nameQuery}
-                onChange={(e) => setNameQuery(e.target.value)}
-                placeholder="输入类型名称搜索"
-                className={FILTER_CLS}
-              />
             </div>
             <div className="min-w-0 flex-1 basis-0">
               <label className={LBL}>左末端类型</label>

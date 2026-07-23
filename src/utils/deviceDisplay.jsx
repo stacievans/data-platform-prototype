@@ -1,4 +1,4 @@
-/** 采集设备展示：列表显示实例编号，hover 展示完整 SN */
+/** 采集设备展示：列表显示设备名称，hover 展示完整 SN */
 
 export function snLast6(sn) {
   if (!sn || typeof sn !== 'string') return '—'
