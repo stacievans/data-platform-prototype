@@ -39,10 +39,10 @@ export { devices } from './devices'
 
 // 系统管理 - 用户（orgId 见 organizations.js；U-000 超级管理员无组织，其余归入默认组织 ORG-002）
 export const users = [
-  { id: 0, uid: 'U-000', username: 'superadmin', nickname: '系统', phone: '138****0000', role: '超级管理员', status: '启用', orgId: null, email: 'system@ai2robotics.com', remark: '平台超级管理员账号', createdAt: '2026-03-01 00:00:00', lastLoginAt: '2026-06-18 09:00:00' },
-  { id: 1, uid: 'U-001', username: 'zhanghua',  nickname: '张华', phone: '138****2201', role: '组织管理员', status: '启用', orgId: 'ORG-002', email: 'zhanghua@ai2robotics.com', remark: '智平方 组织管理员', createdAt: '2026-03-01 09:00:00', lastLoginAt: '2026-06-18 09:15:00' },
-  { id: 2, uid: 'U-002', username: 'liming',   nickname: '李明',   phone: '139****8512', role: '平台运营', status: '启用', orgId: 'ORG-002', email: 'ming.li@ai2robotics.com', remark: '负责采集项目运营', createdAt: '2026-03-05 10:30:00', lastLoginAt: '2026-06-18 07:40:00' },
-  { id: 3, uid: 'U-003', username: 'wangfang', nickname: '王芳',   phone: '136****3308', role: '平台运营', status: '启用', orgId: 'ORG-002', email: 'wangfang@ai2robotics.com', remark: '负责标签与方案管理', createdAt: '2026-03-08 14:20:00', lastLoginAt: '2026-06-17 16:22:00' },
+  { id: 0, uid: 'U-000', username: 'superadmin', nickname: '系统', phone: '138****0000', role: '超级管理员', status: '启用', orgId: null, loginMethod: '账号密码', email: 'system@ai2robotics.com', remark: '平台超级管理员账号', createdAt: '2026-03-01 00:00:00', lastLoginAt: '2026-06-18 09:00:00' },
+  { id: 1, uid: 'U-001', username: 'zhanghua',  nickname: '张华', phone: '138****2201', role: '组织管理员', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'zhanghua@ai2robotics.com', remark: '智平方 组织管理员', createdAt: '2026-03-01 09:00:00', lastLoginAt: '2026-06-18 09:15:00' },
+  { id: 2, uid: 'U-002', username: 'liming',   nickname: '李明',   phone: '139****8512', role: '平台运营', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'ming.li@ai2robotics.com', remark: '负责采集项目运营', createdAt: '2026-03-05 10:30:00', lastLoginAt: '2026-06-18 07:40:00' },
+  { id: 3, uid: 'U-003', username: 'wangfang', nickname: '王芳',   phone: '136****3308', role: '平台运营', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'wangfang@ai2robotics.com', remark: '负责标签与方案管理', createdAt: '2026-03-08 14:20:00', lastLoginAt: '2026-06-17 16:22:00' },
   { id: 4, uid: 'U-004', username: 'liuwei',   nickname: '刘伟',   phone: '137****9914', role: '采集员',   status: '启用', orgId: 'ORG-002', email: 'liuwei@ai2robotics.com', remark: '一线采集员', createdAt: '2026-03-12 11:00:00', lastLoginAt: '2026-06-18 10:05:00' },
   { id: 5, uid: 'U-005', username: 'zhoujie',  nickname: '周杰',   phone: '135****6627', role: '采集员',   status: '启用', orgId: 'ORG-002', email: 'zhoujie@ai2robotics.com', remark: '一线采集员', createdAt: '2026-03-15 09:45:00', lastLoginAt: '2026-06-16 08:30:00' },
   { id: 6, uid: 'U-006', username: 'sunli',    nickname: '孙丽',   phone: '188****4053', role: '标注员',   status: '启用', orgId: 'ORG-002', email: 'sunli@ai2robotics.com', remark: '数据标注专员', createdAt: '2026-03-18 13:10:00', lastLoginAt: '2026-06-15 14:18:00' },
@@ -53,6 +53,8 @@ export const users = [
   { id: 11, uid: 'U-011', username: 'wulei',    nickname: '吴磊',   phone: '134****7788', role: '采集员&标注员', status: '启用', orgId: 'ORG-002', email: 'wulei@ai2robotics.com', remark: '采集与标注双角色', createdAt: '2026-04-12 09:15:00', lastLoginAt: '2026-06-18 08:20:00' },
   { id: 12, uid: 'U-012', username: 'zhenghao', nickname: '郑浩',   phone: '159****3321', role: '采集员&标注员', status: '启用', orgId: 'ORG-002', email: 'zhenghao@ai2robotics.com', remark: '采集与标注双角色', createdAt: '2026-04-20 11:30:00', lastLoginAt: '2026-06-11 13:45:00' },
   { id: 13, uid: 'U-013', username: 'linfang',  nickname: '林芳',   phone: '137****8899', role: '区域协调员',     status: '停用', orgId: 'ORG-002', email: 'linfang@ai2robotics.com', remark: '区域协调，账号已停用', createdAt: '2026-05-25 09:00:00', lastLoginAt: '2026-06-17 10:12:00' },
+  { id: 14, uid: 'U-014', username: 'chenwei',  nickname: '陈伟',   phone: '131****4455', role: '平台运营',       status: '启用', orgId: 'ORG-001', email: 'chenwei@robotics.com', remark: '机器人公司运营', createdAt: '2026-04-05 10:00:00', lastLoginAt: '2026-06-16 09:30:00' },
+  { id: 15, uid: 'U-015', username: 'xuyan',    nickname: '徐燕',   phone: '130****6677', role: '采集员',         status: '启用', orgId: 'ORG-003', email: 'xuyan@east-collect.com', remark: '华东采集中心采集员', createdAt: '2026-04-18 11:20:00', lastLoginAt: '2026-06-15 08:45:00' },
 ]
 
 export const roleColor = {

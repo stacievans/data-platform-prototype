@@ -35,7 +35,7 @@ import {
 } from '../../mock/organizations'
 
 import { useAuth } from '../../context/AuthContext'
-
+import CreateInviteUserModal from './CreateInviteUserModal'
 import { dtCol, formatRelativeTime, nowDateTime } from '../../utils/formatDateTime'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
@@ -44,6 +44,29 @@ import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 const LBL = 'mb-1 block text-xs text-gray-500'
 
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+
+const LOGIN_METHOD_OPTIONS = ['账号密码', '飞书SSO']
+
+function getLoginMethod(user) {
+  return user.loginMethod ?? '账号密码'
+}
+
+function userHasRole(userRole, filterRole) {
+  if (!filterRole) return true
+  return (userRole ?? '').split('&').includes(filterRole)
+}
+
+function renderRoleTags(role) {
+  const roles = (role ?? '').split('&').filter(Boolean)
+  if (!roles.length) return '—'
+  return (
+    <div className="flex flex-wrap justify-center gap-1">
+      {roles.map((r) => (
+        <Badge key={r} color={roleColor[r] ?? 'gray'}>{r}</Badge>
+      ))}
+    </div>
+  )
+}
 
 
 
@@ -311,8 +334,6 @@ export default function UserListPanel({
 
   const { can, user: currentUser, roles, enabledRoles } = useAuth()
 
-  const isSuperAdmin = currentUser?.role === SUPER_ADMIN_ROLE
-
 
 
   const [users, setUsers] = useState(() => getRuntimeUsers())
@@ -333,11 +354,9 @@ export default function UserListPanel({
 
 
 
-  const [qUid, setQUid] = useState('')
-
   const [qUsername, setQUsername] = useState('')
 
-  const [qNickname, setQNickname] = useState('')
+  const [qLoginMethod, setQLoginMethod] = useState('')
 
   const [qOrgId, setQOrgId] = useState('')
 
@@ -423,6 +442,11 @@ export default function UserListPanel({
 
   )
 
+  const inviteCandidates = useMemo(
+    () => users.filter((u) => u.orgId && u.orgId !== currentUserOrgId),
+    [users, currentUserOrgId],
+  )
+
 
 
   const editRoleOptions = useMemo(() => {
@@ -441,17 +465,15 @@ export default function UserListPanel({
 
     scopedUsers.filter((u) => {
 
-      const { uid, username, nickname, orgId: fOrgId, role, status } = filters
-
-      if (uid && !u.uid?.toLowerCase().includes(uid.toLowerCase())) return false
+      const { username, loginMethod, orgId: fOrgId, role, status } = filters
 
       if (username && !u.username.toLowerCase().includes(username.toLowerCase())) return false
 
-      if (nickname && !u.nickname.includes(nickname)) return false
+      if (loginMethod && getLoginMethod(u) !== loginMethod) return false
 
       if (fOrgId && u.orgId !== fOrgId) return false
 
-      if (role && u.role !== role) return false
+      if (!userHasRole(u.role, role)) return false
 
       if (status && u.status !== status) return false
 
@@ -467,11 +489,9 @@ export default function UserListPanel({
 
   const applyFilters = () => setFilters({
 
-    uid: qUid.trim(),
-
     username: qUsername.trim(),
 
-    nickname: qNickname.trim(),
+    loginMethod: qLoginMethod,
 
     orgId: qOrgId,
 
@@ -485,11 +505,9 @@ export default function UserListPanel({
 
   const resetFilters = () => {
 
-    setQUid('')
-
     setQUsername('')
 
-    setQNickname('')
+    setQLoginMethod('')
 
     setQOrgId('')
 
@@ -517,8 +535,6 @@ export default function UserListPanel({
 
     if (!createForm.nickname.trim()) errs.nickname = true
 
-    if (variant === 'global' && !createForm.role) errs.role = true
-
     if (Object.keys(errs).length) { setCreateErrors(errs); return }
 
 
@@ -528,8 +544,6 @@ export default function UserListPanel({
     const uid = `U-${String(maxId + 1).padStart(3, '0')}`
 
     const now = nowDateTime()
-
-    const targetOrgId = variant === 'org' ? orgId : currentUserOrgId
 
 
 
@@ -549,9 +563,11 @@ export default function UserListPanel({
 
       remark: createForm.remark.trim(),
 
-      role: variant === 'org' ? ORG_ADMIN_ROLE : createForm.role,
+      role: ORG_ADMIN_ROLE,
 
-      orgId: targetOrgId,
+      loginMethod: '账号密码',
+
+      orgId: orgId,
 
       status: toStoreStatus(createForm.status),
 
@@ -568,6 +584,74 @@ export default function UserListPanel({
     setCreateForm(emptyCreate)
 
     setCreateErrors({})
+
+  }
+
+
+
+  const handleCreateNewUser = (payload) => {
+
+    const maxId = Math.max(...users.map((u) => u.id), 0)
+
+    const uid = `U-${String(maxId + 1).padStart(3, '0')}`
+
+    const now = nowDateTime()
+
+    appendOrgUser({
+
+      id: maxId + 1,
+
+      uid,
+
+      username: payload.username,
+
+      nickname: payload.username,
+
+      phone: payload.phone,
+
+      email: payload.email,
+
+      remark: payload.remark,
+
+      role: payload.role,
+
+      loginMethod: '账号密码',
+
+      orgId: currentUserOrgId,
+
+      status: '启用',
+
+      createdAt: now,
+
+      lastLoginAt: null,
+
+    })
+
+    refreshUsers()
+
+    setCreateOpen(false)
+
+  }
+
+
+
+  const handleInviteUser = (payload) => {
+
+    updateRuntimeUser(payload.userId, {
+
+      orgId: currentUserOrgId,
+
+      role: payload.role,
+
+      remark: payload.remark,
+
+      status: '启用',
+
+    })
+
+    refreshUsers()
+
+    setCreateOpen(false)
 
   }
 
@@ -659,27 +743,25 @@ export default function UserListPanel({
 
   const columns = [
 
-    { title: '用户ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-blue-600">{v ?? '—'}</span> },
+    { title: '用户 ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-blue-600">{v ?? '—'}</span> },
 
-    { title: '账号', dataIndex: 'username', render: (v) => <span className="font-mono text-xs">{v}</span> },
-
-    { title: '用户昵称', dataIndex: 'nickname', render: (v) => <span className="font-medium">{v}</span> },
+    { title: '用户名', dataIndex: 'username', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
 
     {
-
-      title: '所属组织',
-
-      dataIndex: 'orgId',
-
-      render: (v) => <span className="text-gray-600">{v ? (orgMap.get(v) ?? '—') : '—'}</span>,
-
+      title: '描述',
+      dataIndex: 'remark',
+      render: (v) => (
+        <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>
+      ),
     },
 
-    { title: '角色', dataIndex: 'role', render: (v) => <Badge color={roleColor[v] ?? 'gray'}>{v}</Badge> },
+    { title: '角色', dataIndex: 'role', render: (v) => renderRoleTags(v) },
 
-    { title: '手机号', dataIndex: 'phone', render: (v) => v || '—' },
-
-    { title: '邮箱', dataIndex: 'email', render: (v) => <span className="text-gray-600">{v || '—'}</span> },
+    {
+      title: '登录方式',
+      dataIndex: 'loginMethod',
+      render: (_, row) => <span className="text-gray-600">{getLoginMethod(row)}</span>,
+    },
 
     { title: '状态', dataIndex: 'status', render: (v, row) => {
       const isSelf = currentUser?.uid === row.uid
@@ -990,29 +1072,41 @@ export default function UserListPanel({
 
             <div className="min-w-0 flex-1 basis-0">
 
-              <label className={LBL}>用户ID</label>
+              <label className={LBL}>用户名</label>
 
-              <input placeholder="请输入用户ID" value={qUid} onChange={(e) => setQUid(e.target.value)} className={INPUT_CLS} />
-
-            </div>
-
-            <div className="min-w-0 flex-1 basis-0">
-
-              <label className={LBL}>账号</label>
-
-              <input placeholder="请输入账号" value={qUsername} onChange={(e) => setQUsername(e.target.value)} className={INPUT_CLS} />
+              <input placeholder="请输入用户名" value={qUsername} onChange={(e) => setQUsername(e.target.value)} className={INPUT_CLS} />
 
             </div>
 
             <div className="min-w-0 flex-1 basis-0">
 
-              <label className={LBL}>用户昵称</label>
+              <label className={LBL}>登录方式</label>
 
-              <input placeholder="请输入用户昵称" value={qNickname} onChange={(e) => setQNickname(e.target.value)} className={INPUT_CLS} />
+              <select value={qLoginMethod} onChange={(e) => setQLoginMethod(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+
+                <option value="">全部</option>
+
+                {LOGIN_METHOD_OPTIONS.map((m) => <option key={m} value={m}>{m}</option>)}
+
+              </select>
 
             </div>
 
-            {variant === 'global' && isSuperAdmin && (
+            <div className="min-w-0 flex-1 basis-0">
+
+              <label className={LBL}>角色</label>
+
+              <select value={qRole} onChange={(e) => setQRole(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+
+                <option value="">全部</option>
+
+                {allRoleNames.map((r) => <option key={r} value={r}>{r}</option>)}
+
+              </select>
+
+            </div>
+
+            {variant === 'global' && (
 
               <div className="min-w-0 flex-1 basis-0">
 
@@ -1029,20 +1123,6 @@ export default function UserListPanel({
               </div>
 
             )}
-
-            <div className="min-w-0 flex-1 basis-0">
-
-              <label className={LBL}>角色</label>
-
-              <select value={qRole} onChange={(e) => setQRole(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-
-                <option value="">全部</option>
-
-                {allRoleNames.map((r) => <option key={r} value={r}>{r}</option>)}
-
-              </select>
-
-            </div>
 
             <div className="min-w-0 flex-1 basis-0">
 
@@ -1114,7 +1194,7 @@ export default function UserListPanel({
 
       <Modal
 
-        open={createOpen}
+        open={createOpen && variant === 'org'}
 
         title={createTitle}
 
@@ -1139,6 +1219,34 @@ export default function UserListPanel({
         {renderUserFormFields({ mode: 'create' })}
 
       </Modal>
+
+
+
+      {variant === 'global' && (
+
+        <CreateInviteUserModal
+
+          open={createOpen}
+
+          onCancel={() => setCreateOpen(false)}
+
+          onCreate={handleCreateNewUser}
+
+          onInvite={handleInviteUser}
+
+          currentOrgId={currentUserOrgId}
+
+          currentOrgName={currentUserOrgName}
+
+          roleOptions={assignableRoleNames}
+
+          inviteCandidates={inviteCandidates}
+
+          orgMap={orgMap}
+
+        />
+
+      )}
 
 
 

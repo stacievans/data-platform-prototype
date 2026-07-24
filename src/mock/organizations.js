@@ -110,6 +110,16 @@ export function appendOrgUser(user) {
   return user
 }
 
+export function isUsernameTakenInOrg(username, orgId, excludeUserId = null) {
+  const normalized = username.trim().toLowerCase()
+  if (!normalized || !orgId) return false
+  return runtimeUsers.some(
+    (u) => u.username.toLowerCase() === normalized
+      && u.orgId === orgId
+      && u.id !== excludeUserId,
+  )
+}
+
 export function updateRuntimeUser(id, patch) {
   runtimeUsers = runtimeUsers.map((u) => (u.id === id ? { ...u, ...patch } : u))
 }
