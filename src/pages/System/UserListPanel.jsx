@@ -94,8 +94,6 @@ const emptyCreate = {
 
 const emptyEdit = {
 
-  nickname: '',
-
   phone: '',
 
   email: '',
@@ -103,16 +101,6 @@ const emptyEdit = {
   remark: '',
 
   role: '',
-
-  status: '启用',
-
-}
-
-
-
-function toDisplayStatus(status) {
-
-  return status === '停用' ? '停用' : '启用'
 
 }
 
@@ -172,13 +160,13 @@ function PasswordInput({ value, onChange, className, error }) {
 
 
 
-function RemarkField({ value, onChange, max = 500 }) {
+function RemarkField({ value, onChange, max = 500, label = '备注', placeholder = '请输入备注信息' }) {
 
   return (
 
     <div>
 
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">备注</label>
+      <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
 
       <textarea
 
@@ -190,7 +178,7 @@ function RemarkField({ value, onChange, max = 500 }) {
 
         onChange={onChange}
 
-        placeholder="请输入备注信息"
+        placeholder={placeholder}
 
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
 
@@ -663,8 +651,6 @@ export default function UserListPanel({
 
     setEditForm({
 
-      nickname: user.nickname,
-
       phone: user.phone ?? '',
 
       email: user.email ?? '',
@@ -672,8 +658,6 @@ export default function UserListPanel({
       remark: user.remark ?? '',
 
       role: user.role,
-
-      status: toDisplayStatus(user.status),
 
     })
 
@@ -687,8 +671,6 @@ export default function UserListPanel({
 
     updateRuntimeUser(editingUser.id, {
 
-      nickname: editForm.nickname.trim(),
-
       phone: editForm.phone.trim(),
 
       email: editForm.email.trim(),
@@ -696,8 +678,6 @@ export default function UserListPanel({
       remark: editForm.remark.trim(),
 
       role: variant === 'org' ? ORG_ADMIN_ROLE : editForm.role,
-
-      status: toStoreStatus(editForm.status),
 
     })
 
@@ -752,6 +732,14 @@ export default function UserListPanel({
       dataIndex: 'remark',
       render: (v) => (
         <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>
+      ),
+    },
+
+    {
+      title: '所属组织',
+      dataIndex: 'orgId',
+      render: (_, row) => (
+        <span className="text-gray-600">{orgMap.get(row.orgId) ?? '—'}</span>
       ),
     },
 
@@ -902,7 +890,7 @@ export default function UserListPanel({
 
         ) : (
 
-          <ReadonlyField label="账号" value={editingUser?.username ?? ''} />
+          <ReadonlyField label="用户名" value={editingUser?.username ?? ''} />
 
         )}
 
@@ -932,25 +920,29 @@ export default function UserListPanel({
 
 
 
-        <div>
+        {isCreate && (
 
-          <Req label="用户昵称" />
+          <div>
 
-          <input
+            <Req label="用户昵称" />
 
-            placeholder="请输入用户昵称"
+            <input
 
-            value={form.nickname}
+              placeholder="请输入用户昵称"
 
-            onChange={(e) => setForm('nickname', e.target.value)}
+              value={form.nickname}
 
-            className={fieldCls(isCreate && errors.nickname)}
+              onChange={(e) => setForm('nickname', e.target.value)}
 
-          />
+              className={fieldCls(errors.nickname)}
 
-          {isCreate && errors.nickname && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+            />
 
-        </div>
+            {errors.nickname && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+
+          </div>
+
+        )}
 
 
 
@@ -1032,15 +1024,19 @@ export default function UserListPanel({
 
 
 
-        <StatusRadio
+        {isCreate && (
 
-          name={isCreate ? 'create-user-status' : 'edit-user-status'}
+          <StatusRadio
 
-          value={form.status}
+            name="create-user-status"
 
-          onChange={(s) => setForm('status', s)}
+            value={form.status}
 
-        />
+            onChange={(s) => setForm('status', s)}
+
+          />
+
+        )}
 
 
 
@@ -1049,6 +1045,10 @@ export default function UserListPanel({
           value={form.remark}
 
           onChange={(e) => setForm('remark', e.target.value)}
+
+          label={isCreate ? '备注' : '描述'}
+
+          placeholder={isCreate ? '请输入备注信息' : '请输入描述'}
 
         />
 
@@ -1254,7 +1254,7 @@ export default function UserListPanel({
 
         open={!!editingUser}
 
-        title="编辑用户"
+        title="编辑"
 
         onCancel={() => setEditingUser(null)}
 
