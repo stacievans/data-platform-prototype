@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   IconDashboard,
@@ -9,8 +9,6 @@ import {
   IconSystem,
   IconChevron,
 } from '../common/Icons'
-import { MENU_VIEW_PERMISSION } from '../../mock/permissions'
-import { useAuth } from '../../context/AuthContext'
 
 const menu = [
   { key: '/dashboard', label: '运营看板', icon: <IconDashboard />, permission: 'dashboard.view' },
@@ -48,28 +46,7 @@ const menu = [
 
 export default function Sidebar({ collapsed }) {
   const location = useLocation()
-  const { can } = useAuth()
   const [openKeys, setOpenKeys] = useState(['collection', 'dataset', 'system'])
-
-  const visibleMenu = useMemo(() => {
-    const canView = (item) => {
-      const perm = item.permission ?? MENU_VIEW_PERMISSION[item.key]
-      if (perm && can(perm)) return true
-      if (item.altPermission && can(item.altPermission)) return true
-      return !perm && !item.altPermission
-    }
-    return menu
-      .map((item) => {
-        if (item.children) {
-          const children = item.children.filter((c) => canView(c))
-          if (!children.length) return null
-          return { ...item, children }
-        }
-        if (!canView(item)) return null
-        return item
-      })
-      .filter(Boolean)
-  }, [can])
 
   const toggle = (key) =>
     setOpenKeys((keys) =>
@@ -86,7 +63,7 @@ export default function Sidebar({ collapsed }) {
       }`}
     >
       <nav className="space-y-1 p-2.5">
-        {visibleMenu.map((item) => {
+        {menu.map((item) => {
           if (!item.children) {
             return (
               <NavLink

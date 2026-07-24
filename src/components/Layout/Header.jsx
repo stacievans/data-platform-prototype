@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconCollapse } from '../common/Icons'
-import { useToast } from '../common/Toast'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/logo.png'
 
@@ -25,10 +24,8 @@ const IconChevron = ({ open }) => (
 
 export default function Header({ collapsed, onToggle }) {
   const navigate = useNavigate()
-  const { user, demoPersonas, switchUser } = useAuth()
-  const { ToastNode, show: toast } = useToast()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
-  const [personaOpen, setPersonaOpen] = useState(false)
   const dropRef = useRef(null)
 
   const avatarChar = user?.nickname?.slice(0, 1) ?? '?'
@@ -37,7 +34,6 @@ export default function Header({ collapsed, onToggle }) {
     const handler = (e) => {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
         setOpen(false)
-        setPersonaOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -47,16 +43,6 @@ export default function Header({ collapsed, onToggle }) {
   const handleLogout = () => {
     setOpen(false)
     navigate('/login')
-  }
-
-  const handleSwitchPersona = (uid) => {
-    const ok = switchUser(uid)
-    if (ok) {
-      const label = demoPersonas.find((p) => p.uid === uid)?.label ?? ''
-      toast(`已切换演示身份：${label}`)
-    }
-    setOpen(false)
-    setPersonaOpen(false)
   }
 
   return (
@@ -113,31 +99,6 @@ export default function Header({ collapsed, onToggle }) {
                 </div>
 
                 <div className="py-1">
-                  <button
-                    type="button"
-                    onClick={() => setPersonaOpen(!personaOpen)}
-                    className="flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left text-[13px] text-slate-300 transition hover:bg-white/5"
-                  >
-                    <span>演示身份切换</span>
-                    <IconChevron open={personaOpen} />
-                  </button>
-                  {personaOpen && (
-                    <div className="border-t border-white/5 pb-1">
-                      {demoPersonas.map((p) => (
-                        <button
-                          key={p.uid}
-                          type="button"
-                          onClick={() => handleSwitchPersona(p.uid)}
-                          className={`block w-full cursor-pointer px-6 py-1.5 text-left text-xs transition hover:bg-white/5 ${
-                            user?.uid === p.uid ? 'text-blue-400' : 'text-slate-400'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ height: 1, background: 'rgba(255,255,255,.06)', margin: '4px 0' }} />
                   <MenuItem icon={<IconLogout />} label="退出登录" onClick={handleLogout} danger />
                 </div>
               </div>
@@ -145,7 +106,6 @@ export default function Header({ collapsed, onToggle }) {
           </div>
         </div>
       </header>
-      {ToastNode}
     </>
   )
 }

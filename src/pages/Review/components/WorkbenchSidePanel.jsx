@@ -12,6 +12,27 @@ const CHEVRON = (
   </svg>
 )
 
+function PlaceholderDash() {
+  return <div className="text-xs text-gray-800">-</div>
+}
+
+function hasOverallAnnotation(entry, form, actionSegments, regionFrames) {
+  return Boolean(
+    entry?.auditResult
+    || form.auditConclusion
+    || actionSegments.length
+    || regionFrames.length,
+  )
+}
+
+function hasFragmentData(actionSegments, regionFrames) {
+  return actionSegments.length > 0 || regionFrames.length > 0
+}
+
+function hasAcceptanceData(entry, acceptForm) {
+  return Boolean(entry?.acceptResult || acceptForm?.acceptConclusion)
+}
+
 function DescGrid({ items }) {
   return (
     <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
@@ -160,7 +181,7 @@ function OverallAnnotationReadonly({ form }) {
           </div>
           <div>
             <p className="mb-1.5 text-xs text-gray-500">描述</p>
-            <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap">
+            <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
               {form.auditComment?.trim() ? form.auditComment : '—'}
             </div>
           </div>
@@ -177,11 +198,52 @@ function OverallAnnotationReadonly({ form }) {
           </div>
           <div>
             <p className="mb-1.5 text-xs text-gray-500">驳回理由</p>
-            <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap">
+            <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
               {form.auditRejectReason?.trim() ? form.auditRejectReason : '—'}
             </div>
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+function AcceptanceReadonly({ entry, acceptForm }) {
+  const isPass = acceptForm.acceptConclusion === 'pass' || entry?.acceptResult === '通过'
+  const isReject = acceptForm.acceptConclusion === 'reject' || entry?.acceptResult === '不通过'
+  const conclusionLabel = isPass ? '通过' : isReject ? '驳回' : '—'
+  const conclusionCls = isPass
+    ? 'text-emerald-600'
+    : isReject
+      ? 'text-red-500'
+      : 'text-gray-800'
+
+  const passComment = acceptForm.acceptComment?.trim() || (entry?.acceptResult === '通过' ? entry?.acceptComment : '')
+  const rejectReason = acceptForm.acceptRejectReason?.trim() || (entry?.acceptResult === '不通过' ? entry?.acceptComment : '')
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="mb-1.5 text-xs text-gray-500">验收结论</p>
+        <div className={`min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium ${conclusionCls}`}>
+          {conclusionLabel}
+        </div>
+      </div>
+      {isPass && (
+        <div>
+          <p className="mb-1.5 text-xs text-gray-500">描述</p>
+          <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+            {passComment?.trim() ? passComment : '—'}
+          </div>
+        </div>
+      )}
+      {isReject && (
+        <div>
+          <p className="mb-1.5 text-xs text-gray-500">驳回理由</p>
+          <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+            {rejectReason?.trim() ? rejectReason : '—'}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -343,11 +405,173 @@ function FragmentTable({
   )
 }
 
+function OverallAnnotationEditor({
+  form,
+  setForm,
+  onPass,
+  onReject,
+}) {
+  const readOnlyFieldCls = 'cursor-default border-gray-200 bg-white text-gray-800'
+  const editFieldCls = 'border-gray-300 bg-white focus:border-blue-500'
+
+  const setConclusion = (value) => {
+    setForm((f) => ({ ...f, auditConclusion: value }))
+  }
+
+  const toggleProblemTag = (tag) => {
+    setForm((f) => ({
+      ...f,
+      auditTags: f.auditTags.includes(tag)
+        ? f.auditTags.filter((t) => t !== tag)
+        : [...f.auditTags, tag],
+    }))
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <RequiredLabel>标注结论</RequiredLabel>
+        <ConclusionButtons
+          value={form.auditConclusion}
+          onChange={setConclusion}
+          onPass={onPass}
+          onReject={onReject}
+        />
+      </div>
+
+      {form.auditConclusion === 'pass' && (
+        <>
+          <div>
+            <RequiredLabel>质量标签</RequiredLabel>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {QUALITY_OPTIONS.map((opt) => (
+                <label key={opt} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-gray-700">
+                  <input
+                    type="radio"
+                    name="audit-quality"
+                    checked={form.auditQuality === opt}
+                    onChange={() => setForm((f) => ({ ...f, auditQuality: opt }))}
+                    className="h-3.5 w-3.5 accent-blue-600"
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <RequiredLabel optional>描述</RequiredLabel>
+            <textarea
+              rows={3}
+              maxLength={500}
+              value={form.auditComment}
+              onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
+              placeholder="请输入描述"
+              className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+            />
+            <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length} / 500</p>
+          </div>
+        </>
+      )}
+
+      {form.auditConclusion === 'reject' && (
+        <>
+          <div>
+            <RequiredLabel optional>问题标签</RequiredLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {PROBLEM_TAG_OPTIONS.map((tag) => {
+                const checked = form.auditTags.includes(tag)
+                return (
+                  <label
+                    key={tag}
+                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                      checked
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleProblemTag(tag)}
+                      className="h-3 w-3 shrink-0 accent-blue-600"
+                    />
+                    {tag}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+          <div>
+            <RequiredLabel>驳回理由</RequiredLabel>
+            <textarea
+              rows={3}
+              maxLength={500}
+              value={form.auditRejectReason}
+              onChange={(e) => setForm((f) => ({ ...f, auditRejectReason: e.target.value }))}
+              placeholder="请输入驳回理由"
+              className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+            />
+            <p className="mt-1 text-right text-xs text-gray-400">{form.auditRejectReason.length} / 500</p>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AcceptanceEditor({ acceptForm, setAcceptForm }) {
+  const editFieldCls = 'border-gray-300 bg-white focus:border-blue-500'
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <RequiredLabel>验收结论</RequiredLabel>
+        <ConclusionButtons
+          value={acceptForm.acceptConclusion}
+          onChange={(value) => setAcceptForm((f) => ({ ...f, acceptConclusion: value }))}
+        />
+      </div>
+
+      {acceptForm.acceptConclusion === 'pass' && (
+        <div>
+          <RequiredLabel optional>描述</RequiredLabel>
+          <textarea
+            rows={3}
+            maxLength={500}
+            value={acceptForm.acceptComment}
+            onChange={(e) => setAcceptForm((f) => ({ ...f, acceptComment: e.target.value }))}
+            placeholder="请输入描述"
+            className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+          />
+          <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptComment.length} / 500</p>
+        </div>
+      )}
+
+      {acceptForm.acceptConclusion === 'reject' && (
+        <div>
+          <RequiredLabel>驳回理由</RequiredLabel>
+          <textarea
+            rows={3}
+            maxLength={500}
+            value={acceptForm.acceptRejectReason}
+            onChange={(e) => setAcceptForm((f) => ({ ...f, acceptRejectReason: e.target.value }))}
+            placeholder="请输入驳回理由"
+            className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+          />
+          <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptRejectReason.length} / 500</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function WorkbenchSidePanel({
   mode,
   entry,
   form,
   setForm,
+  acceptForm,
+  setAcceptForm,
   actionSegments,
   setActionSegments,
   regionFrames,
@@ -356,21 +580,24 @@ export default function WorkbenchSidePanel({
   onSave,
   saveDisabled,
   showSave,
+  showSubmit,
+  onAcceptSubmit,
   onPass,
   onReject,
-  passRejectDisabled = false,
 }) {
-  const editable = mode === 'review'
-  const readOnlyFieldCls = 'cursor-default border-gray-200 bg-white text-gray-800'
-  const editFieldCls = 'border-gray-300 bg-white focus:border-blue-500'
+  const annotationEditable = mode === 'review'
+  const acceptEditable = mode === 'accept'
 
   const [basicInfoOpen, setBasicInfoOpen] = useState(true)
   const [annotationOpen, setAnnotationOpen] = useState(true)
   const [fragmentOpen, setFragmentOpen] = useState(false)
+  const [acceptOpen, setAcceptOpen] = useState(mode === 'accept')
 
   const panelTitle = mode === 'accept' ? '验收' : mode === 'review' ? '标注' : '播放'
-  const showConclusionPanel = mode === 'review' || mode === 'accept'
-  const showFragmentPanel = mode === 'review' || mode === 'accept'
+
+  const hasOverall = hasOverallAnnotation(entry, form, actionSegments, regionFrames)
+  const hasFragment = hasFragmentData(actionSegments, regionFrames)
+  const hasAcceptance = hasAcceptanceData(entry, acceptForm)
 
   const ctx = (() => {
     const task = tasks.find((t) => t.id === entry.taskId)
@@ -392,17 +619,49 @@ export default function WorkbenchSidePanel({
     { label: '格式·时长', value: `${entry.format} · ${durationSec}`, span: 'full' },
   ]
 
-  const setConclusion = (value) => {
-    setForm((f) => ({ ...f, auditConclusion: value }))
+  const renderOverallAnnotation = () => {
+    if (mode === 'play' && !hasOverall) return <PlaceholderDash />
+    if (annotationEditable) {
+      return (
+        <OverallAnnotationEditor
+          form={form}
+          setForm={setForm}
+          onPass={onPass}
+          onReject={onReject}
+        />
+      )
+    }
+    return <OverallAnnotationReadonly form={form} />
   }
 
-  const toggleProblemTag = (tag) => {
-    setForm((f) => ({
-      ...f,
-      auditTags: f.auditTags.includes(tag)
-        ? f.auditTags.filter((t) => t !== tag)
-        : [...f.auditTags, tag],
-    }))
+  const renderFragmentAnnotation = () => {
+    if (mode === 'play' && !hasFragment) return <PlaceholderDash />
+    return (
+      <div className="space-y-4">
+        <FragmentTable
+          title="动作语义"
+          type="action"
+          rows={actionSegments}
+          editable={annotationEditable}
+          onSeek={onSeek}
+          onChange={setActionSegments}
+        />
+        <FragmentTable
+          title="区域帧"
+          type="region"
+          rows={regionFrames}
+          editable={annotationEditable}
+          onSeek={onSeek}
+          onChange={setRegionFrames}
+        />
+      </div>
+    )
+  }
+
+  const renderAcceptance = () => {
+    if ((mode === 'play' || mode === 'review') && !hasAcceptance) return <PlaceholderDash />
+    if (acceptEditable) return <AcceptanceEditor acceptForm={acceptForm} setAcceptForm={setAcceptForm} />
+    return <AcceptanceReadonly entry={entry} acceptForm={acceptForm} />
   }
 
   return (
@@ -418,148 +677,17 @@ export default function WorkbenchSidePanel({
             <PlanDetailsExpandable plan={ctx.plan} />
           </PanelCard>
 
-          {showConclusionPanel && (
-            <PanelCard title="整体标注" open={annotationOpen} onToggle={() => setAnnotationOpen((o) => !o)}>
-              {mode === 'accept' ? (
-                <OverallAnnotationReadonly form={form} />
-              ) : (
-              <div className="space-y-3">
-                <div>
-                  <RequiredLabel>标注结论</RequiredLabel>
-                  <ConclusionButtons
-                    value={form.auditConclusion}
-                    onChange={setConclusion}
-                    onPass={onPass}
-                    onReject={onReject}
-                    disabled={passRejectDisabled}
-                  />
-                </div>
-
-                {form.auditConclusion === 'pass' && (
-                  <>
-                    <div>
-                      <RequiredLabel>质量标签</RequiredLabel>
-                      {editable ? (
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                          {QUALITY_OPTIONS.map((opt) => (
-                            <label key={opt} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-gray-700">
-                              <input
-                                type="radio"
-                                name="audit-quality"
-                                checked={form.auditQuality === opt}
-                                onChange={() => setForm((f) => ({ ...f, auditQuality: opt }))}
-                                className="h-3.5 w-3.5 accent-blue-600"
-                              />
-                              {opt}
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className={`min-h-8 rounded-md border px-3 py-2 text-xs ${readOnlyFieldCls}`}>
-                          {form.auditQuality ?? '—'}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <RequiredLabel optional>描述</RequiredLabel>
-                      <textarea
-                        rows={3}
-                        maxLength={500}
-                        readOnly={!editable}
-                        value={form.auditComment}
-                        onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
-                        placeholder={editable ? '请输入描述' : undefined}
-                        className={`w-full resize-none rounded-md border px-3 py-2 text-xs outline-none ${
-                          editable ? `${editFieldCls} text-gray-800 focus:ring-2 focus:ring-blue-100` : readOnlyFieldCls
-                        }`}
-                      />
-                      {editable && (
-                        <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length} / 500</p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {form.auditConclusion === 'reject' && (
-                  <>
-                    <div>
-                      <RequiredLabel optional>问题标签</RequiredLabel>
-                      {editable ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {PROBLEM_TAG_OPTIONS.map((tag) => {
-                            const checked = form.auditTags.includes(tag)
-                            return (
-                              <label
-                                key={tag}
-                                className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
-                                  checked
-                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => toggleProblemTag(tag)}
-                                  className="h-3 w-3 shrink-0 accent-blue-600"
-                                />
-                                {tag}
-                              </label>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className={`min-h-8 rounded-md border px-3 py-2 text-xs ${readOnlyFieldCls}`}>
-                          {form.auditTags.length ? form.auditTags.join('、') : '—'}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <RequiredLabel>驳回理由</RequiredLabel>
-                      <textarea
-                        rows={3}
-                        maxLength={500}
-                        readOnly={!editable}
-                        value={form.auditRejectReason}
-                        onChange={(e) => setForm((f) => ({ ...f, auditRejectReason: e.target.value }))}
-                        placeholder={editable ? '请输入驳回理由' : undefined}
-                        className={`w-full resize-none rounded-md border px-3 py-2 text-xs outline-none ${
-                          editable ? `${editFieldCls} text-gray-800 focus:ring-2 focus:ring-blue-100` : readOnlyFieldCls
-                        }`}
-                      />
-                      {editable && (
-                        <p className="mt-1 text-right text-xs text-gray-400">{form.auditRejectReason.length} / 500</p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-              )}
-            </PanelCard>
-          )}
-
-          {showFragmentPanel && (
-          <PanelCard title="片段标注" open={fragmentOpen} onToggle={() => setFragmentOpen((o) => !o)}>
-            <div className="space-y-4">
-              <FragmentTable
-                title="动作语义"
-                type="action"
-                rows={actionSegments}
-                editable={editable}
-                onSeek={onSeek}
-                onChange={setActionSegments}
-              />
-              <FragmentTable
-                title="区域帧"
-                type="region"
-                rows={regionFrames}
-                editable={editable}
-                onSeek={onSeek}
-                onChange={setRegionFrames}
-              />
-            </div>
+          <PanelCard title="整体标注" open={annotationOpen} onToggle={() => setAnnotationOpen((o) => !o)}>
+            {renderOverallAnnotation()}
           </PanelCard>
-          )}
+
+          <PanelCard title="片段标注" open={fragmentOpen} onToggle={() => setFragmentOpen((o) => !o)}>
+            {renderFragmentAnnotation()}
+          </PanelCard>
+
+          <PanelCard title="验收" open={acceptOpen} onToggle={() => setAcceptOpen((o) => !o)}>
+            {renderAcceptance()}
+          </PanelCard>
         </div>
       </div>
 
@@ -572,6 +700,18 @@ export default function WorkbenchSidePanel({
             onClick={onSave}
           >
             保存
+          </Button>
+        </div>
+      )}
+
+      {showSubmit && (
+        <div className="shrink-0 border-t border-gray-100 p-3">
+          <Button
+            variant="primary"
+            className="h-9 w-full text-sm font-medium"
+            onClick={onAcceptSubmit}
+          >
+            提交
           </Button>
         </div>
       )}

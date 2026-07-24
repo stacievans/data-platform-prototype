@@ -9,7 +9,6 @@ import {
   setRoleStatus as persistRoleStatus,
   deleteRuntimeRole,
 } from '../mock/rbac'
-import { resolveRouteViewPermission, buildRolePermissionPreset, SUPER_ADMIN_ROLE } from '../mock/permissions'
 
 const DEFAULT_UID = 'U-000'
 
@@ -34,27 +33,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => userFromUid(DEFAULT_UID))
   const [roles, setRoles] = useState(() => getRuntimeRoles())
 
-  const permissionSet = useMemo(() => {
-    if (!user?.role) return new Set()
-    if (user.role === SUPER_ADMIN_ROLE) {
-      return new Set(buildRolePermissionPreset(SUPER_ADMIN_ROLE))
-    }
-    const role = roles.find((r) => r.name === user.role)
-    return new Set(role?.permissions ?? buildRolePermissionPreset(user.role))
-  }, [roles, user?.role])
+  const can = useCallback(() => true, [])
 
-  const can = useCallback((key) => permissionSet.has(key), [permissionSet])
-
-  const canAccessRoute = useCallback(
-    (pathname) => {
-      const rule = resolveRouteViewPermission(pathname)
-      if (!rule) return true
-      if (can(rule.permission)) return true
-      if (rule.alt && can(rule.alt)) return true
-      return false
-    },
-    [can],
-  )
+  const canAccessRoute = useCallback(() => true, [])
 
   const switchUser = useCallback((uid) => {
     const next = userFromUid(uid)

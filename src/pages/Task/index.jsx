@@ -117,7 +117,6 @@ export default function TaskList({
   const [qReviewer, setQReviewer] = useState('')
   const [qPurpose, setQPurpose] = useState('全部')
   const [qBodyType, setQBodyType] = useState('全部')
-  const [qDeviceCode, setQDeviceCode] = useState('')
   const [qScene, setQScene] = useState('全部')
   const [qMethod, setQMethod] = useState('全部')
   const [qStatus, setQStatus] = useState('全部')
@@ -163,7 +162,7 @@ export default function TaskList({
   const filtered = useMemo(() => {
     const {
       taskId, taskName, projectName, planId, collector, reviewer,
-      purpose, bodyType, deviceCode, scene, method, status,
+      purpose, bodyType, scene, method, status,
     } = filters
     return poolTasks
       .filter((t) => {
@@ -176,7 +175,6 @@ export default function TaskList({
         if (reviewer && !peopleMatchQuery(getTaskAnnotators(t), reviewer)) return false
         if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
         if (bodyType && bodyType !== '全部' && enriched.deviceTypeId !== bodyType) return false
-        if (deviceCode && !(enriched.device ?? '').toLowerCase().includes(deviceCode.toLowerCase())) return false
         if (scene && scene !== '全部' && t.scene !== scene) return false
         if (method && method !== '全部' && t.method !== method) return false
         if (status && status !== '全部' && t.status !== status) return false
@@ -238,7 +236,6 @@ export default function TaskList({
     reviewer: qReviewer,
     purpose: qPurpose,
     bodyType: qBodyType,
-    deviceCode: qDeviceCode.trim(),
     scene: qScene,
     method: qMethod,
     status: qStatus,
@@ -253,7 +250,6 @@ export default function TaskList({
     setQReviewer('')
     setQPurpose('全部')
     setQBodyType('全部')
-    setQDeviceCode('')
     setQScene('全部')
     setQMethod('全部')
     setQStatus('全部')
@@ -351,15 +347,6 @@ export default function TaskList({
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-              </div>
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>采集设备</label>
-                <input
-                  value={qDeviceCode}
-                  onChange={(e) => setQDeviceCode(e.target.value)}
-                  placeholder="请输入设备名称"
-                  className={INPUT_CLS}
-                />
               </div>
               <div className={FILTER_FIELD}>
                 <label className={LBL}>所属场景</label>

@@ -6,6 +6,13 @@ import { IconTrash, IconChevronDown } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
 import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags, getAuditTemplates, getAuditTemplateById } from '../../mock/tags'
 import { resolvePlanDeviceTypeId } from '../../mock/plans'
+import FragmentAnnotPreconfigPanel from './FragmentAnnotPreconfigPanel'
+import {
+  getDisplayFragmentTypes,
+  resolveAnnotAutoFragment,
+  resolveCustomFragmentTypesFromPlan,
+  stripPresetFragmentTypes,
+} from './fragmentAnnotPreconfig'
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 
@@ -20,8 +27,10 @@ export const emptyCreatePlan = () => ({
   steps: [{ ...EMPTY_STEP }],
   totalDeviation: '',
   annotTemplateId: '',
+  annotAutoFragment: true,
   annotGenConfig: true,
   annotPreLabel: true,
+  fragmentAnnotTypes: [],
 })
 
 export function Field({ label, required, error, hint, children }) {
@@ -276,62 +285,77 @@ function SearchableAuditTemplateSelect({ templates, value, onChange, error }) {
 function AnnotationManagementBlock({ form, errors, onChange, readonly = false }) {
   const auditTemplates = useMemo(() => getAuditTemplates(), [])
   const templateName = getAuditTemplateById(form.annotTemplateId)?.name ?? '—'
+  const autoFromPlan = form.annotAutoFragment !== false
+  const customTypes = useMemo(
+    () => stripPresetFragmentTypes(form.fragmentAnnotTypes ?? []),
+    [form.fragmentAnnotTypes],
+  )
+  const displayTypes = useMemo(
+    () => getDisplayFragmentTypes(autoFromPlan, customTypes),
+    [autoFromPlan, customTypes],
+  )
+
+  const handleAutoToggle = (checked) => {
+    onChange({
+      annotAutoFragment: checked,
+      annotGenConfig: checked,
+      annotPreLabel: checked,
+    })
+  }
+
+  const handleFragmentTypesChange = (nextTypes) => {
+    onChange({ fragmentAnnotTypes: stripPresetFragmentTypes(nextTypes) })
+  }
 
   if (readonly) {
     return (
-      <div className="rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium text-gray-700">标注管理</p>
-        <div className="space-y-3">
-          <Field label="整体标签模板">
-            <input readOnly value={templateName} className={readonlyCls} />
-          </Field>
-          <div>
-            <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-            <div className="space-y-1 text-sm text-gray-600">
-              <p>{form.annotGenConfig !== false ? '☑' : '☐'} 基于采集方案生成标注配置</p>
-              <p>{form.annotPreLabel !== false ? '☑' : '☐'} 基于采集方案预标注</p>
-            </div>
-          </div>
+      <div className="space-y-3">
+        <Field label="整体标签模板">
+          <input readOnly value={templateName} className={readonlyCls} />
+        </Field>
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
+          <p className="mb-2 text-sm text-gray-600">
+            {autoFromPlan ? '☑' : '☐'} 基于采集方案生成片段标注配置并预标注
+          </p>
+          <FragmentAnnotPreconfigPanel
+            readonly
+            types={displayTypes}
+            autoFromPlan={autoFromPlan}
+            onChange={() => {}}
+          />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-4">
-      <p className="mb-3 text-sm font-medium text-gray-700">标注管理</p>
-      <div className="space-y-3">
-        <Field label="整体标签模板" required error={errors.plan_annotTemplateId}>
-          <SearchableAuditTemplateSelect
-            templates={auditTemplates}
-            value={form.annotTemplateId}
-            onChange={(annotTemplateId) => onChange({ annotTemplateId })}
-            error={errors.plan_annotTemplateId}
+    <div className="space-y-3">
+      <Field label="整体标签模板" required error={errors.plan_annotTemplateId}>
+        <SearchableAuditTemplateSelect
+          templates={auditTemplates}
+          value={form.annotTemplateId}
+          onChange={(annotTemplateId) => onChange({ annotTemplateId })}
+          error={errors.plan_annotTemplateId}
+        />
+      </Field>
+      <div>
+        <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
+        <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={autoFromPlan}
+            onChange={(e) => handleAutoToggle(e.target.checked)}
+            className="h-4 w-4 accent-blue-600"
           />
-        </Field>
-        <div>
-          <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-          <div className="space-y-2">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.annotGenConfig}
-                onChange={(e) => onChange({ annotGenConfig: e.target.checked })}
-                className="h-4 w-4 accent-blue-600"
-              />
-              基于采集方案生成标注配置
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.annotPreLabel}
-                onChange={(e) => onChange({ annotPreLabel: e.target.checked })}
-                className="h-4 w-4 accent-blue-600"
-              />
-              基于采集方案预标注
-            </label>
-          </div>
-        </div>
+          基于采集方案生成片段标注配置并预标注
+        </label>
+        <FragmentAnnotPreconfigPanel
+          types={displayTypes}
+          autoFromPlan={autoFromPlan}
+          onChange={handleFragmentTypesChange}
+          defaultExpanded={false}
+        />
       </div>
     </div>
   )
@@ -551,15 +575,20 @@ export function PlanReadonlyDetails({ plan, deviceTypes }) {
           totalDeviation={durationMeta.totalDeviation}
         />
       )}
-      <AnnotationManagementBlock
-        readonly
-        form={{
-          annotTemplateId: plan.annotTemplateId ?? '',
-          annotGenConfig: plan.annotGenConfig,
-          annotPreLabel: plan.annotPreLabel,
-        }}
-        onChange={() => {}}
-      />
+      <div>
+        <p className="mb-3 text-sm font-semibold text-gray-800">标注管理</p>
+        <AnnotationManagementBlock
+          readonly
+          form={{
+            annotTemplateId: plan.annotTemplateId ?? '',
+            annotAutoFragment: resolveAnnotAutoFragment(plan),
+            annotGenConfig: plan.annotGenConfig,
+            annotPreLabel: plan.annotPreLabel,
+            fragmentAnnotTypes: resolveCustomFragmentTypesFromPlan(plan),
+          }}
+          onChange={() => {}}
+        />
+      </div>
     </div>
   )
 }
@@ -609,8 +638,10 @@ export function planToForm(plan) {
     steps,
     totalDeviation,
     annotTemplateId: plan.annotTemplateId ?? '',
+    annotAutoFragment: resolveAnnotAutoFragment(plan),
     annotGenConfig: plan.annotGenConfig !== false,
     annotPreLabel: plan.annotPreLabel !== false,
+    fragmentAnnotTypes: resolveCustomFragmentTypesFromPlan(plan),
   }
 }
 
@@ -633,8 +664,10 @@ export function buildPlanPayloadFromForm(form) {
     durationMax,
     steps: normalizeStepsForSave(form.steps),
     annotTemplateId: form.annotTemplateId,
-    annotGenConfig: form.annotGenConfig,
-    annotPreLabel: form.annotPreLabel,
+    annotAutoFragment: form.annotAutoFragment !== false,
+    annotGenConfig: form.annotAutoFragment !== false,
+    annotPreLabel: form.annotAutoFragment !== false,
+    fragmentAnnotTypes: stripPresetFragmentTypes(form.fragmentAnnotTypes ?? []),
   }
 }
 
@@ -647,118 +680,131 @@ export function CollectPlanFormFields({
   updateStep,
   addStep,
   removeStep,
-  planNameLabel = '采集方案名称',
+  planNameLabel = '方案名称',
 }) {
   return (
-    <div className="space-y-3">
-      <Field label={planNameLabel} required error={errors.plan_name}>
-        <input
-          placeholder="请输入方案名称"
-          value={form.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          className={inputCls(errors.plan_name)}
-        />
-      </Field>
-
-      <SceneCascadeFields
-        form={form}
-        errors={errors}
-        onChange={onChange}
-      />
-
-      <BodyTypeField
-        typeId={form.deviceTypeId}
-        deviceTypes={deviceTypes}
-        error={errors.plan_deviceTypeId}
-        onChange={(deviceTypeId) => onChange({ deviceTypeId })}
-      />
-
-      <Field label="采集方式" required error={errors.plan_method}>
-        <select
-          value={form.method}
-          onChange={(e) => onChange({ method: e.target.value })}
-          className={selectCls(errors.plan_method)}
-        >
-          {getCollectionMethodTags().map((t) => (
-            <option key={t.id} value={t.name}>{t.name}</option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="原始场景状态">
-        <textarea
-          rows={3}
-          maxLength={500}
-          placeholder="描述场景初始状态（0/500）"
-          value={form.initialScene}
-          onChange={(e) => onChange({ initialScene: e.target.value.slice(0, 500) })}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-        <p className="mt-0.5 text-right text-xs text-gray-400">{form.initialScene.length}/500</p>
-      </Field>
-
-      <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">采集步骤</p>
+    <div className="space-y-5">
+      <section>
+        <p className="mb-3 text-sm font-semibold text-gray-800">基础信息</p>
         <div className="space-y-3">
-          {form.steps.map((step, i) => (
-            <div key={i} className="rounded-md border border-gray-200 bg-white p-3">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <span className="text-xs font-semibold text-blue-600">步骤 {i + 1}</span>
-                {form.steps.length >= 2 && (
-                  <button
-                    type="button"
-                    title="删除步骤"
-                    onClick={() => removeStep(i)}
-                    className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                  >
-                    <IconTrash />
-                  </button>
-                )}
-              </div>
-              <div className="space-y-3">
-                <StepField label="步骤描述">
-                  <input
-                    placeholder="步骤描述"
-                    value={step.description}
-                    onChange={(e) => updateStep(i, 'description', e.target.value)}
-                    className={inputCls(false)}
-                  />
-                </StepField>
-                <div className="grid grid-cols-[2fr_1fr] gap-3">
-                  <StepField label="原子技能">
-                    <AtomicSkillMultiSelect
-                      value={step.atomicSkills ?? []}
-                      onChange={(skills) => updateStep(i, 'atomicSkills', skills)}
-                    />
-                  </StepField>
-                  <StepField label="时长(秒)">
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="时长(秒)"
-                      value={step.duration}
-                      onChange={(e) => updateStep(i, 'duration', e.target.value)}
-                      className={inputCls(false)}
-                    />
-                  </StepField>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex justify-center">
-          <Button variant="link" size="sm" onClick={addStep}>+ 添加步骤</Button>
-        </div>
-        <div className="mt-3">
-          <PlanDurationSummary
-            totalDuration={durationMeta.totalDuration}
-            totalDeviation={form.totalDeviation}
-            onDeviationChange={(v) => onChange({ totalDeviation: v })}
-          />
-        </div>
-      </div>
+          <Field label={planNameLabel} required error={errors.plan_name}>
+            <input
+              placeholder="请输入方案名称"
+              value={form.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              className={inputCls(errors.plan_name)}
+            />
+          </Field>
 
-      <AnnotationManagementBlock form={form} errors={errors} onChange={onChange} />
+          <SceneCascadeFields
+            form={form}
+            errors={errors}
+            onChange={onChange}
+          />
+
+          <BodyTypeField
+            typeId={form.deviceTypeId}
+            deviceTypes={deviceTypes}
+            error={errors.plan_deviceTypeId}
+            onChange={(deviceTypeId) => onChange({ deviceTypeId })}
+          />
+
+          <Field label="采集方式" required error={errors.plan_method}>
+            <select
+              value={form.method}
+              onChange={(e) => onChange({ method: e.target.value })}
+              className={selectCls(errors.plan_method)}
+            >
+              {getCollectionMethodTags().map((t) => (
+                <option key={t.id} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      <section>
+        <p className="mb-3 text-sm font-semibold text-gray-800">动作模板</p>
+        <div className="space-y-3">
+          <Field label="原始场景状态">
+            <textarea
+              rows={3}
+              maxLength={500}
+              placeholder="描述场景初始状态（0/500）"
+              value={form.initialScene}
+              onChange={(e) => onChange({ initialScene: e.target.value.slice(0, 500) })}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <p className="mt-0.5 text-right text-xs text-gray-400">{form.initialScene.length}/500</p>
+          </Field>
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-gray-700">采集步骤</p>
+            <div className="space-y-3">
+              {form.steps.map((step, i) => (
+                <div key={i} className="rounded-md border border-gray-200 bg-white p-3">
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <span className="text-xs font-semibold text-blue-600">步骤 {i + 1}</span>
+                    {form.steps.length >= 2 && (
+                      <button
+                        type="button"
+                        title="删除步骤"
+                        onClick={() => removeStep(i)}
+                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                      >
+                        <IconTrash />
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <StepField label="步骤描述">
+                      <input
+                        placeholder="步骤描述"
+                        value={step.description}
+                        onChange={(e) => updateStep(i, 'description', e.target.value)}
+                        className={inputCls(false)}
+                      />
+                    </StepField>
+                    <div className="grid grid-cols-[2fr_1fr] gap-3">
+                      <StepField label="原子技能">
+                        <AtomicSkillMultiSelect
+                          value={step.atomicSkills ?? []}
+                          onChange={(skills) => updateStep(i, 'atomicSkills', skills)}
+                        />
+                      </StepField>
+                      <StepField label="时长(秒)">
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="时长(秒)"
+                          value={step.duration}
+                          onChange={(e) => updateStep(i, 'duration', e.target.value)}
+                          className={inputCls(false)}
+                        />
+                      </StepField>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex justify-center">
+              <Button variant="link" size="sm" onClick={addStep}>+ 添加步骤</Button>
+            </div>
+            <div className="mt-3">
+              <PlanDurationSummary
+                totalDuration={durationMeta.totalDuration}
+                totalDeviation={form.totalDeviation}
+                onDeviationChange={(v) => onChange({ totalDeviation: v })}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <p className="mb-3 text-sm font-semibold text-gray-800">标注管理</p>
+        <AnnotationManagementBlock form={form} errors={errors} onChange={onChange} />
+      </section>
     </div>
   )
 }
@@ -783,6 +829,7 @@ function deriveActionSemantic(step) {
 
 export function isPlanAnnotConfigEnabled(plan) {
   if (!plan) return false
+  if (plan.annotAutoFragment != null) return plan.annotAutoFragment !== false
   return plan.annotGenConfig !== false || plan.annotPreLabel !== false
 }
 

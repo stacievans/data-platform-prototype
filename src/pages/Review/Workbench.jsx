@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
 import { useToast } from '../../components/common/Toast'
 import {
   getEntryById,
@@ -260,11 +259,15 @@ export default function Workbench() {
     auditRejectReason: '',
   })
 
+  const [acceptForm, setAcceptForm] = useState({
+    acceptConclusion: null,
+    acceptComment: '',
+    acceptRejectReason: '',
+  })
+
   const [actionSegments, setActionSegments] = useState([])
   const [regionFrames, setRegionFrames] = useState([])
   const [savedSnapshot, setSavedSnapshot] = useState('')
-  const [acceptRejectOpen, setAcceptRejectOpen] = useState(false)
-  const [acceptRejectReason, setAcceptRejectReason] = useState('')
 
   const taskEntries = useMemo(
     () => (entry ? getEntriesByTaskId(entry.taskId) : []),
@@ -290,7 +293,17 @@ export default function Workbench() {
     }
     const nextActions = e.actionSegments ?? []
     const nextRegions = e.regionFrames ?? []
+    const nextAcceptForm = {
+      acceptConclusion: e.acceptResult === '通过'
+        ? 'pass'
+        : e.acceptResult === '不通过'
+          ? 'reject'
+          : null,
+      acceptComment: e.acceptResult === '通过' ? (e.acceptComment ?? '') : '',
+      acceptRejectReason: e.acceptResult === '不通过' ? (e.acceptComment ?? '') : '',
+    }
     setForm(nextForm)
+    setAcceptForm(nextAcceptForm)
     setActionSegments(nextActions)
     setRegionFrames(nextRegions)
     setSavedSnapshot(buildPanelSnapshot(nextForm, nextActions, nextRegions))
@@ -393,98 +406,93 @@ export default function Workbench() {
   }
 
   const handlePass = () => {
-    if (mode === 'play' || isLayoutPreview) return
-    if (mode === 'review') {
-      if (!ensureReviewSaved()) return
-      if (form.auditConclusion !== 'pass') {
-        setForm((f) => ({ ...f, auditConclusion: 'pass' }))
-      }
-      if (!form.auditQuality) {
-        showToast('请选择质量标签')
-        return
-      }
-      syncFromEntry(updateEntry(entryId, {
-        dataStatus: '已标注',
-        auditResult: '通过',
-        auditQuality: form.auditQuality,
-        auditTags: form.auditTags,
-        auditComment: form.auditComment,
-        actionSegments,
-        regionFrames,
-        reviewClaimedBy: null,
-        reviewClaimedAt: null,
-        reviewTime: nowDateTime(),
-      }))
-      goNextAfterSubmit()
+    if (mode === 'play' || isLayoutPreview || mode !== 'review') return
+    if (!ensureReviewSaved()) return
+    if (form.auditConclusion !== 'pass') {
+      setForm((f) => ({ ...f, auditConclusion: 'pass' }))
+    }
+    if (!form.auditQuality) {
+      showToast('请选择质量标签')
       return
     }
-    if (mode === 'accept') {
-      syncFromEntry(updateEntry(entryId, {
-        dataStatus: '已验收',
-        acceptResult: '通过',
-        acceptClaimedBy: null,
-        acceptClaimedAt: null,
-        acceptTime: nowDateTime(),
-      }))
-      syncBatchesAfterEntryAccept(entryId, 'pass')
-      goNextAfterSubmit()
-    }
-  }
-
-  const handleAcceptRejectOpen = () => {
-    if (mode !== 'accept' || isLayoutPreview) return
-    setAcceptRejectReason('')
-    setAcceptRejectOpen(true)
-  }
-
-  const handleAcceptRejectConfirm = () => {
-    const reason = acceptRejectReason.trim()
-    if (!reason) return
     syncFromEntry(updateEntry(entryId, {
-      dataStatus: '验收不通过',
-      acceptResult: '不通过',
-      acceptComment: reason,
-      acceptClaimedBy: null,
-      acceptClaimedAt: null,
-      acceptTime: nowDateTime(),
+      dataStatus: '已标注',
+      auditResult: '通过',
+      auditQuality: form.auditQuality,
+      auditTags: form.auditTags,
+      auditComment: form.auditComment,
+      actionSegments,
+      regionFrames,
+      reviewClaimedBy: null,
+      reviewClaimedAt: null,
+      reviewTime: nowDateTime(),
     }))
-    syncBatchesAfterEntryAccept(entryId, 'reject')
-    setAcceptRejectOpen(false)
-    setAcceptRejectReason('')
     goNextAfterSubmit()
   }
 
-  const handleReject = () => {
-    if (mode === 'play' || isLayoutPreview || mode === 'accept') return
-    if (mode === 'review') {
-      if (!ensureReviewSaved()) return
-      if (form.auditConclusion !== 'reject') {
-        setForm((f) => ({ ...f, auditConclusion: 'reject' }))
-      }
-      const reason = form.auditRejectReason.trim()
+  const handleAcceptSubmit = () => {
+    if (mode !== 'accept' || isLayoutPreview) return
+    const { acceptConclusion, acceptComment, acceptRejectReason } = acceptForm
+    if (!acceptConclusion) {
+      showToast('请选择验收结论')
+      return
+    }
+    if (acceptConclusion === 'reject') {
+      const reason = acceptRejectReason.trim()
       if (!reason) {
         showToast('请填写驳回理由')
         return
       }
       syncFromEntry(updateEntry(entryId, {
-        dataStatus: '标注不通过',
-        auditResult: '不通过',
-        auditQuality: form.auditQuality,
-        auditTags: form.auditTags,
-        auditComment: form.auditComment,
-        auditRejectReason: reason,
-        actionSegments,
-        regionFrames,
-        reviewClaimedBy: null,
-        reviewClaimedAt: null,
-        reviewTime: nowDateTime(),
+        dataStatus: '验收不通过',
+        acceptResult: '不通过',
+        acceptComment: reason,
+        acceptClaimedBy: null,
+        acceptClaimedAt: null,
+        acceptTime: nowDateTime(),
       }))
+      syncBatchesAfterEntryAccept(entryId, 'reject')
       goNextAfterSubmit()
       return
     }
+    syncFromEntry(updateEntry(entryId, {
+      dataStatus: '已验收',
+      acceptResult: '通过',
+      acceptComment: acceptComment.trim(),
+      acceptClaimedBy: null,
+      acceptClaimedAt: null,
+      acceptTime: nowDateTime(),
+    }))
+    syncBatchesAfterEntryAccept(entryId, 'pass')
+    goNextAfterSubmit()
   }
 
-  const passRejectDisabled = mode === 'play' || isLayoutPreview
+  const handleReject = () => {
+    if (mode === 'play' || isLayoutPreview || mode !== 'review') return
+    if (!ensureReviewSaved()) return
+    if (form.auditConclusion !== 'reject') {
+      setForm((f) => ({ ...f, auditConclusion: 'reject' }))
+    }
+    const reason = form.auditRejectReason.trim()
+    if (!reason) {
+      showToast('请填写驳回理由')
+      return
+    }
+    syncFromEntry(updateEntry(entryId, {
+      dataStatus: '标注不通过',
+      auditResult: '不通过',
+      auditQuality: form.auditQuality,
+      auditTags: form.auditTags,
+      auditComment: form.auditComment,
+      auditRejectReason: reason,
+      actionSegments,
+      regionFrames,
+      reviewClaimedBy: null,
+      reviewClaimedAt: null,
+      reviewTime: nowDateTime(),
+    }))
+    goNextAfterSubmit()
+  }
 
   const totalFrames = entry?.totalFrames ?? 3140
   const signalSeries = useMemo(
@@ -529,24 +537,6 @@ export default function Workbench() {
         <div className="flex shrink-0 items-center gap-2">
           {!isLayoutPreview && (
             <>
-              {mode === 'accept' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handlePass}
-                    className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-blue-600 px-3.5 py-1.5 text-sm text-white transition hover:bg-blue-700"
-                  >
-                    通过
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAcceptRejectOpen}
-                    className="inline-flex cursor-pointer items-center rounded-md border-[0.5px] border-blue-500 bg-white px-3.5 py-1.5 text-sm text-blue-600 transition hover:bg-blue-50"
-                  >
-                    驳回
-                  </button>
-                </>
-              )}
               <button
                 type="button"
                 disabled={currentIndex <= 0}
@@ -632,6 +622,8 @@ export default function Workbench() {
               entry={entry}
               form={form}
               setForm={setForm}
+              acceptForm={acceptForm}
+              setAcceptForm={setAcceptForm}
               actionSegments={actionSegments}
               setActionSegments={setActionSegments}
               regionFrames={regionFrames}
@@ -640,59 +632,16 @@ export default function Workbench() {
               onSave={handleSaveDraft}
               saveDisabled={saveDisabled}
               showSave={mode === 'review' && !isLayoutPreview}
-              onPass={mode === 'review' ? handlePass : undefined}
-              onReject={mode === 'review' ? handleReject : undefined}
-              passRejectDisabled={passRejectDisabled}
+              showSubmit={mode === 'accept' && !isLayoutPreview}
+              onAcceptSubmit={handleAcceptSubmit}
+              onPass={handlePass}
+              onReject={handleReject}
             />
           </div>
         )}
       </div>
 
       {ToastNode}
-
-      <Modal
-        open={acceptRejectOpen}
-        title="驳回理由"
-        onCancel={() => {
-          setAcceptRejectOpen(false)
-          setAcceptRejectReason('')
-        }}
-        footer={(
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setAcceptRejectOpen(false)
-                setAcceptRejectReason('')
-              }}
-            >
-              取消
-            </Button>
-            <Button
-              variant="primary"
-              disabled={!acceptRejectReason.trim()}
-              onClick={handleAcceptRejectConfirm}
-            >
-              确认
-            </Button>
-          </div>
-        )}
-        width={480}
-      >
-        <div>
-          <label className="mb-2 block text-sm text-gray-600">
-            驳回理由
-            <span className="text-red-500"> *</span>
-          </label>
-          <textarea
-            rows={4}
-            value={acceptRejectReason}
-            onChange={(e) => setAcceptRejectReason(e.target.value)}
-            placeholder="请输入驳回理由"
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-      </Modal>
     </div>
   )
 }
