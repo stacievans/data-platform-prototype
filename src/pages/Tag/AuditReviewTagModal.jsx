@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
-import { CreatorReadonlyField } from '../../components/common/FormField'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import { APPLICATION_SCOPE_OPTIONS } from '../../mock/tags'
 
@@ -104,9 +103,7 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
   const updateChild = (ci, patch) => {
     setForm((f) => {
       const children = [...f.children]
-      const next = { ...children[ci], ...patch }
-      if (patch.name !== undefined) next.value = patch.name
-      children[ci] = next
+      children[ci] = { ...children[ci], ...patch }
       return { ...f, children }
     })
     if (patch.name !== undefined) {
@@ -151,7 +148,6 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
       okText="确定"
     >
       <div className="space-y-5">
-        {!isEdit && <CreatorReadonlyField />}
         <div>
           <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
             一级标签名称
@@ -210,6 +206,15 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
                       {errs.children[ci]?.name && (
                         <p className="mt-1 text-xs text-red-500">标签名称不能为空</p>
                       )}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">标签值</label>
+                      <input
+                        value={child.value}
+                        onChange={(e) => updateChild(ci, { value: e.target.value })}
+                        placeholder="默认同标签名称"
+                        className={inputCls(false)}
+                      />
                     </div>
                     <div>
                       <label className="mb-1 block text-xs text-gray-500">描述</label>

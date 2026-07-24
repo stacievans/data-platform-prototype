@@ -1020,7 +1020,7 @@ export default function UserListPanel({
 
                 <select value={qOrgId} onChange={(e) => setQOrgId(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
 
-                  <option value="">全部组织</option>
+                  <option value="">全部</option>
 
                   {organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
 
@@ -1036,7 +1036,7 @@ export default function UserListPanel({
 
               <select value={qRole} onChange={(e) => setQRole(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
 
-                <option value="">全部角色</option>
+                <option value="">全部</option>
 
                 {allRoleNames.map((r) => <option key={r} value={r}>{r}</option>)}
 
@@ -1050,7 +1050,7 @@ export default function UserListPanel({
 
               <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
 
-                <option value="">全部状态</option>
+                <option value="">全部</option>
 
                 <option value="启用">启用</option>
 

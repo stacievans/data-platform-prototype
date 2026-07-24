@@ -94,14 +94,14 @@ export default function SystemManage() {
           <div>
             <label className="mb-1 block text-xs text-gray-500">角色</label>
             <select value={queryRole} onChange={(e) => setQueryRole(e.target.value)} className={`${selCls} w-28`}>
-              <option value="">全部角色</option>
+              <option value="">全部</option>
               {roles.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-500">状态</label>
             <select value={queryStatus} onChange={(e) => setQueryStatus(e.target.value)} className={`${selCls} w-24`}>
-              <option value="">全部状态</option>
+              <option value="">全部</option>
               <option value="启用">启用</option>
               <option value="停用">停用</option>
             </select>

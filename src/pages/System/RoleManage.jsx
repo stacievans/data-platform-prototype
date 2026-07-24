@@ -110,6 +110,7 @@ export default function RoleManage() {
   const { ToastNode, show: toast } = useToast()
   const [qName, setQName] = useState('')
   const [qType, setQType] = useState('')
+  const [qStatus, setQStatus] = useState('')
   const [filters, setFilters] = useState({})
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -151,13 +152,14 @@ export default function RoleManage() {
     roles.filter((r) => {
       if (filters.name && !r.name.includes(filters.name)) return false
       if (filters.type && r.type !== filters.type) return false
+      if (filters.status && r.status !== filters.status) return false
       return true
     }),
     [roles, filters],
   )
 
-  const applyFilters = () => setFilters({ name: qName.trim(), type: qType })
-  const resetFilters = () => { setQName(''); setQType(''); setFilters({}) }
+  const applyFilters = () => setFilters({ name: qName.trim(), type: qType, status: qStatus })
+  const resetFilters = () => { setQName(''); setQType(''); setQStatus(''); setFilters({}) }
 
   const handleSavePermissions = (permissions) => {
     if (!permTarget) return
@@ -241,9 +243,17 @@ export default function RoleManage() {
             <div className="min-w-[140px] flex-1">
               <label className={LBL}>角色类型</label>
               <select value={qType} onChange={(e) => setQType(e.target.value)} className={selCls}>
-                <option value="">全部类型</option>
+                <option value="">全部</option>
                 <option value="内置">内置</option>
                 <option value="自定义">自定义</option>
+              </select>
+            </div>
+            <div className="min-w-[140px] flex-1">
+              <label className={LBL}>状态</label>
+              <select value={qStatus} onChange={(e) => setQStatus(e.target.value)} className={selCls}>
+                <option value="">全部</option>
+                <option value="启用">启用</option>
+                <option value="停用">停用</option>
               </select>
             </div>
             <div className="flex shrink-0 gap-2">

@@ -26,8 +26,28 @@ const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5
 const LBL = 'mb-1 block text-xs text-gray-500'
 const nowDatetime = () => nowDateTime()
 
-const URDF_FILE_MAX_BYTES = 20 * 1024 * 1024
-const URDF_ACCEPT = '.urdf,.xacro,application/xml,text/xml'
+const URDF_FILE_MAX_BYTES = 100 * 1024 * 1024
+const URDF_ACCEPT = '.zip,application/zip'
+
+function resolveUrdfStatus(row) {
+  if (row.urdfStatus) return row.urdfStatus
+  return row.hasUrdf ? 'success' : 'none'
+}
+
+function renderUrdfCell(row, onPreview) {
+  const status = resolveUrdfStatus(row)
+  if (status === 'success') {
+    return (
+      <Button variant="link" size="sm" onClick={() => onPreview(row)}>
+        预览
+      </Button>
+    )
+  }
+  if (status === 'failed') {
+    return <span className="text-sm text-red-500">解析失败</span>
+  }
+  return <span className="text-gray-400">-</span>
+}
 
 const emptyTypeForm = () => {
   const bodies = getBodyTypeTagNames()
@@ -49,12 +69,12 @@ function UrdfFileUpload({ fileName, error, onSelect, onClear }) {
   const acceptFile = (file) => {
     if (!file) return
     const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!['urdf', 'xacro'].includes(ext ?? '')) {
-      onSelect('', '请上传 URDF 或 XACRO 格式文件')
+    if (ext !== 'zip') {
+      onSelect('', '请上传 .zip 格式文件')
       return
     }
     if (file.size > URDF_FILE_MAX_BYTES) {
-      onSelect('', '文件大小不能超过 20MB')
+      onSelect('', '文件大小不能超过 100MB')
       return
     }
     onSelect(file.name, '')
@@ -110,8 +130,8 @@ function UrdfFileUpload({ fileName, error, onSelect, onClear }) {
         onDrop={onDrop}
       >
         <IconUpload className="mb-2 h-8 w-8 text-gray-400" />
-        <p className="text-sm text-gray-600">点击或拖拽 URDF 文件到此区域上传</p>
-        <p className="mt-1 text-xs text-gray-400">支持 .urdf / .xacro，文件大小不超过 20MB</p>
+        <p className="text-sm text-gray-600">点击或拖拽文件到此区域上传</p>
+        <p className="mt-1 text-xs text-gray-400">支持上传 .zip 文件，大小不超过 100MB</p>
         <input ref={fileRef} type="file" accept={URDF_ACCEPT} className="hidden" onChange={onFileChange} />
       </div>
       {error && <p className="mt-1.5 text-xs text-red-500">{error}</p>}
@@ -151,7 +171,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         leftEnd: editing.leftEnd,
         rightEnd: editing.rightEnd,
         description: editing.description ?? '',
-        urdfFileName: editing.hasUrdf ? '当前 URDF 文件' : '',
+        urdfFileName: editing.hasUrdf || editing.urdfStatus === 'success' ? '当前 URDF 文件' : '',
       })
     } else {
       setForm(emptyTypeForm())
@@ -183,12 +203,15 @@ function TypeModal({ open, editing, onCancel, onOk }) {
 
     const ts = nowDatetime()
 
+    const hasUrdfFile = Boolean(form.urdfFileName)
+
     if (isEdit) {
       onOk({
         ...editing,
         name: trimmedName,
         description: form.description.trim(),
-        hasUrdf: Boolean(form.urdfFileName),
+        hasUrdf: hasUrdfFile,
+        urdfStatus: hasUrdfFile ? 'success' : 'none',
         updatedAt: ts,
       })
     } else {
@@ -198,7 +221,8 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         body: form.body,
         leftEnd: form.leftEnd,
         rightEnd: form.rightEnd,
-        hasUrdf: Boolean(form.urdfFileName),
+        hasUrdf: hasUrdfFile,
+        urdfStatus: hasUrdfFile ? 'success' : 'none',
         description: form.description.trim(),
         creator: creatorName,
         createdAt: ts,
@@ -315,7 +339,7 @@ function UrdfPreviewModal({ open, typeName, onClose }) {
         </span>
       </div>
       <p className="mt-4 text-center text-xs text-gray-400">
-        当前为静态占位，正式版本支持拖拽旋转查看
+        当前为静态占位，正式支持鼠标左键-平移、滚轮-缩放、右键-旋转视角
       </p>
     </Modal>
   )
@@ -404,13 +428,7 @@ export default function TypeList() {
     {
       title: 'URDF',
       key: 'urdf',
-      render: (_, row) => (
-        row.hasUrdf ? (
-          <Button variant="link" size="sm" onClick={() => setPreviewTarget(row)}>预览</Button>
-        ) : (
-          <span className="text-gray-400">—</span>
-        )
-      ),
+      render: (_, row) => renderUrdfCell(row, setPreviewTarget),
     },
     {
       title: '描述',

@@ -30,7 +30,16 @@ const menu = [
       { key: '/dataset/self', label: '真机数据集', permission: 'dataset.self.view' },
     ],
   },
-  { key: '/tag', label: '标签管理', icon: <IconTag />, permission: 'tag.view' },
+  {
+    key: 'tag',
+    label: '标签管理',
+    icon: <IconTag />,
+    children: [
+      { key: '/tag/collect', label: '采集标签', permission: 'tag.view' },
+      { key: '/tag/device', label: '设备标签', permission: 'tag.view' },
+      { key: '/tag/audit', label: '审核模板', permission: 'tag.view' },
+    ],
+  },
   { key: '/device', label: '设备管理', icon: <IconDevice />, permission: 'device.view' },
   {
     key: 'system',
@@ -46,7 +55,13 @@ const menu = [
 
 export default function Sidebar({ collapsed }) {
   const location = useLocation()
-  const [openKeys, setOpenKeys] = useState(['collection', 'dataset', 'system'])
+  const [openKeys, setOpenKeys] = useState(['collection', 'dataset', 'tag', 'system'])
+
+  const isChildActive = (childKey) => {
+    if (location.pathname.startsWith(childKey)) return true
+    if (childKey === '/tag/audit' && location.pathname.startsWith('/tag/audit-template')) return true
+    return false
+  }
 
   const toggle = (key) =>
     setOpenKeys((keys) =>
@@ -84,9 +99,7 @@ export default function Sidebar({ collapsed }) {
             )
           }
 
-          const childActive = item.children.some((c) =>
-            location.pathname.startsWith(c.key),
-          )
+          const childActive = item.children.some((c) => isChildActive(c.key))
           const open = openKeys.includes(item.key) && !collapsed
 
           return (
@@ -114,9 +127,9 @@ export default function Sidebar({ collapsed }) {
                     <NavLink
                       key={child.key}
                       to={child.key}
-                      className={({ isActive }) =>
+                      className={() =>
                         `block rounded-md py-2 pl-11 pr-3 text-sm transition-colors ${
-                          isActive
+                          isChildActive(child.key)
                             ? 'bg-blue-600 text-white'
                             : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                         }`

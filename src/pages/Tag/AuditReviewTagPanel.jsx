@@ -94,24 +94,26 @@ function formToGroup(form, existingGroup, currentUser) {
   }
 }
 
-function matchesQuery(row, nameQ) {
+function matchesQuery(row, nameQ, valueQ) {
   if (nameQ && !row.name.includes(nameQ)) return false
+  const val = row.value ?? row.name ?? ''
+  if (valueQ && !String(val).includes(valueQ)) return false
   return true
 }
 
-function groupMatches(group, nameQ, scopeQ) {
+function groupMatches(group, nameQ, valueQ, scopeQ) {
   if (scopeQ && (group.applicationScope ?? '全局') !== scopeQ) return false
-  if (!nameQ) return true
-  if (matchesQuery({ name: group.name }, nameQ)) return true
-  return (group.children ?? []).some((c) => matchesQuery(c, nameQ))
+  if (!nameQ && !valueQ) return true
+  if (matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)) return true
+  return (group.children ?? []).some((c) => matchesQuery(c, nameQ, valueQ))
 }
 
-function buildVisibleRows(groups, expanded, nameQ, scopeQ) {
+function buildVisibleRows(groups, expanded, nameQ, valueQ, scopeQ) {
   const rows = []
-  const filtered = (nameQ || scopeQ)
-    ? groups.filter((g) => groupMatches(g, nameQ, scopeQ))
+  const filtered = (nameQ || valueQ || scopeQ)
+    ? groups.filter((g) => groupMatches(g, nameQ, valueQ, scopeQ))
     : groups
-  const autoExpand = Boolean(nameQ)
+  const autoExpand = Boolean(nameQ || valueQ)
 
   filtered.forEach((group) => {
     rows.push({
@@ -119,6 +121,7 @@ function buildVisibleRows(groups, expanded, nameQ, scopeQ) {
       level: 1,
       rowType: 'group',
       name: group.name,
+      value: '—',
       description: group.description,
       applicationScope: group.applicationScope ?? '全局',
       creator: group.creator,
@@ -132,15 +135,16 @@ function buildVisibleRows(groups, expanded, nameQ, scopeQ) {
     if (!groupExpanded) return
 
     ;(group.children ?? []).forEach((child) => {
-      if (nameQ) {
-        const parentHit = matchesQuery({ name: group.name }, nameQ)
-        if (!parentHit && !matchesQuery(child, nameQ)) return
+      if (nameQ || valueQ) {
+        const parentHit = matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)
+        if (!parentHit && !matchesQuery(child, nameQ, valueQ)) return
       }
       rows.push({
         id: child.id,
         level: 2,
         rowType: 'leaf',
         name: child.name,
+        value: child.value ?? child.name,
         description: child.description,
         applicationScope: group.applicationScope ?? '全局',
         creator: child.creator,
@@ -175,8 +179,10 @@ export default function AuditReviewTagPanel({ templateId }) {
   const [tree, setTree] = useState(() => deepCloneTree(template?.tagTree ?? []))
   const [expanded, setExpanded] = useState(() => new Set())
   const [nameQuery, setNameQuery] = useState('')
+  const [valueQuery, setValueQuery] = useState('')
   const [scopeQuery, setScopeQuery] = useState(APPLICATION_SCOPE_OPTIONS[0])
   const [appliedName, setAppliedName] = useState('')
+  const [appliedValue, setAppliedValue] = useState('')
   const [appliedScope, setAppliedScope] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
@@ -188,11 +194,11 @@ export default function AuditReviewTagPanel({ templateId }) {
   }
 
   const visibleRows = useMemo(
-    () => buildVisibleRows(tree, expanded, appliedName, appliedScope),
-    [tree, expanded, appliedName, appliedScope],
+    () => buildVisibleRows(tree, expanded, appliedName, appliedValue, appliedScope),
+    [tree, expanded, appliedName, appliedValue, appliedScope],
   )
 
-  const pageResetKey = `${appliedName}|${appliedScope}|${tree.length}`
+  const pageResetKey = `${appliedName}|${appliedValue}|${appliedScope}|${tree.length}`
 
   const toggleExpand = (id) => {
     setExpanded((prev) => {
@@ -243,10 +249,15 @@ export default function AuditReviewTagPanel({ templateId }) {
               expanded={expanded.has(row.id)}
               onClick={() => toggleExpand(row.id)}
             />
-            <span className="truncate font-medium text-gray-800">{row.name}</span>
+            <span className="truncate font-bold text-gray-800">{row.name}</span>
           </div>
         )
       },
+    },
+    {
+      title: '标签值',
+      dataIndex: 'value',
+      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
     },
     {
       title: '描述',
@@ -260,7 +271,6 @@ export default function AuditReviewTagPanel({ templateId }) {
       dataIndex: 'applicationScope',
       render: (v) => <span className="text-gray-600">{v || '—'}</span>,
     },
-    { title: '创建人', dataIndex: 'creator' },
     dtCol('创建时间', 'createdAt'),
     dtCol('最后更新', 'updatedAt'),
     {
@@ -296,6 +306,15 @@ export default function AuditReviewTagPanel({ templateId }) {
             />
           </div>
           <div>
+            <label className="mb-1 block text-xs text-gray-500">标签值</label>
+            <input
+              value={valueQuery}
+              onChange={(e) => setValueQuery(e.target.value)}
+              placeholder="输入标签值"
+              className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            />
+          </div>
+          <div>
             <label className="mb-1 block text-xs text-gray-500">应用范围</label>
             <select
               value={scopeQuery}
@@ -309,8 +328,10 @@ export default function AuditReviewTagPanel({ templateId }) {
           </div>
           <Button onClick={() => {
             setNameQuery('')
+            setValueQuery('')
             setScopeQuery(APPLICATION_SCOPE_OPTIONS[0])
             setAppliedName('')
+            setAppliedValue('')
             setAppliedScope('')
           }}
           >
@@ -318,6 +339,7 @@ export default function AuditReviewTagPanel({ templateId }) {
           </Button>
           <Button variant="primary" onClick={() => {
             setAppliedName(nameQuery.trim())
+            setAppliedValue(valueQuery.trim())
             setAppliedScope(scopeQuery)
           }}
           >

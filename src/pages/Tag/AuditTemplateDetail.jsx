@@ -14,7 +14,7 @@ export default function AuditTemplateDetail() {
         <div className="rounded-lg border border-gray-100 bg-white py-16 text-center text-gray-400 shadow-sm">
           模板不存在
           <div className="mt-4">
-            <Button onClick={() => navigate('/tag?tab=audit')}>返回模板列表</Button>
+            <Button onClick={() => navigate('/tag/audit')}>返回模板列表</Button>
           </div>
         </div>
       </div>

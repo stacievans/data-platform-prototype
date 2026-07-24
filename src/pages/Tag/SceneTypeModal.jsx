@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
-import { CreatorReadonlyField } from '../../components/common/FormField'
 
 const inputCls = (err) =>
   `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${
@@ -202,7 +201,6 @@ export default function SceneTypeModal({ open, scene, onCancel, onOk }) {
       okText="确定"
     >
       <div className="space-y-5">
-        {!isEdit && <CreatorReadonlyField />}
         <div>
           <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
             场景名称<span className="text-red-500">*</span>

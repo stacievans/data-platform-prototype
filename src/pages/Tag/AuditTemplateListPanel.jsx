@@ -55,9 +55,7 @@ export default function AuditTemplateListPanel() {
   const { ToastNode, show: showToast } = useToast()
   const [templates, setTemplates] = useState(() => getAuditTemplates())
   const [nameQuery, setNameQuery] = useState('')
-  const [creatorQuery, setCreatorQuery] = useState('')
   const [appliedName, setAppliedName] = useState('')
-  const [appliedCreator, setAppliedCreator] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -66,11 +64,10 @@ export default function AuditTemplateListPanel() {
 
   const filtered = useMemo(() => templates.filter((t) => {
     if (appliedName && !t.name.includes(appliedName)) return false
-    if (appliedCreator && !t.creator.includes(appliedCreator)) return false
     return true
-  }), [templates, appliedName, appliedCreator])
+  }), [templates, appliedName])
 
-  const pageResetKey = `${appliedName}|${appliedCreator}|${templates.length}`
+  const pageResetKey = `${appliedName}|${templates.length}`
 
   const openCreate = () => {
     setEditing(null)
@@ -146,7 +143,7 @@ export default function AuditTemplateListPanel() {
     {
       title: '模板ID',
       dataIndex: 'id',
-      render: (v) => <span className="font-medium text-blue-600">{v}</span>,
+      render: (v) => <span className="text-gray-800">{v}</span>,
     },
     { title: '模板名称', dataIndex: 'name', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
     { title: '关联任务数', dataIndex: 'taskCount' },
@@ -157,7 +154,6 @@ export default function AuditTemplateListPanel() {
         <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>
       ),
     },
-    { title: '创建人', dataIndex: 'creator' },
     dtCol('创建时间', 'createdAt'),
     dtCol('更新时间', 'updatedAt'),
     {
@@ -205,27 +201,15 @@ export default function AuditTemplateListPanel() {
               className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">创建人</label>
-            <input
-              value={creatorQuery}
-              onChange={(e) => setCreatorQuery(e.target.value)}
-              placeholder="输入创建人"
-              className="h-8 w-40 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-            />
-          </div>
           <Button onClick={() => {
             setNameQuery('')
-            setCreatorQuery('')
             setAppliedName('')
-            setAppliedCreator('')
           }}
           >
             重置
           </Button>
           <Button variant="primary" onClick={() => {
             setAppliedName(nameQuery.trim())
-            setAppliedCreator(creatorQuery.trim())
           }}
           >
             查询
