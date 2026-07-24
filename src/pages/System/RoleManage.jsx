@@ -1,5 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
@@ -17,75 +16,6 @@ const LBL = 'mb-1 block text-xs text-gray-500'
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 const selCls = `${inputCls} cursor-pointer`
 
-function TooltipWrap({ label, children }) {
-  const anchorRef = useRef(null)
-  const tipRef = useRef(null)
-  const [visible, setVisible] = useState(false)
-  const [tipStyle, setTipStyle] = useState({ left: 0, top: 0, opacity: 0 })
-
-  const repositionTip = () => {
-    const anchor = anchorRef.current
-    const tipEl = tipRef.current
-    if (!anchor || !tipEl) return
-
-    const rect = anchor.getBoundingClientRect()
-    const tipW = tipEl.offsetWidth
-    const tipH = tipEl.offsetHeight
-    const gap = 6
-    const pad = 8
-    const vw = window.innerWidth
-
-    const centerX = rect.left + rect.width / 2
-    let left = centerX - tipW / 2
-    if (left + tipW > vw - pad) left = vw - pad - tipW
-    if (left < pad) left = pad
-
-    let top = rect.top - gap - tipH
-    if (top < pad) top = rect.bottom + gap
-
-    setTipStyle({ left, top, opacity: 1 })
-  }
-
-  useLayoutEffect(() => {
-    if (!visible) return
-    repositionTip()
-    const onMove = () => repositionTip()
-    window.addEventListener('scroll', onMove, true)
-    window.addEventListener('resize', onMove)
-    return () => {
-      window.removeEventListener('scroll', onMove, true)
-      window.removeEventListener('resize', onMove)
-    }
-  }, [visible, label])
-
-  return (
-    <>
-      <span
-        ref={anchorRef}
-        className="inline-flex shrink-0"
-        onMouseEnter={() => {
-          setTipStyle({ left: 0, top: 0, opacity: 0 })
-          setVisible(true)
-        }}
-        onMouseLeave={() => setVisible(false)}
-      >
-        {children}
-      </span>
-      {visible && createPortal(
-        <div
-          ref={tipRef}
-          role="tooltip"
-          className="pointer-events-none fixed z-[9999] w-max max-w-[calc(100vw-16px)] whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg"
-          style={{ left: tipStyle.left, top: tipStyle.top, opacity: tipStyle.opacity }}
-        >
-          {label}
-        </div>,
-        document.body,
-      )}
-    </>
-  )
-}
-
 function StatusSwitch({ enabled, onToggle }) {
   return (
     <button
@@ -101,10 +31,7 @@ function StatusSwitch({ enabled, onToggle }) {
   )
 }
 
-function deleteDisabledReason(row) {
-  if (row.memberCount > 0) return '该角色下存在成员，无法删除'
-  return null
-}
+
 
 export default function RoleManage() {
   const { roles, updateRole, addRole, toggleRoleStatus, deleteRole, can } = useAuth()
@@ -217,27 +144,21 @@ export default function RoleManage() {
       key: 'actions',
       render: (_, row) => {
         const isBuiltin = row.type === '内置'
-        const deleteReason = deleteDisabledReason(row)
-        const canDelete = !deleteReason
-        const deleteBtn = (
-          <button
-            type="button"
-            disabled={!canDelete}
-            onClick={canDelete ? () => setDeleteTarget(row) : undefined}
-            className={`text-sm ${canDelete ? 'cursor-pointer text-red-500 hover:text-red-400' : 'cursor-not-allowed text-red-300 opacity-40'}`}
-          >
-            删除
-          </button>
-        )
 
         return (
           <div className="flex items-center justify-center gap-2">
             {can('system.role.assignPerm')
               ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑权限</Button>
               : <span className="text-xs text-gray-300">—</span>}
-            {!isBuiltin && (deleteReason
-              ? <TooltipWrap label={deleteReason}>{deleteBtn}</TooltipWrap>
-              : deleteBtn)}
+            {!isBuiltin && (
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(row)}
+                className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+              >
+                删除
+              </button>
+            )}
           </div>
         )
       },

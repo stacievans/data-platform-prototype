@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · **抽样验收**（项目详情 Tab；任务维度新建批次；筛选点查询刷新；抽检数下限；验收工作台同步批次进度）· **标注工作台**（播放/标注/验收三模式；右侧四模块统一骨架；验收在侧栏提交）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· **标签管理**（采集/设备/审核模板三级 Tab；审核模板列表 + 详情页标签树；**无标签值列**；**随时可删改**）· 采集方案 **三模块表单**（基础信息 / 动作模板 / 标注管理；**片段标注预配置**折叠编辑器）· 设备管理（**设备名称**+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · **统一分页**（10 条/页 + 省略号页码）· RBAC **角色权限配置页仍保留**（原型演示 **全量开放**，无菜单/按钮/数据范围拦截）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
+**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · **抽样验收**（项目详情 Tab；任务维度新建批次；筛选点查询刷新；抽检数下限；验收工作台同步批次进度）· **标注工作台**（播放/标注/验收三模式；右侧四模块统一骨架；验收在侧栏提交）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· **标签管理**（采集/设备/审核模板三级 Tab；**标签值**列与筛选项；审核模板列表 + 详情页标签树；**随时可删改**）· 采集方案 **三模块表单**（基础信息 / 动作模板 / 标注管理；**片段标注预配置**折叠编辑器）· 设备管理（**设备名称**+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · **统一分页**（10 条/页 + 省略号页码）· RBAC **角色权限配置页仍保留**（原型演示 **全量开放**，无菜单/按钮/数据范围拦截）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **用户管理**（用户名/登录方式/角色/组织/状态筛选；列表含所属组织、登录方式；新建/邀请双 Tab 弹窗）· **角色管理**（菜单权限树 + 项目数据权限；内置角色不显示删除）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -104,7 +104,7 @@ npm run preview
 ```
 AuthProvider (AuthContext.jsx)
   ├─ user          ← organizations.js runtime users + rbac.js USER_EMAILS
-  ├─ roles         ← rbac.js 运行时角色（permissions[]、status 会话内可改；不含超级管理员）
+  ├─ roles         ← rbac.js 运行时角色（permissions[]、projectIds[]、status 会话内可改；不含超级管理员）
   ├─ enabledRoles  ← status === '启用' 的角色（用户管理新建角色下拉）
   ├─ can(key)      ← 原型恒为 true
   ├─ canAccessRoute(pathname) ← 原型恒为 true
@@ -120,7 +120,7 @@ Sidebar          展示全部菜单（原型不过滤）
 PermissionGuard  原型直接放行
 ProjectMutateGate 项目关闭/归档时置灰新建类入口 + Tooltip
 PermissionAction PermButton / PermAction / PermMenuItem（原型均可用；组件仍保留权限 key 参数）
-UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建/编辑弹窗
+UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建/编辑弹窗；global 新建走 CreateInviteUserModal
 页面组件         数据范围 filter 原型不过滤；操作按钮权限 key 仍传入组件
 ```
 
@@ -186,9 +186,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | **游客** | `dashboard.view`；`dataset.self/open` 的 **view**；`tag.view`；`device.view`（无 `collection.*`、无下载） |
 | **工程师** | `dashboard.view`；`dataset.self/open` 的 view + download；`tag.view`；`device.view`（无 `collection.*`） |
 
-自定义角色通过 **角色管理** 页（`/system/role`）新建，初始 `permissions: []`、`status: '启用'`，需手动「编辑权限」。**停用的角色**不出现在用户管理新建/编辑的角色下拉中。
+自定义角色通过 **角色管理** 页（`/system/role`）新建，需填写名称与描述，并可在创建时配置 **菜单权限**（`MenuPermissionTree`）与 **数据权限**（`ProjectDataTransfer` 勾选可见项目）；初始 `status: '启用'`。**停用的角色**不出现在用户管理新建/编辑的角色下拉中。
 
-内置角色 **不可删除**；自定义角色仅 **成员数为 0** 时可删（否则置灰 + Tooltip）。
+内置角色 **不显示删除按钮**；自定义角色 **均可删除**（二次确认，与是否绑定用户无关）。
 
 ### 权限生效范围（配置 vs 原型）
 
@@ -210,8 +210,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 真机数据集 | 新建、删除、下载说明；详情数据条目 Tab：批量下载、删除（`dataset.self.update`）；卡片菜单删除 |
 | 标签管理 | 各 Tab 新建；行内编辑、删除 |
 | 设备管理 | 新建类型/实例；行内编辑、删除 |
-| 用户管理 | 新建用户、编辑用户、删除用户（不可删当前登录用户） |
-| 角色管理 | 新建角色、**状态开关**、**删除角色**（规则见 [角色管理](#角色管理-systemrole)）、编辑权限 |
+| 用户管理 | 新建/邀请用户、编辑、删除用户（不可删当前登录用户） |
+| 角色管理 | 新建角色、**状态开关**、**删除角色**（自定义角色均可删；内置角色不显示删除）、编辑权限 |
 | 组织管理 | 新建组织、编辑、删除、启停（联动组织下全部用户状态）；列表 **详情** 跳转组织详情 |
 
 > **运营看板**：当前仍为全量 mock 数据，不随项目成员数据范围收缩（已知临时差异）。
@@ -234,7 +234,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ### 编辑权限弹窗
 
-`RolePermissionModal`：树形模块 + 操作 checkbox 矩阵；保存写入 `rbac.js` 运行时 store，**刷新页面恢复 preset**（不影响原型浏览时的按钮显隐）。
+`RolePermissionModal`（标题「编辑权限」，宽 920px）：与新建角色弹窗字段对齐 — **角色名称**（内置只读）、**描述**、**菜单权限**（`MenuPermissionTree` 树形勾选）、**数据权限**（`ProjectDataTransfer`，**仅自定义角色**展示）；保存写入 `rbac.js` 运行时 store，**刷新页面恢复 preset**（不影响原型浏览时的按钮显隐）。
+
+新建角色弹窗（`RoleManage.jsx`）同样包含：自动生成的角色 ID（只读）、角色名称、描述（必填）、菜单权限、数据权限；**无「类型」字段**（保存时固定为「自定义」）。
 
 ### 创建人自动填充
 
@@ -244,10 +246,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 |---|---|
 | 采集项目 · 新建项目 | `Project/index.jsx` |
 | 真机数据集 · 新建数据集 | `CreateDatasetModal.jsx` |
-| 标签管理 · 审核模板新建 | `AuditTemplateModal.jsx` |
-| 标签管理 · 平铺标签新建 | `Tag/index.jsx` → `FlatTagModal` |
+| 标签管理 · 平铺标签新建 | `Tag/index.jsx` → `FlatTagModal`（后台写入 `creator`，弹窗不展示） |
 
-> 上表页面新建弹窗内展示 `CreatorReadonlyField`；**设备类型新建弹窗已移除创建人字段**（后台仍写入 `creator`）。编辑模式不展示创建人。历史 mock 数据中的 `creator` 字段不受演示切换影响，仅本次会话新建记录使用当前身份。
+> 上表页面新建弹窗内展示 `CreatorReadonlyField`；**设备类型新建弹窗**、**审核模板新建弹窗**已移除创建人字段（后台仍写入 `creator`）。编辑模式不展示创建人。历史 mock 数据中的 `creator` 字段不受演示切换影响，仅本次会话新建记录使用当前身份。
 
 ---
 
@@ -795,21 +796,21 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 标签管理 `/tag`
-页面标题「标签管理」，**三个一级 Tab**（蓝色下划线，样式对齐项目详情采标方案二级 Tab）：**采集标签**、**设备标签**、**审核模板**。URL 支持 `?tab=audit` / `?tab=device` 直达对应 Tab。
+页面标题「标签管理」，**三个一级 Tab**（蓝色下划线，样式对齐项目详情采标方案二级 Tab）：**采集标签**、**设备标签**、**审核模板**。URL 支持 `?tab=audit` / `?tab=device` 直达对应 Tab；路由亦支持 `/tag/collect`、`/tag/device`、`/tag/audit` 等形式。
 
-> 全平台标签相关 UI **已移除「标签值」列与表单项**（平铺标签内部仍保留 `value` 字段与 `name` 同步，供历史兼容）。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
+> **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示；审核模板列表 **模板 ID** 为普通黑色（非加粗）。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
 
 **运行时 store**（`tags.js`）：各 Tab 通过 getter/setter 读写会话内状态，刷新页面恢复 seed。下游消费方包括 `CollectPlanForm`（场景树、采集方式、任务用途、**整体标签模板**）、`CreateTaskModal`、`plans.js` 等。
 
 #### 审核模板 Tab（`AuditTemplateListPanel` + 详情页）
 
-- **列表**：模板名称（蓝色跳转详情）、描述、关联任务数、创建人、创建/更新时间；筛选：模板名称、创建人（点「查询」生效）
-- **操作**：复制（操作列最左侧图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、编辑（名称/描述）、删除（软删除，二次确认；**无「已使用」限制**）
-- **新建/编辑模板**：`AuditTemplateModal`（名称、描述；新建展示创建人）
+- **列表**：模板 ID（黑色）、模板名称、关联任务数、描述、创建时间、更新时间；筛选：**模板名称**（点「查询」生效；**无创建人筛选项**）
+- **操作**：复制（操作列最左侧图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、**详情**、编辑、删除（`taskCount > 0` 时 Toast 不可删；否则二次确认）
+- **新建/编辑模板**：`AuditTemplateModal`（名称、描述；**无创建人字段**；后台新建仍写入 `creator`）
 - **模板详情** `/tag/audit-template/:templateId`（`AuditTemplateDetail` + `AuditReviewTagPanel`）：
   - 顶部卡片：模板名称、描述、关联任务数、创建人（**无「返回模板列表」按钮**）
-  - 标签树列表：一级分组 + 二级叶子；列含 **应用范围**（全局/通过/驳回）；筛选：标签名称、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
-  - 新建/编辑标签组：`AuditReviewTagModal`（一级名称、描述、**应用范围**、二级标签列表）；**随时可删改**，无「已使用」锁定
+  - 标签树列表：一级分组 + 二级叶子；列含 **标签名称**（加粗）、**标签值**、**描述**、**应用范围**（全局/通过/驳回）、创建/更新时间；筛选：标签名称、标签值、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
+  - 新建/编辑标签组：`AuditReviewTagModal`（一级名称、描述、**应用范围**、二级标签列表含 **标签值**）；**随时可删改**，无「已使用」锁定
   - **分页** 10 条/页
 
 **Mock 初始模板**（`auditTemplateSeed`）：标准标注模板 ATM-001、试采集专用 ATM-002、工业场景 ATM-003
@@ -832,11 +833,16 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### 平铺标签 Tab 共用交互（`FlatTagPanel` + `FlatTagModal`）
 
-- **筛选**：标签名称（点「查询」生效）
-- **列表字段**：标签名称、描述、创建人、创建时间、最后更新、操作（**无标签值列**）
-- **新建/编辑弹窗**：标签名称（必填）、描述（选填）；新建展示只读「创建人」
+- **筛选**：标签名称、**标签值**（点「查询」生效）
+- **列表字段**：标签名称（**加粗**）、**标签值**、描述、创建时间、最后更新、操作（**无创建人列**）
+- **新建/编辑弹窗**：标签名称（必填）、**标签值**（必填）、描述（选填）；**无创建人字段**（后台新建写入 `creator`）
 - **删除**：Modal 二次确认
 - **分页**：10 条/页
+
+#### 场景标签 Tab（`SceneTypePanel`）
+
+- **筛选**：标签名称、**标签值**（点「查询」生效）
+- **列表字段**：标签名称（加粗）、**标签值**、描述、创建时间、最后更新、操作（树形缩进展示层级）
 
 > **采集方案标注配置**：由方案步骤自动生成，在项目详情 → 采标方案 → 采集方案列表通过「**标注配置**」按钮只读查看（`PlanAnnotationDetails`）。方案表单中的 **整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
 
@@ -907,9 +913,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 薄包装页（`UserManage.jsx` → `UserListPanel variant="global"`）。
 
-**筛选区**（点击「查询」生效，单行布局）：用户 ID、**账号**、**用户昵称**、**所属组织**（下拉，**仅超级管理员可见**）、角色、状态；右侧「重置」「查询」
+**筛选区**（点击「查询」生效，单行布局）：**用户名**、**登录方式**（全部 / 账号密码 / 飞书SSO）、**角色**、**所属组织**、**状态**；右侧「重置」「查询」
 
-**列表字段**（与组织详情用户列表一致）：用户 ID、账号、用户昵称、**所属组织**、角色、手机号、**邮箱**、**状态**（Toggle 开关，启用/停用）、创建时间、最后登录、操作
+**列表字段**（与组织详情用户列表列顺序一致）：用户 ID、**用户名**、**描述**（`remark`）、**所属组织**、**角色**（多角色 `&` 拆分 Badge）、**登录方式**、**状态**（Toggle 开关，启用/停用）、创建时间、最后登录、操作
 
 **标题栏**：「用户列表」+ 「+ **新建用户**」（需 `system.user.create`）
 
@@ -917,18 +923,17 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **状态列交互**：列表 **Toggle 开关** 切换启用/停用（需 `system.user.edit`；**不可切换当前登录用户本人**）；与组织管理、角色管理开关样式一致
 
-**新建 / 编辑弹窗**（字段顺序统一）：
-1. **账号**（新建必填；编辑只读）
-2. **密码**（新建必填，可见/隐藏切换；**编辑不展示**）
-3. **用户昵称**（必填）
-4. **所属组织**（只读置灰；显示当前登录用户所属组织，超级管理员默认 `智平方` / ORG-002）
-5. **角色**（下拉可选；**排除组织管理员与超级管理员**；新建必填）
-6. 手机号（选填）
-7. 邮箱（选填）
-8. **状态**（单选「**启用 / 停用**」，默认启用）
-9. **备注**（文本域，0/500 计数）
+**新建用户**（`CreateInviteUserModal`，`variant="global"` 时）：
+- 双 Tab：**新建用户** / **邀请用户**
+- **新建用户**：用户名（必填，组织内唯一）、密码、所属组织（只读）、角色（多选，排除组织管理员/超级管理员）、手机号/邮箱（选填）、备注；默认 `loginMethod: '账号密码'`
+- **邀请用户**：从其他组织选已有用户（可搜索），迁入当前组织并分配角色；原组织信息只读展示
 
-**操作**：编辑（可改昵称、手机号、邮箱、备注、角色、状态）；删除（不可删当前登录用户；二次确认）
+**编辑弹窗**（标题「**编辑**」）：
+- **用户名**（只读）、所属组织（只读）、角色、手机号、邮箱、**描述**（原 remark；**无用户昵称、无状态字段** — 状态仅在列表 Toggle 切换）
+
+**组织详情新建**（`variant="org"`）：沿用旧表单 — 账号、密码、用户昵称、所属组织只读、角色固定组织管理员、手机号/邮箱、状态、备注
+
+**操作**：编辑、删除（不可删当前登录用户；二次确认）
 
 **面包屑**：系统管理 / 用户管理
 
@@ -956,30 +961,30 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **页头**：白卡片仅显示 **组织名称**（如「智平方」）；面包屑为 `系统管理 / 组织管理 / 组织详情`
 
-**用户列表**：复用 `UserListPanel variant="org"`，仅展示 `orgId` 匹配的用户（含状态 **Toggle**、新建/编辑「启用/停用」等与用户管理一致）
+**用户列表**：复用 `UserListPanel variant="org"`，仅展示 `orgId` 匹配的用户（含状态 **Toggle**、新建/编辑等与用户管理一致）
 
-**筛选区**：用户 ID、账号、用户昵称、**角色**、状态（与用户管理一致，**无所属组织**筛选项）
+**筛选区**：用户名、登录方式、角色、状态（**无所属组织**筛选项；与用户管理 global 版一致）
 
 **标题栏**：「用户列表」+ 「+ **新建组织管理员**」
 
 **新建 / 编辑弹窗**（与用户管理字段顺序一致，差异如下）：
 - **所属组织**：只读，显示当前组织名称
 - **角色**：固定「组织管理员」，只读
-- 新建用户角色恒为组织管理员
+- 新建用户角色恒为组织管理员；沿用组织详情专用表单（含账号、密码、用户昵称、状态、备注）
 
 #### 角色管理 `/system/role`
 
-**筛选区**（点击「查询」生效）：角色名称、角色类型（内置/自定义）；右侧「重置」「查询」
+**筛选区**（点击「查询」生效）：角色名称、角色类型（**全部** / 内置 / 自定义）、**状态**（全部 / 启用 / 停用）；右侧「重置」「查询」
 
 **标题栏**：「角色列表」+ 「+ 新建角色」（需 `system.role.create`）
 
-**新建角色**：ID 自动 `R-00X`、名称/描述必填、类型默认「自定义」、初始无权限且 **启用**（Toast 提示去配置）
+**新建角色**：ID 自动 `R-00X`、名称/描述必填、**菜单权限**（`MenuPermissionTree`）+ **数据权限**（`ProjectDataTransfer`）；**无「类型」字段**（保存为「自定义」）；初始 **启用**
 
-**列**：角色 ID、名称、描述、**权限模块数**、**成员数**（按 runtime users 统计）、创建时间、类型 badge、**状态**（Toggle 开关，切换启用/停用 + Toast）
+**列**：角色 ID、角色名称、**描述**、**权限数**、**成员数**（按 runtime users 统计）、创建时间、类型 badge、**状态**（Toggle 开关，切换启用/停用 + Toast）
 
-**编辑权限**（需 `system.role.assignPerm`）：打开 `RolePermissionModal`（树形模块 + 操作矩阵）
+**编辑权限**（需 `system.role.assignPerm`）：打开 `RolePermissionModal` — 内置角色名称只读、自定义可改名称；均可编辑描述与菜单权限；**数据权限仅自定义角色**展示
 
-**删除**（操作列）：仅 **自定义且成员数 = 0** 可删（二次确认）；内置角色置灰 +「内置角色不可删除」；有成员置灰 +「该角色下存在成员，无法删除」（Tooltip 使用 Portal 避免裁切）
+**删除**（操作列）：**内置角色不显示删除按钮**；自定义角色均可删除（二次确认）
 
 **面包屑**：系统管理 / 角色管理
 
@@ -1098,10 +1103,13 @@ src/
 │   └── System/
 │       ├── UserManage.jsx         # 用户管理（薄包装 → UserListPanel global）
 │       ├── UserListPanel.jsx      # 用户列表共用（global / org 两变体）
+│       ├── CreateInviteUserModal.jsx  # 新建/邀请用户双 Tab 弹窗（global 用户管理）
 │       ├── OrgManage.jsx          # 组织管理列表
 │       ├── OrgDetail.jsx          # 组织详情（组织名页头 + 用户列表）
 │       ├── RoleManage.jsx         # 角色管理
 │       ├── RolePermissionModal.jsx
+│       ├── MenuPermissionTree.jsx # 角色菜单权限树
+│       ├── ProjectDataTransfer.jsx # 角色数据权限（项目勾选）
 │       ├── NoPermission.jsx
 │       └── index.jsx
 ├── context/
@@ -1155,7 +1163,7 @@ scripts/
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
 | 依赖 | React 19、Vite 8、Tailwind CSS 4、react-router-dom 7、recharts、xlsx（SheetJS，开源数据集 Excel 导入） |
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员** |
-| RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
+| RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`projectIds[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
 | 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存草稿 / 通过驳回提交** 后更新会话内状态 |
 | 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
@@ -1191,7 +1199,9 @@ scripts/
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
 | URDF 上传 | 设备类型 **新建与编辑** 弹窗均支持拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
 | 任务采集员 | 每任务 **1 名**采集员（`collector` 字符串）；任务列表/详情单人展示，无 `+N` |
-| 用户状态 UI | 用户列表状态列 Toggle；新建/编辑单选「启用/停用」；`updateRuntimeUser` 即时生效 |
+| 用户状态 UI | 用户列表状态列 Toggle；global 编辑弹窗不含状态（列表 Toggle 切换）；组织详情新建仍含状态单选；`updateRuntimeUser` 即时生效 |
+| 用户登录方式 | 字段 `loginMethod`（`账号密码` / `飞书SSO`）；未设置时默认「账号密码」；列表与筛选展示 |
+| 角色权限 UI | 新建/编辑权限均用 `MenuPermissionTree` + `ProjectDataTransfer`（内置角色无数据权限区块）；列表列「权限数」 |
 | 标注工作台 | 三模式共用 **四模块** 侧栏：`play` 全只读；`review` 可编辑整体/片段 + 底部保存 + 标注结论提交；`accept` 侧栏验收模块提交（**无顶栏通过/驳回**）；`syncBatchesAfterEntryAccept` |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
@@ -1228,7 +1238,7 @@ scripts/
 | 设备类型数据源 | 任务/条目/方案创建时快照 `deviceTypeName`（及条目 `deviceTypeId`）；运行时 `enrichTask` 仅用于 seed 生成，历史展示读快照 |
 | 标注模板 | 3 条审核模板（`tags.js` → `auditTemplateSeed`，UI 在「审核模板」Tab）；历史 `misc.js` → `annotationTemplates` **未接入 UI** |
 | 组织 | 4 条（`organizations.js`）；含 `remark`、启停状态、动态 `memberCount` |
-| 用户 | 14 人（U-000 超级管理员无组织 + 13 人默认归属 **智平方** ORG-002）；含 `orgId`、`email`、`remark`；默认演示 U-000 |
+| 用户 | 14 人 seed + U-014/U-015 跨组织演示（共 16 人）；含 `orgId`、`loginMethod`、`email`、`remark`；默认演示 U-000 |
 | 内置角色 | 6 个：`组织管理员` / `平台运营` / `采集员` / `标注员` / `游客` / `工程师`（`rbac.js` R-001~R-006，`type: '内置'`，默认启用） |
 | 自定义角色 | 2 个：**数据审核员** R-007（成员 0，可演示删除）、**区域协调员** R-008（成员 1：林芳 U-013） |
 | 项目成员 | 按项目 ID 组织；`joinedAt` 精确到 `YYYY-MM-DD HH:mm:ss` |
@@ -1239,31 +1249,33 @@ scripts/
 
 | ID | 名称 | 备注 | 状态 | 初始人数 |
 |---|---|---|---|---|
-| ORG-001 | 机器人公司 | 总部组织，负责家庭与工业采集项目运营 | 启用 | 0 |
-| ORG-002 | **智平方** | 演示测试组织（`DEMO_ORG_ID`，默认用户归属） | 启用 | 13 |
-| ORG-003 | 华东采集中心 | 区域采集与标注团队 | 启用 | 0 |
+| ORG-001 | 机器人公司 | 总部组织，负责家庭与工业采集项目运营 | 启用 | 1 |
+| ORG-002 | **智平方** | 演示测试组织（`DEMO_ORG_ID`，默认用户归属） | 启用 | 12 |
+| ORG-003 | 华东采集中心 | 区域采集与标注团队 | 启用 | 1 |
 | ORG-004 | 试点实验室 | （空） | 停用 | 0 |
 
 ### Mock 用户（`misc.js` seed → `organizations.js` runtime）
 
-| UID | username | 昵称 | 角色 | 所属组织 | 状态 | 邮箱 |
-|---|---|---|---|---|---|---|
-| U-000 | superadmin | 系统 | **超级管理员** | — | 启用 | system@ai2robotics.com |
-| U-001 | zhanghua | 张华 | 组织管理员 | 智平方 | 启用 | zhanghua@ai2robotics.com |
-| U-002 | liming | 李明 | 平台运营 | 智平方 | 启用 | ming.li@ai2robotics.com |
-| U-003 | wangfang | 王芳 | 平台运营 | 智平方 | 启用 | wangfang@ai2robotics.com |
-| U-004 | liuwei | 刘伟 | 采集员 | 智平方 | 启用 | liuwei@ai2robotics.com |
-| U-005 | zhoujie | 周杰 | 采集员 | 智平方 | 启用 | zhoujie@ai2robotics.com |
-| U-006 | sunli | 孙丽 | 标注员 | 智平方 | 启用 | sunli@ai2robotics.com |
-| U-007 | hemin | 何敏 | 标注员 | 智平方 | **停用** | hemin@ai2robotics.com |
-| U-008 | qianlin | 钱琳 | 标注员 | 智平方 | 启用 | qianlin@ai2robotics.com |
-| U-009 | zhaoyan | 赵研 | 游客 | 智平方 | 启用 | zhao.yan@ai2robotics.com |
-| U-010 | chengong | 陈工 | 工程师 | 智平方 | 启用 | cheng.gong@ai2robotics.com |
-| U-011 | wulei | 吴磊 | 采集员&标注员 | 智平方 | 启用 | wulei@ai2robotics.com |
-| U-012 | zhenghao | 郑浩 | 采集员&标注员 | 智平方 | 启用 | zhenghao@ai2robotics.com |
-| U-013 | linfang | 林芳 | 区域协调员 | 智平方 | **停用** | linfang@ai2robotics.com |
+| UID | username | 昵称 | 角色 | 所属组织 | 登录方式 | 状态 | 邮箱 |
+|---|---|---|---|---|---|---|---|
+| U-000 | superadmin | 系统 | **超级管理员** | — | 账号密码 | 启用 | system@ai2robotics.com |
+| U-001 | zhanghua | 张华 | 组织管理员 | 智平方 | 飞书SSO | 启用 | zhanghua@ai2robotics.com |
+| U-002 | liming | 李明 | 平台运营 | 智平方 | 飞书SSO | 启用 | ming.li@ai2robotics.com |
+| U-003 | wangfang | 王芳 | 平台运营 | 智平方 | 飞书SSO | 启用 | wangfang@ai2robotics.com |
+| U-004 | liuwei | 刘伟 | 采集员 | 智平方 | 账号密码 | 启用 | liuwei@ai2robotics.com |
+| U-005 | zhoujie | 周杰 | 采集员 | 智平方 | 账号密码 | 启用 | zhoujie@ai2robotics.com |
+| U-006 | sunli | 孙丽 | 标注员 | 智平方 | 账号密码 | 启用 | sunli@ai2robotics.com |
+| U-007 | hemin | 何敏 | 标注员 | 智平方 | 账号密码 | **停用** | hemin@ai2robotics.com |
+| U-008 | qianlin | 钱琳 | 标注员 | 智平方 | 账号密码 | 启用 | qianlin@ai2robotics.com |
+| U-009 | zhaoyan | 赵研 | 游客 | 智平方 | 账号密码 | 启用 | zhao.yan@ai2robotics.com |
+| U-010 | chengong | 陈工 | 工程师 | 智平方 | 账号密码 | 启用 | cheng.gong@ai2robotics.com |
+| U-011 | wulei | 吴磊 | 采集员&标注员 | 智平方 | 账号密码 | 启用 | wulei@ai2robotics.com |
+| U-012 | zhenghao | 郑浩 | 采集员&标注员 | 智平方 | 账号密码 | 启用 | zhenghao@ai2robotics.com |
+| U-013 | linfang | 林芳 | 区域协调员 | 智平方 | 账号密码 | **停用** | linfang@ai2robotics.com |
+| U-014 | chenwei | 陈伟 | 平台运营 | 机器人公司 | 账号密码 | 启用 | chenwei@robotics.com |
+| U-015 | xuyan | 徐燕 | 采集员 | 华东采集中心 | 账号密码 | 启用 | xuyan@east-collect.com |
 
-> 停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。U-011、U-012 为双角色平台用户；U-013 绑定自定义角色「区域协调员」。用户单条字段还含 `phone`、`remark`、`createdAt`、`lastLoginAt`。
+> 共 **16** 人（U-000 ~ U-015）。停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。U-011、U-012 为双角色平台用户（`role` 字段以 `&` 连接）；U-013 绑定自定义角色「区域协调员」。U-001~U-003 演示飞书SSO 登录方式。用户单条字段还含 `phone`、`remark`（列表展示为「描述」）、`createdAt`、`lastLoginAt`；未显式设置 `loginMethod` 时 UI 默认「账号密码」。
 
 ### 组织单条字段（`organizations.js`）
 `id`, `name`, `remark`, `status`（启用/停用）, `createdAt`（列表附加 `memberCount`）
