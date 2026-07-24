@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · **抽样验收**（项目详情 Tab；任务维度新建批次；筛选点查询刷新；抽检数下限；验收工作台同步批次进度）· **标注工作台**（播放/标注/验收三模式；播放仅基础信息；验收顶栏通过/驳回 + 只读反显标注）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· **标签管理**（采集/设备/审核模板三级 Tab；审核模板列表 + 详情页标签树；**无标签值列**）· 采集方案 **标注管理**区块（整体标签模板 + 片段标注配置）· 设备管理（编号+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · **统一分页**（10 条/页 + 省略号页码）· RBAC 权限演示（菜单/路由/按钮/数据范围/角色启停与删除）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
+**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · **抽样验收**（项目详情 Tab；任务维度新建批次；筛选点查询刷新；抽检数下限；验收工作台同步批次进度）· **标注工作台**（播放/标注/验收三模式；右侧四模块统一骨架；验收在侧栏提交）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· **标签管理**（采集/设备/审核模板三级 Tab；审核模板列表 + 详情页标签树；**无标签值列**；**随时可删改**）· 采集方案 **三模块表单**（基础信息 / 动作模板 / 标注管理；**片段标注预配置**折叠编辑器）· 设备管理（**设备名称**+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · **统一分页**（10 条/页 + 省略号页码）· RBAC **角色权限配置页仍保留**（原型演示 **全量开放**，无菜单/按钮/数据范围拦截）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -15,7 +15,7 @@
 - [全局布局](#全局布局)
 - [RBAC 权限体系](#rbac-权限体系)
   - [平台角色与项目成员角色](#平台角色与项目成员角色)
-  - [演示身份切换](#演示身份切换)
+  - [原型全量开放模式](#原型全量开放模式)
   - [创建人自动填充](#创建人自动填充)
 - [功能模块总览](#功能模块总览)
   - [系统管理](#系统管理二级导航)
@@ -53,14 +53,16 @@ npm run preview
 | 区域 | 说明 |
 |---|---|
 | 顶栏 `Header` | 左侧 Logo + 侧边栏折叠按钮；右侧显示当前角色 + 用户头像下拉 |
-| 侧边栏 `Sidebar` | 深色导航，支持折叠；按 RBAC **view** 权限过滤菜单项与子菜单 |
+| 侧边栏 `Sidebar` | 深色导航，支持折叠；**原型阶段展示全部菜单项** |
 | 面包屑 `Breadcrumb` | 内容区顶部路径导航；系统管理下分别显示「用户管理 / 角色管理 / 组织管理 / 组织详情」；审核模板详情为「标签管理 / 模板详情」 |
-| 内容区 | 各业务页面；无路由 **view** 权限时渲染 `NoPermission`（非独立路由） |
+| 内容区 | 各业务页面；**原型阶段不因 RBAC 拦截** |
 
 **顶栏用户下拉**：
-- **默认身份**：超级管理员 · **系统**（`system@ai2robotics.com`，U-000），拥有全部 permission key（含 `system.org.*`）
-- **演示身份切换**：展开后可切换 7 个预设身份（见 [RBAC → 演示身份](#演示身份切换)）；切换后 Toast 提示，侧边栏与按钮即时更新
+- **默认身份**：超级管理员 · **系统**（`system@ai2robotics.com`，U-000）
+- 展示用户名、邮箱、角色标签
 - **退出登录**：跳转 `/login`（不清理 mock 运行时数据）
+
+> **已移除**顶栏「演示身份切换」及下属角色选项列表。
 
 **标注工作台**（`/review/:entryId`，亦称审核工作台）为**独立全屏页面**，不包含侧边栏与面包屑，在新标签页打开。
 
@@ -68,7 +70,20 @@ npm run preview
 
 ## RBAC 权限体系
 
-原型实现 **功能权限**（菜单 / 路由 / 部分按钮）+ **数据范围**（采集员 / 标注员任务与条目过滤）。用户与角色为 **一对一** 绑定，不支持多角色权限合并。
+原型实现 **功能权限**（菜单 / 路由 / 按钮）+ **数据范围**（项目/任务/条目过滤）的 **配置与演示 UI**；当前版本为 **全量开放**，便于产品原型走查。
+
+### 原型全量开放模式
+
+为便于演示完整产品能力，前端已 **关闭** 基于当前角色的 Mock 拦截：
+
+| 层级 | 原型行为 | 实现 |
+|---|---|---|
+| 侧边栏 | 展示全部菜单与子菜单 | `Sidebar.jsx` 不再按 `can()` 过滤 |
+| 路由 | 直链均可访问 | `PermissionGuard.jsx` 直接 `<Outlet />`；`canAccessRoute()` 恒为 `true` |
+| 按钮 | 全部可点（不因权限隐藏/置灰） | `AuthContext.can()` 恒为 `true` |
+| 数据范围 | 列表/详情不过滤 | `permissions.js` 数据范围 helper 全量返回 |
+
+> **角色管理 / 用户管理** 页面仍可编辑角色权限 preset 与会话内 store，但 **不影响** 原型浏览时的菜单与按钮显隐。`rbac.js` → `DEMO_PERSONAS` 与 `switchUser` 仍保留于代码，**顶栏入口已移除**。
 
 ### 平台角色与项目成员角色
 
@@ -82,7 +97,7 @@ npm run preview
 | 作用 | 侧边栏、路由、按钮 **功能权限**；部分 **数据范围** | 仅影响该项目下的任务/条目 **数据范围** |
 | 多选 | 否（一人一角色） | 是（同一人可兼采集员+标注员等） |
 
-> **游客**（R-005）为只读型平台角色，可浏览看板与数据集等，无 `collection.*` 权限、无数据集下载。**工程师**（R-006）在游客基础上保留数据集 **view + download**。
+> **游客** / **工程师** 在 RBAC catalog 中为只读型预设（游客无 `collection.*`、工程师保留数据集 download）；**原型阶段**因全量开放，实际浏览不受上述限制。
 
 ### 架构
 
@@ -91,27 +106,30 @@ AuthProvider (AuthContext.jsx)
   ├─ user          ← organizations.js runtime users + rbac.js USER_EMAILS
   ├─ roles         ← rbac.js 运行时角色（permissions[]、status 会话内可改；不含超级管理员）
   ├─ enabledRoles  ← status === '启用' 的角色（用户管理新建角色下拉）
-  ├─ can(key)      ← 当前用户角色是否含 permission key
-  ├─ canAccessRoute(pathname) ← permissions.js ROUTE_VIEW_PERMISSION
+  ├─ can(key)      ← 原型恒为 true
+  ├─ canAccessRoute(pathname) ← 原型恒为 true
   ├─ switchUser(uid) / saveRolePermissions / addRole / toggleRoleStatus / deleteRole
   └─ useCurrentNickname / useCurrentUsername ← 创建人自动填充等
 
-permissions.js   权限目录 permissionCatalog、preset、数据范围 helper
-rbac.js          内置 + 自定义角色、DEMO_PERSONAS、updateRolePermissions / setRoleStatus / deleteRuntimeRole
+permissions.js   权限目录 permissionCatalog、preset；数据范围 helper **原型全量返回**
+rbac.js          内置 + 自定义角色、DEMO_PERSONAS（顶栏切换已移除）
 organizations.js 组织 runtime store + 用户 runtime store（与 misc.js seed 同步）
 projectStatus.js 项目三态 open / closed / archived、canProjectMutate、canAcceptProject
 qcResults.js     条目质检结果（掉帧检查有效帧率/标准差）与详情弹窗联动
-Sidebar          按 view 过滤菜单
-PermissionGuard  直链拦截 → NoPermission
+Sidebar          展示全部菜单（原型不过滤）
+PermissionGuard  原型直接放行
 ProjectMutateGate 项目关闭/归档时置灰新建类入口 + Tooltip
-PermissionAction PermButton / PermAction / PermMenuItem（顶部 hide、行内 disable+Tooltip）
+PermissionAction PermButton / PermAction / PermMenuItem（原型均可用；组件仍保留权限 key 参数）
 UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建/编辑弹窗
-页面组件         数据范围 filter + 操作按钮权限
+页面组件         数据范围 filter 原型不过滤；操作按钮权限 key 仍传入组件
 ```
 
-### 演示身份切换
+### ~~演示身份切换~~（已移除）
 
-顶栏「演示身份切换」仅列出 **启用** 状态的预设账号（`rbac.js` → `DEMO_PERSONAS`）：
+顶栏 **不再提供**「演示身份切换」。默认固定为 **超级管理员 · 系统**（U-000）。`rbac.js` → `DEMO_PERSONAS` 数据仍可用于后续扩展。
+
+<details>
+<summary>历史演示账号列表（仅供参考）</summary>
 
 | UID | 展示标签 | 角色 | 邮箱 |
 |---|---|---|---|
@@ -123,7 +141,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | U-009 | 游客（赵研） | 游客 | `zhao.yan@ai2robotics.com` |
 | U-010 | 工程师（陈工） | 工程师 | `cheng.gong@ai2robotics.com` |
 
-> **超级管理员**（U-000）为默认登录身份，拥有含 `system.org.view` 在内的全部权限，**不出现在角色管理列表**中。用户/组织 CRUD 写入 `organizations.js` 运行时 store，**刷新页面恢复 seed**；顶栏演示切换读取同一 runtime store。
+</details>
 
 ### 权限 key 约定
 
@@ -172,17 +190,16 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 内置角色 **不可删除**；自定义角色仅 **成员数为 0** 时可删（否则置灰 + Tooltip）。
 
-### 权限生效范围
+### 权限生效范围（配置 vs 原型）
 
-| 层级 | 行为 | 实现位置 |
+| 层级 | 角色管理中的配置 | 原型实际行为 |
 |---|---|---|
-| 侧边栏 | 无 view 的菜单/子菜单隐藏；父级无可见子项则整组隐藏 | `Sidebar.jsx` |
-| 路由 | 直链访问无 view 权限 → `NoPermission` 占位页 | `PermissionGuard.jsx` + `ROUTE_VIEW_PERMISSION` |
-| 顶部/全局操作 | 无权限 → **不渲染**（如「+ 新建项目」、侧边栏入口） | `PermButton` / `IfPerm`（`mode="hide"` 默认） |
-| 行内/卡片/详情操作 | 无权限 → **置灰 + Tooltip**「暂无操作权限，请联系管理员分配」 | `PermButton` / `PermAction` / `PermMenuItem`（`mode="disable"`） |
-| 数据范围 | 按角色过滤项目/任务/条目 | `permissions.js` 数据范围 helper |
+| 侧边栏 | 按 view 过滤菜单 | **全部展示** |
+| 路由 | 无 view → `NoPermission` | **全部可访问** |
+| 按钮 | 无权限 hide/disable | **全部可用** |
+| 数据范围 | 按角色过滤项目/任务/条目 | **全量数据** |
 
-**已接入按钮级权限的页面**（`PermissionAction.jsx`）：
+**已接入 `permission` 参数的页面**（`PermissionAction.jsx`；原型阶段均可用）：
 
 | 页面 | 受控操作 |
 |---|---|
@@ -199,27 +216,29 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 > **运营看板**：当前仍为全量 mock 数据，不随项目成员数据范围收缩（已知临时差异）。
 
-### 数据范围
+### 数据范围（配置说明 · 原型已全量开放）
 
-基于 `misc.js` → `projectMembers`（项目成员 Tab 配置）：
+`permissions.js` 中仍保留按 `projectMembers` 过滤的 **配置逻辑说明**；**原型阶段** `filterProjectsByDataScope` / `filterTasksByDataScope` / `filterEntriesByDataScope` / `canAccessProject` / `canAccessTask` 等 **均返回全量**，详情页不再因数据范围显示 `NoPermission`。
+
+<details>
+<summary>历史数据范围规则（角色管理参考）</summary>
 
 | 角色 | 项目列表 | 任务列表 | 任务详情条目 | 采集条目 |
 |---|---|---|---|---|
 | **组织管理员 / 超级管理员** | 全部 | 全部 | 全部 | 全部 |
 | **平台运营** | 本人担任 **平台运营** 的项目 | 上述项目下全部任务 | 上述任务下全部条目 | 上述任务关联条目 |
-| **采集员** | 本人担任 **采集员** 的项目 | `taskIds` 分配的任务 | **仅本人上传**（`uploader === 昵称`） | 仅本人上传 |
+| **采集员** | 本人担任 **采集员** 的项目 | `taskIds` 分配的任务 | **仅本人上传** | 仅本人上传 |
 | **标注员** | 本人担任 **标注员** 的项目 | `taskIds` 分配的任务 | 分配任务下 **全部条目** | 分配任务关联条目 |
-| **游客 / 工程师** | 无 `collection.*` 路由权限 | — | — | — |
 
-进入任务详情前校验 `canAccessTask`；进入项目详情前校验 `canAccessProject`。无权限时显示 `NoPermission`（与路由 view 权限独立）。
+</details>
 
 ### 编辑权限弹窗
 
-`RolePermissionModal`：树形模块 + 操作 checkbox 矩阵；支持模块级全选/半选；保存写入 `rbac.js` 运行时 store，**刷新页面恢复 preset**。
+`RolePermissionModal`：树形模块 + 操作 checkbox 矩阵；保存写入 `rbac.js` 运行时 store，**刷新页面恢复 preset**（不影响原型浏览时的按钮显隐）。
 
 ### 创建人自动填充
 
-新建类弹窗通过 `FormField.jsx` → `CreatorReadonlyField` 展示只读「创建人」，取值 `AuthContext.useCurrentNickname()`（**昵称**，如张华/李明），**随顶栏演示身份切换实时更新**；提交保存时各页面在 handler 内再次读取当前昵称写入 `creator` 字段。
+新建类弹窗通过 `FormField.jsx` → `CreatorReadonlyField` 展示只读「创建人」，取值 `AuthContext.useCurrentNickname()`（默认「系统」）；提交保存时各页面在 handler 内再次读取当前昵称写入 `creator` 字段。
 
 | 页面 / 弹窗 | 说明 |
 |---|---|
@@ -304,7 +323,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **视图切换**：卡片视图（默认，4 列）/ 列表视图
 - **筛选区**（点击「查询」生效）：项目 ID、项目名称、**项目状态**（开启/关闭/归档）、创建人、创建时间范围；筛选项单行铺满，「重置」「查询」次行右对齐
 - **标题栏**：「项目列表」+ 视图切换按钮 + 「+ 新建项目」
-- **新建项目弹窗**：自动生成项目 ID（只读）、项目名称（必填）、**创建人**（只读，随演示身份）、项目描述
+- **新建项目弹窗**：自动生成项目 ID（只读）、项目名称（必填）、**创建人**（只读，默认「系统」）、项目描述
 - **卡片/列表字段**：项目 ID（黑色不可点）、**项目名称**（蓝色可点击跳转详情）、任务数、创建人、描述、采集进度条（蓝色/绿色，100% 变绿）、状态 badge、创建/更新时间
 - **卡片头像**：左侧首字头像 **统一蓝色渐变**（`from-blue-500 to-blue-700`），不随项目状态变化
 - **操作**（点击「查看详情」与点击项目名称一致，跳转项目详情）：
@@ -374,20 +393,29 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **查看**（已发布/已归档）：只读采集方案详情（`PlanReadonlyDetails`）
 - **创建任务**：打开 `CreateTaskModal` 并锁定当前方案为 `initialPlan`
 
-**新建/编辑弹窗**（`fitViewport`，与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）：
+**新建/编辑弹窗**（`fitViewport`，与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）分为 **三个模块**（各模块左上角加粗小标题）：
+
+**模块一：基础信息**
 - 方案名称（必填）；编辑态方案 ID 只读
 - 所属场景（三级级联，必填）
-- 设备类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端（未选显示「—」）
+- 设备类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端
 - 采集方式（下拉，必填；选项来自 `getCollectionMethodTags()`）
+
+**模块二：动作模板**
 - 原始场景状态（文本域 0/500）
-- 采集步骤：默认 1 步；每步含步骤描述、原子技能（多选 portal 下拉）、时长(秒)；≥2 步才可删；步骤可留空
-- 总时长（自动累加）· 总偏差 · 目标时间范围（总时长 ± 总偏差）
-- **标注管理**（白色 Card 区块）：
-  - **整体标签模板**（必填）：`SearchableAuditTemplateSelect` 模糊搜索下拉，选项来自 `getAuditTemplates()`（组织内标注标签模板）；占位符「请选择标注标签模板」
-  - **片段标注配置**：「基于采集方案生成标注配置」「基于采集方案预标注」两个勾选（默认均勾选）
+- 采集步骤：默认 1 步；每步含步骤描述、原子技能（多选 portal 下拉）、时长(秒)；≥2 步才可删
+- 总时长（自动累加）· 总偏差 · 目标时间范围
+
+**模块三：标注管理**（无外层 Card 线框，与表单融为一体）
+- **整体标签模板**（必填）：`SearchableAuditTemplateSelect` 模糊搜索下拉
+- **片段标注配置**：
+  - 单个复选框（默认勾选）：**基于采集方案生成片段标注配置并预标注**
+  - 勾选时：展示折叠面板 **片段标注预配置**（`FragmentAnnotPreconfigPanel`，默认收起）；自动注入只读预置大类 **动作语义**、**区域帧**；可「+ 添加类型」扩展自定义大类（可编辑/删除）
+  - 取消勾选：仅隐藏两个预置大类；**不清空**用户已添加的自定义类型及其属性
+  - 预配置编辑器：左侧类型列表 + 右侧类型/属性配置（文本/单选/多选 + 选项）；预置大类全锁定（不可删、不可增属性）
 - **不含**指定采集设备（设备在任务级选择）
 
-方案 payload 含 `annotTemplateId`、`annotGenConfig`、`annotPreLabel`（`validatePlanForm` 校验模板必选）。
+方案 payload 含 `annotTemplateId`、`annotAutoFragment`（兼容写入 `annotGenConfig` / `annotPreLabel`）、`fragmentAnnotTypes`（仅存用户自定义类型；预置大类由勾选态动态合并展示）。
 
 **标注配置只读弹窗**（列表「标注配置」按钮）：
 - 顶部说明：「由采集方案步骤自动生成」
@@ -525,7 +553,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 2. **任务用途**（必填；正式采集 / 试采集，来自 `getTaskPurposeTags()`）
 3. **目标条数**（必填，≥1）
 4. **配置采集方案**（新建必填；编辑只读展示摘要）
-5. **指定采集设备**（必填；按已配置方案的设备类型 `deviceTypeId` 级联过滤在库实例；**未配置方案时禁用**，placeholder「请先配置采集方案」；下拉选项格式 **`编号（SN 后 6 位）`**，如 `DEV-A01（A8842）`）
+5. **指定采集设备**（必填；按已配置方案的设备类型 `deviceTypeId` 级联过滤在库实例；**未配置方案时禁用**，placeholder「请先配置采集方案」；下拉选项格式 **`设备名称（SN 后 6 位）`**，如 `DEV-A01（A8842）`）
 6. **标注布局**（选填，默认布局；选项来自当前项目 `playLayouts`）
 
 **「配置采集方案」字段**（`PlanSummaryBlock`）：
@@ -553,13 +581,13 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 采集任务 `/collection/task`
-- **数据范围**：列表经 `filterTasksByDataScope` 过滤（采集员/标注员仅见相关任务）
+- **数据范围**：原型全量展示（`filterTasksByDataScope` 不过滤）
 - **筛选区**（5 列响应式网格，点击「查询」生效；**展开筛选** 显示第二行）：
   - **首行（始终可见）**：任务 ID、任务名称、所属项目名称（全局列表；项目详情 Tab 内隐藏）、采集方案 ID、采集员
-  - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、采集设备、所属场景、采集方式、任务状态
-  - 各字段 placeholder 为具体提示（如「请输入任务ID」「请输入项目名称」「请输入姓名」）；「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
+  - **展开行**：标注员（全局列表；项目详情 Tab 内标注员在首行）、任务用途、设备类型、所属场景、采集方式、任务状态
+  - **已移除**展开行「采集设备」筛选项
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、**采集设备**（显示实例**编号**，hover Tooltip 完整 SN）、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、**采集员**（单人）、标注员、创建人、创建/更新时间
+- **列表字段**：任务 ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、采集方案 ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度、**采集员**（单人）、标注员、创建人、创建/更新时间（**已移除「采集设备」列**）
 - **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」；**已发布无删除、已归档无复制**）：
 
@@ -575,9 +603,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 任务详情 `/collection/task/:id`
-进入前校验 `canAccessTask`：采集员/标注员访问非本人任务时显示 `NoPermission`（与路由 view 权限独立）。
 
-顶部展示任务名称、状态、采集/标注/验收进度、采集员/标注员（各 **单人**）。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`，见下节）。
+顶部信息卡片展示任务名称、状态、**设备类型**、采集/标注/验收进度、采集员/标注员（各 **单人**）。**已移除**卡片内「采集设备」字段。下方直接嵌入 **采集条目列表**（`EntryListPanel` → `EntryDataTable`）。
 
 ---
 
@@ -604,7 +631,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照，不随类型库变更）、**采集设备**（显示实例编号，hover Tooltip 完整 SN，`CollectDeviceCell`）、**质检状态**（已通过/已驳回可点击查看 `QcDetailModal` 七项结果 + 详情列）、**标注状态** / **验收状态**（已通过/已驳回 **可点击查看详情**；处理中/待处理悬停或展示操作人；待处理不可点）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+勾选、条目 ID、所属项目名称/任务名称（`showScopeColumns` 时）、文件 ID、文件名称、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照，不随类型库变更）、**采集设备**（显示实例**设备名称**，hover Tooltip 完整 SN，`CollectDeviceCell`）、**质检状态**（已通过/已驳回可点击查看 `QcDetailModal` 七项结果 + 详情列）、**标注状态** / **验收状态**（已通过/已驳回 **可点击查看详情**；处理中/待处理悬停或展示操作人；待处理不可点）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
 
 **工序状态详情弹窗**（`EntryDataTable.jsx`）：
 
@@ -653,52 +680,44 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 标注工作台 `/review/:entryId?mode=play|review|accept`
-独立全屏页面（无 AppLayout），需 `collection.task.view` 路由权限。三种模式共用 `WorkbenchSidePanel` 骨架，按模式区分可见区块、只读/可编辑与顶栏按钮。
+独立全屏页面（无 AppLayout）。三种模式共用 **四模块** 右侧面板骨架（`WorkbenchSidePanel`），按模式区分只读/可编辑。
 
 **模式**（URL query `mode`，默认 `play`）：
 
-| mode | 顶栏 | 右侧面板可见区块 | 通过 / 驳回 | 保存按钮 |
-|---|---|---|---|---|
-| `play` | 播放 + 布局 A/B | **仅基础信息**（含可展开采集方案详情） | 无 | 无 |
-| `review` | 标注 + 布局 A/B | 基础信息 + **整体标注** + **片段标注** | 整体标注内「标注结论」按钮（首次选中、再次点击同按钮提交） | 有（底部固定） |
-| `accept` | 验收 + 布局 A/B + **顶栏通过/驳回** | 基础信息 + **整体标注**（只读）+ **片段标注**（只读，默认折叠） | **顶栏**通过 / 驳回（驳回弹窗确认按钮「确认」） | 无 |
+| mode | 顶栏右侧 | 基础信息 | 整体标注 | 片段标注 | 验收模块 | 底部按钮 |
+|---|---|---|---|---|---|---|
+| `play` | 上一条 / 下一条 | 只读 | 只读（未标注显示 `-`） | 只读（无数据显示 `-`） | 只读（未验收显示 `-`） | 无 |
+| `review` | 上一条 / 下一条 | 只读 | **可编辑** + 标注结论双次点击提交 | **可编辑** | 只读 | **保存** |
+| `accept` | 上一条 / 下一条 | 只读 | 只读（反显标注员数据） | 只读 | **可编辑** + 验收结论 | **提交** |
 
 **顶栏布局**：
-- **左侧**：模式文字（播放 / 标注 / 验收）+ **布局 A / 布局 B** 切换（`LayoutToggle`）
-- **正中**：条目文件名（加粗居中）；无返回箭头
-- **右侧**：上一条 / 下一条 →（验收模式）**通过** / **驳回** → 右侧面板折叠 → 布局设置（占位）
+- **左侧**：模式文字（播放 / 标注 / 验收）+ **布局 A / 布局 B** 切换
+- **正中**：条目文件名（加粗居中）
+- **右侧**：**上一条 / 下一条** → 右侧面板折叠 → 布局设置（占位）
+- **已移除**验收模式顶栏「通过 / 驳回」按钮
 
-**右侧面板结构**（`WorkbenchSidePanel`）：
-1. **基础信息**（三模式均有，可折叠）：采集项目 → 采集任务 → 采集员 → **设备类型**（快照）→ 采集设备（hover SN）→ 采集方式 → 格式·时长 → 可展开「采集方案详情」
-2. **整体标注**（标注/验收模式，可折叠）：
-   - **标注结论**（通过/驳回；仅标注模式可编辑）
-   - 通过时：**质量标签**（高质量/中质量/低质量，单选；字段文案为「质量标签」非「质量评分」）、问题标签（21 项多选）、描述
-   - 驳回时：驳回理由
-   - 验收模式：`OverallAnnotationReadonly` 只读反显标注员结果
-3. **片段标注**（标注/验收模式，可折叠；验收默认折叠）：**动作语义**、**区域帧** 两表；标注模式可编辑，验收模式只读
+**右侧面板四模块**（均可折叠）：
+1. **基础信息**：采集项目 → 采集任务 → 采集员 → 设备类型 → 采集设备 → 采集方式 → 格式·时长 → 「采集方案详情」
+2. **整体标注**：标注结论（通过/驳回）；通过时质量标签 + 描述；驳回时问题标签 + 驳回理由
+3. **片段标注**：动作语义表、区域帧表
+4. **验收**：验收结论（通过/驳回，样式同标注结论按钮）；通过时描述（选填）；驳回时驳回理由（必填）
 
-**通过 / 驳回与保存逻辑（标注模式）**：
-- **保存**：写入 `auditQuality` / `auditTags` / `auditComment` / `actionSegments` / `regionFrames`；Toast「保存成功」；按钮置灰；面板有新改动后重新可点
-- **通过 / 驳回**：标注结论按钮第二次点击同选项才提交；未保存就提交 → Toast「请先保存标注」
-- **通过**（标注）→ `dataStatus=已标注`、`auditResult=通过`；**驳回** → 必填驳回理由 → `标注不通过`
-- **通过**（验收，顶栏）→ `已验收`；**驳回** → 弹窗填必填驳回理由 → `acceptComment` → `验收不通过`
-- **验收提交联动批次**：通过/驳回后调用 `syncBatchesAfterEntryAccept(entryId, 'pass'|'reject')`
+**提交逻辑**：
+- **标注 · 保存** → 草稿写入条目；未保存就点标注结论提交 → Toast「请先保存标注」
+- **标注 · 通过/驳回** → `已标注` / `标注不通过`
+- **验收 · 提交** → 侧栏验收模块校验后写入 `已验收` / `验收不通过`；联动 `syncBatchesAfterEntryAccept`
 - 提交后跳转同任务下一条，末条回任务详情
 
-**左侧主区**：
-- 上区：相机行 + 信号图（布局 A / B，`WorkbenchLayoutA` / `WorkbenchLayoutB`）
-- 下区：时间轴（播放/暂停、倍速、帧 scrubber、动作段与区域段；`review` 可编辑）
+**左侧主区**：相机 + 信号图（布局 A/B）+ 时间轴（`review` 可编辑片段轨）
 
-**可视化 mock**：`src/assets/review/` 占位图；信号数据 `mock/signalData.js`。**快捷键**：空格切换播放/暂停（输入框内不触发）。
-
-> **工作台整体标签**不读标签管理审核模板树，而使用独立常量 `pages/Review/constants/workbenchTags.js`（质量标签 3 + 问题标签 21）。采集方案绑定的 **整体标签模板**（`annotTemplateId`）供方案配置与后续扩展，当前工作台 UI 仍用 `workbenchTags.js`。
+> 工作台整体标签仍读 `workbenchTags.js`（质量 3 + 问题 21），与审核模板树独立。
 
 ---
 
 ### 采集条目 `/collection/upload`
 侧边栏显示为「采集条目」（路由 `/collection/upload` 不变）。
 
-- **数据范围**：采集员见本人上传；标注员见 `reviewer` 含本人的任务关联条目；组织管理员/超级管理员/平台运营/工程师见全部
+- **数据范围**：原型全量展示
 - **SDK 说明折叠区块**（筛选区上方）：默认折叠，点击展开 Python SDK 上传代码示例
 - **条目列表**：复用 `EntryDataTable`（`listTitle="条目列表"`、`hideProcessTabs`、`showScopeColumns`）；**无工序 Tab**，展示所属项目/任务名称列与筛选
 - 数据与 `entries.js` mock 对齐；展示文件名为 `{fileName}.{h5|lerobot}`，格式在「数据格式」列展示
@@ -728,7 +747,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 区块 | 内容 |
 |---|---|
-| 基本信息 | **创建人**（只读，随演示身份）、数据集名称（必填）、描述（选填） |
+| 基本信息 | **创建人**（只读，默认「系统」）、数据集名称（必填）、描述（选填） |
 | 选择数据来源 | **纳入任务**（`TreeTransfer`：按项目分组勾选多个任务，必填）、**数据格式**（h5/LeRobot 多选，必填） |
 | 预览 | 实时计算符合条件的条目数、预计总数据量、预计总时长 |
 
@@ -828,54 +847,39 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### 设备实例 Tab（`InstanceList.jsx`）
 
-**顶部看板**（一行，左 1/4 + 右 3/4）：
-- **左侧**：三个统计卡横排（内容居中）——设备总数 / 在线 / 离线
-- **右侧**：**设备类型占比**堆叠条形图——横向色带按各类型实例数量占比分段；图例格式 `类型名 · XX%`（`Math.round` 取整，各段合计 100%）
+**已移除**顶部统计看板与设备类型占比图。
 
-**筛选区**（点击「查询」生效）：所属类型、状态、编号、SN；左侧四列均匀拉伸，「重置」「查询」固定右侧
+**筛选区**（点击「查询」生效）：**设备名称**、SN（两列）；「重置」「查询」固定右侧
 
-**列表字段**：**编号**、SN、**设备类型**、**描述**、在线状态（圆点 badge）、电量（电池图标 + 百分比；&lt;20% 红色，无「低电」文字）、创建时间、更新时间、操作
+**列表字段**：**设备名称**（字段 `code`）、SN、**描述**、创建时间、更新时间、操作
 
-**分页**：**10 条/页**（筛选变更 `pageResetKey` 重置第 1 页）
+**分页**：**10 条/页**
 
-**操作**：编辑、删除（**无「查看详情」**）
+**操作**：编辑、删除
 
 ##### 新建/编辑实例弹窗
 | 字段 | 新建 | 编辑 |
 |---|---|---|
-| 编号 | 必填；默认自动填入 `DEV-XXX` 递增编号，可手动修改；`isDeviceCodeTaken` 唯一校验 | **可编辑**；`isDeviceCodeTaken(code, id)` 唯一校验（排除自身） |
-| SN | 必填手动录入；`isDeviceSnTaken` 唯一校验，重复提示「该 SN 已存在」 | **只读** |
-| 设备类型 | 下拉选择（必选） | **可编辑下拉**；下方灰色提示「变更类型不影响历史任务和条目中已记录的设备类型」 |
+| 设备名称 | 必填；默认自动填入 `DEV-XXX` 递增编号；`isDeviceCodeTaken` 唯一校验 | 可编辑；唯一校验排除自身 |
+| SN | 必填手动录入；`isDeviceSnTaken` 唯一校验 | **只读** |
 | 描述 | 选填 | 选填 |
 
-- 弹窗字段顺序：**编号 → SN → 设备类型 → 描述**
-- **编号规则**：新建默认 `DEV-` + 全局三位递增（`DEV-001` 起）；历史字母编号（`DEV-A01` 等）不参与递增计数，仍可手动录入
-- 新建默认：状态「离线」、电量 100%；写入 `createdAt` / `updatedAt` 到秒
+- **已移除**弹窗内「设备类型」字段；实例 `typeId` 在数据层仍保留历史快照逻辑
+- 弹窗字段顺序：**设备名称 → SN → 描述**
 
 #### 设备类型 Tab（`TypeList.jsx`）
 
-**筛选区**（点击「查询」生效）：本体、类型名称、左末端类型、右末端类型；左侧四列均匀拉伸，「重置」「查询」固定右侧
+**筛选区**（点击「查询」生效，顺序与列表列一致）：**类型名称**、本体、左末端类型、右末端类型
 
-**下拉选项来源**：本体 ← `getBodyTypeTags()`；左/右末端 ← `getEndTypeTags()`（标签管理对应 Tab 维护，增删改后重新进入设备类型页或打开弹窗即可读到最新选项）
+**列表字段**：类型名称、本体、左末端类型、右末端类型、**URDF**（有模型时「预览」链接，无则「—」）、**描述**、创建时间、更新时间、操作（**无「实例数量」列**）
 
-**列表字段**：类型名称、本体、左末端类型、右末端类型、**URDF**（有模型时显示「预览」链接，无则「—」；`DTY-002` 演示无 URDF）、实例数量、**描述**、创建时间、更新时间、操作
-
-**分页**：**10 条/页**（筛选变更重置第 1 页）
-
-**URDF 预览弹窗**：标题「URDF 模型预览」，副标题为类型名称；内容区展示 `assets/review/urdf-robot.png` 占位图并标注「零坐标初始姿态」；底部说明「当前为静态占位，正式版本支持拖拽旋转查看」；仅「关闭」按钮
-
-**操作**：编辑、删除（**无「查看实例」**，**类型名称不可点击跳转**）
+**URDF 预览弹窗**：静态占位图 +「零坐标初始姿态」说明（`urdf-robot.png`）
 
 **新建/编辑类型弹窗**：
-- **类型名称**：必填手动输入；提交时校验重名（`isDeviceTypeNameTaken`）
-- 名称下方灰色参考预览：`参考：{本体}·{左末端}+{右末端}`（`buildTypeNameReference`）
-- **新建**：本体 / 左末端 / 右末端 可填；**描述**下方 **URDF 上传**（虚线拖拽区，支持 `.urdf` / `.xacro`，≤20MB，选填）；上传后 `hasUrdf: true`，列表显示「预览」；**不展示创建人**
-- **编辑**：本体、左末端、右末端 **只读锁定**；仅类型名称、描述可改（**不含 URDF 更换**）
-- 创建时间、更新时间精确到 `YYYY-MM-DD HH:mm:ss`
+- 类型名称、本体/左末端/右末端（新建可填，编辑本体三字段只读）、描述
+- **新建与编辑均支持 URDF 上传**（`.urdf` / `.xacro`，≤20MB）；编辑时已有 URDF 显示「当前 URDF 文件」
 
-**删除类型**：
-- 若该类型下仍有实例（`instanceCount > 0`）：删除按钮 **置灰**；hover 时通过 **Portal 渲染至 `document.body`** 的 Tooltip 提示「该类型下仍有 N 个实例，请先变更实例类型或删除实例」（位置跟随按钮，宽度自适应，靠左展开避免超出屏幕右边界）
-- 无实例时：二次确认弹窗；**仅移除类型选项，不级联删除实例**；文案说明不影响历史任务和条目中已记录的类型信息
+**删除类型**：**随时可删**（不再因绑定实例置灰）；二次确认说明不影响历史任务/条目中的类型快照
 
 **设备类型快照**（任务/方案/条目）：新建任务时写入 `deviceTypeId` / `deviceTypeName`（`tasks.js` / `CreateTaskModal`）；采集方案 `plans.js`、条目 `entries.js` 在生成时写入同名快照字段（`buildEntryExtras` → `enrichTask`）。列表与工作台 **优先读条目/任务上的快照**，变更设备类型库或实例绑定 **不回写** 历史记录。
 
@@ -990,16 +994,18 @@ src/
 │   └── review/                # 标注工作台相机/URDF 占位图
 ├── components/
 │   ├── collect/
-│   │   └── CollectPlanForm.jsx    # 采集方案表单/只读详情/标注管理区块/标注配置只读视图（项目详情与新建任务共用）
+│   │   ├── CollectPlanForm.jsx           # 采集方案三模块表单 + 标注管理区块
+│   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注预配置折叠编辑器
+│   │   └── fragmentAnnotPreconfig.js     # 预置大类 + 自定义类型合并逻辑
 │   ├── entry/
 │   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/标注/验收/流转弹窗）
 │   ├── task/
 │   │   └── EntryListPanel.jsx     # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区）
-│   │   ├── Header.jsx         # 顶栏（演示身份切换 + 退出登录）
-│   │   ├── Sidebar.jsx        # 侧边栏（按 RBAC 过滤菜单）
-│   │   ├── PermissionGuard.jsx # 路由 view 权限拦截
+│   │   ├── Header.jsx         # 顶栏（角色展示 + 退出登录）
+│   │   ├── Sidebar.jsx        # 侧边栏（原型展示全部菜单）
+│   │   ├── PermissionGuard.jsx # 路由守卫（原型不拦截）
 │   │   └── Breadcrumb.jsx     # 面包屑
 │   └── common/
 │       ├── Button.jsx         # 按钮（primary / link / linkDanger）
@@ -1049,12 +1055,12 @@ src/
 │   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏、showProjectColumn）
 │   │   └── CreateTaskModal.jsx    # 新建/编辑任务（单栏 + PlanConfigModal 二级配置采集方案）
 │   ├── Review/
-│   │   ├── Workbench.jsx          # 标注工作台（独立全屏；顶栏模式/布局/通过驳回；草稿保存）
+│   │   ├── Workbench.jsx          # 标注工作台（独立全屏；四模块侧栏；验收侧栏提交）
 │   │   ├── constants/
 │   │   │   └── workbenchTags.js   # 质量标签 / 问题标签 21 项 + normalizeAuditQuality
 │   │   ├── mock/signalData.js     # 信号图 mock 数据生成
 │   │   └── components/
-│   │       ├── WorkbenchSidePanel.jsx   # 右侧共用面板（基础信息/整体标签/片段标注）
+│   │       ├── WorkbenchSidePanel.jsx   # 右侧四模块（基础信息/整体标注/片段标注/验收）
 │   │       ├── SegmentAnnotateModal.jsx # 片段标注编辑弹窗
 │   │       ├── LayoutToggle.jsx         # 布局 A / B 切换
 │   │       ├── WorkbenchLayoutA.jsx
@@ -1087,7 +1093,7 @@ src/
 │   │   └── SceneTypeModal.jsx
 │   ├── Device/
 │   │   ├── index.jsx              # 设备实例 / 设备类型 Tab 容器
-│   │   ├── InstanceList.jsx       # 实例列表（看板 + 跨类型表格）
+│   │   ├── InstanceList.jsx       # 实例列表（设备名称 + SN）
 │   │   └── TypeList.jsx           # 设备类型列表
 │   └── System/
 │       ├── UserManage.jsx         # 用户管理（薄包装 → UserListPanel global）
@@ -1110,7 +1116,7 @@ src/
 │   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录
 │   ├── projectStatus.js           # 采集项目三态、canProjectMutate、canAcceptProject
 │   ├── qcResults.js               # 条目质检结果（掉帧检查帧率/标准差）
-│   ├── deviceDisplay.jsx          # CollectDeviceCell、formatDeviceSelectLabel（编号+SN）
+│   ├── deviceDisplay.jsx          # CollectDeviceCell、formatDeviceSelectLabel（设备名称+SN）
 │   ├── samplingHelpers.js         # 抽样验收：calcSampledCount（下限 1）、任务候选筛选、按任务抽样、recalcBatchAfterProcess、批次/项目批量处理、工作台打开
 │   ├── openDatasetMetrics.js      # 开源数据集：dataSize/trajCount 解析
 │   └── deviceTypeName.js          # buildTypeName / buildTypeNameReference
@@ -1126,7 +1132,7 @@ src/
 │   ├── tags.js                    # 标签 runtime store + 设备形态选项 seed
 │   ├── devices.js                 # 设备类型 + 实例运行时 store
 │   ├── permissions.js             # RBAC 权限目录、preset、数据范围 helper
-│   ├── rbac.js                    # 角色 runtime + 演示身份列表
+│   ├── rbac.js                    # 角色 runtime（DEMO_PERSONAS 保留供扩展）
 │   ├── organizations.js           # 组织 + 用户 runtime store（seed 来自 misc.js）
 │   ├── dashboard.js               # 运营看板 mock
 │   └── misc.js                    # 用户 seed、项目成员、annotationTemplates
@@ -1173,20 +1179,20 @@ scripts/
 | 任务/方案删除规则 | **已发布任务**不渲染删除；**已归档任务**不渲染复制；**已归档方案**不渲染复制 |
 | 列表「查看详情」按钮 | 项目列表「查看详情」、任务列表「查看详情」均为蓝底白字实心 sm（`bg-blue-600 px-2 py-0.5 text-xs`） |
 | 列表名称列跳转 | 采集项目/任务、真机数据集：**名称列蓝色可点击**进详情；**ID 列黑色不可点击** |
-| 采集设备展示 | 全平台 `deviceDisplay.jsx`：列表显示**编号**，Tooltip 完整 SN；下拉「编号（SN 后 6 位）」 |
+| 采集设备展示 | 全平台 `deviceDisplay.jsx`：列表显示**设备名称**（字段 `code`），Tooltip 完整 SN；下拉「设备名称（SN 后 6 位）」 |
 | 条目采集员列 | 全平台条目列表列标题为「**采集员**」，数据字段仍为 `uploader` |
 | 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset`；详情条目删除仅更新 `entryIds` 并重算指标 |
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
 | 标签 runtime | `tags.js`：`getAuditTemplates` / `upsertAuditTemplate` / `saveAuditTemplateTagTree`；平铺标签 getter/setter；`getSceneTypeTree`；`APPLICATION_SCOPE_OPTIONS`（全局/通过/驳回）；工作台整体标签仍读 `workbenchTags.js` |
-| 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：`annotTemplateId`（整体标签模板，必填）+ `annotGenConfig` / `annotPreLabel`（片段标注配置，默认 true） |
+| 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：`annotTemplateId`（整体标签模板，必填）+ 复选框 `annotAutoFragment`（默认 true，兼容 `annotGenConfig` / `annotPreLabel`）+ `FragmentAnnotPreconfigPanel`（预置动作语义/区域帧 + 自定义类型） |
 | 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob`；详情页 mock 约 2.5s 自动完成 |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
-| URDF 上传 | 新建设备类型弹窗「描述」下方拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
+| URDF 上传 | 设备类型 **新建与编辑** 弹窗均支持拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
 | 任务采集员 | 每任务 **1 名**采集员（`collector` 字符串）；任务列表/详情单人展示，无 `+N` |
 | 用户状态 UI | 用户列表状态列 Toggle；新建/编辑单选「启用/停用」；`updateRuntimeUser` 即时生效 |
-| 标注工作台 | 三模式：`play` 仅基础信息；`review` 可编辑整体/片段标注 + 标注结论双次点击提交；`accept` 顶栏通过/驳回 + 只读反显标注；质量标签字段文案；验收驳回弹窗「确认」；`syncBatchesAfterEntryAccept` |
+| 标注工作台 | 三模式共用 **四模块** 侧栏：`play` 全只读；`review` 可编辑整体/片段 + 底部保存 + 标注结论提交；`accept` 侧栏验收模块提交（**无顶栏通过/驳回**）；`syncBatchesAfterEntryAccept` |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
@@ -1197,7 +1203,7 @@ scripts/
 | 数据类型 | 条数 / 说明 |
 |---|---|
 | 采集项目 | 8 条（status：**open** ×6、**closed** P-1006、**archived** P-1007；mock 仍含 `projectType`，UI 不展示；`createdAt` 精确到秒） |
-| 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布/已归档**；含 `deviceTypeId`、场景路径、步骤、**annotTemplateId**、标注开关） |
+| 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布/已归档**；含 `deviceTypeId`、场景路径、步骤、**annotTemplateId**、`annotAutoFragment`、`fragmentAnnotTypes` 等） |
 | 质检项 | 每项目固定 **7 条**（8 项目 × 7 = 56 条；含**掉帧检查**；mock 初始 **全部 enabled: true**；`plans.js` → `getQcItemsByProjectId`） |
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
 | 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；**采集员为单人字符串**、标注员为单人） |
@@ -1217,8 +1223,8 @@ scripts/
 | 采集方式标签 | 5 条 |
 | 任务用途标签 | 2 条（正式采集/试采集） |
 | 设备形态选项 | 本体机型标签 2 条、末端类型标签 4 条（`getBodyTypeTags()` / `getEndTypeTags()`，标签管理 Tab CRUD） |
-| 设备类型 | 5 条（`DTY-001`~`005`）；`hasUrdf`：**DTY-002** 为 `false`（URDF 列「—」），其余为 `true`；历史机型名 **AlphaBotX 已统一为 AlphaBot1**；列表 **不展示创建人** |
-| 设备实例 | 10 条；含 `code`（编号）、`status`（在线/离线）、`battery`（0~100）、`description`、`createdAt`、`updatedAt`；列表展示 **编号** / SN / 设备类型 / 描述 |
+| 设备类型 | 5 条（`DTY-001`~`005`）；`hasUrdf`：**DTY-002** 为 `false`，其余为 `true`；**列表无实例数量列**；类型 **随时可删** |
+| 设备实例 | 10 条；含 `code`（设备名称）、`status`、`battery`、`description`、`createdAt`、`updatedAt`；列表展示 **设备名称** / SN / 描述（**无设备类型/在线/电量列**） |
 | 设备类型数据源 | 任务/条目/方案创建时快照 `deviceTypeName`（及条目 `deviceTypeId`）；运行时 `enrichTask` 仅用于 seed 生成，历史展示读快照 |
 | 标注模板 | 3 条审核模板（`tags.js` → `auditTemplateSeed`，UI 在「审核模板」Tab）；历史 `misc.js` → `annotationTemplates` **未接入 UI** |
 | 组织 | 4 条（`organizations.js`）；含 `remark`、启停状态、动态 `memberCount` |
@@ -1257,7 +1263,7 @@ scripts/
 | U-012 | zhenghao | 郑浩 | 采集员&标注员 | 智平方 | 启用 | zhenghao@ai2robotics.com |
 | U-013 | linfang | 林芳 | 区域协调员 | 智平方 | **停用** | linfang@ai2robotics.com |
 
-> 停用用户（何敏、林芳）不会出现在演示身份切换列表与项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。演示切换含 **超级管理员（U-000）**、**游客（赵研）** 与 **工程师（陈工）**。U-011、U-012 为双角色平台用户；U-013 绑定自定义角色「区域协调员」。用户单条字段还含 `phone`、`remark`、`createdAt`、`lastLoginAt`。
+> 停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。U-011、U-012 为双角色平台用户；U-013 绑定自定义角色「区域协调员」。用户单条字段还含 `phone`、`remark`、`createdAt`、`lastLoginAt`。
 
 ### 组织单条字段（`organizations.js`）
 `id`, `name`, `remark`, `status`（启用/停用）, `createdAt`（列表附加 `memberCount`）
@@ -1290,7 +1296,7 @@ scripts/
 
 ### 设备类型单条字段（`devices.js`）
 
-`id`, `name`, `body`, `leftEnd`, `rightEnd`, `hasUrdf`（布尔，是否有 URDF 模型；**非**文件名字段）, `description`, `creator`（列表/UI 不展示）, `createdAt`, `updatedAt`（列表附加 `instanceCount`）
+`id`, `name`, `body`, `leftEnd`, `rightEnd`, `hasUrdf`, `description`, `creator`（列表/UI 不展示）, `createdAt`, `updatedAt`（数据层仍可有 `instanceCount`，**列表不展示**）
 
 | ID | 名称 | hasUrdf |
 |---|---|---|
@@ -1303,12 +1309,12 @@ scripts/
 ### 设备实例单条字段
 `id`, `typeId`, `code`, `sn`, `status`（在线/离线）, `battery`（0~100）, `description`（选填）, `createdAt`, `updatedAt`, `registeredAt`（兼容字段）
 
-### 实例编号示例（mock 初始数据）
+### 设备名称示例（mock 初始数据，`code` 字段）
 
-| 编号 | 说明 |
+| 设备名称 | 说明 |
 |---|---|
-| `DEV-A01` ~ `DEV-F01` 等 | 历史字母编号，保留不变 |
-| `DEV-001` 起 | 新建实例自动分配的全局递增三位数字编号 |
+| `DEV-A01` ~ `DEV-F01` 等 | 历史字母命名，保留不变 |
+| `DEV-001` 起 | 新建实例自动分配的全局递增三位数字名称 |
 
 ### 项目成员单条字段
 `id`, `name`, `roles[]`, `taskIds[]`, `joinedAt`（`YYYY-MM-DD HH:mm:ss`）
@@ -1326,7 +1332,7 @@ scripts/
 | `/collection/project/:id` | 项目详情 | 同上 |
 | `/collection/project/:id/sampling` | 重定向至项目详情 `?tab=sampling` | — |
 | `/collection/task` | 采集任务列表 | `collection.task.view` |
-| `/collection/task/:id` | 任务详情（含数据范围校验） | 同上 |
+| `/collection/task/:id` | 任务详情 | `collection.task.view`（原型全量可访问） |
 | `/collection/upload` | 采集条目 | `collection.upload.view` |
 | `/review/:entryId` | 标注工作台（独立全屏，无侧边栏；`?mode=play|review|accept`） | `collection.task.view` |
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
@@ -1346,3 +1352,5 @@ scripts/
 | `/system/org/:id` | 组织详情（组织名页头 + 用户列表） | `system.org.view` |
 | `/system/log` | 重定向 → `/system/user` | — |
 | `*` | 未知路径 → `/dashboard` | 由目标页决定 |
+
+> **view 权限**列描述 RBAC catalog 中的 key；**原型阶段** `PermissionGuard` 不拦截，所有路由均可直接访问。

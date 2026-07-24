@@ -168,6 +168,16 @@ export function getNextInstanceCode() {
   return `DEV-${String(next).padStart(3, '0')}`
 }
 
+/** 新实例唯一 ID：INS- + 全局三位递增 */
+export function getNextInstanceId() {
+  const nums = runtimeInstances
+    .map((i) => i.id.match(/^INS-(\d{3})$/)?.[1])
+    .filter(Boolean)
+    .map((n) => parseInt(n, 10))
+  const next = nums.length ? Math.max(...nums) + 1 : 1
+  return `INS-${String(next).padStart(3, '0')}`
+}
+
 /** @deprecated 旧扁平设备列表，保留兼容 */
 export const devices = initialDeviceInstances.map((i) => ({
   id: i.code,

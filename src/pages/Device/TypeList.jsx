@@ -250,7 +250,7 @@ function TypeModal({ open, editing, onCancel, onOk }) {
           />
           <p className="mt-1 text-xs text-gray-400">参考：{referencePreview}</p>
         </Field>
-        <Field label="本体" required={!isEdit} error={errs.body}>
+        <Field label="本体机型" required={!isEdit} error={errs.body}>
           {renderBodyField()}
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -398,7 +398,7 @@ export default function TypeList() {
       dataIndex: 'name',
       render: (v) => <span className="font-medium text-gray-800">{v}</span>,
     },
-    { title: '本体', dataIndex: 'body' },
+    { title: '本体机型', dataIndex: 'body' },
     { title: '左末端类型', dataIndex: 'leftEnd' },
     { title: '右末端类型', dataIndex: 'rightEnd' },
     {
@@ -458,7 +458,7 @@ export default function TypeList() {
               />
             </div>
             <div className="min-w-0 flex-1 basis-0">
-              <label className={LBL}>本体</label>
+              <label className={LBL}>本体机型</label>
               <select
                 value={bodyFilter}
                 onChange={(e) => setBodyFilter(e.target.value)}

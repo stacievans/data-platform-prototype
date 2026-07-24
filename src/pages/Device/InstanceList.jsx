@@ -7,6 +7,7 @@ import { IconPlus } from '../../components/common/Icons'
 import {
   getAllDeviceInstances,
   getNextInstanceCode,
+  getNextInstanceId,
   isDeviceCodeTaken,
   isDeviceSnTaken,
   setDeviceInstances,
@@ -67,7 +68,7 @@ function InstanceModal({ open, editing, defaultCode, onCancel, onOk }) {
       if (isDeviceSnTaken(trimmedSn)) { setSnError('duplicate'); return }
       const ts = now()
       onOk({
-        id: `INS-${Date.now()}`,
+        id: getNextInstanceId(),
         code: trimmedCode,
         sn: trimmedSn,
         description: description.trim(),
@@ -202,6 +203,11 @@ export default function InstanceList() {
   }
 
   const columns = [
+    {
+      title: '编号',
+      dataIndex: 'id',
+      render: (v) => <span className="font-mono text-xs text-gray-700">{v ?? '—'}</span>,
+    },
     {
       title: '设备名称',
       dataIndex: 'code',
