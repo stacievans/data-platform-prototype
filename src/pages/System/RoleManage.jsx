@@ -6,9 +6,11 @@ import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
-import { countPermittedModules } from '../../mock/permissions'
 import { useAuth } from '../../context/AuthContext'
 import RolePermissionModal from './RolePermissionModal'
+import MenuPermissionTree, { normalizeRolePermissions } from './MenuPermissionTree'
+import ProjectDataTransfer from './ProjectDataTransfer'
+import { projects } from '../../mock/projects'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
@@ -100,13 +102,12 @@ function StatusSwitch({ enabled, onToggle }) {
 }
 
 function deleteDisabledReason(row) {
-  if (row.type === '内置') return '内置角色不可删除'
   if (row.memberCount > 0) return '该角色下存在成员，无法删除'
   return null
 }
 
 export default function RoleManage() {
-  const { roles, saveRolePermissions, addRole, toggleRoleStatus, deleteRole, can } = useAuth()
+  const { roles, updateRole, addRole, toggleRoleStatus, deleteRole, can } = useAuth()
   const { ToastNode, show: toast } = useToast()
   const [qName, setQName] = useState('')
   const [qType, setQType] = useState('')
@@ -114,7 +115,9 @@ export default function RoleManage() {
   const [filters, setFilters] = useState({})
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [createForm, setCreateForm] = useState({ name: '', description: '', type: '自定义' })
+  const [createForm, setCreateForm] = useState({ name: '', description: '' })
+  const [createMenuPermissions, setCreateMenuPermissions] = useState([])
+  const [createProjectIds, setCreateProjectIds] = useState([])
   const [createErrors, setCreateErrors] = useState({})
   const [permTarget, setPermTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -126,26 +129,31 @@ export default function RoleManage() {
 
   const setC = (k, v) => { setCreateForm((f) => ({ ...f, [k]: v })); setCreateErrors((e) => ({ ...e, [k]: false })) }
 
+  const resetCreateForm = () => {
+    setCreateForm({ name: '', description: '' })
+    setCreateMenuPermissions([])
+    setCreateProjectIds([])
+    setCreateErrors({})
+  }
+
   const handleCreate = () => {
     const errs = {}
-    if (!createForm.name.trim())        errs.name        = true
+    if (!createForm.name.trim()) errs.name = true
     if (!createForm.description.trim()) errs.description = true
     if (Object.keys(errs).length) { setCreateErrors(errs); return }
     addRole({
       id: nextRoleId,
       name: createForm.name.trim(),
       description: createForm.description.trim(),
-      permissions: [],
-      moduleCount: 0,
-      memberCount: 0,
+      permissions: normalizeRolePermissions(createMenuPermissions),
+      projectIds: [...createProjectIds],
       createdAt: nowDateTime(),
-      type: createForm.type,
+      type: '自定义',
       status: '启用',
     })
     setCreateOpen(false)
-    setCreateForm({ name: '', description: '', type: '自定义' })
-    setCreateErrors({})
-    toast('角色已创建，请配置权限')
+    resetCreateForm()
+    toast('角色已创建')
   }
 
   const filtered = useMemo(() =>
@@ -161,11 +169,15 @@ export default function RoleManage() {
   const applyFilters = () => setFilters({ name: qName.trim(), type: qType, status: qStatus })
   const resetFilters = () => { setQName(''); setQType(''); setQStatus(''); setFilters({}) }
 
-  const handleSavePermissions = (permissions) => {
+  const handleSavePermissions = ({ name, description, permissions, projectIds }) => {
     if (!permTarget) return
-    saveRolePermissions(permTarget.id, permissions)
+    const patch = { name, description, permissions }
+    if (permTarget.type !== '内置') {
+      patch.projectIds = projectIds ?? []
+    }
+    updateRole(permTarget.id, patch)
     setPermTarget(null)
-    toast(`已更新「${permTarget.name}」权限（${countPermittedModules(permissions)} 个模块）`)
+    toast(`已更新「${name}」`)
   }
 
   const handleToggleStatus = (row) => {
@@ -185,8 +197,8 @@ export default function RoleManage() {
   const columns = [
     { title: '角色ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
     { title: '角色名称', dataIndex: 'name', render: (v) => <span className="font-medium">{v}</span> },
-    { title: '角色描述', dataIndex: 'description', render: (v) => <span className="text-gray-500 max-w-xs truncate block" title={v}>{v}</span> },
-    { title: '权限模块数', dataIndex: 'moduleCount' },
+    { title: '描述', dataIndex: 'description', render: (v) => <span className="text-gray-500 max-w-xs truncate block" title={v}>{v}</span> },
+    { title: '权限数', dataIndex: 'moduleCount' },
     { title: '成员数', dataIndex: 'memberCount' },
     dtCol('创建时间', 'createdAt'),
     { title: '类型', dataIndex: 'type', render: (v) => <Badge color={v === '内置' ? 'blue' : 'purple'}>{v}</Badge> },
@@ -204,6 +216,7 @@ export default function RoleManage() {
       title: '操作',
       key: 'actions',
       render: (_, row) => {
+        const isBuiltin = row.type === '内置'
         const deleteReason = deleteDisabledReason(row)
         const canDelete = !deleteReason
         const deleteBtn = (
@@ -222,9 +235,9 @@ export default function RoleManage() {
             {can('system.role.assignPerm')
               ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑权限</Button>
               : <span className="text-xs text-gray-300">—</span>}
-            {deleteReason
+            {!isBuiltin && (deleteReason
               ? <TooltipWrap label={deleteReason}>{deleteBtn}</TooltipWrap>
-              : deleteBtn}
+              : deleteBtn)}
           </div>
         )
       },
@@ -270,14 +283,19 @@ export default function RoleManage() {
         </div>
         <Table columns={columns} dataSource={filtered} />
 
-        <Modal open={createOpen} title="新建角色"
-          onCancel={() => { setCreateOpen(false); setCreateForm({ name: '', description: '', type: '自定义' }); setCreateErrors({}) }}
-          onOk={handleCreate} okText="确认创建"
+        <Modal
+          open={createOpen}
+          title="新建角色"
+          onCancel={() => { setCreateOpen(false); resetCreateForm() }}
+          onOk={handleCreate}
+          okText="确认创建"
+          width={920}
+          fitViewport
         >
           {(() => {
             const fCls = (err) => `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
             return (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">角色ID</label>
                   <input readOnly value={nextRoleId} className="h-8 w-full rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none cursor-default" />
@@ -288,17 +306,21 @@ export default function RoleManage() {
                   {createErrors.name && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">角色描述<span className="text-red-500">*</span></label>
-                  <input placeholder="请输入角色描述" value={createForm.description} onChange={(e) => setC('description', e.target.value)} className={fCls(createErrors.description)} />
+                  <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">描述<span className="text-red-500">*</span></label>
+                  <input placeholder="请输入描述" value={createForm.description} onChange={(e) => setC('description', e.target.value)} className={fCls(createErrors.description)} />
                   {createErrors.description && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">类型<span className="text-red-500">*</span></label>
-                  <select value={createForm.type} onChange={(e) => setC('type', e.target.value)}
-                    className="h-8 w-full cursor-pointer rounded-md border border-gray-300 px-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                    <option value="自定义">自定义</option>
-                    <option value="内置">内置</option>
-                  </select>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">菜单权限</label>
+                  <MenuPermissionTree value={createMenuPermissions} onChange={setCreateMenuPermissions} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">数据权限</label>
+                  <ProjectDataTransfer
+                    projects={projects}
+                    value={createProjectIds}
+                    onChange={setCreateProjectIds}
+                  />
                 </div>
               </div>
             )

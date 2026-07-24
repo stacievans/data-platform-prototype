@@ -78,6 +78,7 @@ function enrichRole(role) {
     ...role,
     status: role.status ?? '启用',
     permissions,
+    projectIds: role.projectIds ?? [],
     moduleCount: countPermittedModules(permissions),
     memberCount: memberCountForRole(role.name),
   }
@@ -95,6 +96,28 @@ export function updateRolePermissions(roleId, permissions) {
       ? { ...r, permissions: [...permissions], moduleCount: countPermittedModules(permissions) }
       : r,
   )
+  return getRuntimeRoles()
+}
+
+export function isRoleNameTaken(name, excludeRoleId) {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+  return getRuntimeRoles().some((r) => r.name === trimmed && r.id !== excludeRoleId)
+}
+
+export function updateRuntimeRole(roleId, patch) {
+  runtimeRoles = runtimeRoles.map((r) => {
+    if (r.id !== roleId) return r
+    const next = { ...r, ...patch }
+    if (patch.permissions) {
+      next.permissions = [...patch.permissions]
+      next.moduleCount = countPermittedModules(patch.permissions)
+    }
+    if (patch.projectIds) {
+      next.projectIds = [...patch.projectIds]
+    }
+    return enrichRole(next)
+  })
   return getRuntimeRoles()
 }
 

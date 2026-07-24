@@ -5,6 +5,7 @@ import {
   USER_EMAILS,
   getRuntimeRoles,
   updateRolePermissions as persistRolePermissions,
+  updateRuntimeRole,
   appendRuntimeRole,
   setRoleStatus as persistRoleStatus,
   deleteRuntimeRole,
@@ -53,6 +54,11 @@ export function AuthProvider({ children }) {
     setRoles(getRuntimeRoles())
   }, [])
 
+  const updateRole = useCallback((roleId, patch) => {
+    updateRuntimeRole(roleId, patch)
+    setRoles(getRuntimeRoles())
+  }, [])
+
   const addRole = useCallback((role) => {
     appendRuntimeRole(role)
     setRoles(getRuntimeRoles())
@@ -88,11 +94,12 @@ export function AuthProvider({ children }) {
       switchUser,
       refreshRoles,
       saveRolePermissions,
+      updateRole,
       addRole,
       toggleRoleStatus,
       deleteRole,
     }),
-    [user, roles, enabledRoles, can, canAccessRoute, switchUser, refreshRoles, saveRolePermissions, addRole, toggleRoleStatus, deleteRole],
+    [user, roles, enabledRoles, can, canAccessRoute, switchUser, refreshRoles, saveRolePermissions, updateRole, addRole, toggleRoleStatus, deleteRole],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
