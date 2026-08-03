@@ -1,18 +1,18 @@
 import { Link, useLocation } from 'react-router-dom'
 
 const routes = [
+  { match: /^\/intro/, crumbs: [['数采介绍']] },
   { match: /^\/dashboard/, crumbs: [['运营看板']] },
+  { match: /^\/backflow/, crumbs: [['真机回流']] },
   {
     match: /^\/collection\/project\/.+/,
-    crumbs: [['数据采集'], ['采集项目', '/collection/project'], ['项目详情']],
+    crumbs: [['采集项目', '/collection/project'], ['项目详情']],
   },
-  { match: /^\/collection\/project/, crumbs: [['数据采集'], ['采集项目']] },
+  { match: /^\/collection\/project/, crumbs: [['采集项目']] },
   {
     match: /^\/collection\/task\/.+/,
-    crumbs: [['数据采集'], ['采集任务', '/collection/task'], ['任务详情']],
+    crumbs: [['采集项目', '/collection/project'], ['任务详情']],
   },
-  { match: /^\/collection\/task/, crumbs: [['数据采集'], ['采集任务']] },
-  { match: /^\/collection\/upload/, crumbs: [['数据采集'], ['采集条目']] },
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
   { match: /^\/dataset\/self\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情']] },
   { match: /^\/dataset\/self/, crumbs: [['数据集管理'], ['真机数据集']] },
@@ -32,30 +32,23 @@ const routes = [
 export default function Breadcrumb() {
   const { pathname } = useLocation()
 
-  let crumbs = null
   const route = routes.find((r) => r.match.test(pathname))
-  if (route) crumbs = route.crumbs
+  const crumbs = route?.crumbs
 
-  if (!crumbs) return null
+  if (!crumbs?.length) return null
 
   return (
-    <div className="flex items-center gap-1.5 text-sm">
-      <Link to="/dashboard" className="text-gray-400 hover:text-blue-600">
-        首页
-      </Link>
+    <div className="flex items-center text-sm text-gray-500">
+      <span className="shrink-0 text-gray-600">当前位置：</span>
       {crumbs.map(([label, link], i) => (
-        <span key={label} className="flex items-center gap-1.5">
-          <span className="text-gray-300">/</span>
+        <span key={`${label}-${i}`} className="flex items-center">
+          {i > 0 && <span className="mx-1.5 text-gray-300">/</span>}
           {link ? (
-            <Link to={link} className="text-gray-400 hover:text-blue-600">
+            <Link to={link} className="text-gray-500 transition hover:text-blue-600">
               {label}
             </Link>
           ) : (
-            <span
-              className={
-                i === crumbs.length - 1 ? 'text-gray-700' : 'text-gray-400'
-              }
-            >
+            <span className={i === crumbs.length - 1 ? 'text-blue-600' : 'text-gray-500'}>
               {label}
             </span>
           )}

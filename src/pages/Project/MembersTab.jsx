@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 import { IconPlus } from '../../components/common/Icons'
 import {
   CHECKBOX_LIST_CLS,
@@ -111,6 +112,16 @@ function tasksUnassignedForRole(role, projectTasks) {
   return []
 }
 
+function tasksUnassignedForRoles(roles, projectTasks) {
+  if (!roles.length) return []
+  if (roles.includes(ROLE_COLLECTOR) && roles.includes(ROLE_REVIEWER)) {
+    return projectTasks.filter((t) => !hasCollector(t) || !hasReviewer(t))
+  }
+  if (roles.includes(ROLE_COLLECTOR)) return projectTasks.filter((t) => !hasCollector(t))
+  if (roles.includes(ROLE_REVIEWER)) return projectTasks.filter((t) => !hasReviewer(t))
+  return []
+}
+
 function RoleFieldLabel({ required = true }) {
   return (
     <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
@@ -156,7 +167,6 @@ function RoleMultiPicker({ value = [], onChange, error }) {
       <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
         角色
         <span className="text-red-500">*</span>
-        <span className="text-xs font-normal text-gray-400">（多选）</span>
       </label>
       <div className="flex flex-wrap gap-2">
         {ADD_ROLE_OPTIONS.map((role) => (
@@ -526,13 +536,14 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const [assignTask, setAssignTask] = useState(null)
   const [replaceConfirm, setReplaceConfirm] = useState(null)
 
-  const [form, setForm] = useState({ name: '', role: '', taskIds: [] })
+  const [form, setForm] = useState({ name: '', roles: [], taskIds: [] })
   const [addForm, setAddForm] = useState({ roles: [], names: [], taskIds: [] })
   const [configTaskForm, setConfigTaskForm] = useState({ roles: [], taskIds: [] })
   const [configTaskErrors, setConfigTaskErrors] = useState({})
   const [assignForm, setAssignForm] = useState({ collectors: [], reviewers: [] })
   const [assignSnapshot, setAssignSnapshot] = useState({ collectors: [], reviewers: [] })
   const [assignRoleLock, setAssignRoleLock] = useState({ collectors: false, reviewers: false })
+  const [assignErrors, setAssignErrors] = useState({})
   const [errors, setErrors] = useState({})
   const [addErrors, setAddErrors] = useState({})
 
@@ -556,20 +567,20 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   )
 
   const batchTaskList = useMemo(
-    () => (form.role ? tasksUnassignedForRole(form.role, incompleteTasks) : incompleteTasks),
-    [form.role, incompleteTasks],
+    () => (form.roles.length ? tasksUnassignedForRoles(form.roles, incompleteTasks) : []),
+    [form.roles, incompleteTasks],
   )
 
   const formUsers = useMemo(() => {
-    if (!form.role) return []
+    if (!form.roles.length) return []
     return users.filter(
       (u) =>
         u.status === '启用' &&
         u.nickname !== project?.creator &&
-        userMatchesRole(u, form.role) &&
+        userMatchesAnyRole(u, form.roles) &&
         !members.some((m) => m.name === u.nickname),
     )
-  }, [form.role, members, project?.creator])
+  }, [form.roles, members, project?.creator])
 
   const addFormUsers = useMemo(() => {
     if (!addForm.roles.length) return []
@@ -593,7 +604,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   )
 
   const resetForm = () => {
-    setForm({ name: '', role: '', taskIds: [] })
+    setForm({ name: '', roles: [], taskIds: [] })
     setErrors({})
   }
 
@@ -631,6 +642,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       reviewers: reviewers.length > 0,
     })
     setAssignForm({ collectors: [], reviewers: [] })
+    setAssignErrors({})
   }
 
   const stripAnnotatorForTask = (list, taskId, excludeName = null) =>
@@ -749,13 +761,13 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
   const applyFormToTasksAndMembers = (nextMembers) => {
     let membersDraft = [...nextMembers]
+    const { roles, name, taskIds } = form
 
-    for (const taskId of form.taskIds) {
-      const needsReviewer = form.role === ROLE_REVIEWER || form.role === ROLE_BOTH
-      if (needsReviewer) {
+    for (const taskId of taskIds) {
+      if (roles.includes(ROLE_REVIEWER)) {
         const owner = membersDraft.find(
           (m) =>
-            m.name !== form.name &&
+            m.name !== name &&
             m.roles.includes(ROLE_REVIEWER) &&
             m.taskIds.includes(taskId),
         )
@@ -763,7 +775,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
           setReplaceConfirm({
             taskId,
             existingName: owner.name,
-            reviewerName: form.name,
+            reviewerName: name,
             resumeAdd: true,
           })
           return null
@@ -772,30 +784,26 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     }
 
     const nextTasks = projectTasks.map((t) => {
-      if (!form.taskIds.includes(t.id)) return t
+      if (!taskIds.includes(t.id)) return t
       let updated = { ...t }
-      const assignCollector = form.role === ROLE_COLLECTOR || form.role === ROLE_BOTH
-      const assignReviewer = form.role === ROLE_REVIEWER || form.role === ROLE_BOTH
-
-      if (assignCollector) {
-        updated = { ...updated, collector: form.name }
+      if (roles.includes(ROLE_COLLECTOR)) {
+        updated = appendTaskPerson(updated, ROLE_COLLECTOR, name)
       }
-      if (assignReviewer) {
-        membersDraft = stripAnnotatorForTask(membersDraft, t.id, form.name)
-        updated = { ...updated, reviewer: form.name }
+      if (roles.includes(ROLE_REVIEWER)) {
+        membersDraft = stripAnnotatorForTask(membersDraft, t.id, name)
+        updated = appendTaskPerson(updated, ROLE_REVIEWER, name)
       }
       return updated
     })
 
-    const storedRoles = rolesToStore(form.role)
-    const existing = membersDraft.find((m) => m.name === form.name)
+    const existing = membersDraft.find((m) => m.name === name)
     if (existing) {
       membersDraft = membersDraft.map((m) =>
         m.id === existing.id
           ? {
               ...m,
-              roles: [...new Set([...m.roles, ...storedRoles])],
-              taskIds: [...new Set([...m.taskIds, ...form.taskIds])],
+              roles: [...new Set([...m.roles, ...roles])],
+              taskIds: [...new Set([...m.taskIds, ...taskIds])],
             }
           : m,
       )
@@ -804,9 +812,9 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         ...membersDraft,
         {
           id: `PM-${projectId}-${Date.now()}`,
-          name: form.name,
-          roles: storedRoles,
-          taskIds: form.taskIds,
+          name,
+          roles: [...roles],
+          taskIds,
           joinedAt: nowDatetime(),
         },
       ]
@@ -860,6 +868,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     const errs = {}
     if (!addForm.roles.length) errs.roles = true
     if (!addForm.names.length) errs.names = true
+    if (!addForm.taskIds.length) errs.taskIds = true
     if (Object.keys(errs).length) {
       setAddErrors(errs)
       return
@@ -887,8 +896,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
   const handleAddSave = () => {
     const errs = {}
+    if (!form.roles.length) errs.roles = true
     if (!form.name) errs.name = true
-    if (!form.role) errs.role = true
     if (Object.keys(errs).length) { setErrors(errs); return }
 
     const result = applyFormToTasksAndMembers(members)
@@ -908,6 +917,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
     const errs = {}
     if (!configTaskForm.roles.length) errs.roles = true
+    if (!configTaskForm.taskIds.length) errs.taskIds = true
     if (Object.keys(errs).length) {
       setConfigTaskErrors(errs)
       return
@@ -963,10 +973,11 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const handleSingleAssignSave = () => {
     if (!assignTask) return
 
-    const hasCollectorUpdate = !assignRoleLock.collectors && assignForm.collectors.length > 0
-    const hasReviewerUpdate = !assignRoleLock.reviewers && assignForm.reviewers.length > 0
-    if (!hasCollectorUpdate && !hasReviewerUpdate) {
-      setAssignTask(null)
+    const errs = {}
+    if (!assignRoleLock.collectors && assignForm.collectors.length === 0) errs.collectors = true
+    if (!assignRoleLock.reviewers && assignForm.reviewers.length === 0) errs.reviewers = true
+    if (Object.keys(errs).length) {
+      setAssignErrors(errs)
       return
     }
 
@@ -1007,9 +1018,9 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     }
   }
 
-  const handleRoleChange = (role) => {
-    setForm((f) => ({ ...f, role, name: '', taskIds: [] }))
-    setErrors((e) => ({ ...e, role: false, name: false }))
+  const handleBatchRolesChange = (roles) => {
+    setForm((f) => ({ ...f, roles, name: '', taskIds: [] }))
+    setErrors((e) => ({ ...e, roles: false, name: false }))
   }
 
   const handleAddRolesChange = (roles) => {
@@ -1029,7 +1040,6 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
           选择用户
           <span className="text-red-500">*</span>
-          <span className="text-xs font-normal text-gray-400">（多选）</span>
         </label>
         <PersonMultiDropdownSelect
           value={addForm.names}
@@ -1047,32 +1057,39 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">配置任务</label>
+        <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+          配置任务
+          <span className="text-red-500">*</span>
+        </label>
         {!addForm.roles.length ? (
           <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">请先选择角色</p>
         ) : (
           <TaskCheckboxList
             tasks={addFormTaskList}
             selectedIds={addForm.taskIds}
-            onChange={(ids) => setAddForm((f) => ({ ...f, taskIds: ids }))}
+            onChange={(ids) => {
+              setAddForm((f) => ({ ...f, taskIds: ids }))
+              setAddErrors((er) => ({ ...er, taskIds: false }))
+            }}
           />
         )}
+        {addErrors.taskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
       </div>
     </div>
   )
 
   const memberFormContent = (taskList) => (
     <div className="space-y-4">
-      <RolePicker
-        value={form.role}
-        onChange={handleRoleChange}
-        error={errors.role}
+      <RoleMultiPicker
+        value={form.roles}
+        onChange={handleBatchRolesChange}
+        error={errors.roles}
       />
 
       <div>
         <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
-          选择用户<span className="text-red-500">*</span>
-          <span className="text-xs font-normal text-gray-400">（模糊查找 · 单选）</span>
+          选择用户
+          <span className="text-red-500">*</span>
         </label>
         <PersonDropdownSelect
           value={form.name}
@@ -1081,8 +1098,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
             setErrors((er) => ({ ...er, name: false }))
           }}
           options={formUsers.map((u) => u.nickname)}
-          placeholder={!form.role ? '请先选择角色' : '请输入用户姓名查找'}
-          disabled={!form.role}
+          placeholder={!form.roles.length ? '请先选择角色' : '请输入用户姓名查找'}
+          disabled={!form.roles.length}
           disabledPlaceholder="请先选择角色"
           error={errors.name}
         />
@@ -1091,7 +1108,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">分配任务</label>
-        {!form.role ? (
+        {!form.roles.length ? (
           <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">请先选择角色</p>
         ) : (
           <TaskCheckboxList
@@ -1226,9 +1243,9 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
       <Table columns={columns} dataSource={members} pageSize={LIST_PAGE_SIZE} pageResetKey={members.length} />
 
-      <Modal open={addOpen} title="添加成员" onCancel={() => setAddOpen(false)} onOk={handleAddMemberSave} okText="添加">
+      <Drawer open={addOpen} title="添加成员" onCancel={() => setAddOpen(false)} onOk={handleAddMemberSave}>
         {addMemberFormContent}
-      </Modal>
+      </Drawer>
 
       <Modal
         open={batchOpen}
@@ -1241,14 +1258,12 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         {memberFormContent(batchTaskList)}
       </Modal>
 
-      <Modal
+      <Drawer
         open={!!configTaskMember}
         title="配置任务"
-        width={960}
-        fitViewport
+        width="min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))"
         onCancel={() => setConfigTaskMember(null)}
         onOk={handleConfigTaskSave}
-        okText="保存"
       >
         {configTaskMember && (
           <div className="space-y-4">
@@ -1269,18 +1284,25 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
               error={configTaskErrors.roles}
             />
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">配置任务</label>
+              <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+                配置任务
+                <span className="text-red-500">*</span>
+              </label>
               <TreeTransfer
                 key={configTaskMember.id}
                 projects={configTaskProjects}
                 tasks={projectTasks}
                 value={configTaskForm.taskIds}
-                onChange={(taskIds) => setConfigTaskForm((f) => ({ ...f, taskIds }))}
+                onChange={(taskIds) => {
+                  setConfigTaskForm((f) => ({ ...f, taskIds }))
+                  setConfigTaskErrors((e) => ({ ...e, taskIds: false }))
+                }}
               />
+              {configTaskErrors.taskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
             </div>
           </div>
         )}
-      </Modal>
+      </Drawer>
 
       <Modal
         open={matrixOpen}
@@ -1296,18 +1318,6 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
           </PermButton>
         </div>
         <Table columns={matrixColumns} dataSource={matrixRows} pageSize={LIST_PAGE_SIZE} />
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-xs text-gray-400">
-            当前仍有 {matrixRows.length} 个任务未完成完整分配
-          </p>
-          <button
-            type="button"
-            onClick={() => setMatrixOpen(false)}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            关闭
-          </button>
-        </div>
       </Modal>
 
       <Modal
@@ -1316,12 +1326,15 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         zIndex={matrixOpen ? 60 : 50}
         onCancel={() => setAssignTask(null)}
         onOk={handleSingleAssignSave}
-        okText="保存"
+        okText="确定"
       >
         {assignTask && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">任务名称</label>
+              <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+                任务名称
+                <span className="text-red-500">*</span>
+              </label>
               <input
                 readOnly
                 value={assignTask.name}
@@ -1331,32 +1344,38 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
             <div>
               <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
                 采集员
-                <span className="text-xs font-normal text-gray-400">
-                  {assignRoleLock.collectors ? '（已分配，不可编辑）' : '（多选）'}
-                </span>
+                <span className="text-red-500">*</span>
               </label>
               <PersonMultiDropdownSelect
                 value={assignRoleLock.collectors ? assignSnapshot.collectors : assignForm.collectors}
-                onChange={(collectors) => setAssignForm((f) => ({ ...f, collectors }))}
+                onChange={(collectors) => {
+                  setAssignForm((f) => ({ ...f, collectors }))
+                  setAssignErrors((e) => ({ ...e, collectors: false }))
+                }}
                 options={collectorOptions}
                 placeholder="请选择采集员"
                 readonly={assignRoleLock.collectors}
+                error={assignErrors.collectors}
               />
+              {assignErrors.collectors && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
                 标注员
-                <span className="text-xs font-normal text-gray-400">
-                  {assignRoleLock.reviewers ? '（已分配，不可编辑）' : '（多选）'}
-                </span>
+                <span className="text-red-500">*</span>
               </label>
               <PersonMultiDropdownSelect
                 value={assignRoleLock.reviewers ? assignSnapshot.reviewers : assignForm.reviewers}
-                onChange={(reviewers) => setAssignForm((f) => ({ ...f, reviewers }))}
+                onChange={(reviewers) => {
+                  setAssignForm((f) => ({ ...f, reviewers }))
+                  setAssignErrors((e) => ({ ...e, reviewers: false }))
+                }}
                 options={reviewerOptions}
                 placeholder="请选择标注员"
                 readonly={assignRoleLock.reviewers}
+                error={assignErrors.reviewers}
               />
+              {assignErrors.reviewers && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
             </div>
           </div>
         )}

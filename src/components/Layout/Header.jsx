@@ -1,134 +1,259 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { IconCollapse } from '../common/Icons'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { IconCollapse, IconGrid } from '../common/Icons'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../common/Toast'
+import { getOrganizations } from '../../mock/organizations'
 import logo from '../../assets/logo.png'
 
-const IconLogout = () => (
-  <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" strokeWidth="1.6">
-    <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3" />
-    <path d="M13 14l3-4-3-4" />
-    <path d="M16 10H8" />
-  </svg>
-)
+const MODULE_TABS = [
+  { key: 'collection', label: '数采中心', path: '/dashboard' },
+  { key: 'backflow', label: '真机回流', path: '/backflow' },
+]
 
-const IconChevron = ({ open }) => (
-  <svg
-    viewBox="0 0 20 20" fill="none" width="12" height="12"
-    stroke="currentColor" strokeWidth="2"
-    style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-  >
-    <path d="M5 8l5 5 5-5" />
-  </svg>
-)
+const EXTERNAL_LINKS = [
+  { label: '帮助文档', href: 'https://docs.example.com/help' },
+  { label: '标注平台', href: 'https://docs.example.com/annotation' },
+  { label: '数据看板', href: 'https://docs.example.com/dashboard' },
+]
 
-export default function Header({ collapsed, onToggle }) {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const [open, setOpen] = useState(false)
-  const dropRef = useRef(null)
+function IconBackflow(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" strokeLinecap="round" />
+      <path d="M21 3v6h-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
-  const avatarChar = user?.nickname?.slice(0, 1) ?? '?'
+function IconChevron({ open, className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      width="12"
+      height="12"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`transition-transform ${open ? 'rotate-180' : ''} ${className}`}
+    >
+      <path d="M5 8l5 5 5-5" />
+    </svg>
+  )
+}
 
+function displayRole(role) {
+  if (role === '超级管理员' || role === '组织管理员') return '管理员'
+  return role ?? '管理员'
+}
+
+function useClickOutside(refs, onClose) {
   useEffect(() => {
     const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target)) {
-        setOpen(false)
+      if (refs.every((ref) => ref.current && !ref.current.contains(e.target))) {
+        onClose()
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [refs, onClose])
+}
+
+function HeaderDropdown({ open, align = 'right', children, className = '' }) {
+  if (!open) return null
+  return (
+    <div
+      className={`absolute top-full z-50 mt-1 min-w-[140px] overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg ${
+        align === 'right' ? 'right-0' : 'left-0'
+      } ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+function DropdownItem({ label, onClick, danger = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`block w-full cursor-pointer px-4 py-2 text-left text-sm transition-colors ${
+        danger
+          ? 'text-red-500 hover:bg-red-50'
+          : 'text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+export default function Header({ collapsed, onToggle }) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const { user } = useAuth()
+  const { ToastNode, show: toast } = useToast()
+
+  const [externalOpen, setExternalOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
+  const [orgOpen, setOrgOpen] = useState(false)
+
+  const externalRef = useRef(null)
+  const userRef = useRef(null)
+
+  const activeModule = pathname.startsWith('/backflow') ? 'backflow' : 'collection'
+  const orgs = getOrganizations().filter((o) => o.status === '启用')
+
+  const avatarChar = user?.nickname?.slice(0, 1) ?? '?'
+
+  useClickOutside([externalRef, userRef], () => {
+    setExternalOpen(false)
+    setUserOpen(false)
+    setOrgOpen(false)
+  })
 
   const handleLogout = () => {
-    setOpen(false)
+    setUserOpen(false)
     navigate('/login')
+  }
+
+  const handleExternalLink = (item) => {
+    setExternalOpen(false)
+    window.open(item.href, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleSwitchOrg = (org) => {
+    setOrgOpen(false)
+    setUserOpen(false)
+    toast(`已切换至「${org.name}」`)
   }
 
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-slate-900 pr-6 shadow-md">
-        <div className="flex items-center">
-          <div
-            className={`flex h-14 items-center gap-2.5 px-4 transition-all duration-200 ${
-              collapsed ? 'w-16 justify-center' : 'w-52'
-            }`}
-          >
+        <div className="flex min-w-0 items-center gap-3 pl-4">
+          <div className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5">
               <img src={logo} alt="ABC-Data" className="h-full w-full object-contain" />
             </div>
-            {!collapsed && (
-              <span className="whitespace-nowrap text-base font-semibold tracking-wide text-white">
-                ABC-<span className="font-light text-blue-300">Data</span>
-              </span>
-            )}
+            <span className="hidden whitespace-nowrap text-base font-semibold tracking-wide text-white sm:inline">
+              ABC-<span className="font-light text-blue-300">Data</span>
+            </span>
           </div>
+
           <button
+            type="button"
             onClick={onToggle}
-            className="ml-2 cursor-pointer rounded-md p-2 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="cursor-pointer rounded-md p-2 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
           >
             <IconCollapse collapsed={collapsed} />
           </button>
+
+          <div className="ml-2 flex items-center gap-1">
+            {MODULE_TABS.map((tab) => {
+              const active = activeModule === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => navigate(tab.path)}
+                  className={`relative flex cursor-pointer flex-col items-center gap-0.5 px-4 pb-3 pt-1 transition-colors ${
+                    active ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span className={active ? 'text-blue-400' : 'text-slate-500'}>
+                    {tab.key === 'collection' ? <IconGrid /> : <IconBackflow />}
+                  </span>
+                  <span className="text-xs font-medium">{tab.label}</span>
+                  {active && (
+                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-blue-500" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="hidden text-xs text-slate-500 sm:inline">{user?.role}</span>
-          <span className="h-4 w-px bg-slate-700" />
-
-          <div ref={dropRef} className="relative">
+        <div className="flex shrink-0 items-center gap-3">
+          <div ref={externalRef} className="relative">
             <button
-              onClick={() => setOpen(!open)}
+              type="button"
+              onClick={() => {
+                setExternalOpen((v) => !v)
+                setUserOpen(false)
+                setOrgOpen(false)
+              }}
+              onMouseEnter={() => {
+                setExternalOpen(true)
+                setUserOpen(false)
+                setOrgOpen(false)
+              }}
+              className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            >
+              外部连接
+              <IconChevron open={externalOpen} />
+            </button>
+            <HeaderDropdown open={externalOpen}>
+              {EXTERNAL_LINKS.map((item) => (
+                <DropdownItem
+                  key={item.label}
+                  label={item.label}
+                  onClick={() => handleExternalLink(item)}
+                />
+              ))}
+            </HeaderDropdown>
+          </div>
+
+          <div
+            ref={userRef}
+            className="relative"
+            onMouseEnter={() => {
+              setUserOpen(true)
+              setExternalOpen(false)
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setUserOpen((v) => !v)
+                setExternalOpen(false)
+              }}
               className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-slate-200 transition hover:bg-slate-800"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white">
                 {avatarChar}
               </div>
-              <span className="text-sm">{user?.nickname}</span>
-              <IconChevron open={open} />
+              <span className="text-sm">{displayRole(user?.role)}</span>
+              <IconChevron open={userOpen} />
             </button>
 
-            {open && (
-              <div
-                className="absolute right-0 top-full mt-1 w-52 overflow-hidden rounded-xl shadow-2xl"
-                style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,.08)' }}
-              >
-                <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                  <p className="text-sm font-medium text-white">{user?.nickname}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">{user?.email}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{user?.role}</p>
-                </div>
-
-                <div className="py-1">
-                  <MenuItem icon={<IconLogout />} label="退出登录" onClick={handleLogout} danger />
-                </div>
+            <HeaderDropdown open={userOpen}>
+              <div className="relative">
+                <DropdownItem
+                  label="切换组织"
+                  onClick={() => setOrgOpen((v) => !v)}
+                />
+                {orgOpen && (
+                  <div className="border-t border-gray-100 py-1">
+                    {orgs.map((org) => (
+                      <DropdownItem
+                        key={org.id}
+                        label={org.name}
+                        onClick={() => handleSwitchOrg(org)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+              <div className="border-t border-gray-100">
+                <DropdownItem label="退出登录" onClick={handleLogout} danger />
+              </div>
+            </HeaderDropdown>
           </div>
         </div>
       </header>
+      {ToastNode}
     </>
-  )
-}
-
-function MenuItem({ icon, label, onClick, danger }) {
-  const [hover, setHover] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-        padding: '7px 16px',
-        background: hover ? (danger ? 'rgba(239,68,68,.12)' : 'rgba(255,255,255,.06)') : 'transparent',
-        color: danger ? (hover ? '#f87171' : '#fc8181') : (hover ? '#e2e8f0' : '#94a3b8'),
-        fontSize: 13, border: 'none', cursor: 'pointer',
-        transition: 'background .15s, color .15s',
-        textAlign: 'left',
-      }}
-    >
-      {icon}
-      {label}
-    </button>
   )
 }

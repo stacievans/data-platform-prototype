@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
 import CreateSamplingBatchModal from '../Project/CreateSamplingBatchModal'
@@ -22,6 +23,7 @@ import { filterTasksByDataScope } from '../../mock/permissions'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { PermButton } from '../../components/common/PermissionAction'
 import { useToast } from '../../components/common/Toast'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 
 const STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 
@@ -33,41 +35,6 @@ const FILTER_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:gri
 const FILTER_FIELD = 'min-w-0'
 const FILTER_ACTIONS = 'flex flex-wrap items-center justify-end gap-2'
 
-/* ── 删除确认弹窗 ── */
-function DeleteConfirmModal({ task, open, onCancel, onConfirm }) {
-  if (!open || !task) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <h2 className="text-base font-semibold text-red-600">删除采集任务</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-gray-500">
-            确定删除任务「<strong className="text-gray-800">{task.name}</strong>」？此操作不可逆。
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button
-            onClick={onCancel}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            onClick={onConfirm}
-            className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-          >
-            确定删除
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /* ── 主组件
    fixedProjectId: 传入时锁定项目、隐藏项目筛选下拉，用于项目详情页
@@ -291,8 +258,9 @@ export default function TaskList({
   return (
     <div className="space-y-4">
       {ToastNode}
+      <ListPageCard>
       {/* 筛选区 */}
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageFilter>
         <div className="space-y-3">
           <div className={FILTER_GRID}>
             <div className={FILTER_FIELD}>
@@ -382,11 +350,11 @@ export default function TaskList({
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+      </ListPageFilter>
 
       {/* 标题栏 */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-800">任务列表</h2>
+      <ListPageToolbar first={false}>
+        <h2 className="text-base font-semibold text-gray-800">采集任务列表</h2>
         {fixedProjectId && (
           <div className="flex items-center gap-2">
             <Button
@@ -398,14 +366,15 @@ export default function TaskList({
             </Button>
             <ProjectMutateGate projectStatus={projectStatus}>
               <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
-                + 新建任务
+                + 新建
               </PermButton>
             </ProjectMutateGate>
           </div>
         )}
-      </div>
+      </ListPageToolbar>
 
       <TaskTable
+        embedded
         data={filtered}
         showProjectColumn={!fixedProjectId}
         pageResetKey={taskPageResetKey}
@@ -418,6 +387,7 @@ export default function TaskList({
         onEditSave={handleEditSave}
         onCopy={handleCopy}
       />
+      </ListPageCard>
 
       {fixedProjectId && (
         <CreateTaskModal
@@ -441,7 +411,6 @@ export default function TaskList({
       )}
 
       <DeleteConfirmModal
-        task={deleteTarget}
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}

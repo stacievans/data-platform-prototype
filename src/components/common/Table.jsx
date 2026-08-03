@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import ListPaginator from './ListPaginator'
+import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 export default function Table({
   columns,
   dataSource,
   rowKey = 'id',
-  pageSize,
+  pageSize: initialPageSize,
   pageResetKey,
   scrollVisibleRows,
   bodyRowHeight = 48,
   getRowClassName,
+  embedded = false,
 }) {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(initialPageSize ?? LIST_PAGE_SIZE)
   const scrollable = scrollVisibleRows != null && scrollVisibleRows > 0
-  const paginated = Boolean(pageSize)
+  const paginated = initialPageSize != null
   const total = dataSource.length
   const totalPages = paginated ? Math.max(1, Math.ceil(total / pageSize)) : 1
 
@@ -92,7 +95,7 @@ export default function Table({
   )
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className={embedded ? '' : 'overflow-hidden rounded-lg border border-gray-200 bg-white'}>
       <div className="overflow-x-auto">
         {scrollable ? (
           <div className="overflow-y-auto" style={{ maxHeight: scrollMaxHeight }}>
@@ -107,7 +110,13 @@ export default function Table({
         )}
       </div>
       {paginated ? (
-        <ListPaginator total={total} page={page} pageSize={pageSize} onPageChange={setPage} />
+        <ListPaginator
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       ) : (
         <div className="border-t border-gray-100 px-4 py-2.5 text-xs text-gray-500">
           共 {total} 条记录

@@ -69,7 +69,6 @@ function IconBtn({ onClick, disabled, title, children }) {
 
 function TimelinePanel({
   totalFrames,
-  fps,
   currentFrame,
   onFrameChange,
   actionSegments,
@@ -216,19 +215,16 @@ function TimelinePanel({
           <IconBtn title="下一帧" onClick={() => onFrameChange(Math.min(maxFrame, currentFrame + 1))}>
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z" /></svg>
           </IconBtn>
-          <span className="ml-1 font-mono text-xs text-gray-600">{currentFrame} / {maxFrame}</span>
-          <span className="text-xs text-gray-400">{fps}fps</span>
           <select
             value={speed}
             onChange={(e) => onSpeedChange(Number(e.target.value))}
-            className="h-7 cursor-pointer rounded border border-gray-200 bg-white px-1.5 text-xs text-gray-600 outline-none focus:border-blue-400"
+            className="ml-1 h-7 cursor-pointer rounded border border-gray-200 bg-white px-1.5 text-xs text-gray-600 outline-none focus:border-blue-400"
           >
             {SPEEDS.map((s) => (
               <option key={s} value={s}>{s.toFixed(1)}x</option>
             ))}
           </select>
         </div>
-        <span className="shrink-0 text-xs text-gray-400">快捷键：拖选区间 · 数字键打技能 · 空格播放</span>
       </div>
     </div>
   )
@@ -287,9 +283,9 @@ export default function Workbench() {
           : null,
       auditQuality: normalizeAuditQuality(e.auditQuality),
       auditTags: e.auditTags ?? [],
-      auditComment: e.auditComment ?? '',
-      auditRejectReason: e.auditRejectReason
-        ?? (e.auditResult && e.auditResult !== '通过' ? (e.auditComment ?? '') : ''),
+      auditComment: e.auditComment
+        ?? e.auditRejectReason
+        ?? (e.auditResult && e.auditResult !== '通过' ? '' : ''),
     }
     const nextActions = e.actionSegments ?? []
     const nextRegions = e.regionFrames ?? []
@@ -299,8 +295,7 @@ export default function Workbench() {
         : e.acceptResult === '不通过'
           ? 'reject'
           : null,
-      acceptComment: e.acceptResult === '通过' ? (e.acceptComment ?? '') : '',
-      acceptRejectReason: e.acceptResult === '不通过' ? (e.acceptComment ?? '') : '',
+      acceptComment: e.acceptComment ?? '',
     }
     setForm(nextForm)
     setAcceptForm(nextAcceptForm)
@@ -396,7 +391,6 @@ export default function Workbench() {
       auditQuality: form.auditQuality,
       auditTags: form.auditTags,
       auditComment: form.auditComment,
-      auditRejectReason: form.auditRejectReason,
       actionSegments,
       regionFrames,
     })
@@ -432,21 +426,16 @@ export default function Workbench() {
 
   const handleAcceptSubmit = () => {
     if (mode !== 'accept' || isLayoutPreview) return
-    const { acceptConclusion, acceptComment, acceptRejectReason } = acceptForm
+    const { acceptConclusion, acceptComment } = acceptForm
     if (!acceptConclusion) {
       showToast('请选择验收结论')
       return
     }
     if (acceptConclusion === 'reject') {
-      const reason = acceptRejectReason.trim()
-      if (!reason) {
-        showToast('请填写驳回理由')
-        return
-      }
       syncFromEntry(updateEntry(entryId, {
         dataStatus: '验收不通过',
         acceptResult: '不通过',
-        acceptComment: reason,
+        acceptComment: acceptComment.trim(),
         acceptClaimedBy: null,
         acceptClaimedAt: null,
         acceptTime: nowDateTime(),
@@ -473,18 +462,12 @@ export default function Workbench() {
     if (form.auditConclusion !== 'reject') {
       setForm((f) => ({ ...f, auditConclusion: 'reject' }))
     }
-    const reason = form.auditRejectReason.trim()
-    if (!reason) {
-      showToast('请填写驳回理由')
-      return
-    }
     syncFromEntry(updateEntry(entryId, {
       dataStatus: '标注不通过',
       auditResult: '不通过',
       auditQuality: form.auditQuality,
       auditTags: form.auditTags,
       auditComment: form.auditComment,
-      auditRejectReason: reason,
       actionSegments,
       regionFrames,
       reviewClaimedBy: null,
@@ -513,13 +496,12 @@ export default function Workbench() {
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-white text-gray-400">
         条目不存在
         <div className="mt-4">
-          <Button onClick={() => navigate('/collection/upload')}>返回采集条目</Button>
+          <Button onClick={() => navigate('/collection/project')}>返回采集项目</Button>
         </div>
       </div>
     )
   }
 
-  const fps = entry.fps ?? 30
   const displayName = entry.displayName ?? `${entry.fileName}.h5`
   const maxFrame = totalFrames - 1
   const playPct = (currentFrame / Math.max(maxFrame, 1)) * 100
@@ -602,7 +584,6 @@ export default function Workbench() {
 
           <TimelinePanel
             totalFrames={totalFrames}
-            fps={fps}
             currentFrame={currentFrame}
             onFrameChange={setCurrentFrame}
             actionSegments={actionSegments}

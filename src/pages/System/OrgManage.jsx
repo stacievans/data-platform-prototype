@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
@@ -203,8 +204,8 @@ export default function OrgManage() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
-        <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px] flex-1">
               <label className={LBL}>组织名称</label>
@@ -223,17 +224,17 @@ export default function OrgManage() {
               <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
             </div>
           </div>
-        </div>
+        </ListPageFilter>
 
-        <div className="flex items-center justify-between">
+        <ListPageToolbar>
           <h2 className="text-base font-semibold text-gray-800">组织列表</h2>
           <Button variant="primary" icon={<IconPlus />} onClick={() => { setCreateForm(emptyForm); setCreateErrors({}); setCreateOpen(true) }}>
             新建组织
           </Button>
-        </div>
+        </ListPageToolbar>
 
-        <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
-      </div>
+        <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      </ListPageCard>
 
       <OrgFormModal
         open={createOpen}

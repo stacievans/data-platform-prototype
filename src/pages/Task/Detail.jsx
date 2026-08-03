@@ -20,7 +20,7 @@ export default function TaskDetail() {
       <div className="rounded-lg border border-gray-100 bg-white py-20 text-center text-gray-400">
         任务不存在
         <div className="mt-4">
-          <Button onClick={() => navigate('/collection/task')}>返回任务列表</Button>
+          <Button onClick={() => navigate('/collection/project')}>返回采集项目</Button>
         </div>
       </div>
     )

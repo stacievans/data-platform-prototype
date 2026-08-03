@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 import Button from '../../components/common/Button'
 import { IconChevronLeft } from '../../components/common/Icons'
 import { SelectChevronWrap } from '../../components/common/SelectControl'
@@ -36,9 +36,6 @@ const PURPOSE_OPTIONS = getTaskPurposeTags().map((t) => ({
   label: t.name,
 }))
 
-/** 新建任务 / 配置采集方案共用固定面板尺寸 */
-const TASK_MODAL_WIDTH = 520
-const TASK_MODAL_PANEL_HEIGHT = 'min(85vh, 560px)'
 const emptyTaskForm = () => ({
   name: '',
   purpose: '',
@@ -439,7 +436,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     deviceTypes,
   ])
 
-  const showPlanConfigAction = !isEdit
+  const showPlanConfigAction = !isEdit && !initialPlan
   const isPlanView = modalView === 'plan'
 
   useEffect(() => {
@@ -635,7 +632,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   }
 
   return (
-    <Modal
+    <Drawer
       open={open}
       title={
         isPlanView ? (
@@ -651,12 +648,12 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
             <span>配置采集方案</span>
           </div>
         ) : (
-          isEdit ? '编辑任务' : '新建采集任务'
+          isEdit ? '编辑采集任务' : '新建采集任务'
         )
       }
       onCancel={() => onClose(null)}
       onOk={isPlanView ? handlePlanConfirm : handleOk}
-      okText={isPlanView ? '确定' : (isEdit ? '保存' : '确定')}
+      okText="确定"
       cancelText="取消"
       footer={
         isPlanView ? (
@@ -666,9 +663,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
           </>
         ) : undefined
       }
-      width={TASK_MODAL_WIDTH}
-      fitViewport
-      panelHeight={TASK_MODAL_PANEL_HEIGHT}
     >
       {isPlanView && planDraft ? (
         <PlanConfigPanel
@@ -753,6 +747,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
           </Field>
         </div>
       )}
-    </Modal>
+    </Drawer>
   )
 }

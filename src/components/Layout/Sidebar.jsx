@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
+  IconIntro,
   IconDashboard,
-  IconCollection,
+  IconProject,
   IconDataset,
   IconTag,
   IconDevice,
@@ -11,17 +12,9 @@ import {
 } from '../common/Icons'
 
 const menu = [
+  { key: '/intro', label: '数采介绍', icon: <IconIntro /> },
   { key: '/dashboard', label: '运营看板', icon: <IconDashboard />, permission: 'dashboard.view' },
-  {
-    key: 'collection',
-    label: '数据采集',
-    icon: <IconCollection />,
-    children: [
-      { key: '/collection/project', label: '采集项目', permission: 'collection.project.view' },
-      { key: '/collection/task', label: '采集任务', permission: 'collection.task.view' },
-      { key: '/collection/upload', label: '采集条目', permission: 'collection.upload.view' },
-    ],
-  },
+  { key: '/collection/project', label: '采集项目', icon: <IconProject />, permission: 'collection.project.view' },
   {
     key: 'dataset',
     label: '数据集管理',
@@ -55,7 +48,7 @@ const menu = [
 
 export default function Sidebar({ collapsed }) {
   const location = useLocation()
-  const [openKeys, setOpenKeys] = useState(['collection', 'dataset', 'tag', 'system'])
+  const [openKeys, setOpenKeys] = useState(['dataset', 'tag', 'system'])
 
   const isChildActive = (childKey) => {
     if (location.pathname.startsWith(childKey)) return true

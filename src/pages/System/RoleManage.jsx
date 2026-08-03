@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
@@ -167,8 +168,8 @@ export default function RoleManage() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
-        <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[200px] flex-1">
               <label className={LBL}>角色名称</label>
@@ -195,14 +196,15 @@ export default function RoleManage() {
               <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
             </div>
           </div>
-        </div>
-        <div className="flex items-center justify-between">
+        </ListPageFilter>
+        <ListPageToolbar>
           <h2 className="text-base font-semibold text-gray-800">角色列表</h2>
           {can('system.role.create') && (
             <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新建角色</Button>
           )}
-        </div>
-        <Table columns={columns} dataSource={filtered} />
+        </ListPageToolbar>
+        <Table embedded columns={columns} dataSource={filtered} />
+      </ListPageCard>
 
         <Modal
           open={createOpen}
@@ -269,7 +271,6 @@ export default function RoleManage() {
           onSave={handleSavePermissions}
         />
         {ToastNode}
-      </div>
     </div>
   )
 }

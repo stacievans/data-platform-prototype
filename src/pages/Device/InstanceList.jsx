@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
@@ -239,7 +240,8 @@ export default function InstanceList() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+      <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-0 flex-1 items-end gap-3">
             <div className="min-w-0 flex-1 basis-0">
@@ -266,16 +268,17 @@ export default function InstanceList() {
             <Button variant="primary" onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+      </ListPageFilter>
 
-      <div className="flex items-center justify-between">
+      <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">设备实例</h2>
         <PermButton permission="device.create" variant="primary" icon={<IconPlus />} onClick={openCreateModal}>
           新建实例
         </PermButton>
-      </div>
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      </ListPageCard>
 
       <InstanceModal
         open={modalOpen}

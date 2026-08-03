@@ -307,7 +307,7 @@ export default function FragmentAnnotPreconfigPanel({
     return (
       <div className="rounded-md border border-gray-200 bg-gray-50/80">
         <div className="px-4 py-3">
-          <p className="text-sm font-medium text-gray-800">片段标注预配置</p>
+          <p className="text-sm font-medium text-gray-800">片段标注配置</p>
           {!types.length ? (
             <p className="mt-2 text-sm text-gray-400">暂无配置</p>
           ) : (
@@ -338,7 +338,7 @@ export default function FragmentAnnotPreconfigPanel({
         className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left"
       >
         <div>
-          <p className="text-sm font-medium text-gray-800">片段标注预配置</p>
+          <p className="text-sm font-medium text-gray-800">片段标注配置</p>
           <p className="mt-0.5 text-xs text-gray-400">类型、属性与选项可在创建前编辑</p>
         </div>
         <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>{CHEVRON}</span>

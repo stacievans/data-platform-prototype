@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Table from '../common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../common/ListPageCard'
 import Badge from '../common/Badge'
 import Button from '../common/Button'
 import Modal from '../common/Modal'
+import DeleteConfirmModal from '../common/DeleteConfirmModal'
 import { IconSearch, IconChevronDown } from '../common/Icons'
-import { useToast } from '../common/Toast'
 import { getQcItemsByProjectId } from '../../mock/plans'
 import { resolveQcRowResult } from '../../utils/qcResults'
 import { formatReviewer } from '../../mock/tasks'
@@ -320,7 +321,7 @@ function ReviewDetailModal({ open, entry, task, onClose }) {
       open={open}
       title="标注详情"
       onCancel={onClose}
-      footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>}
+      footer={null}
       width={560}
     >
       <div className="space-y-4">
@@ -357,7 +358,7 @@ function AcceptDetailModal({ open, entry, onClose }) {
       open={open}
       title="验收详情"
       onCancel={onClose}
-      footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>}
+      footer={null}
       width={560}
     >
       <div className="space-y-4">
@@ -382,7 +383,7 @@ function QcDetailModal({ open, entry, projectId, onClose }) {
   const qcItems = useMemo(() => getQcItemsByProjectId(projectId), [projectId, open])
   if (!open || !entry) return null
   return (
-    <Modal open={open} title="质检详情" onCancel={onClose} footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>} width={720}>
+    <Modal open={open} title="质检详情" onCancel={onClose} footer={null} width={720}>
       <div className="space-y-4">
         <div className="text-sm text-gray-500">
           质检时间：<span className="font-medium text-gray-800">{formatDateTime(entry.qcTime ?? entry.uploadTime)}</span>
@@ -427,7 +428,7 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
   const nodes = useMemo(() => (entry && task ? resolveFlowHistory(entry, task) : []), [entry, task, open])
   if (!open || !entry) return null
   return (
-    <Modal open={open} title="流转记录" onCancel={onClose} footer={<div className="flex justify-end"><Button variant="secondary" onClick={onClose}>关闭</Button></div>} width={520}>
+    <Modal open={open} title="流转记录" onCancel={onClose} footer={null} width={520}>
       {nodes.length === 0 ? (
         <p className="py-6 text-center text-sm text-gray-400">暂无流转记录</p>
       ) : (
@@ -452,29 +453,6 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
   )
 }
 
-function DeleteEntryConfirmModal({ entry, open, onCancel, onConfirm, title = '删除采集条目' }) {
-  if (!open || !entry) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <h2 className="text-base font-semibold text-red-600">{title}</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-gray-500">
-            确定删除条目「<strong className="font-mono text-xs text-gray-800">{entry.fileName}</strong>」？此操作不可逆。
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button type="button" onClick={onCancel} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">取消</button>
-          <button type="button" onClick={onConfirm} className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600">确定删除</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function resolveReviewOperator(entry, task) {
   return entry.reviewOperator ?? {
@@ -492,13 +470,10 @@ export default function EntryDataTable({
   getTask,
   getProjectId,
   onDelete,
-  listTitle = '条目列表',
-  deleteModalTitle = '删除采集条目',
+  listTitle = '采集条目列表',
   hideProcessTabs = false,
   showScopeColumns = false,
 }) {
-  const { ToastNode, show: showToast } = useToast()
-
   const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
   const [qEntryId, setQEntryId] = useState('')
@@ -728,8 +703,9 @@ export default function EntryDataTable({
 
   return (
     <div className="space-y-3">
+      <ListPageCard>
       {!hideProcessTabs && (
-        <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+        <ListPageFilter>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className={ROW_LABEL_CLS}>工序</span>
@@ -740,10 +716,10 @@ export default function EntryDataTable({
               <ProcessSubFilterBar counts={subCounts} activeKey={subStatus} onChange={setSubStatus} />
             </div>
           </div>
-        </div>
+        </ListPageFilter>
       )}
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageFilter className={!hideProcessTabs ? 'pt-3' : ''}>
         <div className="space-y-3">
           <div className={FILTER_GRID_ROW}>
             <div className={FILTER_FIELD}>
@@ -837,28 +813,28 @@ export default function EntryDataTable({
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+      </ListPageFilter>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
         <div className="flex flex-wrap gap-2">
-          <Button disabled={!hasSelection} onClick={() => showToast('已加入下载队列')}>批量下载</Button>
-          <Button disabled={!hasSelection} onClick={() => showToast('已触发重新质检')}>重新质检</Button>
-          <Button disabled={!hasSelection} onClick={() => showToast('已加入播放转码队列')}>播放转码</Button>
+          <Button disabled={!hasSelection}>批量下载</Button>
+          <Button disabled={!hasSelection}>重新质检</Button>
+          <Button disabled={!hasSelection}>播放转码</Button>
         </div>
-      </div>
+      </ListPageToolbar>
 
       <Table
+        embedded
         columns={columns}
         dataSource={visibleEntries}
         pageSize={LIST_PAGE_SIZE}
         pageResetKey={entryPageResetKey}
       />
+      </ListPageCard>
 
-      <DeleteEntryConfirmModal
-        entry={deleteTarget}
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title={deleteModalTitle}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />
@@ -881,7 +857,6 @@ export default function EntryDataTable({
         onClose={() => setFlowTarget(null)}
       />
 
-      {ToastNode}
     </div>
   )
 }

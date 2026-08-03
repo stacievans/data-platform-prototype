@@ -4,6 +4,7 @@ import Badge from '../common/Badge'
 import Button from '../common/Button'
 import { IconTrash, IconChevronDown } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
+import SceneCascader from '../common/SceneCascader'
 import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags, getAuditTemplates, getAuditTemplateById } from '../../mock/tags'
 import { resolvePlanDeviceTypeId } from '../../mock/plans'
 import FragmentAnnotPreconfigPanel from './FragmentAnnotPreconfigPanel'
@@ -177,14 +178,6 @@ export function BodyTypeField({ typeId, deviceTypes, onChange, error, readonly =
 }
 
 export function SceneCascadeFields({ form, onChange, readonly = false, errors = {} }) {
-  const sceneTypeTree = getSceneTypeTree()
-  const scene = sceneTypeTree.find((s) => s.id === form.sceneId)
-  const subScenes = scene?.subScenes ?? []
-  const sub = subScenes.find((s) => s.id === form.subSceneId)
-  const tags = sub?.tags ?? []
-
-  const cls = readonly ? readonlyCls : selectCls(errors.scene)
-
   if (readonly) {
     return (
       <Field label="所属场景">
@@ -195,34 +188,13 @@ export function SceneCascadeFields({ form, onChange, readonly = false, errors = 
 
   return (
     <Field label="所属场景" required error={errors.scene}>
-      <div className="grid grid-cols-3 gap-2">
-        <select
-          value={form.sceneId}
-          onChange={(e) => onChange({ sceneId: e.target.value, subSceneId: '', tagId: '' })}
-          className={cls}
-        >
-          <option value="">一级场景</option>
-          {sceneTypeTree.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <select
-          value={form.subSceneId}
-          disabled={!form.sceneId}
-          onChange={(e) => onChange({ subSceneId: e.target.value, tagId: '' })}
-          className={cls}
-        >
-          <option value="">二级场景</option>
-          {subScenes.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <select
-          value={form.tagId}
-          disabled={!form.subSceneId}
-          onChange={(e) => onChange({ tagId: e.target.value })}
-          className={cls}
-        >
-          <option value="">场景标签</option>
-          {tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
-      </div>
+      <SceneCascader
+        sceneId={form.sceneId}
+        subSceneId={form.subSceneId}
+        tagId={form.tagId}
+        error={Boolean(errors.scene)}
+        onChange={({ sceneId, subSceneId, tagId }) => onChange({ sceneId, subSceneId, tagId })}
+      />
     </Field>
   )
 }
@@ -576,7 +548,7 @@ export function PlanReadonlyDetails({ plan, deviceTypes }) {
         />
       )}
       <div>
-        <p className="mb-3 text-sm font-semibold text-gray-800">标注管理</p>
+        <p className="mb-3 text-sm font-semibold text-gray-800">标注配置</p>
         <AnnotationManagementBlock
           readonly
           form={{
@@ -681,7 +653,84 @@ export function CollectPlanFormFields({
   addStep,
   removeStep,
   planNameLabel = '方案名称',
+  readonly = false,
 }) {
+  if (readonly) {
+    const visibleSteps = (form.steps ?? []).filter((s) => !isStepEmpty(s))
+    return (
+      <div className="space-y-5">
+        <section>
+          <p className="mb-3 text-sm font-semibold text-gray-800">基础信息</p>
+          <div className="space-y-3">
+            <Field label={planNameLabel}>
+              <input readOnly value={form.name || '—'} className={readonlyCls} />
+            </Field>
+            <SceneCascadeFields form={form} readonly />
+            <BodyTypeField readonly typeId={form.deviceTypeId} deviceTypes={deviceTypes} />
+            <Field label="采集方式">
+              <input readOnly value={form.method || '—'} className={readonlyCls} />
+            </Field>
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-3 text-sm font-semibold text-gray-800">动作模板</p>
+          <div className="space-y-3">
+            <Field label="原始场景状态">
+              <textarea
+                readOnly
+                rows={3}
+                value={form.initialScene || '—'}
+                className={`${readonlyCls} h-auto py-2`}
+              />
+            </Field>
+            <div>
+              <p className="mb-2 text-sm font-medium text-gray-700">采集步骤</p>
+              {visibleSteps.length === 0 ? (
+                <p className="text-sm text-gray-400">暂无步骤</p>
+              ) : (
+                <div className="space-y-3">
+                  {visibleSteps.map((step, i) => (
+                    <div key={i} className="rounded-md border border-gray-200 bg-white p-3">
+                      <div className="mb-3">
+                        <span className="text-xs font-semibold text-blue-600">步骤 {i + 1}</span>
+                      </div>
+                      <div className="space-y-3">
+                        <StepField label="步骤描述">
+                          <input readOnly value={step.description || '—'} className={readonlyCls} />
+                        </StepField>
+                        <div className="grid grid-cols-[2fr_1fr] gap-3">
+                          <StepField label="原子技能">
+                            <AtomicSkillMultiSelect value={step.atomicSkills ?? []} readonly />
+                          </StepField>
+                          <StepField label="时长(秒)">
+                            <input readOnly value={step.duration ?? 0} className={readonlyCls} />
+                          </StepField>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-3">
+                <PlanDurationSummary
+                  readonly
+                  totalDuration={durationMeta.totalDuration}
+                  totalDeviation={form.totalDeviation}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-3 text-sm font-semibold text-gray-800">标注配置</p>
+          <AnnotationManagementBlock readonly form={form} onChange={() => {}} />
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
       <section>
@@ -802,7 +851,7 @@ export function CollectPlanFormFields({
       </section>
 
       <section>
-        <p className="mb-3 text-sm font-semibold text-gray-800">标注管理</p>
+        <p className="mb-3 text-sm font-semibold text-gray-800">标注配置</p>
         <AnnotationManagementBlock form={form} errors={errors} onChange={onChange} />
       </section>
     </div>

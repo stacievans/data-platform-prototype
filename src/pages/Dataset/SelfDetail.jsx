@@ -4,6 +4,7 @@ import Tabs from '../../components/common/Tabs'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Progress from '../../components/common/Progress'
 import { PermButton } from '../../components/common/PermissionAction'
@@ -112,13 +113,11 @@ function StackedRatioBar({ title, keys, stats, colorMap }) {
 
 function FilterBar({ children, onReset, onSearch }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-      <div className={FILTER_ROW}>
-        <div className={FILTER_FIELDS}>{children}</div>
-        <div className="flex shrink-0 gap-2">
-          <Button onClick={onReset}>重置</Button>
-          <Button variant="primary" icon={<IconSearch />} onClick={onSearch}>查询</Button>
-        </div>
+    <div className={FILTER_ROW}>
+      <div className={FILTER_FIELDS}>{children}</div>
+      <div className="flex shrink-0 gap-2">
+        <Button onClick={onReset}>重置</Button>
+        <Button variant="primary" icon={<IconSearch />} onClick={onSearch}>查询</Button>
       </div>
     </div>
   )
@@ -376,6 +375,8 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmRemoveEntry}
       />
+      <ListPageCard>
+      <ListPageFilter>
       <FilterBar onReset={resetFilters} onSearch={applyFilters}>
         <div className={FILTER_FIELD}>
           <label className={LBL}>所属项目</label>
@@ -396,17 +397,19 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
           </select>
         </div>
       </FilterBar>
+      </ListPageFilter>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <ListPageToolbar>
         <h3 className="text-sm font-semibold text-gray-800">条目列表</h3>
         <div className="flex flex-wrap gap-2">
           <Button disabled={!hasSelection} onClick={() => runBatchConvert('转图片')}>转图片</Button>
           <Button disabled={!hasSelection} onClick={() => runBatchConvert('转视频')}>转视频</Button>
           <Button disabled={!hasSelection} onClick={() => show('已加入下载队列')}>批量下载</Button>
         </div>
-      </div>
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      </ListPageCard>
     </div>
   )
 }
@@ -452,7 +455,8 @@ function ConversionsTab({ jobs }) {
   ]
 
   return (
-    <div className="space-y-3">
+    <ListPageCard>
+      <ListPageFilter>
       <FilterBar
         onReset={() => { setQId(''); setQType('全部'); setQStatus('全部'); setFilters({}) }}
         onSearch={() => setFilters({ id: qId.trim(), type: qType, status: qStatus })}
@@ -474,11 +478,15 @@ function ConversionsTab({ jobs }) {
           </select>
         </div>
       </FilterBar>
+      </ListPageFilter>
 
-      <h3 className="text-sm font-semibold text-gray-800">记录列表</h3>
+      <ListPageToolbar first>
+        <h3 className="text-sm font-semibold text-gray-800">记录列表</h3>
+        <span />
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
-    </div>
+      <Table embedded columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+    </ListPageCard>
   )
 }
 
@@ -510,7 +518,8 @@ function ConvertedDatasetsTab({ records }) {
   ]
 
   return (
-    <div className="space-y-3">
+    <ListPageCard>
+      <ListPageFilter>
       <FilterBar
         onReset={() => { setQId(''); setQName(''); setQType('全部'); setFilters({}) }}
         onSearch={() => setFilters({ id: qId.trim(), name: qName.trim(), type: qType })}
@@ -530,11 +539,15 @@ function ConvertedDatasetsTab({ records }) {
           </select>
         </div>
       </FilterBar>
+      </ListPageFilter>
 
-      <h3 className="text-sm font-semibold text-gray-800">数据集列表</h3>
+      <ListPageToolbar first>
+        <h3 className="text-sm font-semibold text-gray-800">数据集列表</h3>
+        <span />
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
-    </div>
+      <Table embedded columns={columns} dataSource={filtered} rowKey="id" pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+    </ListPageCard>
   )
 }
 

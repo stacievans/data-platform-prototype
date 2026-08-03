@@ -1,6 +1,5 @@
 import Modal from '../../components/common/Modal'
-import Button from '../../components/common/Button'
-import { formatSamplingFiltersSummary, summarizeDetailItems } from '../../utils/samplingHelpers'
+import { summarizeDetailItems } from '../../utils/samplingHelpers'
 
 function passRateTone(rate) {
   if (rate >= 90) return 'text-emerald-600'
@@ -19,14 +18,13 @@ export default function SamplingBatchDetailModal({ open, batch, onClose }) {
       open={open}
       title={`批次详情 · ${batch.name}`}
       onCancel={onClose}
-      footer={<div className="flex justify-end"><Button onClick={onClose}>关闭</Button></div>}
+      footer={null}
       width={720}
-      fitViewport
     >
       <div className="space-y-3">
         <div className="flex flex-wrap gap-4 text-sm text-gray-500">
           <span>批次ID：<span className="font-medium text-gray-700">{batch.id}</span></span>
-          <span>筛选条件：<span className="font-medium text-gray-700">{batch.filters ? formatSamplingFiltersSummary(batch.filters) : (batch.basis ?? '—')}</span></span>
+          <span>批次名称：<span className="font-medium text-gray-700">{batch.name}</span></span>
           <span>创建人：<span className="font-medium text-gray-700">{batch.creator}</span></span>
         </div>
 

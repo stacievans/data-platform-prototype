@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：运营看板 · 采集项目（三态 open/closed/archived）/任务/条目 · **抽样验收**（项目详情 Tab；任务维度新建批次；筛选点查询刷新；抽检数下限；验收工作台同步批次进度）· **标注工作台**（播放/标注/验收三模式；右侧四模块统一骨架；验收在侧栏提交）· 七项质检与掉帧检查 · 条目 **标注/验收详情弹窗** · 真机数据集（含转换记录/转换数据集）· **标签管理**（采集/设备/审核模板三级 Tab；**标签值**列与筛选项；审核模板列表 + 详情页标签树；**随时可删改**）· 采集方案 **三模块表单**（基础信息 / 动作模板 / 标注管理；**片段标注预配置**折叠编辑器）· 设备管理（**设备名称**+SN 展示、**URDF 预览/上传**）· 条目 **设备类型快照** · 全平台统一时间格式 · **统一分页**（10 条/页 + 省略号页码）· RBAC **角色权限配置页仍保留**（原型演示 **全量开放**，无菜单/按钮/数据范围拦截）· **组织管理**（组织 CRUD、启停联动用户、组织详情用户列表）· **用户管理**（用户名/登录方式/角色/组织/状态筛选；列表含所属组织、登录方式；新建/邀请双 Tab 弹窗）· **角色管理**（菜单权限树 + 项目数据权限；内置角色不显示删除）· **超级管理员 / 组织管理员** 双层级系统角色 · 任务 **单采集员** 绑定。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台** · 七项质检与掉帧检查 · 真机数据集 · **标签管理** · 采集方案 **三模块表单（Drawer）** · 设备管理 · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理** · **`DeleteConfirmModal` 统一删除确认** · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -18,6 +18,7 @@
   - [原型全量开放模式](#原型全量开放模式)
   - [创建人自动填充](#创建人自动填充)
 - [功能模块总览](#功能模块总览)
+  - [数采介绍](#数采介绍)
   - [系统管理](#系统管理二级导航)
 - [目录结构](#目录结构)
 - [技术说明](#技术说明)
@@ -52,15 +53,24 @@ npm run preview
 
 | 区域 | 说明 |
 |---|---|
-| 顶栏 `Header` | 左侧 Logo + 侧边栏折叠按钮；右侧显示当前角色 + 用户头像下拉 |
-| 侧边栏 `Sidebar` | 深色导航，支持折叠；**原型阶段展示全部菜单项** |
-| 面包屑 `Breadcrumb` | 内容区顶部路径导航；系统管理下分别显示「用户管理 / 角色管理 / 组织管理 / 组织详情」；审核模板详情为「标签管理 / 模板详情」 |
-| 内容区 | 各业务页面；**原型阶段不因 RBAC 拦截** |
+| 顶栏 `Header` | 深色顶栏（`bg-slate-900`）：Logo + 折叠按钮 + **模块 Tab**（**数采中心** → `/dashboard`、**真机回流** → `/backflow`）；右侧 **外部连接** 下拉（帮助文档 / 标注平台 / 数据看板，新标签打开）+ **用户下拉**（切换组织、退出登录） |
+| 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**原型阶段展示全部菜单项**；**采集项目**为一级菜单（文件夹图标 `IconProject`），不再嵌套「数据采集」父级 |
+| 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」 |
+| 内容区 | 各业务页面；背景 `#f0f2f5`；**原型阶段不因 RBAC 拦截** |
+
+**侧边栏菜单（自上而下）**：数采介绍 · 运营看板 · **采集项目** · 数据集管理（真机数据集）· 标签管理（采集/设备/审核模板）· 设备管理 · 系统管理（用户/角色/组织）
+
+> **已下线侧栏入口**：「数据采集」父菜单、「采集任务」「采集条目」；路由 `/collection/task`、`/collection/upload` **重定向至** `/collection/project`（任务详情 `/collection/task/:id` 仍可直接访问）。
+
+**ListPageCard 列表页布局**（`ListPageCard.jsx`，多数列表页已接入）：
+- 检索区 `ListPageFilter` + 列表区 `ListPageToolbar` / `Table embedded` / `ListPageBody` 合并在 **同一白色 Card** 内
+- 检索栏与列表标题之间、标题与表格之间为 **`border-gray-100` 分割线**（非独立卡片间距）
 
 **顶栏用户下拉**：
 - **默认身份**：超级管理员 · **系统**（`system@ai2robotics.com`，U-000）
-- 展示用户名、邮箱、角色标签
-- **退出登录**：跳转 `/login`（不清理 mock 运行时数据）
+- 展示角色标签（超级管理员/组织管理员显示为「管理员」）、头像首字
+- **切换组织**：Toast 提示（mock，不持久化）
+- **退出登录**：跳转 `/login`
 
 > **已移除**顶栏「演示身份切换」及下属角色选项列表。
 
@@ -203,7 +213,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 页面 | 受控操作 |
 |---|---|
-| 采集项目 | 新建项目；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态，见 [采集项目](#采集项目-collectionproject)；**列表无验收入口**） |
+| 采集项目 | **+ 新建**（Drawer）；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态；**列表无验收入口**） |
 | 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**抽样验收** Tab、运营看板；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、标注、验收、导出、归档、删除（**已发布无删除、已归档无复制**） |
 | 采集条目 | 下载、删除 |
@@ -244,11 +254,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 页面 / 弹窗 | 说明 |
 |---|---|
-| 采集项目 · 新建项目 | `Project/index.jsx` |
+| 采集项目 · 新建 | **Drawer** 不展示创建人；提交时 `useCurrentNickname()` 写入 `creator`，ID 自动递增 |
 | 真机数据集 · 新建数据集 | `CreateDatasetModal.jsx` |
 | 标签管理 · 平铺标签新建 | `Tag/index.jsx` → `FlatTagModal`（后台写入 `creator`，弹窗不展示） |
 
-> 上表页面新建弹窗内展示 `CreatorReadonlyField`；**设备类型新建弹窗**、**审核模板新建弹窗**已移除创建人字段（后台仍写入 `creator`）。编辑模式不展示创建人。历史 mock 数据中的 `creator` 字段不受演示切换影响，仅本次会话新建记录使用当前身份。
+> 上表除采集项目新建外，弹窗内仍可能展示 `CreatorReadonlyField`。**设备类型新建**、**审核模板新建**已移除创建人字段（后台仍写入 `creator`）。编辑模式不展示创建人。
 
 ---
 
@@ -258,6 +268,19 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 全屏深色背景 + 3 个动态光晕装饰
 - 双 Tab 登录：账号密码登录（邮箱 + 密码 + 记住我）、飞书 SSO 登录
 - 密码可见/隐藏切换，登录后跳转 `/dashboard`
+
+---
+
+### 数采介绍（/intro）
+- 侧边栏首项；面包屑「当前位置：数采介绍」
+- 页面直接展示 **全链路作业流程原图**（`public/intro/data-collection-flow.png`，701×1024，居中按原始像素宽度渲染，避免拉伸发糊）
+- 无交互组件，纯静态说明页
+
+---
+
+### 真机回流（/backflow）
+- 顶栏模块 Tab「真机回流」入口；面包屑「当前位置：真机回流」
+- 占位页：「功能开发中」
 
 ---
 
@@ -321,10 +344,15 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 采集项目 `/collection/project`
+- **容器**：`ListPageCard`（筛选 + 列表同一白卡片，检索栏底部分割线）
 - **视图切换**：卡片视图（默认，4 列）/ 列表视图
 - **筛选区**（点击「查询」生效）：项目 ID、项目名称、**项目状态**（开启/关闭/归档）、创建人、创建时间范围；筛选项单行铺满，「重置」「查询」次行右对齐
-- **标题栏**：「项目列表」+ 视图切换按钮 + 「+ 新建项目」
-- **新建项目弹窗**：自动生成项目 ID（只读）、项目名称（必填）、**创建人**（只读，默认「系统」）、项目描述
+- **标题栏**：「项目列表」+ 视图切换按钮 + 「**+ 新建**」
+- **新建项目（右侧 Drawer）**：
+  - 宽度 **`calc((100vw - 侧边栏宽度) / 3)`**，随侧栏折叠（`--layout-sidebar-width`）自适应
+  - 表单仅 **项目名称**（必填）、**项目描述**（选填，**最多 500 字**；右下角 **`n/500`** 计数在输入框外右对齐）
+  - **不展示**项目 ID、创建人；创建成功后后台自动生成 ID（`P-xxxx` 递增）并写入当前用户昵称至 `creator`
+- **编辑项目**：仍用居中 **Modal**（名称 + 描述）
 - **卡片/列表字段**：项目 ID（黑色不可点）、**项目名称**（蓝色可点击跳转详情）、任务数、创建人、描述、采集进度条（蓝色/绿色，100% 变绿）、状态 badge、创建/更新时间
 - **卡片头像**：左侧首字头像 **统一蓝色渐变**（`from-blue-500 to-blue-700`），不随项目状态变化
 - **操作**（点击「查看详情」与点击项目名称一致，跳转项目详情）：
@@ -338,7 +366,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **验收**：项目列表**不再提供「验收」入口**。统一在项目详情内进行——采集任务 Tab 勾选任务发起「抽样验收」，批次管理在「抽样验收」Tab
 - **关闭 / 开启**：Toast 提示；关闭后项目详情内新建任务、新建方案等入口由 `ProjectMutateGate` 置灰
 - **归档**：二次确认；归档后不可新建，仍可查看与下载
-- **删除**：仅归档项目；二次确认弹窗（无需输入名称）
+- **删除**：仅归档项目；`DeleteConfirmModal`（无需输入名称）
 - **项目状态**（`utils/projectStatus.js`）：**开启**（蓝）/ **关闭**（橙）/ **归档**（灰）；与任务、方案状态独立
 - **分页**：卡片视图与列表视图均为 **10 条/页**（`usePagination` + `ListPaginator` / `Table`）；筛选条件变更时重置至第 1 页
 
@@ -355,21 +383,21 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 |---|---|
 | 采集任务 | 复用 `Task/index.jsx`（`fixedProjectId` 锁定当前项目，传入 `projectStatus`；隐藏「所属项目名称」筛选与列表列，含筛选区 + `TaskTable` + 「抽样验收」+ 「+ 新建任务」）；支持 URL `?tab=task` |
 | 采标方案 | 内含 **3 个二级 Tab**（胶囊样式，见下文） |
-| **项目成员** | 成员列表 + 添加/编辑成员弹窗（见下文） |
+| **项目成员** | 成员列表 + **右侧 Drawer** 添加成员/配置任务 + 分配校验（见下文） |
 | **抽样验收** | 复用 `Sampling.jsx` → `SamplingPanel`（筛选 + 批次列表 + 批量处理；**无「+ 新建」**）；支持 `?tab=sampling`、`&highlight={batchId}` 高亮新建行 |
 | 运营看板 | 复用 `RealDataTab`（`fixedProjectId` 锁定当前项目，隐藏全局项目筛选） |
 
-**项目关闭/归档限制**：详情页内「+ 新建任务」、采集方案「+ 新建」、质检导入、播放布局「+ 新建布局」等写入类入口外包 `ProjectMutateGate`；关闭/归档时置灰并 Tooltip（如「项目已关闭，无法新建」）。
+**项目关闭/归档限制**：详情页内「+ 新建任务」、采集方案「+ 新建」、质检导入、播放布局「+ 新建」等写入类入口外包 `ProjectMutateGate`；关闭/归档时置灰并 Tooltip（如「项目已关闭，无法新建」）。
 
 #### 采标方案 → 二级 Tab
 
 | 二级 Tab | 组件 | 内容 |
 |---|---|---|
-| 采集方案 | `CollectConfigTab` | 采集方案 CRUD、状态机、标注方案只读弹窗（见下文） |
+| 采集方案 | `CollectConfigTab` | 采集方案 CRUD、状态机（见下文） |
 | 质检配置 | `QcTab` | 固定质检项列表，开关启停 + 规则说明编辑（见下文） |
 | 播放布局 | `LayoutTab` | 系统默认布局 + 项目自建布局；新建/编辑/下载/删除 |
 
-> **标注方案**不再作为独立 Tab。标注配置由采集方案步骤自动生成，在采集方案列表操作栏通过「**标注配置**」按钮只读查看（`PlanAnnotationDetails`）。
+> **标注方案**不再作为独立 Tab。标注配置由采集方案步骤在表单 **模块三：标注配置** 内配置；**列表操作栏已移除「标注配置」只读入口**（标注配置仍可在方案 **查看 Drawer** 内只读浏览）。
 
 #### 采集方案子 Tab（`CollectConfigTab` + `CollectPlanForm.jsx`）
 
@@ -377,28 +405,29 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **筛选区**（点「查询」生效，**筛选项与重置/查询同一行**）：方案 ID、方案名称、状态；右端固定「重置」「查询」
 
-**列表标题**：「方案列表」。列：方案 ID、方案名称、设备类型、采集方式、步骤数、状态
+**列表标题**：「**采集方案列表**」。列：方案 ID、方案名称、设备类型、采集方式、步骤数、状态
 
 **操作栏按状态**（复制为图标按钮；**已归档不显示复制**）：
 
 | 状态 | 操作 |
 |---|---|
 | 草稿 | 复制 · 编辑 · 发布 · 删除 |
-| 已发布 | 复制 · 查看 · 归档 · **创建任务**（仅项目 **开启** 时显示）· **标注配置** |
+| 已发布 | 复制 · 查看 · 归档 · **创建任务**（仅项目 **开启** 时显示） |
 | 已归档 | 查看 · 删除 |
 
 - **复制**：图标按钮，生成草稿副本，其余字段同原方案
 - **编辑**：仅草稿可编辑；已发布需先复制为草稿
-- **发布 / 删除**：二次确认弹窗
-- **标注配置**：只读弹窗，按步骤展示自动生成的标注配置（`PlanAnnotationDetails`）
-- **查看**（已发布/已归档）：只读采集方案详情（`PlanReadonlyDetails`）
-- **创建任务**：打开 `CreateTaskModal` 并锁定当前方案为 `initialPlan`
+- **发布**：**直接发布** + Toast「状态更新成功」（**无二次确认**）
+- **删除**：`DeleteConfirmModal`（橙色图标 + 标题「提示」+「确定要删除吗？」+ 取消/确定）
+- **归档**：二次确认弹窗「归档采集方案」
+- **查看**（已发布/已归档）：只读采集方案 **Drawer**（`CollectPlanFormFields` readonly）
+- **创建任务**：打开 `CreateTaskModal`（Drawer）并锁定当前方案为 `initialPlan`（**隐藏「配置」按钮**）
 
-**新建/编辑弹窗**（`fitViewport`，与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）分为 **三个模块**（各模块左上角加粗小标题）：
+**新建/编辑/查看**（**右侧 Drawer**，与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）分为 **三个模块**（各模块左上角加粗小标题）：
 
 **模块一：基础信息**
 - 方案名称（必填）；编辑态方案 ID 只读
-- 所属场景（三级级联，必填）
+- 所属场景（**`SceneCascader` 三级渐进列选**，必填；无搜索框）
 - 设备类型（下拉，必填）+ 只读解析：本体机型 / 左末端 / 右末端
 - 采集方式（下拉，必填；选项来自 `getCollectionMethodTags()`）
 
@@ -407,7 +436,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 采集步骤：默认 1 步；每步含步骤描述、原子技能（多选 portal 下拉）、时长(秒)；≥2 步才可删
 - 总时长（自动累加）· 总偏差 · 目标时间范围
 
-**模块三：标注管理**（无外层 Card 线框，与表单融为一体）
+**模块三：标注配置**（无外层 Card 线框，与表单融为一体）
 - **整体标签模板**（必填）：`SearchableAuditTemplateSelect` 模糊搜索下拉
 - **片段标注配置**：
   - 单个复选框（默认勾选）：**基于采集方案生成片段标注配置并预标注**
@@ -417,11 +446,6 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **不含**指定采集设备（设备在任务级选择）
 
 方案 payload 含 `annotTemplateId`、`annotAutoFragment`（兼容写入 `annotGenConfig` / `annotPreLabel`）、`fragmentAnnotTypes`（仅存用户自定义类型；预置大类由勾选态动态合并展示）。
-
-**标注配置只读弹窗**（列表「标注配置」按钮）：
-- 顶部说明：「由采集方案步骤自动生成」
-- 按有效步骤列表：动作语义（类别）｜ 步骤描述（属性）｜ 技能标签（原子技能，多 Badge）｜ 时长
-- 若两个标注开关均未勾选：提示「该方案未启用标注配置生成」
 
 **运行时 API**（`plans.js`）：`getPlansByProjectId`、`appendPlan`、`updatePlanInStore`、`deletePlanFromStore`、`publishPlanInStore`、`copyPlanInStore`、`resolvePlanDeviceTypeId`
 
@@ -467,25 +491,30 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 自建 | 用户命名（如 P-1001「四宫格布局」） | 创建日期 | 用户填写 | 编辑 · 下载 · 删除 |
 
 - **默认布局**：UI 固定项（`plans.js` → `buildDefaultPlayLayoutRow`），不可编辑/删除
+- **布局名称**：蓝色链接，点击在新标签页打开工作台 `mode=play&layoutPreview=…` 预览
 - **下载**：Toast「布局文件已导出」（占位）
+- **删除**：`DeleteConfirmModal`，文案「确定要删除这个布局配置吗？」
 
-**新建弹窗**（仅新建，非编辑）：
+**新建/编辑（右侧 Drawer）**：
 - 布局名称（必填）
-- **布局文件**（必填）：虚线框拖拽/点击上传；文案「点击或拖拽文件到此区域上传」；副文案「支持 JSON 格式，文件大小不超过 10MB」；选中后显示文件名可移除；纯前端 mock，不解析文件
-- 布局描述（选填）
+- **布局文件**（新建必填）：虚线框拖拽/点击上传；文案「点击或拖拽文件到此区域上传」；副文案「支持 JSON 格式，文件大小不超过 10MB」；选中后显示文件名可移除；纯前端 mock，不解析文件
+- 布局描述（选填，**最多 200 字**；输入框外右下角 **`n/200`** 计数）
+- 新建主按钮「创建」；编辑主按钮「保存」
 
-**编辑弹窗**：可修改布局名称与描述（不含布局文件；日期不变）
-
-#### 项目成员 Tab
-- **成员列表**：姓名、角色（多 badge）、负责任务（多标签，过多截断 + tooltip）、**加入时间**（`YYYY-MM-DD HH:mm:ss`）、操作（编辑/移除，二次确认移除）；**分页 10 条/页**
-- 项目创建人固定显示为「平台运营」，置于首行，不可编辑/移除；加入时间取项目 `createdAt`
-- **任务人员绑定规则**：每个任务 **仅 1 名采集员**、**仅 1 名标注员**（`tasks.js` → `collector` / `reviewer` 均为单人字符串；分配时覆盖写入，不追加多人）
-- **添加成员弹窗**（字段顺序）：
-  1. **角色**（必选，**单选**）：采集员 / 标注员 / **采集员&标注员**（`RolePicker`）
-  2. **选择用户**（必选，单选）：`PersonDropdownSelect` 支持 **模糊搜索** + 下拉单选；仅显示姓名（不含角色后缀）；列出启用用户，排除创建人与已在项目中的成员
-  3. **分配任务**：`TaskCheckboxList`（项目任务多选；列表首行统一 **全选** 行：浅灰底 + 「已选 x / 共 y」+ 半选态）
-- **编辑弹窗**：同上顺序；用户字段只读，角色与任务可改
-- **单任务分配弹窗**（任务行「分配人员」）：采集员 / 标注员各选一个；已有采集员时只读展示，不可再追加第二人
+#### 项目成员 Tab（`MembersTab.jsx`）
+- **成员列表**（10 条/页）：姓名、角色（Badge；双角色合并展示为「采集员&标注员」）、**负责任务数**、加入时间、操作（**查看任务** / **配置任务**）
+- 列表 **不展示**项目创建人「平台运营」合成行（mock 中 `roles` 含平台运营的成员已过滤）
+- **添加成员**（**右侧 Drawer**；底部 **取消 / 确定**）：
+  1. **角色**（必选，**多选** pill）：采集员 / 标注员（`RoleMultiPicker`）
+  2. **选择用户**（必选，**多选**）：`PersonMultiDropdownSelect`；须先选角色；排除项目创建人与已在项目中的成员
+  3. **配置任务**（必选 `*`，`TaskCheckboxList` 多选项目任务）
+- **配置任务**（**右侧 Drawer**，宽 `min(960px, …)`；底部 **取消 / 确定**）：成员只读、角色多选、**配置任务**（必选 `*`，`TreeTransfer`）
+- **分配校验** → **任务分配矩阵** Modal（无底部「关闭」、无左下角未完成提示文案）：
+  - 待分配任务表：任务名称、采集员、标注员、操作「分配」
+  - 右上角「批量分配」
+  - **单任务分配** Modal：任务名称 / 采集员 / 标注员 **均为必填**（红 `*`）；已分配角色只读展示；主按钮 **确定**
+  - **批量分配** Modal：角色 **多选**（仅采集员 / 标注员，**无「采集员&标注员」**）；选择用户单选；分配任务多选；主按钮「确认分配」
+- **查看任务**：跳转采集任务 Tab 并按成员/角色筛选（由 `Detail.jsx` 传入 `onViewMemberTasks`）
 
 ---
 
@@ -495,17 +524,19 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### Tab 批次列表（无「+ 新建」）
 
-- **筛选区**：批次 ID、批次名称、创建人（顺序与列表列一致）；三列均匀铺满，「重置」「查询」右对齐；placeholder 分别为「请输入批次 ID」「请输入批次名称」「请输入创建人」
-  - 输入框即时编辑；点 **查询** 才写入 applied filters 并过滤列表
+- **筛选区**：批次 ID、批次名称、**创建人**（**下拉单选**，默认「请选择」；选项来自当前项目批次创建人去重）；三列均匀铺满，「重置」「查询」右对齐
+  - 输入框/下拉即时编辑；点 **查询** 才写入 applied filters 并过滤列表
   - **重置** 同时清空输入框与 applied filters
 - **抽检批次列表**（10 条/页）：勾选、批次 ID、批次名称、**任务数**、总条目、抽检条目、通过率、验收进度、创建人、创建时间、操作（**已去掉「抽样依据」列**）；任务数取自 `configItems.length`
 - **标题栏**：左侧「抽检批次列表」；右侧浅色引导「新建抽检批次请前往**采集任务 Tab**勾选任务后发起」（链接切换至本项目采集任务 Tab）+「批量处理」
-- **操作**：
-  - **详情** / **处理** / **删除**（二次确认弹窗「确认删除抽检批次「名称」？」）
+- **操作**（字号与表格其他列一致 `text-sm`）：
+  - **详情** / **处理** / **删除**
   - **验收**：仅 `status !== 'completed'` 时显示；打开最新待验收条目的工作台 `mode=accept`；无待验收条目则 Toast「该批次暂无待验收条目」
-- **批量处理**：勾选批次批量，或项目整体验收
+- **删除**：`DeleteConfirmModal`（「确定要删除吗？」）
+- **批量处理**（`BulkAcceptProcessModal`）：勾选批次批量，或项目整体验收；备注 **最多 500 字**，输入框外右下角 **`n/500`**
+- **批次处理**（`BatchAcceptProcessModal`，列表「处理」）：按批次创建时任务选项整体验收；备注 **最多 500 字**，输入框外 **`n/500`**
 - **高亮**：URL `?highlight={batchId}` 时将对应行置于列表前部并短时高亮（带「新建」badge）
-- **详情弹窗**（`SamplingBatchDetailModal`）：展示筛选条件摘要（有 `filters` 时用 `formatSamplingFiltersSummary`；旧 seed 无 `filters` 时回退 `basis`）+ 抽检明细表
+- **详情弹窗**（`SamplingBatchDetailModal`）：顶部元信息为批次 ID、**批次名称**、创建人 + 抽检明细表；**无底部「关闭」**（右上角 × 关闭）；**高度随内容自适应**（非 `fitViewport` 满屏）
 
 #### 新建抽检批次（`CreateSamplingBatchModal`）
 
@@ -545,9 +576,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ---
 
-### 新建/编辑任务弹窗（`CreateTaskModal`，项目任务 Tab 共用）
+### 新建/编辑任务（`CreateTaskModal.jsx`，**右侧 Drawer**；项目任务 Tab 共用）
 
-**布局**：单栏 `fitViewport` 弹窗（宽 **520px**，固定面板高 **`min(85vh, 560px)`**；内容超出时弹窗内部滚动，底部确定/取消固定）。采集方案配置移至 **二级弹窗**（`PlanConfigModal`，尺寸与任务弹窗一致，`zIndex=60`，`align="nested"` 相对任务弹窗向右下偏移 **40px**，露出下层边缘体现层级）。
+**布局**：单栏 **Drawer**（默认宽 = 主内容区 1/3）。采集方案配置仍为 **二级 Drawer**（`PlanConfigModal`，`zIndex=60`，标题带返回箭头）。
 
 **单栏字段顺序**（自上而下）：
 1. **任务名称**（必填；前缀只读任务 ID）
@@ -561,10 +592,10 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **未配置**：显示「未配置」+ 右侧主色 **配置** 按钮（`Button primary sm`）
 - **已配置**：灰底摘要区三行带字段名 — `方案名称：` / `设备类型：` / `采集方式：`；右上角 **重新配置** 按钮（与「配置」同样式）
 - **编辑模式**：仅展示三行摘要，方案不可改（无重新配置）
-- 从项目详情带 `initialPlan` 进入：打开时自动已配置，方案锁定（二级弹窗只读 `PlanReadonlySection`，无重新配置）
+- 从项目详情带 `initialPlan` 进入：打开时自动已配置，方案锁定（二级 Drawer 只读，**无「配置/重新配置」**）
 
-**二级弹窗「配置采集方案」**（`PlanConfigModal`）：
-- 与任务弹窗 **同宽同高**（520px × `min(85vh, 560px)`），选择已有方案时内容较少也 **不缩短**；内容区滚动，底部确定/取消固定
+**二级 Drawer「配置采集方案」**（`PlanConfigModal`）：
+- 与任务 Drawer **同默认宽度**；选择已有方案时内容较少也 **不缩短**；内容区滚动，底部确定/取消固定
 - **选择方式**（`ModeToggle`，默认 **选择已有方案**）：
   - **选择已有方案**：`SearchablePlanSelect` 搜索下拉（方案 ID · 名称）+ 选中后 `PlanReadonlyDetails` 只读反显
   - **创建新方案**：嵌入 `CollectPlanFormFields`（与项目详情采集方案弹窗字段一致）
@@ -577,11 +608,12 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **创建新方案**：提交任务时 `appendPlan`，新方案状态 **已发布**（二级弹窗确定时不写入列表，保持现有逻辑）
 - 写入 `deviceTypeName` 快照供历史展示
 
-**编辑**（`editTask`）：可改任务名称、用途、目标条数、设备实例、标注布局；关联采集方案以摘要只读展示，不可切换
+**编辑**（`editTask`）：Drawer 标题「**编辑采集任务**」；可改任务名称、用途、目标条数、设备实例、标注布局；关联采集方案以摘要只读展示，不可切换；主按钮 **确定**
 
 ---
 
 ### 采集任务 `/collection/task`
+- **侧栏入口已移除**；访问 `/collection/task` **重定向至** `/collection/project`（任务仅在 **项目详情 → 采集任务 Tab** 或直链详情页使用）
 - **数据范围**：原型全量展示（`filterTasksByDataScope` 不过滤）
 - **筛选区**（5 列响应式网格，点击「查询」生效；**展开筛选** 显示第二行）：
   - **首行（始终可见）**：任务 ID、任务名称、所属项目名称（全局列表；项目详情 Tab 内隐藏）、采集方案 ID、采集员
@@ -594,12 +626,12 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 状态 | 操作 |
 |---|---|
-| 草稿 | 复制 · 编辑（`CreateTaskModal`）· 发布（二次确认）· 删除 |
+| 草稿 | 复制 · 编辑（`CreateTaskModal` Drawer）· **发布**（**直接发布** + Toast「状态更新成功」）· 删除 |
 | 已发布 | 复制 · **查看详情**（蓝底白字实心 sm）· 标注 · 验收 · 导出（标签/质检报告 Toast）· 归档（二次确认） |
 | 已归档 | **查看详情** · 删除 |
 
-- **编辑弹窗**：可改任务名称、用途、目标条数、设备实例、标注布局；关联采集方案摘要只读（见 [新建/编辑任务弹窗](#新建编辑任务弹窗createtaskmodal项目任务-tab-共用)）
-- **删除**：二次确认弹窗（无需输入任务名）
+- **编辑 Drawer**：标题「编辑采集任务」；主按钮 **确定**
+- **删除**：`DeleteConfirmModal`（「确定要删除吗？」）
 
 ---
 
@@ -674,7 +706,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 验收不通过 | 播放 | **标注** → `mode=review`（打回二次标注，不显示验收） | 占位 | 二次确认 |
 | 已验收 | 播放 | 占位 | 占位 | 二次确认 |
 
-播放/标注/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除为二次确认弹窗（无需输入文件名）。
+播放/标注/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除为 **`DeleteConfirmModal`**（无需输入文件名）。
 
 > **TODO**：中间按钮角色校验（标注=标注员、验收=平台运营）尚未接入。
 
@@ -716,7 +748,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 采集条目 `/collection/upload`
-侧边栏显示为「采集条目」（路由 `/collection/upload` 不变）。
+**侧栏入口已移除**；路由 `/collection/upload` **重定向至** `/collection/project`。
+
+以下为 `EntryDataTable` 在 **`showScopeColumns`** 模式下的能力说明（组件仍保留，可供后续恢复独立入口）：
 
 - **数据范围**：原型全量展示
 - **SDK 说明折叠区块**（筛选区上方）：默认折叠，点击展开 Python SDK 上传代码示例
@@ -735,7 +769,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
   - 左侧：「真机数据集列表」+ **下载说明**（跳转下载说明页，需 `dataset.self.download`）
   - 右侧：视图切换 + 「+ 新建数据集」
 - **列表字段**：ID（黑色不可点）、**数据集名称**（蓝色可点击跳转详情）、关联项目数、关联任务数、条目数量、总数据量、总时长、创建人、创建时间
-- **操作**：详情、删除（二次确认，无需输入名称）；**无列表页编辑**
+- **操作**：详情、删除（`DeleteConfirmModal`，无需输入名称）；**无列表页编辑**
 - **卡片**：右上角三点菜单（查看详情/删除）；点击卡片主体跳转详情；展示条目数、总数据量、关联项目/任务数、创建人、创建时间
 
 #### 数据集下载说明 `/dataset/self/download`
@@ -844,7 +878,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **筛选**：标签名称、**标签值**（点「查询」生效）
 - **列表字段**：标签名称（加粗）、**标签值**、描述、创建时间、最后更新、操作（树形缩进展示层级）
 
-> **采集方案标注配置**：由方案步骤自动生成，在项目详情 → 采标方案 → 采集方案列表通过「**标注配置**」按钮只读查看（`PlanAnnotationDetails`）。方案表单中的 **整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
+> **采集方案标注配置**：由方案步骤在表单 **模块三：标注配置** 内配置；**列表已无「标注配置」操作按钮**。方案 **查看 Drawer** 内可只读浏览完整表单（含标注配置区块）。方案表单中的 **整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
 
 ---
 
@@ -996,10 +1030,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 src/
 ├── assets/
 │   ├── logo.png
+│   ├── intro/                 # 数采介绍页原图（同步复制至 public/intro/）
 │   └── review/                # 标注工作台相机/URDF 占位图
 ├── components/
 │   ├── collect/
-│   │   ├── CollectPlanForm.jsx           # 采集方案三模块表单 + 标注管理区块
+│   │   ├── CollectPlanForm.jsx           # 采集方案三模块表单 + 标注配置区块
 │   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注预配置折叠编辑器
 │   │   └── fragmentAnnotPreconfig.js     # 预置大类 + 自定义类型合并逻辑
 │   ├── entry/
@@ -1007,16 +1042,20 @@ src/
 │   ├── task/
 │   │   └── EntryListPanel.jsx     # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
 │   ├── Layout/
-│   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区）
-│   │   ├── Header.jsx         # 顶栏（角色展示 + 退出登录）
-│   │   ├── Sidebar.jsx        # 侧边栏（原型展示全部菜单）
+│   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
+│   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
+│   │   ├── Sidebar.jsx        # 侧边栏（采集项目一级菜单；原型展示全部菜单）
 │   │   ├── PermissionGuard.jsx # 路由守卫（原型不拦截）
-│   │   └── Breadcrumb.jsx     # 面包屑
+│   │   └── Breadcrumb.jsx     # 面包屑（当前位置：…）
 │   └── common/
 │       ├── Button.jsx         # 按钮（primary / link / linkDanger）
-│       ├── Modal.jsx          # 弹窗（fitViewport、panelHeight 固定面板高、align=nested 二级偏移、内容区滚动）
-│       ├── Table.jsx          # 表格（斑马纹、全列居中；pageSize 分页 + ListPaginator 在横向滚动区外；scrollVisibleRows 固定可见行数+表内滚动）
-│       ├── ListPaginator.jsx  # 统一分页脚：「{pageSize} 条/页 · 共 {total} 条记录」；页数>7 时省略号（首页…邻页…尾页）
+│       ├── Modal.jsx          # 弹窗（fitViewport、panelHeight、align=nested 二级偏移）
+│       ├── Drawer.jsx         # 右侧抽屉（默认宽 = 主内容区 1/3；遮罩点击关闭；默认主按钮「确定」）
+│       ├── DeleteConfirmModal.jsx  # 统一删除二次确认（橙 icon +「提示」+ 自定义 message + 取消/确定）
+│       ├── SceneCascader.jsx  # 所属场景三级渐进列选（采集方案表单）
+│       ├── ListPageCard.jsx   # 检索栏 + 列表统一白容器（Filter / Toolbar / Body）
+│       ├── Table.jsx          # 表格（embedded 嵌入 ListPageCard；内置 pageSize 状态）
+│       ├── ListPaginator.jsx  # 统一分页：第 X-Y 条/总共 Z 条 + 页码 + 条/页下拉（10/20/50/100）
 │       ├── Badge.jsx          # 状态标签（多色、dot 模式）
 │       ├── Tabs.jsx           # Tab 切换（蓝色下划线）
 │       ├── Progress.jsx       # 进度条
@@ -1026,7 +1065,7 @@ src/
 │       ├── PermissionAction.jsx # IfPerm / PermButton / PermAction / PermMenuItem
 │       ├── ProjectMutateGate.jsx # 项目关闭/归档时禁用新建类操作 + Tooltip
 │       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
-│       ├── Icons.jsx          # 内联 SVG 图标集（含 IconDownload）
+│       ├── Icons.jsx          # 内联 SVG 图标（IconProject 采集项目、IconIntro 数采介绍等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
 │       ├── Toast.jsx          # useToast hook — 轻量 Toast 提示
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
@@ -1036,6 +1075,10 @@ src/
 │       ├── DonutChart.jsx     # 环形图
 │       └── WordCloud.jsx      # 词云（SVG 手写）
 ├── pages/
+│   ├── Intro/
+│   │   └── index.jsx              # 数采介绍（静态流程原图）
+│   ├── Backflow/
+│   │   └── index.jsx              # 真机回流占位页
 │   ├── Login/LoginPage.jsx
 │   ├── Dashboard/
 │   │   ├── index.jsx
@@ -1045,20 +1088,21 @@ src/
 │   │       ├── RealDataTab.jsx    # 支持 fixedProjectId prop
 │   │       └── OpenDataTab.jsx
 │   ├── Project/
-│   │   ├── index.jsx              # 采集项目列表（卡片/列表、10 条/页；无列表验收入口）
+│   ├── Project/
+│   │   ├── index.jsx              # 采集项目列表（ListPageCard；Drawer 新建；+ 新建）
 │   │   ├── Detail.jsx             # 项目详情（5 Tab：任务/方案/成员/抽样验收/看板 + 采标方案 3 二级 Tab）
 │   │   ├── Sampling.jsx           # 抽样验收 Tab 面板（SamplingPanel + createSamplingBatchRecord）
 │   │   ├── CreateSamplingBatchModal.jsx  # 新建抽检批次（任务多选 + 筛选查询/重置 + 按任务比例）
 │   │   ├── SamplingBatchDetailModal.jsx
 │   │   ├── BatchAcceptProcessModal.jsx
 │   │   ├── BulkAcceptProcessModal.jsx
-│   │   ├── MembersTab.jsx             # 项目成员（成员列表 10 条/页；角色单选含「采集员&标注员」）
+│   │   ├── MembersTab.jsx             # 项目成员（Drawer 添加/配置任务；分配校验矩阵；10 条/页）
 │   │   └── AnnotationTemplateTab.jsx  # 历史组件，当前采标方案未引用
 │   ├── Task/
 │   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，5 列筛选网格）
 │   │   ├── Detail.jsx             # 任务详情（摘要卡 + EntryListPanel）
 │   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏、showProjectColumn）
-│   │   └── CreateTaskModal.jsx    # 新建/编辑任务（单栏 + PlanConfigModal 二级配置采集方案）
+│   │   └── CreateTaskModal.jsx    # 新建/编辑任务（Drawer + PlanConfigModal 二级配置采集方案）
 │   ├── Review/
 │   │   ├── Workbench.jsx          # 标注工作台（独立全屏；四模块侧栏；验收侧栏提交）
 │   │   ├── constants/
@@ -1117,7 +1161,7 @@ src/
 ├── App.jsx                        # AuthProvider + RouterProvider
 ├── main.jsx
 ├── hooks/
-│   └── usePagination.js           # 卡片列表分页 hook；LIST_PAGE_SIZE = 10
+│   └── usePagination.js           # 分页 hook；LIST_PAGE_SIZE=10；PAGE_SIZE_OPTIONS=[10,20,50,100]
 ├── utils/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
 │   ├── formatDateTime.js          # 全平台时间格式：formatDateTime / dtCol / formatRelativeTime
@@ -1146,6 +1190,10 @@ src/
 │   └── misc.js                    # 用户 seed、项目成员、annotationTemplates
 └── router/index.jsx
 
+public/
+└── intro/
+    └── data-collection-flow.png   # 数采介绍页静态原图（构建时原样拷贝）
+
 scripts/
 └── normalize-mock-datetimes.mjs   # 批量规范化 mock 时间为 YYYY-MM-DD HH:mm:ss
 ```
@@ -1159,7 +1207,9 @@ scripts/
 | 图表库 | 运营看板为手写 SVG（`BarChart`、`DonutChart` 等）；标注工作台信号图使用 **recharts** |
 | 产品名称 | 浏览器标签与顶栏均为 **ABC-Data**（`index.html` / `Header.jsx` / 登录页） |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
-| 路由 | `createBrowserRouter`；`/` → `/login`；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId` → 重定向 `/device`；`/dataset/open*`、`/system/log` → 重定向 |
+| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 真机回流占位；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
+| ListPageCard | 检索 `ListPageFilter`（底部分割线）+ 工具栏 `ListPageToolbar`（底部分割线）+ `Table embedded` / `ListPageBody` 同一白容器；已用于项目/任务/用户/角色/组织/设备/标签/条目等列表页 |
+| 新建项目 Drawer | `Drawer.jsx` 默认宽度 `calc((100vw - var(--layout-sidebar-width)) / 3)`；Layout 在 `<main>` 设置 `--layout-sidebar-width`（`13rem` / `4rem`） |
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
 | 依赖 | React 19、Vite 8、Tailwind CSS 4、react-router-dom 7、recharts、xlsx（SheetJS，开源数据集 Excel 导入） |
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员** |
@@ -1170,20 +1220,21 @@ scripts/
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目 ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
-| 删除确认 | 项目/任务/数据集/条目：二次确认弹窗（**无需输入名称**）；标签/设备/组织/角色/抽检批次等为 Modal 简单确认 |
+| 删除确认 | 项目 / 任务 / 采集方案 / 播放布局 / 抽检批次 / 条目等：**`DeleteConfirmModal`**（橙 icon、标题「提示」、默认文案「确定要删除吗？」、取消/蓝色确定）；**归档**、任务归档等仍为独立确认 Modal；标签/设备/组织/角色等为 Modal 简单确认 |
 | Toast | `useToast` hook，2.5 秒自动消失 |
-| 表格对齐 | `Table` 表头与单元格默认水平居中；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外，避免横向滚动时不可见）；`scrollVisibleRows` + `bodyRowHeight` 可固定表内可见行数并 sticky 表头（运营看板任务进度 5 行、排行榜 6 行，每页 10 条） |
-| 分页惯例 | 统一 **10 条/页**（`LIST_PAGE_SIZE`）；覆盖项目/任务/条目/抽样批次/成员/质检配置/设备实例·类型/组织·用户/标签各 Tab/数据集条目·转换记录·转换数据集等；筛选变更用 `pageResetKey` / `usePagination.resetKey` 回第 1 页 |
-| 页码省略 | `ListPaginator`：总页数 **≤7** 全部展开；**>7** 显示 `1 … 邻页 [当前] 邻页 … N`（首页/尾页始终可见，省略号不可点） |
+| 表格对齐 | `Table` 表头与单元格默认水平居中；`embedded` 时去掉外层 Card 边框（由 `ListPageCard` 承载）；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外）；`scrollVisibleRows` 可固定表内可见行数并 sticky 表头 |
+| 分页惯例 | 默认 **10 条/页**（`LIST_PAGE_SIZE`）；`ListPaginator` 右对齐单行：**第 X-Y 条/总共 Z 条** → `<` `>` 页码（>7 页省略号）→ **条/页** 下拉（10/20/50/100）；`Table` / `usePagination` 均支持 `pageSize` 变更并重置第 1 页 |
+| 页码省略 | `ListPaginator` → `buildPageItems`：总页数 **≤7** 全部展开；**>7** 显示 `1 … 邻页 [当前] 邻页 … N` |
 | 筛选交互 | 绝大多数列表页点击「查询」生效（含用户管理、角色管理、组织管理、抽检批次列表、新建抽检批次筛选区）；角色管理筛选与组织管理布局一致（字段 + 右侧重置/查询） |
 | 筛选布局惯例 | 任务列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮末行右对齐。**条目列表（任务详情）**：固定 **5 列首行**（条目 ID、文件名称、数据格式、质检/标注状态）+ 展开 **1 列**（验收状态）。**采集条目页** 首行含所属项目/任务名称，展开行含三工序状态。**项目详情**内采集方案/质检配置筛选与重置/查询 **同一行** |
 | 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
-| 新建任务弹窗 | `CreateTaskModal`：单栏 520px；`PlanConfigModal` 二级弹窗同尺寸，`zIndex=60`，右下偏移 40px；方案摘要用 `PlanSummaryBlock` 三行展示 |
+| 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer；`PlanConfigModal` 二级 Drawer（同宽，`zIndex=60`，返回箭头）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer` / `UpdateDatasetModal`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
 | 抽样验收 | 仅项目详情 Tab；任务维度抽检；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
 | 条目操作列 | `EntryActions`：标注不通过→验收；验收不通过→标注；质检不通过→无中间按钮 |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |
+| 任务/方案发布 | 草稿「发布」**无二次确认**，直接变更状态 + Toast「状态更新成功」（`TaskTable` / `CollectConfigTab`） |
 | 任务/方案删除规则 | **已发布任务**不渲染删除；**已归档任务**不渲染复制；**已归档方案**不渲染复制 |
 | 列表「查看详情」按钮 | 项目列表「查看详情」、任务列表「查看详情」均为蓝底白字实心 sm（`bg-blue-600 px-2 py-0.5 text-xs`） |
 | 列表名称列跳转 | 采集项目/任务、真机数据集：**名称列蓝色可点击**进详情；**ID 列黑色不可点击** |
@@ -1339,13 +1390,15 @@ scripts/
 |---|---|---|
 | `/login` | 登录 | — |
 | `/` | 重定向 → `/login` | — |
+| `/intro` | 数采介绍（静态流程图） | — |
+| `/backflow` | 真机回流（占位） | — |
 | `/dashboard` | 运营看板 | `dashboard.view` |
 | `/collection/project` | 采集项目列表 | `collection.project.view` |
 | `/collection/project/:id` | 项目详情 | 同上 |
 | `/collection/project/:id/sampling` | 重定向至项目详情 `?tab=sampling` | — |
-| `/collection/task` | 采集任务列表 | `collection.task.view` |
-| `/collection/task/:id` | 任务详情 | `collection.task.view`（原型全量可访问） |
-| `/collection/upload` | 采集条目 | `collection.upload.view` |
+| `/collection/task` | 重定向 → `/collection/project` | — |
+| `/collection/task/:id` | 任务详情 | `collection.task.view` |
+| `/collection/upload` | 重定向 → `/collection/project` | — |
 | `/review/:entryId` | 标注工作台（独立全屏，无侧边栏；`?mode=play|review|accept`） | `collection.task.view` |
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
 | `/dataset/self/download` | 数据集下载说明 | 同上 |

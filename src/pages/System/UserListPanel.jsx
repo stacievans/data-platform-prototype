@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 
 import Badge from '../../components/common/Badge'
 
@@ -1064,7 +1065,9 @@ export default function UserListPanel({
 
     <div className="space-y-3">
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+
+      <ListPageFilter>
 
         <div className="flex flex-wrap items-end gap-3">
 
@@ -1152,11 +1155,11 @@ export default function UserListPanel({
 
         </div>
 
-      </div>
+      </ListPageFilter>
 
 
 
-      <div className="flex items-center justify-between">
+      <ListPageToolbar>
 
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
 
@@ -1186,9 +1189,11 @@ export default function UserListPanel({
 
         )}
 
-      </div>
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+
+      </ListPageCard>
 
 
 

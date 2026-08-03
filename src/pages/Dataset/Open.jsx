@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar, ListPageBody } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import { IconGrid, IconList, IconSearch, IconLink } from '../../components/common/Icons'
@@ -150,7 +151,8 @@ export default function OpenDataset() {
     <div className="space-y-3">
       {ToastNode}
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-0 flex-1 items-end gap-3">
             <div className="min-w-0 flex-1 basis-0">
@@ -173,9 +175,9 @@ export default function OpenDataset() {
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+        </ListPageFilter>
 
-      <div className="flex items-center justify-between">
+        <ListPageToolbar>
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-gray-800">开源数据集列表</h2>
           <PermButton permission="dataset.open.download" onClick={() => navigate('/dataset/open/download')}>下载数据集</PermButton>
@@ -198,9 +200,10 @@ export default function OpenDataset() {
             导入数据集
           </PermButton>
         </div>
-      </div>
+        </ListPageToolbar>
 
       {view === 'card' ? (
+        <ListPageBody className="px-4 pb-4">
         <div className="grid grid-cols-4 gap-3">
           {filtered.map((d) => (
             <OpenDatasetCard key={d.id} dataset={d} onDetail={goDetail} />
@@ -211,9 +214,11 @@ export default function OpenDataset() {
             </div>
           )}
         </div>
+        </ListPageBody>
       ) : (
-        <Table columns={columns} dataSource={filtered} />
+        <Table embedded columns={columns} dataSource={filtered} />
       )}
+      </ListPageCard>
 
       <ImportOpenDatasetModal
         open={importOpen}

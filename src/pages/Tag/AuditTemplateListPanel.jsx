@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
 import { PermAction, PermButton } from '../../components/common/PermissionAction'
@@ -189,7 +190,8 @@ export default function AuditTemplateListPanel() {
   ]
 
   return (
-    <div className="space-y-3">
+    <ListPageCard>
+      <ListPageFilter>
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
           <div>
@@ -219,8 +221,9 @@ export default function AuditTemplateListPanel() {
           + 新建模板
         </PermButton>
       </div>
+      </ListPageFilter>
 
-      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
       <AuditTemplateModal
         open={modalOpen}
@@ -244,6 +247,6 @@ export default function AuditTemplateListPanel() {
       </Modal>
 
       {ToastNode}
-    </div>
+    </ListPageCard>
   )
 }

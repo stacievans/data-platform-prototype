@@ -6,6 +6,14 @@ const base = {
   strokeLinejoin: 'round',
 }
 
+export const IconIntro = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    <path d="M8 7h8M8 11h6" />
+  </svg>
+)
+
 export const IconDashboard = (props) => (
   <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
     <rect x="3" y="3" width="7" height="9" rx="1" />
@@ -20,6 +28,35 @@ export const IconCollection = (props) => (
     <circle cx="12" cy="12" r="3" />
     <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
     <path d="M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19" />
+  </svg>
+)
+
+/** 采集项目 — 文件夹/项目 */
+export const IconProject = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+    <path d="M3 7h18" />
+  </svg>
+)
+
+export const IconClock = (props) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" {...base} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+)
+
+export const IconUser = (props) => (
+  <svg viewBox="0 0 24 24" width="10" height="10" {...base} {...props}>
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6" />
+  </svg>
+)
+
+export const IconId = (props) => (
+  <svg viewBox="0 0 24 24" width="10" height="10" {...base} {...props}>
+    <rect x="5" y="4" width="14" height="16" rx="2" />
+    <path d="M9 9h6M9 13h4" />
   </svg>
 )
 

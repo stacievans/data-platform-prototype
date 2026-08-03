@@ -11,6 +11,7 @@ const LBL = 'mb-1.5 block text-sm text-gray-700'
 const HINT = 'text-xs text-gray-400'
 const TEXTAREA_CLS =
   'w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
+const REMARK_MAX = 500
 
 function ActionRadio({ value, active, onChange, label }) {
   return (
@@ -161,11 +162,13 @@ export default function BatchAcceptProcessModal({ open, batch, onCancel, onConfi
         <label className={LBL}>备注</label>
         <textarea
           rows={3}
+          maxLength={REMARK_MAX}
           value={remark}
           onChange={(e) => { setRemark(e.target.value); setRemarkError(false) }}
           placeholder="请输入处理备注（批量驳回时建议必填）"
           className={`${TEXTAREA_CLS} ${remarkError ? 'border-red-400 ring-1 ring-red-100' : ''}`}
         />
+        <p className="mt-0.5 text-right text-xs text-gray-400">{remark.length}/{REMARK_MAX}</p>
         {remarkError && <p className="mt-1 text-xs text-red-500">批量驳回时请填写备注</p>}
       </div>
     </Modal>

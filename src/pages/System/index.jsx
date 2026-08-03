@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
@@ -80,9 +81,9 @@ export default function SystemManage() {
 
   return (
     <div className="space-y-3">
-      {/* 筛选区 */}
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end gap-3">
+      <ListPageCard>
+        <ListPageFilter>
+          <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="mb-1 block text-xs text-gray-500">用户名</label>
             <input placeholder="请输入用户名" value={queryUsername} onChange={(e) => setQueryUsername(e.target.value)} className={`${inputCls} w-36`} />
@@ -110,15 +111,15 @@ export default function SystemManage() {
             重置
           </button>
         </div>
-      </div>
+        </ListPageFilter>
 
-      {/* 标题栏 */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-800">用户列表</h2>
-        <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新增用户</Button>
-      </div>
+        <ListPageToolbar>
+          <h2 className="text-base font-semibold text-gray-800">用户列表</h2>
+          <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新增用户</Button>
+        </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} />
+        <Table embedded columns={columns} dataSource={filtered} />
+      </ListPageCard>
 
       {/* 新增用户弹窗 */}
       <Modal open={createOpen} title="新增用户"

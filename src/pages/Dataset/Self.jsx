@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar, ListPageBody } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { IconGrid, IconList, IconPlus, IconSearch } from '../../components/common/Icons'
 import { PermButton, PermMenuItem } from '../../components/common/PermissionAction'
@@ -169,7 +170,8 @@ export default function SelfDataset() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className={FILTER_GRID}>
             <div className={FILTER_FIELD}>
@@ -190,9 +192,9 @@ export default function SelfDataset() {
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+        </ListPageFilter>
 
-      <div className="flex items-center justify-between">
+        <ListPageToolbar>
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-gray-800">真机数据集列表</h2>
           <PermButton permission="dataset.self.download" onClick={() => navigate('/dataset/self/download')}>下载说明</PermButton>
@@ -215,9 +217,10 @@ export default function SelfDataset() {
             新建数据集
           </PermButton>
         </div>
-      </div>
+        </ListPageToolbar>
 
       {view === 'card' ? (
+        <ListPageBody className="px-4 pb-4">
         <div className="grid grid-cols-4 gap-3">
           {filtered.map((d) => {
             const stats = getDatasetListStats(d)
@@ -272,14 +275,17 @@ export default function SelfDataset() {
             </div>
           )}
         </div>
+        </ListPageBody>
       ) : (
         <Table
+          embedded
           columns={columns}
           dataSource={filtered}
           pageSize={LIST_PAGE_SIZE}
           pageResetKey={pageResetKey}
         />
       )}
+      </ListPageCard>
 
       <DeleteConfirmModal
         dataset={deleteTarget}

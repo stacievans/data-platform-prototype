@@ -80,7 +80,6 @@ function PlanDetailsExpandable({ plan }) {
         <div className="mt-2 space-y-2.5">
           <DescGrid
             items={[
-              { label: '任务描述', value: plan?.name ?? '—', span: 'full' },
               { label: '初始场景状态', value: plan?.initialScene ?? '—', span: 'full' },
             ]}
           />
@@ -172,38 +171,29 @@ function OverallAnnotationReadonly({ form }) {
       </div>
 
       {isPass && (
-        <>
-          <div>
-            <p className="mb-1.5 text-xs text-gray-500">质量评分</p>
-            <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-              {form.auditQuality ?? '—'}
-            </div>
+        <div>
+          <p className="mb-1.5 text-xs text-gray-500">质量评分</p>
+          <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+            {form.auditQuality ?? '—'}
           </div>
-          <div>
-            <p className="mb-1.5 text-xs text-gray-500">描述</p>
-            <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-              {form.auditComment?.trim() ? form.auditComment : '—'}
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {isReject && (
-        <>
-          <div>
-            <p className="mb-1.5 text-xs text-gray-500">问题标签</p>
-            <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-              {form.auditTags.length ? form.auditTags.join('、') : '—'}
-            </div>
+        <div>
+          <p className="mb-1.5 text-xs text-gray-500">问题标签</p>
+          <div className="min-h-8 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+            {form.auditTags.length ? form.auditTags.join('、') : '—'}
           </div>
-          <div>
-            <p className="mb-1.5 text-xs text-gray-500">驳回理由</p>
-            <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-              {form.auditRejectReason?.trim() ? form.auditRejectReason : '—'}
-            </div>
-          </div>
-        </>
+        </div>
       )}
+
+      <div>
+        <p className="mb-1.5 text-xs text-gray-500">描述</p>
+        <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+          {form.auditComment?.trim() ? form.auditComment : '—'}
+        </div>
+      </div>
     </div>
   )
 }
@@ -218,8 +208,9 @@ function AcceptanceReadonly({ entry, acceptForm }) {
       ? 'text-red-500'
       : 'text-gray-800'
 
-  const passComment = acceptForm.acceptComment?.trim() || (entry?.acceptResult === '通过' ? entry?.acceptComment : '')
-  const rejectReason = acceptForm.acceptRejectReason?.trim() || (entry?.acceptResult === '不通过' ? entry?.acceptComment : '')
+  const passComment = acceptForm.acceptComment?.trim()
+    || entry?.acceptComment
+    || ''
 
   return (
     <div className="space-y-3">
@@ -229,22 +220,12 @@ function AcceptanceReadonly({ entry, acceptForm }) {
           {conclusionLabel}
         </div>
       </div>
-      {isPass && (
-        <div>
-          <p className="mb-1.5 text-xs text-gray-500">描述</p>
-          <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-            {passComment?.trim() ? passComment : '—'}
-          </div>
+      <div>
+        <p className="mb-1.5 text-xs text-gray-500">描述</p>
+        <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
+          {passComment?.trim() ? passComment : '—'}
         </div>
-      )}
-      {isReject && (
-        <div>
-          <p className="mb-1.5 text-xs text-gray-500">驳回理由</p>
-          <div className="min-h-8 whitespace-pre-wrap rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800">
-            {rejectReason?.trim() ? rejectReason : '—'}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -440,81 +421,66 @@ function OverallAnnotationEditor({
       </div>
 
       {form.auditConclusion === 'pass' && (
-        <>
-          <div>
-            <RequiredLabel>质量标签</RequiredLabel>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              {QUALITY_OPTIONS.map((opt) => (
-                <label key={opt} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-gray-700">
-                  <input
-                    type="radio"
-                    name="audit-quality"
-                    checked={form.auditQuality === opt}
-                    onChange={() => setForm((f) => ({ ...f, auditQuality: opt }))}
-                    className="h-3.5 w-3.5 accent-blue-600"
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+        <div>
+          <RequiredLabel>质量标签</RequiredLabel>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {QUALITY_OPTIONS.map((opt) => (
+              <label key={opt} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-gray-700">
+                <input
+                  type="radio"
+                  name="audit-quality"
+                  checked={form.auditQuality === opt}
+                  onChange={() => setForm((f) => ({ ...f, auditQuality: opt }))}
+                  className="h-3.5 w-3.5 accent-blue-600"
+                />
+                {opt}
+              </label>
+            ))}
           </div>
-          <div>
-            <RequiredLabel optional>描述</RequiredLabel>
-            <textarea
-              rows={3}
-              maxLength={500}
-              value={form.auditComment}
-              onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
-              placeholder="请输入描述"
-              className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
-            />
-            <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length} / 500</p>
-          </div>
-        </>
+        </div>
       )}
 
       {form.auditConclusion === 'reject' && (
-        <>
-          <div>
-            <RequiredLabel optional>问题标签</RequiredLabel>
-            <div className="flex flex-wrap gap-1.5">
-              {PROBLEM_TAG_OPTIONS.map((tag) => {
-                const checked = form.auditTags.includes(tag)
-                return (
-                  <label
-                    key={tag}
-                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
-                      checked
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleProblemTag(tag)}
-                      className="h-3 w-3 shrink-0 accent-blue-600"
-                    />
-                    {tag}
-                  </label>
-                )
-              })}
-            </div>
+        <div>
+          <RequiredLabel optional>问题标签</RequiredLabel>
+          <div className="flex flex-wrap gap-1.5">
+            {PROBLEM_TAG_OPTIONS.map((tag) => {
+              const checked = form.auditTags.includes(tag)
+              return (
+                <label
+                  key={tag}
+                  className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                    checked
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleProblemTag(tag)}
+                    className="h-3 w-3 shrink-0 accent-blue-600"
+                  />
+                  {tag}
+                </label>
+              )
+            })}
           </div>
-          <div>
-            <RequiredLabel>驳回理由</RequiredLabel>
-            <textarea
-              rows={3}
-              maxLength={500}
-              value={form.auditRejectReason}
-              onChange={(e) => setForm((f) => ({ ...f, auditRejectReason: e.target.value }))}
-              placeholder="请输入驳回理由"
-              className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
-            />
-            <p className="mt-1 text-right text-xs text-gray-400">{form.auditRejectReason.length} / 500</p>
-          </div>
-        </>
+        </div>
       )}
+
+      <div>
+        <RequiredLabel optional>描述</RequiredLabel>
+        <textarea
+          rows={3}
+          maxLength={500}
+          value={form.auditComment}
+          onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
+          placeholder="请输入描述"
+          className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+        />
+        <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length} / 500</p>
+      </div>
     </div>
   )
 }
@@ -532,35 +498,18 @@ function AcceptanceEditor({ acceptForm, setAcceptForm }) {
         />
       </div>
 
-      {acceptForm.acceptConclusion === 'pass' && (
-        <div>
-          <RequiredLabel optional>描述</RequiredLabel>
-          <textarea
-            rows={3}
-            maxLength={500}
-            value={acceptForm.acceptComment}
-            onChange={(e) => setAcceptForm((f) => ({ ...f, acceptComment: e.target.value }))}
-            placeholder="请输入描述"
-            className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptComment.length} / 500</p>
-        </div>
-      )}
-
-      {acceptForm.acceptConclusion === 'reject' && (
-        <div>
-          <RequiredLabel>驳回理由</RequiredLabel>
-          <textarea
-            rows={3}
-            maxLength={500}
-            value={acceptForm.acceptRejectReason}
-            onChange={(e) => setAcceptForm((f) => ({ ...f, acceptRejectReason: e.target.value }))}
-            placeholder="请输入驳回理由"
-            className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptRejectReason.length} / 500</p>
-        </div>
-      )}
+      <div>
+        <RequiredLabel optional>描述</RequiredLabel>
+        <textarea
+          rows={3}
+          maxLength={500}
+          value={acceptForm.acceptComment}
+          onChange={(e) => setAcceptForm((f) => ({ ...f, acceptComment: e.target.value }))}
+          placeholder="请输入描述"
+          className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
+        />
+        <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptComment.length} / 500</p>
+      </div>
     </div>
   )
 }
@@ -612,6 +561,7 @@ export default function WorkbenchSidePanel({
   const basicInfoItems = [
     { label: '采集项目', value: ctx.projectName },
     { label: '采集任务', value: ctx.taskName },
+    { label: '所属场景', value: ctx.task?.scene ?? '—' },
     { label: '采集员', value: entry.uploader },
     { label: '设备类型', value: entry.deviceTypeName ?? '—' },
     { label: '采集设备', value: entry.collectDevice, title: entry.collectDeviceSn?.trim() || undefined },

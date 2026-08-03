@@ -13,7 +13,7 @@ import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
 import CreateTaskModal from './CreateTaskModal'
 
-const ACTION_BAR_CLS = 'flex min-w-[400px] flex-nowrap items-center gap-1.5'
+const ACTION_BAR_CLS = 'inline-flex flex-nowrap items-center justify-center gap-1.5'
 
 function PeopleCell({ value }) {
   const people = toPeopleArray(value).filter(Boolean)
@@ -133,25 +133,19 @@ function ExportMenu({ onExport }) {
   )
 }
 
-/* ── 二次确认弹窗（发布 / 归档）── */
-function ActionConfirmModal({ open, type, task, onCancel, onConfirm }) {
+/* ── 二次确认弹窗（归档）── */
+function ActionConfirmModal({ open, task, onCancel, onConfirm }) {
   if (!open || !task) return null
-  const isPublish = type === 'publish'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
       <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
         <div className="p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-lg">{isPublish ? '📢' : '📦'}</span>
-            <h2 className="text-base font-semibold text-gray-800">
-              {isPublish ? '发布任务' : '归档任务'}
-            </h2>
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-gray-800">归档任务</h2>
           </div>
           <p className="text-sm text-gray-500">
-            {isPublish
-              ? `确认发布任务「${task.name}」？发布后将进入采集与标注流程。`
-              : `确认归档任务「${task.name}」？归档后不可再编辑或继续采集。`}
+            {`确认归档任务「${task.name}」？归档后不可继续采集。`}
           </p>
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
@@ -163,9 +157,7 @@ function ActionConfirmModal({ open, type, task, onCancel, onConfirm }) {
           </button>
           <button
             onClick={onConfirm}
-            className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-white transition ${
-              isPublish ? 'bg-blue-500 hover:bg-blue-600' : 'bg-orange-500 hover:bg-orange-600'
-            }`}
+            className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
           >
             确认
           </button>
@@ -189,6 +181,7 @@ function openWorkbench(entryId, mode) {
 ══════════════════════════════════════════ */
 export default function TaskTable({
   data,
+  embedded = false,
   showProjectColumn = false,
   pageResetKey,
   onDeleteClick,
@@ -208,9 +201,13 @@ export default function TaskTable({
 
   const closeConfirm = () => setConfirm({ open: false, type: null, task: null })
 
+  const handlePublish = (task) => {
+    onStatusChange?.(task.id, '已发布')
+    showToast('状态更新成功')
+  }
+
   const handleConfirm = () => {
     const { type, task } = confirm
-    if (type === 'publish') onStatusChange?.(task.id, '已发布')
     if (type === 'archive') onStatusChange?.(task.id, '已归档')
     closeConfirm()
   }
@@ -243,7 +240,7 @@ export default function TaskTable({
         <ActionBar>
           <DuplicateBtn onClick={() => onCopy?.(row)} />
           <LinkAction permission="collection.task.edit" onClick={() => setEditTask(row)}>编辑</LinkAction>
-          <LinkAction permission="collection.task.edit" onClick={() => setConfirm({ open: true, type: 'publish', task: row })}>发布</LinkAction>
+          <LinkAction permission="collection.task.edit" onClick={() => handlePublish(row)}>发布</LinkAction>
           {onDeleteClick && (
             <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>
           )}
@@ -336,7 +333,7 @@ export default function TaskTable({
         </Badge>
       ),
     },
-    { title: '总数据量', dataIndex: 'dataTotal', render: (v) => v ?? 0 },
+    { title: '总数据量（MB）', dataIndex: 'dataTotal', render: (v) => v ?? 0 },
     {
       title: '采集进度',
       dataIndex: 'collectDone',
@@ -360,7 +357,6 @@ export default function TaskTable({
     {
       title: '操作',
       key: 'actions',
-      width: 400,
       render: (_, row) => renderActions(row),
     },
   ]
@@ -368,6 +364,7 @@ export default function TaskTable({
   return (
     <>
       <Table
+        embedded={embedded}
         columns={columns}
         dataSource={data}
         pageSize={LIST_PAGE_SIZE}
@@ -376,7 +373,6 @@ export default function TaskTable({
 
       <ActionConfirmModal
         open={confirm.open}
-        type={confirm.type}
         task={confirm.task}
         onCancel={closeConfirm}
         onConfirm={handleConfirm}

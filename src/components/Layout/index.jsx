@@ -16,6 +16,7 @@ export default function AppLayout() {
         className={`min-h-screen bg-[#f0f2f5] pt-14 transition-all duration-200 ${
           collapsed ? 'pl-16' : 'pl-52'
         }`}
+        style={{ '--layout-sidebar-width': collapsed ? '4rem' : '13rem' }}
       >
         <div className="px-6 pb-10 pt-4">
           <div className="mb-4">

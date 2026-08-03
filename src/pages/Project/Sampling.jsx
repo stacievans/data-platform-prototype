@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
+import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import { useToast } from '../../components/common/Toast'
 import { projects } from '../../mock/projects'
 import {
@@ -38,6 +40,7 @@ import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const INPUT_CLS =
   'h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
+const SELECT_CLS = `${INPUT_CLS} cursor-pointer ${nativeSelectChevronCls}`
 const LBL = 'mb-1 block text-xs text-gray-500'
 
 function MiniProgress({ value, tone = 'blue' }) {
@@ -133,14 +136,18 @@ export default function SamplingPanel({
     [projectId, batchTick],
   )
 
+  const creatorOptions = useMemo(() => {
+    const names = [...new Set(allBatches.map((b) => b.creator).filter(Boolean))]
+    return names.sort((a, b) => a.localeCompare(b, 'zh-CN'))
+  }, [allBatches])
+
   const filtered = useMemo(() => {
     const idQ = filters.id.trim().toLowerCase()
     const nameQ = filters.name.trim().toLowerCase()
-    const creatorQ = filters.creator.trim().toLowerCase()
     const list = allBatches.filter((b) => {
       if (idQ && !String(b.id).toLowerCase().includes(idQ)) return false
       if (nameQ && !String(b.name ?? '').toLowerCase().includes(nameQ)) return false
-      if (creatorQ && !String(b.creator ?? '').toLowerCase().includes(creatorQ)) return false
+      if (filters.creator && b.creator !== filters.creator) return false
       return true
     })
     if (!activeHighlight) return list
@@ -338,11 +345,11 @@ export default function SamplingPanel({
       key: 'actions',
       width: 220,
       render: (_, row) => (
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
           {row.status !== 'completed' && (
             <button
               type="button"
-              className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
+              className="cursor-pointer text-blue-600 hover:text-blue-500"
               onClick={() => handleAcceptBatch(row)}
             >
               验收
@@ -350,21 +357,21 @@ export default function SamplingPanel({
           )}
           <button
             type="button"
-            className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
+            className="cursor-pointer text-blue-600 hover:text-blue-500"
             onClick={() => setDetailTarget(row)}
           >
             详情
           </button>
           <button
             type="button"
-            className="cursor-pointer text-xs text-blue-600 hover:text-blue-500"
+            className="cursor-pointer text-blue-600 hover:text-blue-500"
             onClick={() => setProcessTarget(row)}
           >
             处理
           </button>
           <button
             type="button"
-            className="cursor-pointer text-xs text-red-500 hover:text-red-400"
+            className="cursor-pointer text-red-500 hover:text-red-400"
             onClick={() => setDeleteTarget(row)}
           >
             删除
@@ -378,7 +385,8 @@ export default function SamplingPanel({
     <div className="space-y-4">
       {ToastNode}
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1 basis-0">
             <label className={LBL}>批次 ID</label>
@@ -400,12 +408,16 @@ export default function SamplingPanel({
           </div>
           <div className="min-w-0 flex-1 basis-0">
             <label className={LBL}>创建人</label>
-            <input
+            <select
               value={qCreator}
               onChange={(e) => setQCreator(e.target.value)}
-              placeholder="请输入创建人"
-              className={INPUT_CLS}
-            />
+              className={SELECT_CLS}
+            >
+              <option value="">请选择</option>
+              {creatorOptions.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
           <div className="flex shrink-0 gap-2">
             <Button
@@ -427,11 +439,10 @@ export default function SamplingPanel({
             </Button>
           </div>
         </div>
-      </div>
+        </ListPageFilter>
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-gray-800">抽检批次列表</h2>
+        <ListPageToolbar>
+        <h2 className="text-base font-semibold text-gray-800">抽检批次列表</h2>
           <div className="flex flex-wrap items-center justify-end gap-3">
             {onGoToTaskTab && (
               <p className="text-xs text-gray-400">
@@ -455,8 +466,9 @@ export default function SamplingPanel({
               </Button>
             )}
           </div>
-        </div>
+        </ListPageToolbar>
         <Table
+          embedded
           columns={columns}
           dataSource={filtered}
           rowKey="id"
@@ -468,7 +480,7 @@ export default function SamplingPanel({
               : ''
           )}
         />
-      </div>
+      </ListPageCard>
 
       {showCreateButton && (
         <CreateSamplingBatchModal
@@ -492,19 +504,11 @@ export default function SamplingPanel({
         onConfirm={handleBatchProcessConfirm}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除抽检批次"
         onCancel={() => setDeleteTarget(null)}
-        onOk={handleDeleteBatch}
-        okText="确定删除"
-        cancelText="取消"
-        width={440}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确认删除抽检批次「{deleteTarget?.name}」？删除后不可恢复。
-        </p>
-      </Modal>
+        onConfirm={handleDeleteBatch}
+      />
 
       <BulkAcceptProcessModal
         open={bulkOpen}

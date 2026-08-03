@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
@@ -343,7 +344,8 @@ export default function SceneTypePanel() {
   const { subCount, tagCount } = deleteTarget ? countCascade(deleteTarget) : { subCount: 0, tagCount: 0 }
 
   return (
-    <div className="space-y-3">
+    <ListPageCard>
+      <ListPageFilter>
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
           <div>
@@ -369,8 +371,9 @@ export default function SceneTypePanel() {
         </div>
         <PermButton permission="tag.create" variant="primary" onClick={openCreate}>+ 新建标签</PermButton>
       </div>
+      </ListPageFilter>
 
-      <Table columns={columns} dataSource={visibleRows} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={visibleRows} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
 
       <SceneTypeModal
         open={modalOpen}
@@ -393,6 +396,6 @@ export default function SceneTypePanel() {
           <strong className="text-red-600">{tagCount}</strong> 个标签，此操作不可恢复。
         </p>
       </Modal>
-    </div>
+    </ListPageCard>
   )
 }

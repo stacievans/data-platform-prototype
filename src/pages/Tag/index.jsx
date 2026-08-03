@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
@@ -204,20 +205,22 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
   const cols = [...baseColumns, actionColumn]
 
   return (
-    <div className="space-y-3">
-      <FilterBar
-        nameQuery={nameQuery}
-        valueQuery={valueQuery}
-        onNameChange={setNameQuery}
-        onValueChange={setValueQuery}
-        onReset={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}
-        onSearch={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}
-        onNew={() => { setEditingRow(null); setModalOpen(true) }}
-      />
-      <Table columns={cols} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+    <ListPageCard>
+      <ListPageFilter>
+        <FilterBar
+          nameQuery={nameQuery}
+          valueQuery={valueQuery}
+          onNameChange={setNameQuery}
+          onValueChange={setValueQuery}
+          onReset={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}
+          onSearch={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}
+          onNew={() => { setEditingRow(null); setModalOpen(true) }}
+        />
+      </ListPageFilter>
+      <Table embedded columns={cols} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
       <FlatTagModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} idPrefix={idPrefix} />
       {deleteConfirmModal}
-    </div>
+    </ListPageCard>
   )
 }
 

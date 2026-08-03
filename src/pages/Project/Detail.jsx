@@ -2,9 +2,12 @@ import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { Select } from '../../components/common/FormField'
 import { IconPlus, IconUpload, IconCopy, IconSearch, IconDownload, IconClose } from '../../components/common/Icons'
 import { PermButton, PermAction, PERM_DENIED_TIP } from '../../components/common/PermissionAction'
@@ -45,8 +48,6 @@ import {
   CollectPlanFormFields,
   Field,
   readonlyCls,
-  PlanReadonlyDetails,
-  PlanAnnotationDetails,
 } from '../../components/collect/CollectPlanForm'
 import { getAnyEntryIdByProjectId } from '../../mock/entries'
 import { tasks as taskStore, syncTasks, nowDatetime } from '../../mock/tasks'
@@ -119,28 +120,18 @@ function PlanLinkAction({ permission, onClick, children, danger = false }) {
   )
 }
 
-function PlanActionConfirmModal({ open, type, plan, onCancel, onConfirm }) {
+function PlanActionConfirmModal({ open, plan, onCancel, onConfirm }) {
   if (!open || !plan) return null
-  const isPublish = type === 'publish'
-  const isArchive = type === 'archive'
-  const isDelete = type === 'delete'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
       <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
         <div className="p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-lg">{isDelete ? '⚠️' : isArchive ? '📦' : '📢'}</span>
-            <h2 className={`text-base font-semibold ${isDelete ? 'text-red-600' : 'text-gray-800'}`}>
-              {isPublish ? '发布采集方案' : isArchive ? '归档采集方案' : '删除采集方案'}
-            </h2>
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-gray-800">归档采集方案</h2>
           </div>
           <p className="text-sm text-gray-500">
-            {isPublish
-              ? `确认发布方案「${plan.name}」？发布后将可用于创建采集任务。`
-              : isArchive
-                ? `确认将方案「${plan.name}」归档？归档后不可再创建任务。`
-                : `确认删除方案「${plan.name}」？此操作不可恢复。`}
+            {`确认将方案「${plan.name}」归档？归档后不可再创建任务。`}
           </p>
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
@@ -154,9 +145,7 @@ function PlanActionConfirmModal({ open, type, plan, onCancel, onConfirm }) {
           <button
             type="button"
             onClick={onConfirm}
-            className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-white transition ${
-              isDelete ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-            }`}
+            className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
           >
             确认
           </button>
@@ -190,6 +179,7 @@ function SubTabBar({ items, activeKey, onChange }) {
 /* ---------- 采集方案 ---------- */
 function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const creatorName = useCurrentNickname()
+  const { ToastNode, show: showToast } = useToast()
   const [plans, setPlans]         = useState(() => getPlansByProjectId(projectId))
   const refreshPlans              = () => setPlans(getPlansByProjectId(projectId))
   const [modalOpen, setModalOpen] = useState(false)
@@ -197,9 +187,9 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const [form, setForm]           = useState(emptyCreatePlan)
   const [errors, setErrors]       = useState({})
   const [viewTarget, setViewTarget] = useState(null)
-  const [annotTarget, setAnnotTarget] = useState(null)
   const [createTaskPlan, setCreateTaskPlan] = useState(null)
-  const [confirm, setConfirm] = useState({ open: false, type: null, plan: null })
+  const [archiveTarget, setArchiveTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const [qPlanId, setQPlanId] = useState('')
   const [qPlanName, setQPlanName] = useState('')
@@ -210,6 +200,11 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const durationMeta = useMemo(
     () => calcPlanDurationMeta(form.steps, form.totalDeviation),
     [form.steps, form.totalDeviation],
+  )
+  const viewForm = useMemo(() => (viewTarget ? planToForm(viewTarget) : null), [viewTarget])
+  const viewDurationMeta = useMemo(
+    () => (viewForm ? calcPlanDurationMeta(viewForm.steps, viewForm.totalDeviation) : { totalDuration: 0, totalDeviation: 0 }),
+    [viewForm],
   )
 
   const filteredPlans = useMemo(() => {
@@ -262,29 +257,27 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const handlePublish = (row) => {
     publishPlanInStore(row.id)
     refreshPlans()
-    setConfirm({ open: false, type: null, plan: null })
+    showToast('状态更新成功')
   }
 
   const handleArchive = (row) => {
     archivePlanInStore(row.id)
     refreshPlans()
-    setConfirm({ open: false, type: null, plan: null })
+    setArchiveTarget(null)
   }
 
   const handleDelete = (row) => {
     deletePlanFromStore(row.id)
     refreshPlans()
-    setConfirm({ open: false, type: null, plan: null })
+    setDeleteTarget(null)
   }
 
-  const closeConfirm = () => setConfirm({ open: false, type: null, plan: null })
+  const confirmArchive = () => {
+    if (archiveTarget) handleArchive(archiveTarget)
+  }
 
-  const handleConfirmAction = () => {
-    const { type, plan } = confirm
-    if (!plan) return
-    if (type === 'publish') handlePublish(plan)
-    if (type === 'archive') handleArchive(plan)
-    if (type === 'delete') handleDelete(plan)
+  const confirmDelete = () => {
+    if (deleteTarget) handleDelete(deleteTarget)
   }
 
   const renderPlanActions = (row) => {
@@ -293,8 +286,8 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'publish', plan: row })}>发布</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.edit" onClick={() => handlePublish(row)}>发布</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>
         </div>
       )
     }
@@ -303,18 +296,17 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.edit" onClick={() => setConfirm({ open: true, type: 'archive', plan: row })}>归档</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.edit" onClick={() => setArchiveTarget(row)}>归档</PlanLinkAction>
           {canProjectMutate(projectStatus) && (
             <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
           )}
-          <PlanLinkAction permission="collection.project.view" onClick={() => setAnnotTarget(row)}>标注配置</PlanLinkAction>
         </div>
       )
     }
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
-        <PlanLinkAction permission="collection.project.delete" danger onClick={() => setConfirm({ open: true, type: 'delete', plan: row })}>删除</PlanLinkAction>
+        <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>
       </div>
     )
   }
@@ -361,6 +353,9 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
       refreshPlans()
     }
     setModalOpen(false)
+    setEditTarget(null)
+    setForm(emptyCreatePlan())
+    setErrors({})
   }
 
   const columns = [
@@ -390,7 +385,8 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+      <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[200px] flex-1">
             <label className={PLAN_FILTER_LBL}>方案ID</label>
@@ -425,54 +421,59 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+      </ListPageFilter>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-800">方案列表</h2>
+      <ListPageToolbar>
+        <h2 className="text-base font-semibold text-gray-800">采集方案列表</h2>
         <ProjectMutateGate projectStatus={projectStatus}>
           <PermButton permission="collection.project.create" variant="primary" onClick={openCreate}>+ 新建</PermButton>
         </ProjectMutateGate>
-      </div>
+      </ListPageToolbar>
       <Table
+        embedded
         columns={columns}
         dataSource={filteredPlans}
         pageSize={LIST_PAGE_SIZE}
         pageResetKey={planPageResetKey}
       />
+      </ListPageCard>
 
-      <Modal
+      <Drawer
         open={!!viewTarget}
-        title="采集方案详情"
+        title="查看采集方案"
         onCancel={() => setViewTarget(null)}
-        footer={
-          <div className="flex justify-end">
-            <Button variant="secondary" onClick={() => setViewTarget(null)}>关闭</Button>
-          </div>
-        }
-        fitViewport
-        width={720}
+        footer={null}
       >
-        {viewTarget && (
+        {viewTarget && viewForm && (
           <div className="space-y-3">
             <Field label="方案ID">
               <input readOnly value={viewTarget.id} className={readonlyCls} />
             </Field>
-            <Field label="方案名称">
-              <input readOnly value={viewTarget.name} className={readonlyCls} />
-            </Field>
-            <PlanReadonlyDetails plan={viewTarget} deviceTypes={deviceTypes} />
+            <CollectPlanFormFields
+              readonly
+              form={viewForm}
+              deviceTypes={deviceTypes}
+              durationMeta={viewDurationMeta}
+              onChange={() => {}}
+              updateStep={() => {}}
+              addStep={() => {}}
+              removeStep={() => {}}
+            />
           </div>
         )}
-      </Modal>
+      </Drawer>
 
-      <Modal
+      <Drawer
         open={modalOpen}
-        title={editTarget ? '编辑采集方案' : '新建'}
-        onCancel={() => setModalOpen(false)}
+        title={editTarget ? '编辑采集方案' : '新建采集方案'}
+        onCancel={() => {
+          setModalOpen(false)
+          setEditTarget(null)
+          setForm(emptyCreatePlan())
+          setErrors({})
+        }}
         onOk={handleSave}
-        okText={editTarget ? '保存' : '创建'}
-        fitViewport
-        width={720}
+        okText="确定"
       >
         <div className="space-y-3">
           {editTarget && (
@@ -492,37 +493,20 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
             planNameLabel="方案名称"
           />
         </div>
-      </Modal>
+      </Drawer>
 
       <PlanActionConfirmModal
-        open={confirm.open}
-        type={confirm.type}
-        plan={confirm.plan}
-        onCancel={closeConfirm}
-        onConfirm={handleConfirmAction}
+        open={!!archiveTarget}
+        plan={archiveTarget}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={confirmArchive}
       />
 
-      <Modal
-        open={!!annotTarget}
-        title="标注配置"
-        onCancel={() => setAnnotTarget(null)}
-        footer={
-          <div className="flex justify-end">
-            <Button variant="secondary" onClick={() => setAnnotTarget(null)}>关闭</Button>
-          </div>
-        }
-        fitViewport
-        width={720}
-      >
-        {annotTarget && (
-          <div className="space-y-3">
-            <Field label="采集方案">
-              <input readOnly value={`${annotTarget.id} · ${annotTarget.name}`} className={readonlyCls} />
-            </Field>
-            <PlanAnnotationDetails plan={annotTarget} />
-          </div>
-        )}
-      </Modal>
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
 
       <CreateTaskModal
         open={!!createTaskPlan}
@@ -540,6 +524,8 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
           refreshPlans()
         }}
       />
+
+      {ToastNode}
     </div>
   )
 }
@@ -644,7 +630,8 @@ function QcTab({ projectId, projectStatus }) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-gray-100 bg-white p-4">
+      <ListPageCard>
+      <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[200px] flex-1">
             <label className={QC_FILTER_LBL}>质检项名称</label>
@@ -675,9 +662,9 @@ function QcTab({ projectId, projectStatus }) {
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
         </div>
-      </div>
+      </ListPageFilter>
 
-      <div className="flex items-center justify-between">
+      <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">质检方案配置</h2>
         <div className="flex items-center gap-2">
           <ProjectMutateGate projectStatus={projectStatus}>
@@ -701,9 +688,10 @@ function QcTab({ projectId, projectStatus }) {
             导出
           </PermButton>
         </div>
-      </div>
+      </ListPageToolbar>
 
-      <Table columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
+      </ListPageCard>
 
       <Modal
         open={!!viewTarget}
@@ -768,7 +756,7 @@ function QcTab({ projectId, projectStatus }) {
 const SCHEME_SUB_TABS = [
   { key: 'collect',  label: '采集方案' },
   { key: 'qc',       label: '质检配置' },
-  { key: 'layout',   label: '标注布局' },
+  { key: 'layout',   label: '播放布局' },
 ]
 
 function SchemeTab({ projectId, projectStatus, onTasksChange }) {
@@ -888,7 +876,7 @@ function LayoutTab({ projectId, projectStatus }) {
 
   const openEdit = (row) => {
     setEditTarget(row)
-    setForm({ name: row.name ?? '', description: row.description ?? '' })
+    setForm({ name: row.name ?? '', description: (row.description ?? '').slice(0, 200) })
     setLayoutFileName('')
     setLayoutFileError('')
     setModalOpen(true)
@@ -989,43 +977,23 @@ function LayoutTab({ projectId, projectStatus }) {
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">布局列表</h2>
         <ProjectMutateGate projectStatus={projectStatus}>
-          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建布局</PermButton>
+          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
         </ProjectMutateGate>
       </div>
       <Table columns={columns} dataSource={displayLayouts} />
 
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setDeleteTarget(null)} />
-          <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
-            <div className="p-6">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <h2 className="text-base font-semibold text-red-600">删除布局配置</h2>
-              </div>
-              <p className="text-sm text-gray-500">
-                确认删除布局「<strong className="text-gray-800">{deleteTarget.name}</strong>」？此操作不可逆。
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={() => { setLayouts((l) => l.filter((it) => it.id !== deleteTarget.id)); setDeleteTarget(null) }}
-                className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
-              >
-                确认删除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        message="确定要删除这个布局配置吗？"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return
+          setLayouts((l) => l.filter((it) => it.id !== deleteTarget.id))
+          setDeleteTarget(null)
+        }}
+      />
 
-      <Modal
+      <Drawer
         open={modalOpen}
         title={editTarget ? '编辑播放布局' : '新建播放布局'}
         onCancel={closeModal}
@@ -1067,14 +1035,16 @@ function LayoutTab({ projectId, projectStatus }) {
             <label className="mb-1.5 block text-sm text-gray-600">布局描述</label>
             <textarea
               rows={3}
+              maxLength={200}
               placeholder="请输入布局描述（选填）"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 200) })}
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
+            <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/200</p>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   )
 }

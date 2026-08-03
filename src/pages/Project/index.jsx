@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
 import Table from '../../components/common/Table'
+import ListPageCard, { ListPageFilter, ListPageToolbar, ListPageBody } from '../../components/common/ListPageCard'
 import ListPaginator from '../../components/common/ListPaginator'
 import Modal from '../../components/common/Modal'
-import { Input, Select, TextArea, CreatorReadonlyField } from '../../components/common/FormField'
-import { IconPlus, IconSearch, IconGrid, IconList } from '../../components/common/Icons'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { Input, Select, TextArea } from '../../components/common/FormField'
+import { IconPlus, IconSearch, IconGrid, IconList, IconProject, IconClock, IconUser, IconId } from '../../components/common/Icons'
 import { projects as initialProjects } from '../../mock/projects'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { filterProjectsByDataScope } from '../../mock/permissions'
@@ -20,29 +23,38 @@ import {
   PROJECT_STATUS_FILTER_OPTIONS,
 } from '../../utils/projectStatus'
 
-const statusBadge = (status) => {
-  const s = getProjectStatusMeta(status)
-  return <Badge color={s.color} dot>{s.label}</Badge>
+function StatusSwitch({ enabled, disabled, onToggle }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={(e) => { e.stopPropagation(); onToggle() }}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+      } ${enabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+      aria-label={enabled ? '开启' : '关闭'}
+    >
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${enabled ? 'left-[18px]' : 'left-0.5'}`}
+      />
+    </button>
+  )
 }
 
-/* ── inline mini progress bar ── */
-function MiniProgress({ collected, target }) {
-  const p = target > 0 ? Math.min(Math.round((collected / target) * 100), 100) : 0
-  const done = p >= 100
-  return (
-    <div className="min-w-[112px]">
-      <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-        <span>{collected}/{target} 条</span>
-        <span className={done ? 'font-medium text-emerald-600' : 'text-gray-500'}>{p}%</span>
-      </div>
-      <div className="h-1.5 w-full rounded-full bg-gray-100">
-        <div
-          className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-blue-500'}`}
-          style={{ width: `${p}%` }}
-        />
-      </div>
-    </div>
-  )
+function ProjectStatusSwitch({ row, onClose, onOpen }) {
+  const status = normalizeProjectStatus(row.status)
+  if (status === 'archived') {
+    return <Badge color="gray">已归档</Badge>
+  }
+
+  const enabled = status === 'open'
+
+  const handleToggle = () => {
+    if (enabled) onClose(row)
+    else onOpen(row)
+  }
+
+  return <StatusSwitch enabled={enabled} onToggle={handleToggle} />
 }
 
 /* ── three-dot menu (card view) ── */
@@ -130,6 +142,99 @@ function CardMenuItem({ label, onClick, warn, danger }) {
   )
 }
 
+function CardCircleIcon({ children }) {
+  return (
+    <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+      {children}
+    </span>
+  )
+}
+
+const STATUS_CORNER_CLS = {
+  blue: 'bg-blue-50 text-blue-600',
+  orange: 'bg-amber-50 text-amber-600',
+  gray: 'bg-gray-100 text-gray-500',
+}
+
+function ProjectCard({
+  project,
+  onNavigate,
+  onViewDetail,
+  onEdit,
+  onClose,
+  onOpen,
+  onArchive,
+  onDeleteClick,
+}) {
+  const status = getProjectStatusMeta(project.status)
+  const cornerCls = STATUS_CORNER_CLS[status.color] ?? STATUS_CORNER_CLS.blue
+  const description = project.description?.trim() ? project.description : '-'
+
+  return (
+    <div
+      className="group relative cursor-pointer rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
+      onClick={() => onNavigate(project)}
+    >
+      <span className={`absolute right-0 top-0 z-10 rounded-bl-lg px-2.5 py-1 text-xs font-medium ${cornerCls}`}>
+        {status.label}
+      </span>
+
+      <div className="p-4">
+        {/* header */}
+        <div className="flex items-center gap-2.5 pr-12">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+            <IconProject width={18} height={18} />
+          </div>
+          <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 group-hover:text-blue-600">
+            {project.name}
+          </h3>
+        </div>
+
+        {/* body */}
+        <div className="mt-4 space-y-2.5 text-sm">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <span className="inline-flex items-center gap-1.5">
+              <CardCircleIcon><IconId /></CardCircleIcon>
+              <span className="text-gray-500">项目 id</span>
+              <span className="font-medium text-gray-800">{project.id}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-gray-500">任务数</span>
+              <span className="font-medium text-gray-800">{project.taskCount}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CardCircleIcon><IconUser /></CardCircleIcon>
+            <span className="text-gray-500">创建人</span>
+            <span className="font-medium text-gray-800">{project.creator}</span>
+          </div>
+          <p className="line-clamp-2 text-gray-600">
+            <span className="text-gray-500">项目描述：</span>
+            {description}
+          </p>
+        </div>
+
+        {/* footer */}
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+          <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+            <IconClock className="text-gray-400" />
+            {formatDateTime(project.createdAt)}
+          </span>
+          <CardMenu
+            project={project}
+            onViewDetail={() => onViewDetail(project)}
+            onEdit={() => onEdit(project)}
+            onClose={() => onClose(project)}
+            onOpen={() => onOpen(project)}
+            onArchive={() => onArchive(project)}
+            onDeleteClick={() => onDeleteClick(project)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── archive confirm modal ── */
 function ArchiveConfirmModal({ project, open, onCancel, onConfirm }) {
   if (!open || !project) return null
@@ -139,46 +244,6 @@ function ArchiveConfirmModal({ project, open, onCancel, onConfirm }) {
         确认归档项目「<strong className="text-gray-800">{project.name}</strong>」？
       </p>
     </Modal>
-  )
-}
-
-/* ── delete confirm modal ── */
-function DeleteConfirmModal({ project, open, onCancel, onConfirm }) {
-  if (!open || !project) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          {/* title */}
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <h2 className="text-base font-semibold text-red-600">删除数采项目</h2>
-          </div>
-          {/* body */}
-          <p className="text-sm text-gray-500 leading-relaxed">
-            确定删除项目「<strong className="text-gray-800">{project.name}</strong>」？此操作不可逆。
-          </p>
-        </div>
-        {/* footer */}
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button
-            onClick={onCancel}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            onClick={onConfirm}
-            className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-          >
-            确定删除
-          </button>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -200,6 +265,7 @@ function FormRow({ label, required, error, children }) {
 /* ── constants ── */
 const emptyForm = { name: '', description: '' }
 const emptyCreateForm = { name: '', description: '' }
+const DESCRIPTION_MAX = 500
 
 const STATUS_OPTIONS = PROJECT_STATUS_FILTER_OPTIONS.map(({ value, label }) => ({
   value,
@@ -218,37 +284,31 @@ function ViewDetailBtn({ onClick }) {
   )
 }
 
-function ProjectListActions({ row, onViewDetail, onEdit, onClose, onOpen, onArchive, onDelete }) {
+function ProjectListActions({ row, onViewDetail, onEdit, onArchive, onDelete }) {
   const status = normalizeProjectStatus(row.status)
+  const isArchived = status === 'archived'
 
   const linkCls = 'cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500'
   const warnCls = 'cursor-pointer px-1 py-0.5 text-xs text-amber-600 hover:text-amber-500'
-
-  if (status === 'archived') {
-    return (
-      <div className="flex flex-wrap items-center gap-1">
-        <ViewDetailBtn onClick={() => onViewDetail(row)} />
-        <PermAction
-          permission="collection.project.delete"
-          className="cursor-pointer px-1 py-0.5 text-xs text-red-500 hover:text-red-400"
-          onClick={() => onDelete(row)}
-        >
-          删除
-        </PermAction>
-      </div>
-    )
-  }
+  const dangerCls = 'cursor-pointer px-1 py-0.5 text-xs text-red-500 hover:text-red-400'
+  const disabledCls = 'px-1 py-0.5 text-xs text-gray-300 cursor-not-allowed select-none'
 
   return (
     <div className="flex flex-wrap items-center gap-1">
       <ViewDetailBtn onClick={() => onViewDetail(row)} />
-      <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onEdit(row)}>编辑</PermAction>
-      {status === 'open' ? (
-        <PermAction permission="collection.project.edit" className={warnCls} onClick={() => onClose(row)}>关闭</PermAction>
-      ) : (
-        <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onOpen(row)}>开启</PermAction>
+      {!isArchived && (
+        <PermAction permission="collection.project.edit" className={linkCls} onClick={() => onEdit(row)}>编辑</PermAction>
       )}
-      <PermAction permission="collection.project.archive" className={warnCls} onClick={() => onArchive(row)}>归档</PermAction>
+      {isArchived ? (
+        <span className={disabledCls}>归档</span>
+      ) : (
+        <PermAction permission="collection.project.archive" className={warnCls} onClick={() => onArchive(row)}>归档</PermAction>
+      )}
+      {isArchived ? (
+        <PermAction permission="collection.project.delete" className={dangerCls} onClick={() => onDelete(row)}>删除</PermAction>
+      ) : (
+        <span className={disabledCls}>删除</span>
+      )}
     </div>
   )
 }
@@ -311,7 +371,7 @@ export default function ProjectList() {
     () => `${view}:${JSON.stringify(filters)}`,
     [view, filters],
   )
-  const { page, setPage, pageItems: pagedFiltered } = usePagination(filtered, {
+  const { page, setPage, pageItems: pagedFiltered, pageSize, setPageSize } = usePagination(filtered, {
     pageSize: LIST_PAGE_SIZE,
     resetKey: paginationResetKey,
   })
@@ -397,12 +457,14 @@ export default function ProjectList() {
     { title: '创建人',   dataIndex: 'creator' },
     { title: '项目描述', dataIndex: 'description', render: (v) => <span className="block max-w-56 truncate text-gray-500" title={v}>{v}</span> },
     {
-      title: '采集进度', dataIndex: 'collected',
-      render: (v, row) => <MiniProgress collected={v} target={row.target} />,
+      title: '状态',
+      dataIndex: 'status',
+      render: (_, row) => (
+        <ProjectStatusSwitch row={row} onClose={handleCloseProject} onOpen={handleOpenProject} />
+      ),
     },
-    { title: '状态',     dataIndex: 'status',    render: (v) => statusBadge(v) },
     dtCol('创建时间', 'createdAt'),
-    dtCol('最后更新', 'updatedAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '操作', dataIndex: 'id',
       render: (_, row) => (
@@ -410,8 +472,6 @@ export default function ProjectList() {
           row={row}
           onViewDetail={goViewDetail}
           onEdit={openEdit}
-          onClose={handleCloseProject}
-          onOpen={handleOpenProject}
           onArchive={setArchiveTarget}
           onDelete={setDeleteTarget}
         />
@@ -421,8 +481,8 @@ export default function ProjectList() {
 
   return (
     <div className="space-y-4">
-      {/* ── 筛选栏 ── */}
-      <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <ListPageCard>
+        <ListPageFilter>
         {/* row 1：所有筛选项铺满一行 */}
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1 basis-28">
@@ -456,10 +516,9 @@ export default function ProjectList() {
           <Button onClick={resetFilters}>重置</Button>
           <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
         </div>
-      </div>
+        </ListPageFilter>
 
-      {/* ── 标题栏：项目列表 + 视图切换 + 新建 ── */}
-      <div className="flex items-center justify-between">
+        <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">项目列表</h2>
         <div className="flex items-center gap-3">
           <div className="flex overflow-hidden rounded-md border border-gray-300">
@@ -467,114 +526,60 @@ export default function ProjectList() {
               <button key={v} className={`flex h-8 w-9 cursor-pointer items-center justify-center ${view === v ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:text-blue-600'}`} onClick={() => setView(v)}>{icon}</button>
             ))}
           </div>
-          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={() => { setCreateForm(emptyCreateForm); setCreateErrors({}); setCreateOpen(true) }}>新建项目</PermButton>
+          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={() => { setCreateForm(emptyCreateForm); setCreateErrors({}); setCreateOpen(true) }}>新建</PermButton>
         </div>
-      </div>
+        </ListPageToolbar>
 
-      {/* ── content ── */}
       {view === 'card' ? (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <ListPageBody>
           <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {pagedFiltered.map((p) => {
-            const progress = p.target > 0 ? Math.min(Math.round((p.collected / p.target) * 100), 100) : 0
-            const done = progress >= 100
-            return (
-              <div key={p.id} onClick={() => navigate(`/collection/project/${p.id}`)}
-                className="group cursor-pointer rounded-lg border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-              >
-                {/* header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
-                      {p.name.slice(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate font-semibold text-gray-800 group-hover:text-blue-600">{p.name}</h3>
-                      <span className="text-xs text-gray-400">{p.id}</span>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1.5 pl-2">
-                    {statusBadge(p.status)}
-                    <CardMenu
-                      project={p}
-                      onViewDetail={() => goViewDetail(p)}
-                      onEdit={() => openEdit(p)}
-                      onClose={() => handleCloseProject(p)}
-                      onOpen={() => handleOpenProject(p)}
-                      onArchive={() => setArchiveTarget(p)}
-                      onDeleteClick={() => setDeleteTarget(p)}
-                    />
-                  </div>
-                </div>
-
-                {/* description */}
-                <p className="mt-3 line-clamp-2 h-10 text-sm leading-5 text-gray-500">{p.description}</p>
-
-                {/* tags */}
-                <div className="mt-3 flex items-center gap-2">
-                  <Badge color="cyan">任务 {p.taskCount}</Badge>
-                  <span className="ml-auto text-xs text-gray-400">创建人：{p.creator}</span>
-                </div>
-
-                {/* progress */}
-                <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">采集进度</span>
-                    <span className={`font-medium ${done ? 'text-emerald-600' : 'text-gray-600'}`}>{p.collected}/{p.target} 条 · {progress}%</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-gray-100">
-                    <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-
-                {/* footer */}
-                <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                  <span>创建：{formatDateTime(p.createdAt)}</span>
-                  <span>更新：{formatDateTime(p.updatedAt)}</span>
-                </div>
-              </div>
-            )
-            })}
+            {pagedFiltered.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                onNavigate={(row) => navigate(`/collection/project/${row.id}`)}
+                onViewDetail={goViewDetail}
+                onEdit={openEdit}
+                onClose={handleCloseProject}
+                onOpen={handleOpenProject}
+                onArchive={setArchiveTarget}
+                onDeleteClick={setDeleteTarget}
+              />
+            ))}
             {filtered.length === 0 && (
               <div className="col-span-full rounded-lg border border-gray-100 bg-white py-16 text-center text-gray-400">暂无符合条件的项目</div>
             )}
           </div>
           {filtered.length > 0 && (
-            <ListPaginator
-              total={filtered.length}
-              page={page}
-              pageSize={LIST_PAGE_SIZE}
-              onPageChange={setPage}
-            />
+              <ListPaginator
+                total={filtered.length}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
           )}
-        </div>
+        </ListPageBody>
       ) : (
         <Table
+          embedded
           columns={columns}
           dataSource={filtered}
           pageSize={LIST_PAGE_SIZE}
           pageResetKey={paginationResetKey}
         />
       )}
+      </ListPageCard>
 
-      {/* 新建弹窗 */}
-      <Modal
+      {/* 新建抽屉 */}
+      <Drawer
         open={createOpen}
-        title="新建项目"
+        title="新建采集项目"
         onCancel={() => { setCreateOpen(false); setCreateForm(emptyCreateForm); setCreateErrors({}) }}
         onOk={handleCreate}
         okText="创建"
       >
         <div className="space-y-4">
-          {/* 项目ID — 只读 */}
-          <FormRow label="项目ID" required>
-            <input
-              readOnly
-              value={nextProjectId}
-              className="h-8 w-full rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none cursor-default"
-            />
-          </FormRow>
-          {/* 项目名称 */}
           <FormRow label="项目名称" required error={createErrors.name}>
             <input
               placeholder="请输入项目名称"
@@ -585,20 +590,23 @@ export default function ProjectList() {
               }`}
             />
           </FormRow>
-          {/* 创建人 — 只读，随当前登录用户实时更新 */}
-          <CreatorReadonlyField />
-          {/* 项目描述 — 非必填 */}
           <FormRow label="项目描述">
-            <textarea
-              rows={3}
-              placeholder="请输入项目描述（选填）"
-              value={createForm.description}
-              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
+            <div>
+              <textarea
+                rows={5}
+                maxLength={DESCRIPTION_MAX}
+                placeholder="请输入项目描述（选填）"
+                value={createForm.description}
+                onChange={(e) => setCreateForm({ ...createForm, description: e.target.value.slice(0, DESCRIPTION_MAX) })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <p className="mt-1 text-right text-xs text-gray-400">
+                {createForm.description.length}/{DESCRIPTION_MAX}
+              </p>
+            </div>
           </FormRow>
         </div>
-      </Modal>
+      </Drawer>
 
       {/* 编辑弹窗 */}
       <Modal open={editOpen} title="编辑项目" onCancel={() => setEditOpen(false)} onOk={handleEdit} okText="保存">
@@ -607,7 +615,6 @@ export default function ProjectList() {
 
       {/* 删除二次确认 */}
       <DeleteConfirmModal
-        project={deleteTarget}
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
