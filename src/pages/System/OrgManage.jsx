@@ -154,6 +154,7 @@ export default function OrgManage() {
   }
 
   const columns = [
+    { title: '组织ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     {
       title: '组织名称',
       dataIndex: 'name',

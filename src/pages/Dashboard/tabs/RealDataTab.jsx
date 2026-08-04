@@ -203,7 +203,7 @@ function OngoingTaskSection({ projectId }) {
     const qtyTitle = activeTab === 'collection' ? '采集量 / 计划量' : '标注量 / 可标注量'
     return [
       {
-        title: '任务 ID / 名称',
+        title: '任务ID / 名称',
         key: 'task',
         render: (_, row) => <TaskNameCell id={row.taskId} name={row.name} />,
       },

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
-import Progress from '../../components/common/Progress'
 import { taskStatusColor, pct, toPeopleArray } from '../../mock/tasks'
 import { findLatestPendingEntry } from '../../mock/entries'
 import { useToast } from '../../components/common/Toast'
@@ -225,12 +224,21 @@ export default function TaskTable({
     openWorkbench(entry.id, mode)
   }
 
-  const progressCell = (done, total, color) => (
-    <div>
-      <Progress percent={pct(done, total)} color={color} />
-      <span className="text-xs text-gray-400">{done}/{total}</span>
-    </div>
-  )
+  const progressCell = (done, total, color) => {
+    const percent = pct(done, total)
+    const barColor = percent >= 100 ? 'bg-emerald-500' : color
+    return (
+      <div className="flex min-w-[7rem] items-center gap-2">
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-200">
+          <div
+            className={`h-full rounded-full ${barColor}`}
+            style={{ width: `${Math.min(percent, 100)}%` }}
+          />
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-gray-500">{done}/{total}</span>
+      </div>
+    )
+  }
 
   const renderActions = (row) => {
     const goView = () => navigate(`/collection/task/${row.id}`)

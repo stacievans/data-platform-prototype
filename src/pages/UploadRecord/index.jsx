@@ -33,7 +33,7 @@ function SdkGuide() {
       {open && (
         <div className="border-t border-gray-100 px-5 pb-5 pt-4">
           <p className="mb-4 text-sm leading-6 text-gray-500">
-            适用于离线数据或第三方设备数据的批量上传，上传时需指定对应的任务 ID（<code className="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-700">task_id</code>）。
+            适用于离线数据或第三方设备数据的批量上传，上传时需指定对应的任务ID（<code className="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-700">task_id</code>）。
           </p>
           <pre className="overflow-x-auto rounded-md bg-slate-900 p-4 text-xs leading-6 text-slate-200">
 {`pip install alphaloop-data-sdk

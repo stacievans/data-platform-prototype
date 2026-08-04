@@ -1,14 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
-import Badge from '../../components/common/Badge'
 import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar, ListPageBody } from '../../components/common/ListPageCard'
 import ListPaginator from '../../components/common/ListPaginator'
 import Modal from '../../components/common/Modal'
 import Drawer from '../../components/common/Drawer'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
-import { Input, Select, TextArea } from '../../components/common/FormField'
+import { Input, TextArea } from '../../components/common/FormField'
 import { IconPlus, IconSearch, IconGrid, IconList, IconProject, IconClock, IconUser, IconId } from '../../components/common/Icons'
 import { projects as initialProjects } from '../../mock/projects'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
@@ -20,7 +19,6 @@ import { useToast } from '../../components/common/Toast'
 import {
   getProjectStatusMeta,
   normalizeProjectStatus,
-  PROJECT_STATUS_FILTER_OPTIONS,
 } from '../../utils/projectStatus'
 
 function StatusSwitch({ enabled, disabled, onToggle }) {
@@ -44,7 +42,7 @@ function StatusSwitch({ enabled, disabled, onToggle }) {
 function ProjectStatusSwitch({ row, onClose, onOpen }) {
   const status = normalizeProjectStatus(row.status)
   if (status === 'archived') {
-    return <Badge color="gray">已归档</Badge>
+    return <StatusSwitch enabled={false} disabled onToggle={() => {}} />
   }
 
   const enabled = status === 'open'
@@ -156,6 +154,13 @@ const STATUS_CORNER_CLS = {
   gray: 'bg-gray-100 text-gray-500',
 }
 
+function projectCollectProgress(project) {
+  const collected = project.collected ?? 0
+  const target = project.target ?? 0
+  const percent = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0
+  return { collected, target, percent }
+}
+
 function ProjectCard({
   project,
   onNavigate,
@@ -169,6 +174,8 @@ function ProjectCard({
   const status = getProjectStatusMeta(project.status)
   const cornerCls = STATUS_CORNER_CLS[status.color] ?? STATUS_CORNER_CLS.blue
   const description = project.description?.trim() ? project.description : '-'
+  const { collected, target, percent } = projectCollectProgress(project)
+  const barColor = percent >= 100 ? 'bg-emerald-500' : 'bg-blue-500'
 
   return (
     <div
@@ -212,6 +219,19 @@ function ProjectCard({
             <span className="text-gray-500">项目描述：</span>
             {description}
           </p>
+
+          <div className="pt-1">
+            <div className="mb-1.5 flex items-center justify-between text-xs text-gray-500">
+              <span>采集进度</span>
+              <span className="tabular-nums">{collected}/{target} 条 · {percent}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className={`h-full rounded-full transition-all ${barColor}`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* footer */}
@@ -266,11 +286,6 @@ function FormRow({ label, required, error, children }) {
 const emptyForm = { name: '', description: '' }
 const emptyCreateForm = { name: '', description: '' }
 const DESCRIPTION_MAX = 500
-
-const STATUS_OPTIONS = PROJECT_STATUS_FILTER_OPTIONS.map(({ value, label }) => ({
-  value,
-  label: value === '' ? '全部状态' : label,
-}))
 
 function ViewDetailBtn({ onClick }) {
   return (
@@ -327,7 +342,6 @@ export default function ProjectList() {
   /* filter states */
   const [queryId,          setQueryId]          = useState('')
   const [queryName,        setQueryName]        = useState('')
-  const [queryStatus,      setQueryStatus]      = useState('')
   const [queryCreator,     setQueryCreator]     = useState('')
   const [queryDateFrom,    setQueryDateFrom]    = useState('')
   const [queryDateTo,      setQueryDateTo]      = useState('')
@@ -360,7 +374,6 @@ export default function ProjectList() {
   const filtered = useMemo(() => scopedProjects.filter((p) => {
     if (filters.id          && !p.id.toLowerCase().includes(filters.id.toLowerCase())) return false
     if (filters.name        && !p.name.includes(filters.name))                          return false
-    if (filters.status      && normalizeProjectStatus(p.status) !== filters.status)   return false
     if (filters.creator     && !p.creator.includes(filters.creator))                   return false
     if (filters.dateFrom    && p.createdAt < filters.dateFrom)                          return false
     if (filters.dateTo      && p.createdAt > filters.dateTo + ' 23:59')                return false
@@ -376,8 +389,8 @@ export default function ProjectList() {
     resetKey: paginationResetKey,
   })
 
-  const applyFilters = () => setFilters({ id: queryId, name: queryName, status: queryStatus, creator: queryCreator, dateFrom: queryDateFrom, dateTo: queryDateTo })
-  const resetFilters = () => { setQueryId(''); setQueryName(''); setQueryStatus(''); setQueryCreator(''); setQueryDateFrom(''); setQueryDateTo(''); setFilters({}) }
+  const applyFilters = () => setFilters({ id: queryId, name: queryName, creator: queryCreator, dateFrom: queryDateFrom, dateTo: queryDateTo })
+  const resetFilters = () => { setQueryId(''); setQueryName(''); setQueryCreator(''); setQueryDateFrom(''); setQueryDateTo(''); setFilters({}) }
 
   /* ── CRUD ── */
   const now = () => nowDateTime()
@@ -492,10 +505,6 @@ export default function ProjectList() {
           <div className="min-w-0 flex-1 basis-28">
             <label className="mb-1 block text-xs text-gray-500">项目名称</label>
             <Input placeholder="请输入" value={queryName} onChange={(e) => setQueryName(e.target.value)} />
-          </div>
-          <div className="min-w-0 flex-1 basis-28">
-            <label className="mb-1 block text-xs text-gray-500">项目状态</label>
-            <Select value={queryStatus} options={STATUS_OPTIONS} onChange={(e) => setQueryStatus(e.target.value)} />
           </div>
           <div className="min-w-0 flex-1 basis-28">
             <label className="mb-1 block text-xs text-gray-500">创建人</label>

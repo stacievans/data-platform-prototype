@@ -1,8 +1,8 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
@@ -27,6 +27,9 @@ import {
   CONVERSION_STATUSES,
   CONVERTED_DATASET_TYPES,
 } from '../../mock/datasetConversions'
+import ConversionRangeModal from './ConversionRangeModal'
+import ConvertDatasetDrawer from './ConvertDatasetDrawer'
+import CliBatchDownloadModal from './CliBatchDownloadModal'
 import { IconSearch } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { useCurrentNickname } from '../../context/AuthContext'
@@ -140,9 +143,9 @@ function OverviewTab({ dataset }) {
   )
 
   const taskColumns = [
-    { title: '项目 ID', dataIndex: 'projectId', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '项目ID', dataIndex: 'projectId', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '项目名称', dataIndex: 'projectName' },
-    { title: '任务 ID', dataIndex: 'taskId', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    { title: '任务ID', dataIndex: 'taskId', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '任务名称', dataIndex: 'taskName' },
     { title: '纳入条目数', dataIndex: 'count', render: (v) => v.toLocaleString() },
   ]
@@ -177,38 +180,6 @@ function OverviewTab({ dataset }) {
   )
 }
 
-function RemoveDatasetEntryModal({ entry, open, onCancel, onConfirm }) {
-  if (!entry) return null
-
-  return (
-    <Modal
-      open={open}
-      title="删除条目"
-      onCancel={onCancel}
-      width={480}
-      footer={
-        <>
-          <Button onClick={onCancel}>取消</Button>
-          <Button
-            variant="primary"
-            className="border-red-500 bg-red-500 hover:border-red-600 hover:bg-red-600"
-            onClick={onConfirm}
-          >
-            确定删除
-          </Button>
-        </>
-      }
-    >
-      <p className="text-sm leading-relaxed text-gray-600">
-        仅从本数据集移除该条目，不影响采集项目中的原始数据。
-      </p>
-      <p className="mt-3 text-sm text-gray-500">
-        条目 ID：<span className="font-medium text-gray-800">{entry.id}</span>
-      </p>
-    </Modal>
-  )
-}
-
 function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   const { show, ToastNode } = useToast()
   const operator = useCurrentNickname()
@@ -230,6 +201,19 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   const [qFormat, setQFormat] = useState('全部')
   const [filters, setFilters] = useState({})
   const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [convertRangeType, setConvertRangeType] = useState(null)
+  const [convertFlow, setConvertFlow] = useState(null)
+  const [batchDownloadOpen, setBatchDownloadOpen] = useState(false)
+
+  const selectedEntries = useMemo(
+    () => allEntries.filter((e) => selectedIds.has(e.id)),
+    [allEntries, selectedIds],
+  )
+
+  const selectedCount = useMemo(
+    () => allEntries.filter((e) => selectedIds.has(e.id)).length,
+    [allEntries, selectedIds],
+  )
 
   const filtered = useMemo(() => {
     const { project, task, format } = filters
@@ -271,16 +255,31 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     setFilters({})
   }
 
-  const runBatchConvert = (taskType) => {
-    const ids = [...selectedIds]
-    if (!ids.length) return
-    onConversionStart({
-      taskType,
-      operator,
-      entryCount: ids.length,
+  const openConvertRange = (taskType) => {
+    setConvertRangeType(taskType)
+  }
+
+  const handleRangeSelect = (scope) => {
+    const entryCount = scope === 'selected' ? selectedCount : allEntries.length
+    setConvertFlow({
+      taskType: convertRangeType,
+      scope,
+      entryCount,
     })
-    show(`已提交${taskType}任务（${ids.length} 条）`)
-    setSelectedIds(new Set())
+    setConvertRangeType(null)
+  }
+
+  const handleConvertConfirm = () => {
+    if (!convertFlow) return
+    onConversionStart({
+      taskType: convertFlow.taskType,
+      operator,
+      entryCount: convertFlow.entryCount,
+    })
+    if (convertFlow.scope === 'selected') {
+      setSelectedIds(new Set())
+    }
+    setConvertFlow(null)
   }
 
   const confirmRemoveEntry = () => {
@@ -317,10 +316,10 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
         />
       ),
     },
-    { title: '条目 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '条目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '所属项目', dataIndex: 'projectName' },
     { title: '所属任务', dataIndex: 'taskName' },
-    { title: '文件 ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs">{v ?? row.id.replace('E-', 'F-')}</span> },
+    { title: '文件ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs">{v ?? row.id.replace('E-', 'F-')}</span> },
     { title: '文件名称', dataIndex: 'displayName', render: (v) => <span className="font-mono text-xs">{v}</span> },
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
@@ -350,8 +349,8 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
           >
             播放
           </Button>
-          <Button variant="link" size="sm" onClick={() => show('已加入下载队列')}>下载</Button>
-          <Button variant="link" size="sm" onClick={() => show('导出任务已提交')}>导出</Button>
+          <Button variant="link" size="sm">下载</Button>
+          <Button variant="link" size="sm">导出</Button>
           <PermButton
             permission="dataset.self.update"
             mode="disable"
@@ -369,8 +368,26 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   return (
     <div className="space-y-3">
       {ToastNode}
-      <RemoveDatasetEntryModal
-        entry={deleteTarget}
+      <ConversionRangeModal
+        open={!!convertRangeType}
+        selectedCount={selectedCount}
+        totalCount={allEntries.length}
+        onCancel={() => setConvertRangeType(null)}
+        onSelect={handleRangeSelect}
+      />
+      <ConvertDatasetDrawer
+        open={!!convertFlow}
+        taskType={convertFlow?.taskType}
+        datasetId={dataset.id}
+        onCancel={() => setConvertFlow(null)}
+        onConfirm={handleConvertConfirm}
+      />
+      <CliBatchDownloadModal
+        open={batchDownloadOpen}
+        selectedEntries={selectedEntries}
+        onClose={() => setBatchDownloadOpen(false)}
+      />
+      <DeleteConfirmModal
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmRemoveEntry}
@@ -402,9 +419,9 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
       <ListPageToolbar>
         <h3 className="text-sm font-semibold text-gray-800">条目列表</h3>
         <div className="flex flex-wrap gap-2">
-          <Button disabled={!hasSelection} onClick={() => runBatchConvert('转图片')}>转图片</Button>
-          <Button disabled={!hasSelection} onClick={() => runBatchConvert('转视频')}>转视频</Button>
-          <Button disabled={!hasSelection} onClick={() => show('已加入下载队列')}>批量下载</Button>
+          <Button onClick={() => openConvertRange('转图片')}>转图片</Button>
+          <Button onClick={() => openConvertRange('转视频')}>转视频</Button>
+          <Button disabled={!hasSelection} onClick={() => setBatchDownloadOpen(true)}>批量下载</Button>
         </div>
       </ListPageToolbar>
 
@@ -414,7 +431,7 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   )
 }
 
-function ConversionsTab({ jobs }) {
+function ConversionsTab({ jobs, convertedDatasets, onGoToConvertedDataset }) {
   const [qId, setQId] = useState('')
   const [qType, setQType] = useState('全部')
   const [qStatus, setQStatus] = useState('全部')
@@ -432,9 +449,31 @@ function ConversionsTab({ jobs }) {
 
   const pageResetKey = useMemo(() => JSON.stringify(filters), [filters])
 
+  const findConvertedDataset = (job) =>
+    convertedDatasets.find((d) => d.conversionJobId === job.id || d.name === job.targetDatasetName)
+
   const columns = [
-    { title: '转换任务 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
-    { title: '目标数据集', dataIndex: 'targetDatasetName', wrap: true },
+    { title: '转换任务ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    {
+      title: '目标数据集',
+      dataIndex: 'targetDatasetName',
+      wrap: true,
+      render: (v, row) => {
+        const converted = findConvertedDataset(row)
+        if (!converted) {
+          return <span className="text-gray-700">{v}</span>
+        }
+        return (
+          <button
+            type="button"
+            onClick={() => onGoToConvertedDataset?.(converted.id)}
+            className="cursor-pointer text-left text-sm font-medium text-blue-600 hover:text-blue-500"
+          >
+            {v}
+          </button>
+        )
+      },
+    },
     { title: '任务类型', dataIndex: 'taskType' },
     {
       title: '任务进度',
@@ -462,7 +501,7 @@ function ConversionsTab({ jobs }) {
         onSearch={() => setFilters({ id: qId.trim(), type: qType, status: qStatus })}
       >
         <div className={FILTER_FIELD}>
-          <label className={LBL}>任务 ID</label>
+          <label className={LBL}>任务ID</label>
           <input value={qId} onChange={(e) => setQId(e.target.value)} placeholder="请输入任务ID" className={INPUT_CLS} />
         </div>
         <div className={FILTER_FIELD}>
@@ -481,7 +520,7 @@ function ConversionsTab({ jobs }) {
       </ListPageFilter>
 
       <ListPageToolbar first>
-        <h3 className="text-sm font-semibold text-gray-800">记录列表</h3>
+        <h3 className="text-sm font-semibold text-gray-800">转换任务列表</h3>
         <span />
       </ListPageToolbar>
 
@@ -490,11 +529,21 @@ function ConversionsTab({ jobs }) {
   )
 }
 
-function ConvertedDatasetsTab({ records }) {
+function ConvertedDatasetsTab({ records, focusId, onFocusConsumed }) {
   const [qId, setQId] = useState('')
   const [qName, setQName] = useState('')
   const [qType, setQType] = useState('全部')
   const [filters, setFilters] = useState({})
+
+  useEffect(() => {
+    if (!focusId) return
+    const record = records.find((r) => r.id === focusId)
+    if (record) {
+      setQName(record.name)
+      setFilters({ name: record.name.trim() })
+    }
+    onFocusConsumed?.()
+  }, [focusId, records, onFocusConsumed])
 
   const filtered = useMemo(() => {
     const { id, name, type } = filters
@@ -509,7 +558,7 @@ function ConvertedDatasetsTab({ records }) {
   const pageResetKey = useMemo(() => JSON.stringify(filters), [filters])
 
   const columns = [
-    { title: '转换数据集 ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '转换数据集ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '数据集名称', dataIndex: 'name', wrap: true },
     { title: '数据集类型', dataIndex: 'type' },
     { title: '文件数量', dataIndex: 'fileCount', render: (v) => v.toLocaleString() },
@@ -525,7 +574,7 @@ function ConvertedDatasetsTab({ records }) {
         onSearch={() => setFilters({ id: qId.trim(), name: qName.trim(), type: qType })}
       >
         <div className={FILTER_FIELD}>
-          <label className={LBL}>转换数据集 ID</label>
+          <label className={LBL}>转换数据集ID</label>
           <input value={qId} onChange={(e) => setQId(e.target.value)} placeholder="请输入数据集ID" className={INPUT_CLS} />
         </div>
         <div className={FILTER_FIELD}>
@@ -557,6 +606,7 @@ export default function SelfDatasetDetail() {
   const [dataset, setDataset] = useState(() => getDatasetById(id))
   const [tab, setTab] = useState('overview')
   const [convTick, setConvTick] = useState(0)
+  const [convertedFocusId, setConvertedFocusId] = useState(null)
 
   const refreshConversions = useCallback(() => setConvTick((t) => t + 1), [])
 
@@ -592,6 +642,11 @@ export default function SelfDatasetDetail() {
     [dataset],
   )
 
+  const handleGoToConvertedDataset = useCallback((convertedId) => {
+    setConvertedFocusId(convertedId)
+    setTab('converted')
+  }, [])
+
   const handleConversionStart = useCallback(({ taskType, operator, entryCount }) => {
     if (!dataset) return
     const job = createConversionJob({
@@ -620,7 +675,7 @@ export default function SelfDatasetDetail() {
   }
 
   const metaItems = [
-    ['数据集 ID', dataset.id],
+    ['真机数据集ID', dataset.id],
     ['关联项目数', stats.projectCount],
     ['关联任务数', stats.taskCount],
     ['条目数量', stats.entryCount.toLocaleString()],
@@ -666,12 +721,20 @@ export default function SelfDatasetDetail() {
       )}
       {tab === 'conversions' && (
         <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <ConversionsTab jobs={conversionJobs} />
+          <ConversionsTab
+            jobs={conversionJobs}
+            convertedDatasets={convertedDatasets}
+            onGoToConvertedDataset={handleGoToConvertedDataset}
+          />
         </div>
       )}
       {tab === 'converted' && (
         <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <ConvertedDatasetsTab records={convertedDatasets} />
+          <ConvertedDatasetsTab
+            records={convertedDatasets}
+            focusId={convertedFocusId}
+            onFocusConsumed={() => setConvertedFocusId(null)}
+          />
         </div>
       )}
     </div>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 import TreeTransfer from '../../components/common/TreeTransfer'
-import { CreatorReadonlyField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { projects } from '../../mock/projects'
 import { tasks } from '../../mock/tasks'
@@ -134,20 +133,17 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
     }`
 
   return (
-    <Modal
+    <Drawer
       open={open}
       title="新建数据集"
+      width="min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))"
       onCancel={() => onClose(null)}
       onOk={handleCreate}
-      okText="创建"
-      width={920}
-      fitViewport
     >
       <div className="space-y-6 pr-1">
         <section>
           <SectionTitle>基本信息</SectionTitle>
           <div className="space-y-4">
-            <CreatorReadonlyField />
             <FormRow label="数据集名称" required error={errors.name}>
               <input
                 placeholder="请输入数据集名称"
@@ -175,7 +171,7 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 纳入任务<span className="text-red-500">*</span>
               </label>
-              <p className="mb-2 text-xs text-gray-400">可勾选多个采集项目，仅纳入验收通过的数据</p>
+              <p className="mb-2 text-xs text-gray-400">可勾选多个采集项目，仅纳入合格数据（质检、标注、验收均通过）</p>
               <TreeTransfer
                 key={open ? 'open' : 'closed'}
                 projects={projects}
@@ -206,7 +202,7 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
               </div>
               {errors.formats && <p className="mt-1 text-xs text-red-500">请至少选择一种数据格式</p>}
               <p className="mt-2 text-xs text-gray-400">
-                创建后自动同步：符合条件的新增验收通过数据自动纳入，平台删除的数据自动移除
+                创建后自动同步：符合条件的新增合格数据自动纳入，平台删除的数据自动移除
               </p>
             </div>
           </div>
@@ -230,6 +226,6 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
           </div>
         </section>
       </div>
-    </Modal>
+    </Drawer>
   )
 }

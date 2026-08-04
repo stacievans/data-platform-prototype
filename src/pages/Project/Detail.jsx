@@ -359,7 +359,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   }
 
   const columns = [
-    { title: '方案ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '方案ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '方案名称', dataIndex: 'name' },
     {
       title: '设备类型',

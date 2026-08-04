@@ -353,7 +353,7 @@ export default function CreateSamplingBatchModal({
           <CheckboxListSearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="模糊查找任务名称或 ID"
+            placeholder="模糊查找任务名称或ID"
             className="ml-auto w-56"
           />
           <span className="text-xs text-gray-400">

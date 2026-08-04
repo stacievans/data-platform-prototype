@@ -123,7 +123,7 @@ export default function RoleManage() {
   }
 
   const columns = [
-    { title: '角色ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '角色ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '角色名称', dataIndex: 'name', render: (v) => <span className="font-medium">{v}</span> },
     { title: '描述', dataIndex: 'description', render: (v) => <span className="text-gray-500 max-w-xs truncate block" title={v}>{v}</span> },
     { title: '权限数', dataIndex: 'moduleCount' },

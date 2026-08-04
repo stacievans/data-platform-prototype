@@ -389,11 +389,11 @@ export default function SamplingPanel({
         <ListPageFilter>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1 basis-0">
-            <label className={LBL}>批次 ID</label>
+            <label className={LBL}>批次ID</label>
             <input
               value={qId}
               onChange={(e) => setQId(e.target.value)}
-              placeholder="请输入批次 ID"
+              placeholder="请输入批次ID"
               className={INPUT_CLS}
             />
           </div>

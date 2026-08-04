@@ -605,7 +605,7 @@ export default function EntryDataTable({
         />
       ),
     },
-    { title: '条目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-blue-600">{v}</span> },
+    { title: '条目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     ...(showScopeColumns ? [
       {
         title: '所属项目名称',

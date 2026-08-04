@@ -724,7 +724,7 @@ export default function UserListPanel({
 
   const columns = [
 
-    { title: '用户 ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-blue-600">{v ?? '—'}</span> },
+    { title: '用户ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-gray-700">{v ?? '—'}</span> },
 
     { title: '用户名', dataIndex: 'username', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
 

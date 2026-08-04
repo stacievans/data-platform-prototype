@@ -123,7 +123,7 @@ export default function SelfDataset() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    { title: '真机数据集ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     {
       title: '数据集名称',
       dataIndex: 'name',
@@ -131,7 +131,7 @@ export default function SelfDataset() {
         <button
           type="button"
           onClick={() => navigate(`/dataset/self/${row.id}`)}
-          className="cursor-pointer text-sm font-semibold text-blue-600 hover:text-blue-500"
+          className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
         >
           {v}
         </button>
@@ -214,7 +214,7 @@ export default function SelfDataset() {
             ))}
           </div>
           <PermButton permission="dataset.self.create" variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
-            新建数据集
+            新建
           </PermButton>
         </div>
         </ListPageToolbar>

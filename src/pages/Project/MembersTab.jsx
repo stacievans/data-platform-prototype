@@ -439,7 +439,7 @@ function TaskCheckboxList({
   tasks,
   selectedIds,
   onChange,
-  searchPlaceholder = '搜索任务名称或 ID',
+  searchPlaceholder = '搜索任务名称或ID',
 }) {
   const [q, setQ] = useState('')
 
@@ -1012,7 +1012,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
   const runAssignmentCheck = () => {
     if (incompleteTasks.length === 0) {
-      showToast('任务已全部完成分配！')
+      showToast('任务已全部完成分配！', { placement: 'top', variant: 'success' })
     } else {
       setMatrixOpen(true)
     }
