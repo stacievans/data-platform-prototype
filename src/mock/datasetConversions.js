@@ -65,6 +65,34 @@ export function getConvertedDatasetsByDatasetId(datasetId) {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
+export function getConvertedDatasetById(id) {
+  return runtimeConverted.find((d) => d.id === id) ?? null
+}
+
+export function getConversionJobById(id) {
+  return runtimeJobs.find((j) => j.id === id) ?? null
+}
+
+const fileCache = new Map()
+
+export function getConvertedDatasetFiles(convertedId) {
+  if (fileCache.has(convertedId)) return fileCache.get(convertedId)
+  const record = getConvertedDatasetById(convertedId)
+  if (!record) return []
+  const isVideo = record.type === '视频'
+  const ext = isVideo ? 'mp4' : 'jpg'
+  const prefix = isVideo ? 'clip' : 'frame'
+  const files = Array.from({ length: record.fileCount }, (_, i) => ({
+    id: `${convertedId}-F${String(i + 1).padStart(4, '0')}`,
+    name: `${prefix}_${String(i + 1).padStart(4, '0')}.${ext}`,
+    size: isVideo ? `${(80 + (i % 40)).toFixed(1)} MB` : `${(120 + (i % 80)).toFixed(0)} KB`,
+    type: record.type,
+    createdAt: record.createdAt,
+  }))
+  fileCache.set(convertedId, files)
+  return files
+}
+
 function nextConversionJobId() {
   const nums = runtimeJobs.map((j) => parseInt(j.id.replace('CJ-', ''), 10) || 0)
   return `CJ-${String(Math.max(0, ...nums, 2000) + 1).padStart(4, '0')}`

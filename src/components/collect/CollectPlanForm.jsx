@@ -779,7 +779,7 @@ export function CollectPlanFormFields({
             <textarea
               rows={3}
               maxLength={500}
-              placeholder="描述场景初始状态（0/500）"
+              placeholder="描述场景初始状态"
               value={form.initialScene}
               onChange={(e) => onChange({ initialScene: e.target.value.slice(0, 500) })}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"

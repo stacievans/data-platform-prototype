@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台** · 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**CLI 批量下载**）· **标签管理** · 采集方案 **三模块表单（Drawer）** · 设备管理 · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理** · **`DeleteConfirmModal` 统一删除确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台** · 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块表单（Drawer）** · 设备管理 · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；**备注统一为描述**；共享 `DescriptionField` / `PasswordInput`）· **`DeleteConfirmModal` 统一删除确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -804,8 +804,15 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 |---|---|
 | 数据概览 | **各项目纳入条目** 表格（项目ID/任务ID 等 ID 列黑色不可点）；**来源项目分布**与**数据格式分布**横向堆叠占比条 |
 | 数据条目 | 标题「**条目列表**」；工具栏 **转图片 / 转视频 / 批量下载**（转图/转视频 **无需勾选**；批量下载需勾选）；**转图片/转视频流程**：`ConversionRangeModal`（已选/全部条目）→ `ConvertDatasetDrawer`（转图片含抽帧间隔；目标数据集新建/已有；相机路径列表）；**批量下载**：`CliBatchDownloadModal`（安装/登录/下载三段 CLI + macOS·Linux / Windows 切换 + 复制全部命令）；行内播放/**下载/导出无 Toast**、删除 **`DeleteConfirmModal`**；条目ID 黑色不可点 |
-| 转换记录 | 标题「**转换任务列表**」；列：**转换任务ID**（黑色不可点）、**目标数据集**（蓝色可点击 → 跳转「转换数据集」Tab 并按名称筛选，仅已完成任务）、任务类型、进度、操作人、状态、操作时间；筛选：任务ID、任务类型、任务状态 |
-| 转换数据集 | 标题「**数据集列表**」；列：**转换数据集ID**（黑色不可点）、数据集名称、类型、文件数量等；筛选：转换数据集ID、名称、类型；mock 约 2.5s 后自动完成转换任务 |
+| 转换记录 | 标题「**转换任务列表**」；列：**转换任务ID**（黑色不可点）、**目标数据集**（蓝色可点击 → 跳转 **转换数据集详情页** `/dataset/self/:datasetId/converted/:convertedId`，仅已完成任务）、任务类型、进度、操作人、状态、操作时间；筛选：任务ID、任务类型、任务状态 |
+| 转换数据集 | 标题「**数据集列表**」；列：**转换数据集ID**（黑色不可点）、数据集名称（蓝色可点击 → 同上详情页）、类型、文件数量等；筛选：转换数据集ID、名称、类型；mock 约 2.5s 后自动完成转换任务 |
+
+#### 转换数据集详情 `/dataset/self/:datasetId/converted/:convertedId`（`ConvertedDatasetDetail.jsx`）
+
+- **面包屑**：数据集管理 / 真机数据集 / 数据集详情 / 转换数据集详情
+- **页头**：转换数据集名称 + 元信息（转换数据集ID、类型、文件数量、创建人、创建时间）
+- **数据集文件列表**：文件ID、文件名称、文件大小、文件类型（图片/视频 Badge）、创建时间；10 条/页
+- **运行时 API**：`getConvertedDatasetById`、`getConvertedDatasetFiles`（`datasetConversions.js`；按条目数 mock 生成文件列表）
 
 **转换配置 Drawer**（`ConvertDatasetDrawer.jsx`，转图片/转视频共用）：
 - **转图片**：抽帧间隔（纯数字输入框 + 「帧」后缀，**无 ± 步进按钮**，默认 `0`）
@@ -839,21 +846,24 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ---
 
 ### 标签管理 `/tag`
-页面标题「标签管理」，**三个一级 Tab**（蓝色下划线，样式对齐项目详情采标方案二级 Tab）：**采集标签**、**设备标签**、**审核模板**。URL 支持 `?tab=audit` / `?tab=device` 直达对应 Tab；路由亦支持 `/tag/collect`、`/tag/device`、`/tag/audit` 等形式。
 
-> **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示；审核模板列表 **模板ID** 为普通黑色（非加粗）。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
+**布局**：一级 Tab 栏（采集标签 / 设备标签 / 审核模板）与下方列表区为 **两张独立白卡片**（`space-y-4` 间距），对齐设备管理页模式；**无页面级 h2 大标题**，仅保留面包屑。URL 支持 `/tag/collect`、`/tag/device`、`/tag/audit` 及 `?sub=` 二级 Tab；历史 `?tab=` 会自动迁移至路径形式。
+
+> **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示。**任务绑定校验**：采集标签（任务用途/采集方式/原子技能）、设备标签（本体/末端）、场景标签若已被采集任务引用，则 **编辑/删除置灰**，Tooltip「该标签已绑定任务，无法编辑或删除」（`tasks.js` 绑定 helper + `TagTableActions.jsx`）。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
 
 **运行时 store**（`tags.js`）：各 Tab 通过 getter/setter 读写会话内状态，刷新页面恢复 seed。下游消费方包括 `CollectPlanForm`（场景树、采集方式、任务用途、**整体标签模板**）、`CreateTaskModal`、`plans.js` 等。
 
 #### 审核模板 Tab（`AuditTemplateListPanel` + 详情页）
 
-- **列表**：模板ID（黑色）、模板名称、关联任务数、描述、创建时间、更新时间；筛选：**模板名称**（点「查询」生效；**无创建人筛选项**）
-- **操作**：复制（操作列最左侧图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、**详情**、编辑、删除（`taskCount > 0` 时 Toast 不可删；否则二次确认）
+- **列表**：模板ID（黑色）、模板名称（加粗）、关联任务数、描述、**创建人**、创建时间、**更新时间**；筛选：**模板名称**（点「查询」生效；**无创建人筛选项**）
+- **操作**：**创建副本**（操作列最左侧复制图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、**详情**、编辑、删除
+- **权限**：**仅创建人**可编辑/删除；非创建人操作置灰，Tooltip「仅创建人可编辑或删除」；`taskCount > 0` 时删除 Toast 不可删
 - **新建/编辑模板**：`AuditTemplateModal`（名称、描述；**无创建人字段**；后台新建仍写入 `creator`）
 - **模板详情** `/tag/audit-template/:templateId`（`AuditTemplateDetail` + `AuditReviewTagPanel`）：
-  - 顶部卡片：模板名称、描述、关联任务数、创建人（**无「返回模板列表」按钮**）
-  - 标签树列表：一级分组 + 二级叶子；列含 **标签名称**（加粗）、**标签值**、**描述**、**应用范围**（全局/通过/驳回）、创建/更新时间；筛选：标签名称、标签值、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
-  - 新建/编辑标签组：`AuditReviewTagModal`（一级名称、描述、**应用范围**、二级标签列表含 **标签值**）；**随时可删改**，无「已使用」锁定
+  - 顶部卡片：模板名称、描述、关联任务数、创建人（**无「返回模板列表」按钮**）；标签面板 **无额外外层包裹 Card**
+  - 标签树列表：一级分组 + 二级叶子；列含 **标签名称**（加粗）、**标签值**、**描述**、**应用范围**（全局/通过/驳回）、**创建人**、创建/更新时间；筛选：标签名称、标签值、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
+  - 新建/编辑标签组：`AuditReviewTagModal`（**Drawer**）— 标签名称*、标签值*、应用范围*、描述（0/500）、**子标签**（扁平名称/值行，最多 2 级，默认空 children）；编辑模式 Drawer 底部左侧提示「该操作会影响相关采集条目的标注标签」
+  - **删除**：**仅创建人**可删；非创建人置灰「仅创建人可删除」；已绑定任务时置灰「该标签已绑定任务，无法编辑或删除」
   - **分页** 10 条/页
 
 **Mock 初始模板**（`auditTemplateSeed`）：标准标注模板 ATM-001、试采集专用 ATM-002、工业场景 ATM-003
@@ -877,15 +887,16 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### 平铺标签 Tab 共用交互（`FlatTagPanel` + `FlatTagModal`）
 
 - **筛选**：标签名称、**标签值**（点「查询」生效）
-- **列表字段**：标签名称（**加粗**）、**标签值**、描述、创建时间、最后更新、操作（**无创建人列**）
-- **新建/编辑弹窗**：标签名称（必填）、**标签值**（必填）、描述（选填）；**无创建人字段**（后台新建写入 `creator`）
-- **删除**：Modal 二次确认
+- **列表字段**：标签名称（**加粗**）、**标签值**、描述、**创建人**、创建时间、**更新时间**、操作
+- **新建/编辑弹窗**：标签名称（必填）、**标签值**（必填）、描述（选填，0/500）；**无创建人字段**（后台新建写入 `creator`）
+- **编辑/删除**：若标签已被任务绑定 → 置灰 + Tooltip「该标签已绑定任务，无法编辑或删除」；否则删除走 `DeleteConfirmModal`
 - **分页**：10 条/页
 
 #### 场景标签 Tab（`SceneTypePanel`）
 
 - **筛选**：标签名称、**标签值**（点「查询」生效）
-- **列表字段**：标签名称（加粗）、**标签值**、描述、创建时间、最后更新、操作（树形缩进展示层级）
+- **列表字段**：标签名称（加粗）、**标签值**、描述、**创建人**、创建时间、**更新时间**、操作（树形缩进展示层级）
+- **编辑/删除**：场景节点被任务绑定时同样置灰（`isSceneTypeBoundToTask`）
 
 > **采集方案标注配置**：由方案步骤在表单 **模块三：标注配置** 内配置；**列表已无「标注配置」操作按钮**。方案 **查看 Drawer** 内可只读浏览完整表单（含标注配置区块）。方案表单中的 **整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
 
@@ -966,15 +977,16 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **状态列交互**：列表 **Toggle 开关** 切换启用/停用（需 `system.user.edit`；**不可切换当前登录用户本人**）；与组织管理、角色管理开关样式一致
 
-**新建用户**（`CreateInviteUserModal`，`variant="global"` 时）：
-- 双 Tab：**新建用户** / **邀请用户**
-- **新建用户**：用户名（必填，组织内唯一）、密码、所属组织（只读）、角色（多选，排除组织管理员/超级管理员）、手机号/邮箱（选填）、备注；默认 `loginMethod: '账号密码'`
-- **邀请用户**：从其他组织选已有用户（可搜索），迁入当前组织并分配角色；原组织信息只读展示
+**新建用户**（`CreateInviteUserModal`，右侧 **Drawer**；`variant="global"` 时）：
+- 双 Tab：**新建用户** / **邀请用户**；底部 **取消 / 确定**
+- **新建用户**（字段顺序）：用户名（必填，组织内唯一）→ 密码（`PasswordInput`，右侧 **睁眼/闭眼** 切换可见性）→ 所属组织（只读，当前登录用户组织）→ 角色（多选 pill，排除组织管理员/超级管理员）→ 手机号/邮箱（选填）→ **描述**（`DescriptionField`，输入框外右下角 **`n/500`**）；默认 `loginMethod: '账号密码'`
+- **邀请用户**（字段顺序）：用户名（必填，`SearchableUserSelect` 可搜索下拉；**选项与选中后仅显示 username**，不含昵称/公司；仍可按昵称/UID 搜索）→ **所属组织**（只读，选择用户后反显原组织，如「机器人公司」「华东采集中心」）→ 角色（多选）→ **手机号** / **邮箱**（只读，选择用户后反显 mock 数据）→ **描述**（`DescriptionField`）
+- **邀请候选**：`inviteCandidates` = 其他组织且 `orgId` 非空的用户（默认组织「智平方」ORG-002 下可见 **chenwei** U-014、**xuyan** U-015 等跨组织账号）
 
 **编辑弹窗**（标题「**编辑**」）：
-- **用户名**（只读）、所属组织（只读）、角色、手机号、邮箱、**描述**（原 remark；**无用户昵称、无状态字段** — 状态仅在列表 Toggle 切换）
+- **用户名**（只读）、所属组织（只读）、角色、手机号、邮箱、**描述**（`DescriptionField`；数据字段仍为 `remark`；**无用户昵称、无状态字段** — 状态仅在列表 Toggle 切换）
 
-**组织详情新建**（`variant="org"`）：沿用旧表单 — 账号、密码、用户昵称、所属组织只读、角色固定组织管理员、手机号/邮箱、状态、备注
+**组织详情新建**（`variant="org"`）：沿用专用表单 — 账号、密码（`PasswordInput`）、用户昵称、所属组织只读、角色固定组织管理员、手机号/邮箱、状态、**描述**（`DescriptionField`）
 
 **操作**：编辑、删除（不可删当前登录用户；二次确认）
 
@@ -984,13 +996,13 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **筛选区**（点击「查询」生效）：组织名称、状态（全部/启用/停用）
 
-**列表字段**：**组织ID**（黑色不可点）、组织名称（蓝色可点击 → 组织详情）、**备注**（与新建/编辑弹窗 `remark` 同源，过长截断 + title）、组织人数、创建时间、状态（Toggle 开关）、操作
+**列表字段**：**组织ID**（黑色不可点）、组织名称（蓝色可点击 → 组织详情）、**描述**（与新建/编辑弹窗 `remark` 同源，过长截断 + title）、组织人数、创建时间、状态（Toggle 开关）、操作
 
 **分页**：**10 条/页**（筛选变更重置第 1 页）
 
 **操作**：**详情**（同点击组织名称）· 编辑 · 删除
 
-**新建 / 编辑组织弹窗**：组织名称（必填，唯一校验）、备注（文本域 0/500）
+**新建 / 编辑组织弹窗**：组织名称（必填，唯一校验）、**描述**（文本域，输入框外右下角 **`n/500`**）
 
 **启停联动**：停用组织时，该组织下全部用户同步停用；启用时同步启用（Toast 提示）
 
@@ -1013,7 +1025,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 **新建 / 编辑弹窗**（与用户管理字段顺序一致，差异如下）：
 - **所属组织**：只读，显示当前组织名称
 - **角色**：固定「组织管理员」，只读
-- 新建用户角色恒为组织管理员；沿用组织详情专用表单（含账号、密码、用户昵称、状态、备注）
+- 新建用户角色恒为组织管理员；沿用组织详情专用表单（含账号、密码、用户昵称、状态、**描述**）
 
 #### 角色管理 `/system/role`
 
@@ -1069,12 +1081,12 @@ src/
 │       ├── Tabs.jsx           # Tab 切换（蓝色下划线）
 │       ├── Progress.jsx       # 进度条
 │       ├── StatCard.jsx       # 统计指标卡片
-│       ├── FormField.jsx      # Input / TextArea / Select；CreatorReadonlyField（创建人只读）
+│       ├── FormField.jsx      # Input / TextArea / Select；DescriptionField（描述 0/500）；PasswordInput（睁眼/闭眼）；CreatorReadonlyField
 │       ├── CheckboxList.jsx   # 统一多选列表：IndeterminateCheckbox、CheckboxListSelectAllRow（首行全选+已选计数）、CheckboxListShell、CheckboxListSearchInput
 │       ├── PermissionAction.jsx # IfPerm / PermButton / PermAction / PermMenuItem
 │       ├── ProjectMutateGate.jsx # 项目关闭/归档时禁用新建类操作 + Tooltip
 │       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
-│       ├── Icons.jsx          # 内联 SVG 图标（IconProject 采集项目、IconIntro 数采介绍等）
+│       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconEyeOpen/IconEyeOff 等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
 │       ├── Toast.jsx          # useToast hook — 轻量 Toast（支持 placement: top、variant: success）
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
@@ -1131,6 +1143,7 @@ src/
 │   ├── Dataset/
 │   │   ├── Self.jsx               # 真机数据集列表
 │   │   ├── SelfDetail.jsx         # 真机数据集详情（4 Tab：概览/条目/转换记录/转换数据集）
+│   │   ├── ConvertedDatasetDetail.jsx  # 转换数据集详情（文件列表）
 │   │   ├── SelfDownload.jsx       # 数据集下载说明
 │   │   ├── CreateDatasetModal.jsx # 新建数据集（右侧 Drawer）
 │   │   ├── ConversionRangeModal.jsx  # 转图片/转视频：选择已选/全部条目范围
@@ -1148,7 +1161,7 @@ src/
 │   │   ├── AuditTemplateDetail.jsx  # 审核模板详情页（/tag/audit-template/:id）
 │   │   ├── AuditReviewTagPanel.jsx  # 模板下标签树（应用范围筛选/列）
 │   │   ├── AuditReviewTagModal.jsx
-│   │   ├── TagTableActions.jsx
+│   │   ├── TagTableActions.jsx    # 标签行内编辑/删除 + 任务绑定置灰 Tooltip
 │   │   ├── SceneTypePanel.jsx
 │   │   └── SceneTypeModal.jsx
 │   ├── Device/
@@ -1218,7 +1231,7 @@ scripts/
 | 图表库 | 运营看板为手写 SVG（`BarChart`、`DonutChart` 等）；标注工作台信号图使用 **recharts** |
 | 产品名称 | 浏览器标签与顶栏均为 **ABC-Data**（`index.html` / `Header.jsx` / 登录页） |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
-| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 真机回流占位；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
+| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 真机回流占位；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
 | ListPageCard | 检索 `ListPageFilter`（底部分割线）+ 工具栏 `ListPageToolbar`（底部分割线）+ `Table embedded` / `ListPageBody` 同一白容器；已用于项目/任务/用户/角色/组织/设备/标签/条目等列表页 |
 | 新建项目 Drawer | `Drawer.jsx` 默认宽度 `calc((100vw - var(--layout-sidebar-width)) / 3)`；Layout 在 `<main>` 设置 `--layout-sidebar-width`（`13rem` / `4rem`） |
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
@@ -1256,13 +1269,17 @@ scripts/
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
 | 标签 runtime | `tags.js`：`getAuditTemplates` / `upsertAuditTemplate` / `saveAuditTemplateTagTree`；平铺标签 getter/setter；`getSceneTypeTree`；`APPLICATION_SCOPE_OPTIONS`（全局/通过/驳回）；工作台整体标签仍读 `workbenchTags.js` |
 | 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：`annotTemplateId`（整体标签模板，必填）+ 复选框 `annotAutoFragment`（默认 true，兼容 `annotGenConfig` / `annotPreLabel`）+ `FragmentAnnotPreconfigPanel`（预置动作语义/区域帧 + 自定义类型） |
-| 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob`；`ConversionRangeModal` + `ConvertDatasetDrawer` 提交转换；转图片默认抽帧间隔 0、三条相机路径；详情页 mock 约 2.5s 自动完成 |
+| 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob` / `getConvertedDatasetById` / `getConvertedDatasetFiles`；`ConversionRangeModal` + `ConvertDatasetDrawer` 提交转换；转图片默认抽帧间隔 0、三条相机路径；详情页 mock 约 2.5s 自动完成；转换数据集详情页展示 mock 文件列表 |
+| 共享表单组件 | `FormField.jsx` → `DescriptionField`（全平台「描述」字段，输入框外 **`n/500`**）、`PasswordInput`（默认闭眼图标 `IconEyeOff`，展开为 `IconEyeOpen`）；用户/组织/角色/邀请用户等已接入 |
+| 标签任务绑定 | `tasks.js` → `isTaskPurposeTagBoundToTask`、`isCollectionMethodTagBoundToTask`、`isAtomicSkillTagBoundToTask`、`isBodyTypeTagBoundToTask`、`isEndTypeTagBoundToTask`、`isSceneTypeBoundToTask`；`TagTableActions.jsx` 统一置灰 + Tooltip |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
 | URDF 上传 | 设备类型 **新建与编辑** 弹窗均支持拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
 | 任务采集员 | 每任务 **1 名**采集员（`collector` 字符串）；任务列表/详情单人展示，无 `+N` |
 | 用户状态 UI | 用户列表状态列 Toggle；global 编辑弹窗不含状态（列表 Toggle 切换）；组织详情新建仍含状态单选；`updateRuntimeUser` 即时生效 |
+| 用户新建/邀请 | `CreateInviteUserModal`：global 新建/邀请双 Tab Drawer；邀请 tab 用户名仅显示 username，选后所属组织/手机号/邮箱只读反显 |
+| 系统列表 ID/名称列 | 组织/角色/用户列表 **ID 与名称列常规字重**（不加粗），名称列仍可点击跳转 |
 | 用户登录方式 | 字段 `loginMethod`（`账号密码` / `飞书SSO`）；未设置时默认「账号密码」；列表与筛选展示 |
 | 角色权限 UI | 新建/编辑权限均用 `MenuPermissionTree` + `ProjectDataTransfer`（内置角色无数据权限区块）；列表列「权限数」 |
 | 标注工作台 | 三模式共用 **四模块** 侧栏：`play` 全只读；`review` 可编辑整体/片段 + 底部保存 + 标注结论提交；`accept` 侧栏验收模块提交（**无顶栏通过/驳回**）；`syncBatchesAfterEntryAccept` |
@@ -1287,6 +1304,7 @@ scripts/
 | 采集条目页数据 | 由 `entries` 派生（`uploads.js`），字段与 `EntryDataTable` 对齐 |
 | 抽样验收批次 | 6 条初始（P-1001 × 3、P-1002 × 3）；含 `configItems`、`detailItems`、`entryIds`、`passedCount`、`acceptProgress`；历史字段 `basis` 仍保留于 seed；新建写入 `filters`（标注结果/采集员/标注员）+ `rejectedCount: 0` + 兼容 `basis: '任务名称'`；会话内可新建/删除 |
 | 真机数据集 | 5 条；支持跨项目 `projectIds`、多 `taskIds`、验收通过条目、`autoSync` |
+| 转换记录 / 转换数据集 | 初始各 2 条（`CJ-2001`/`CJ-2002`、`CDS-3001`/`CDS-3002`）；转换完成后写入 runtime；详情页 `getConvertedDatasetFiles` 按 `fileCount` mock 生成文件列表 |
 | 开源数据集 | 10 条（ODS-001~010）；侧栏已下线，看板 Tab 仍引用；组件支持 Excel 导入追加 |
 | 审核标签 | 审核模板 Tab：3 个初始模板（ATM-001~003），每模板含独立 `tagTree`（应用范围：全局/通过/驳回）；**工作台问题标签**另有 21 项常量（`workbenchTags.js`） |
 | 场景标签 | 三层树（3 个一级场景） |
@@ -1310,7 +1328,7 @@ scripts/
 
 ### Mock 组织（`organizations.js` → `initialOrganizations`）
 
-| ID | 名称 | 备注 | 状态 | 初始人数 |
+| ID | 名称 | 描述 | 状态 | 初始人数 |
 |---|---|---|---|---|
 | ORG-001 | 机器人公司 | 总部组织，负责家庭与工业采集项目运营 | 启用 | 1 |
 | ORG-002 | **智平方** | 演示测试组织（`DEMO_ORG_ID`，默认用户归属） | 启用 | 12 |
@@ -1338,10 +1356,10 @@ scripts/
 | U-014 | chenwei | 陈伟 | 平台运营 | 机器人公司 | 账号密码 | 启用 | chenwei@robotics.com |
 | U-015 | xuyan | 徐燕 | 采集员 | 华东采集中心 | 账号密码 | 启用 | xuyan@east-collect.com |
 
-> 共 **16** 人（U-000 ~ U-015）。停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。U-011、U-012 为双角色平台用户（`role` 字段以 `&` 连接）；U-013 绑定自定义角色「区域协调员」。U-001~U-003 演示飞书SSO 登录方式。用户单条字段还含 `phone`、`remark`（列表展示为「描述」）、`createdAt`、`lastLoginAt`；未显式设置 `loginMethod` 时 UI 默认「账号密码」。
+> 共 **16** 人（U-000 ~ U-015）。停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。U-011、U-012 为双角色平台用户（`role` 字段以 `&` 连接）；U-013 绑定自定义角色「区域协调员」。U-001~U-003 演示飞书SSO 登录方式。**邀请用户** mock 候选：U-014（chenwei，机器人公司，phone/email 已填）、U-015（xuyan，华东采集中心）。用户单条字段还含 `phone`、`remark`（列表展示为「描述」）、`createdAt`、`lastLoginAt`；未显式设置 `loginMethod` 时 UI 默认「账号密码」。
 
 ### 组织单条字段（`organizations.js`）
-`id`, `name`, `remark`, `status`（启用/停用）, `createdAt`（列表附加 `memberCount`）
+`id`, `name`, `remark`（UI 列名与表单标签均为 **描述**）, `status`（启用/停用）, `createdAt`（列表附加 `memberCount`）
 
 **运行时 API**：`getOrganizations`、`getOrganizationById`、`appendOrganization`、`updateOrganization`、`setOrganizationStatus`、`deleteOrganization`；用户侧 `getRuntimeUsers`、`appendOrgUser`、`updateRuntimeUser`、`deleteRuntimeUser`
 
@@ -1415,6 +1433,7 @@ scripts/
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
 | `/dataset/self/download` | 数据集下载说明 | 同上 |
 | `/dataset/self/:id` | 真机数据集详情（4 Tab） | 同上 |
+| `/dataset/self/:datasetId/converted/:convertedId` | 转换数据集详情（文件列表） | 同上 |
 | `/dataset/open` | 重定向 → `/dataset/self` | — |
 | `/dataset/open/download` | 重定向 → `/dataset/self` | — |
 | `/dataset/open/:id/usage` | 重定向 → `/dataset/self` | — |

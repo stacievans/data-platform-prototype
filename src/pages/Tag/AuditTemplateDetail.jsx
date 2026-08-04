@@ -46,9 +46,7 @@ export default function AuditTemplateDetail() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-        <AuditReviewTagPanel templateId={templateId} />
-      </div>
+      <AuditReviewTagPanel templateId={templateId} />
     </div>
   )
 }

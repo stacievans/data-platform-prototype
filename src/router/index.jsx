@@ -7,6 +7,7 @@ import ProjectDetail from '../pages/Project/Detail'
 import TaskDetail from '../pages/Task/Detail'
 import SelfDataset from '../pages/Dataset/Self'
 import SelfDatasetDetail from '../pages/Dataset/SelfDetail'
+import ConvertedDatasetDetail from '../pages/Dataset/ConvertedDatasetDetail'
 import SelfDatasetDownload from '../pages/Dataset/SelfDownload'
 import TagManage from '../pages/Tag'
 import AuditTemplateDetail from '../pages/Tag/AuditTemplateDetail'
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
       { path: 'collection/upload', element: <Navigate to="/collection/project" replace /> },
       { path: 'dataset/self', element: <SelfDataset /> },
       { path: 'dataset/self/download', element: <SelfDatasetDownload /> },
+      { path: 'dataset/self/:datasetId/converted/:convertedId', element: <ConvertedDatasetDetail /> },
       { path: 'dataset/self/:id', element: <SelfDatasetDetail /> },
       { path: 'dataset/open/download', element: <Navigate to="/dataset/self" replace /> },
       { path: 'dataset/open/:id/usage', element: <Navigate to="/dataset/self" replace /> },

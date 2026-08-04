@@ -7,7 +7,7 @@ import ListPaginator from '../../components/common/ListPaginator'
 import Modal from '../../components/common/Modal'
 import Drawer from '../../components/common/Drawer'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
-import { Input, TextArea } from '../../components/common/FormField'
+import { DescriptionField, Input } from '../../components/common/FormField'
 import { IconPlus, IconSearch, IconGrid, IconList, IconProject, IconClock, IconUser, IconId } from '../../components/common/Icons'
 import { projects as initialProjects } from '../../mock/projects'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
@@ -450,7 +450,12 @@ export default function ProjectList() {
   const ProjectForm = () => (
     <div className="space-y-4">
       <Input label="项目名称" placeholder="请输入项目名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-      <TextArea label="项目描述" placeholder="请输入项目描述（选填）" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      <DescriptionField
+        label="项目描述"
+        placeholder="请输入项目描述（选填）"
+        value={form.description}
+        onChange={(e) => setForm({ ...form, description: e.target.value })}
+      />
     </div>
   )
 
@@ -586,7 +591,7 @@ export default function ProjectList() {
         title="新建采集项目"
         onCancel={() => { setCreateOpen(false); setCreateForm(emptyCreateForm); setCreateErrors({}) }}
         onOk={handleCreate}
-        okText="创建"
+        okText="确定"
       >
         <div className="space-y-4">
           <FormRow label="项目名称" required error={createErrors.name}>

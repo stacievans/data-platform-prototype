@@ -80,13 +80,13 @@ export default function SegmentAnnotateModal({
               <label className={LBL}>步骤描述</label>
               <textarea
                 rows={3}
-                maxLength={100}
+                maxLength={500}
                 value={desc}
-                onChange={(e) => setDesc(e.target.value)}
+                onChange={(e) => setDesc(e.target.value.slice(0, 500))}
                 placeholder="请输入步骤描述"
                 className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
-              <p className="mt-1 text-right text-xs text-gray-400">{desc.length} / 100</p>
+              <p className="mt-1 text-right text-xs text-gray-400">{desc.length}/500</p>
             </div>
             <div>
               <label className={LBL}>技能标签</label>

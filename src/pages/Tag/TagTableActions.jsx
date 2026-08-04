@@ -1,46 +1,70 @@
 import { useState } from 'react'
-import Modal from '../../components/common/Modal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { PermAction } from '../../components/common/PermissionAction'
 
-export default function TagTableActions({ onEdit, onDelete }) {
+export const TAG_BOUND_TIP = '该标签已绑定任务，无法编辑或删除'
+
+const disabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
+
+export default function TagTableActions({
+  onEdit,
+  onDelete,
+  editDisabled = false,
+  deleteDisabled = false,
+  disabledTip = TAG_BOUND_TIP,
+}) {
   return (
     <div className="flex items-center gap-2">
-      <PermAction
-        permission="tag.edit"
-        className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
-        onClick={onEdit}
-      >
-        编辑
-      </PermAction>
-      <PermAction
-        permission="tag.delete"
-        className="cursor-pointer text-sm text-red-500 hover:text-red-400"
-        onClick={onDelete}
-      >
-        删除
-      </PermAction>
+      {editDisabled ? (
+        <span className={disabledCls} title={disabledTip}>编辑</span>
+      ) : (
+        <PermAction
+          permission="tag.edit"
+          className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
+          onClick={onEdit}
+        >
+          编辑
+        </PermAction>
+      )}
+      {deleteDisabled ? (
+        <span className={disabledCls} title={disabledTip}>删除</span>
+      ) : (
+        <PermAction
+          permission="tag.delete"
+          className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+          onClick={onDelete}
+        >
+          删除
+        </PermAction>
+      )}
     </div>
   )
 }
 
-export function tagActionColumn({ onEdit, onDelete } = {}) {
+export function tagActionColumn({ onEdit, onDelete, isBound } = {}) {
   return {
     title: '操作',
     key: 'actions',
-    render: (_, row) => (
-      <TagTableActions
-        onEdit={onEdit ? () => onEdit(row) : undefined}
-        onDelete={onDelete ? () => onDelete(row) : undefined}
-      />
-    ),
+    render: (_, row) => {
+      const bound = isBound?.(row) ?? false
+      return (
+        <TagTableActions
+          onEdit={onEdit && !bound ? () => onEdit(row) : undefined}
+          onDelete={onDelete && !bound ? () => onDelete(row) : undefined}
+          editDisabled={bound}
+          deleteDisabled={bound}
+        />
+      )
+    },
   }
 }
 
-export function useTagRowActions({ onDelete, onEdit }) {
+export function useTagRowActions({ onDelete, onEdit, isBound }) {
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const handleConfirm = () => {
     if (!deleteTarget) return
+    if (isBound?.(deleteTarget)) return
     onDelete(deleteTarget)
     setDeleteTarget(null)
   }
@@ -48,22 +72,15 @@ export function useTagRowActions({ onDelete, onEdit }) {
   const actionColumn = tagActionColumn({
     onEdit,
     onDelete: (row) => setDeleteTarget(row),
+    isBound,
   })
 
   const deleteConfirmModal = (
-    <Modal
+    <DeleteConfirmModal
       open={!!deleteTarget}
-      title="删除标签"
       onCancel={() => setDeleteTarget(null)}
-      onOk={handleConfirm}
-      okText="确定"
-      cancelText="取消"
-      width={480}
-    >
-      <p className="text-sm leading-relaxed text-gray-600">
-        确定删除该标签吗？删除后不可恢复
-      </p>
-    </Modal>
+      onConfirm={handleConfirm}
+    />
   )
 
   return { actionColumn, deleteConfirmModal }

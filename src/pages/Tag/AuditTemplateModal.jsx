@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 
 const inputCls = (err) =>
   `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${
@@ -7,6 +7,10 @@ const inputCls = (err) =>
       ? 'border-red-400 focus:ring-red-100'
       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
+
+const DESC_MAX = 500
+const textareaCls =
+  'w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 export default function AuditTemplateModal({
   open,
@@ -43,13 +47,12 @@ export default function AuditTemplateModal({
   }
 
   return (
-    <Modal
+    <Drawer
       open={open}
       title={isEdit ? '编辑模板' : '新建模板'}
       onCancel={onCancel}
       onOk={handleOk}
-      okText={isEdit ? '确定' : '创建'}
-      width={480}
+      okText="确定"
     >
       <div className="space-y-4">
         <div>
@@ -76,12 +79,14 @@ export default function AuditTemplateModal({
           <textarea
             rows={3}
             value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value.slice(0, DESC_MAX) }))}
+            maxLength={DESC_MAX}
             placeholder="请输入描述（选填）"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className={textareaCls}
           />
+          <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/{DESC_MAX}</p>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   )
 }

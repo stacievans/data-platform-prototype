@@ -197,6 +197,22 @@ export const IconCopy = (props) => (
   </svg>
 )
 
+export const IconEyeOpen = (props) => (
+  <svg viewBox="0 0 20 20" fill="none" width="16" height="16" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <path d="M1.5 10s3-5.5 8.5-5.5S18.5 10 18.5 10s-3 5.5-8.5 5.5S1.5 10 1.5 10z" />
+    <circle cx="10" cy="10" r="2.5" />
+  </svg>
+)
+
+export const IconEyeOff = (props) => (
+  <svg viewBox="0 0 20 20" fill="none" width="16" height="16" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <path d="M2 2l16 16" />
+    <path d="M6.7 6.8C4.8 8 3.3 9.3 1.5 10c1.5 2.8 4.3 5.5 8.5 5.5 1.5 0 2.9-.4 4.1-1" />
+    <path d="M11.3 5.1C10.9 5 10.5 4.5 10 4.5 4.5 4.5 1.5 10 1.5 10" />
+    <path d="M13.4 7.7C15.2 9 16.7 9.8 18.5 10c-1.5 2.8-4.3 5.5-8.5 5.5" />
+  </svg>
+)
+
 export const IconTrash = (props) => (
   <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
     <path d="M3 6h18" />

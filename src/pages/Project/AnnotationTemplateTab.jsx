@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
 import Button from '../../components/common/Button'
+import { IconPlus } from '../../components/common/Icons'
 import { PermButton } from '../../components/common/PermissionAction'
 import Modal from '../../components/common/Modal'
-import { CreatorReadonlyField } from '../../components/common/FormField'
+import { CreatorReadonlyField, DescriptionField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { annotationTemplates as initialTemplates } from '../../mock/misc'
 import { useTagRowActions } from '../Tag/TagTableActions'
@@ -31,7 +32,7 @@ const inputCls = (err) =>
       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
 
-function FilterBar({ query, onQueryChange, onReset, onSearch, newLabel, onNew }) {
+function FilterBar({ query, onQueryChange, onReset, onSearch, onNew }) {
   return (
     <div className="flex items-end gap-3">
       <div className="flex flex-1 items-end gap-2">
@@ -47,7 +48,7 @@ function FilterBar({ query, onQueryChange, onReset, onSearch, newLabel, onNew })
         <Button onClick={onReset}>重置</Button>
         <Button variant="primary" onClick={onSearch}>查询</Button>
       </div>
-      <PermButton permission="tag.create" variant="primary" onClick={onNew}>+ {newLabel}</PermButton>
+      <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={onNew}>新建</PermButton>
     </div>
   )
 }
@@ -102,22 +103,17 @@ function TagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
       title={isEdit ? '编辑标签' : '新建标签'}
       onCancel={handleCancel}
       onOk={handleOk}
-      okText={isEdit ? '确定' : '创建'}
+      okText="确定"
     >
       <div className="space-y-4">
         {!isEdit && <CreatorReadonlyField />}
         <Field label="标签名称" required error={errs.name}>
           <input placeholder="请输入标签名称" value={form.name} onChange={(e) => set('name', e.target.value)} className={inputCls(errs.name)} />
         </Field>
-        <Field label="描述">
-          <textarea
-            rows={2}
-            placeholder="请输入描述（选填）"
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </Field>
+        <DescriptionField
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+        />
       </div>
     </Modal>
   )
@@ -170,7 +166,7 @@ export default function AnnotationTemplateTab() {
         query={query} onQueryChange={setQuery}
         onReset={() => { setQuery(''); setApplied('') }}
         onSearch={() => setApplied(query)}
-        newLabel="新增配置" onNew={() => { setEditingRow(null); setModalOpen(true) }}
+        onNew={() => { setEditingRow(null); setModalOpen(true) }}
       />
       <Table columns={cols} dataSource={filtered} />
       <TagModal

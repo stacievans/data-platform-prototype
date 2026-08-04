@@ -3,7 +3,8 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
-import Modal from '../../components/common/Modal'
+import { IconPlus } from '../../components/common/Icons'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
@@ -14,7 +15,9 @@ import {
 } from '../../mock/tags'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import AuditReviewTagModal from './AuditReviewTagModal'
-import TagTableActions from './TagTableActions'
+import TagTableActions, { TAG_BOUND_TIP } from './TagTableActions'
+
+const DELETE_NOT_CREATOR_TIP = '仅创建人可删除'
 
 const saveMoment = () => nowDateTime()
 const isNewId = (id) => String(id).startsWith('child-')
@@ -43,10 +46,12 @@ function formToGroup(form, existingGroup, currentUser) {
   const groupId = existingGroup?.id ?? `AT-G-${String(Date.now()).slice(-6)}`
 
   const groupName = form.name.trim()
+  const groupValue = form.value.trim()
   const groupDesc = form.description.trim()
   const applicationScope = form.applicationScope ?? '全局'
   const groupMetaChanged = isNewGroup
     || existingGroup.name !== groupName
+    || (existingGroup.value ?? existingGroup.name) !== groupValue
     || (existingGroup.description ?? '') !== groupDesc
     || (existingGroup.applicationScope ?? '全局') !== applicationScope
 
@@ -60,13 +65,12 @@ function formToGroup(form, existingGroup, currentUser) {
       ? `${groupId}-${String(ci + 1).padStart(3, '0')}`
       : child.id
     const childName = child.name.trim()
-    const childValue = (child.value ?? child.name).trim() || childName
-    const childDesc = (child.description ?? '').trim()
+    const childValue = child.value.trim()
+    const childDesc = (oldChild?.description ?? '').trim()
     const childChanged = childIsNew
       || !oldChild
       || oldChild.name !== childName
       || (oldChild.value ?? oldChild.name) !== childValue
-      || (oldChild.description ?? '') !== childDesc
     const meta = mergeItemMeta({
       isNew: childIsNew,
       nameChanged: childChanged,
@@ -86,6 +90,7 @@ function formToGroup(form, existingGroup, currentUser) {
   return {
     id: groupId,
     name: groupName,
+    value: groupValue,
     description: groupDesc,
     applicationScope,
     creator: isNewGroup ? currentUser : existingGroup.creator,
@@ -105,7 +110,7 @@ function matchesQuery(row, nameQ, valueQ) {
 function groupMatches(group, nameQ, valueQ, scopeQ) {
   if (scopeQ && (group.applicationScope ?? '全局') !== scopeQ) return false
   if (!nameQ && !valueQ) return true
-  if (matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)) return true
+  if (matchesQuery({ name: group.name, value: group.value ?? group.name }, nameQ, valueQ)) return true
   return (group.children ?? []).some((c) => matchesQuery(c, nameQ, valueQ))
 }
 
@@ -122,7 +127,7 @@ function buildVisibleRows(groups, expanded, nameQ, valueQ, scopeQ) {
       level: 1,
       rowType: 'group',
       name: group.name,
-      value: '—',
+      value: group.value ?? group.name ?? '—',
       description: group.description,
       applicationScope: group.applicationScope ?? '全局',
       creator: group.creator,
@@ -137,7 +142,7 @@ function buildVisibleRows(groups, expanded, nameQ, valueQ, scopeQ) {
 
     ;(group.children ?? []).forEach((child) => {
       if (nameQ || valueQ) {
-        const parentHit = matchesQuery({ name: group.name, value: group.name }, nameQ, valueQ)
+        const parentHit = matchesQuery({ name: group.name, value: group.value ?? group.name }, nameQ, valueQ)
         if (!parentHit && !matchesQuery(child, nameQ, valueQ)) return
       }
       rows.push({
@@ -233,9 +238,12 @@ export default function AuditReviewTagPanel({ templateId }) {
 
   const confirmDelete = () => {
     if (!deleteTarget) return
+    if (deleteTarget.creator !== creatorName) return
     syncStore(tree.filter((g) => g.id !== deleteTarget.id))
     setDeleteTarget(null)
   }
+
+  const canDeleteGroup = (group) => group?.creator === creatorName
 
   const columns = [
     {
@@ -272,17 +280,25 @@ export default function AuditReviewTagPanel({ templateId }) {
       dataIndex: 'applicationScope',
       render: (v) => <span className="text-gray-600">{v || '—'}</span>,
     },
+    {
+      title: '创建人',
+      dataIndex: 'creator',
+      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
+    },
     dtCol('创建时间', 'createdAt'),
-    dtCol('最后更新', 'updatedAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '操作',
       key: 'actions',
       render: (_, row) => {
         if (row.level !== 1) return null
+        const deleteDisabled = !canDeleteGroup(row.groupRef)
         return (
           <TagTableActions
             onEdit={() => openEdit(row.groupRef)}
             onDelete={() => setDeleteTarget(row.groupRef)}
+            deleteDisabled={deleteDisabled}
+            disabledTip={deleteDisabled ? DELETE_NOT_CREATOR_TIP : TAG_BOUND_TIP}
           />
         )
       },
@@ -348,8 +364,8 @@ export default function AuditReviewTagPanel({ templateId }) {
             查询
           </Button>
         </div>
-        <PermButton permission="tag.create" variant="primary" onClick={openCreate}>
-          + 新建标签
+        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>
+          新建
         </PermButton>
       </div>
       </ListPageFilter>
@@ -363,19 +379,11 @@ export default function AuditReviewTagPanel({ templateId }) {
         onOk={handleSave}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除标签"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定删除"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除标签组「<strong className="text-gray-800">{deleteTarget?.name}</strong>」及其下{' '}
-          <strong className="text-red-600">{deleteTarget?.children?.length ?? 0}</strong> 个子标签？
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
     </ListPageCard>
   )
 }

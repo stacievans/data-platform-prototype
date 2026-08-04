@@ -3,7 +3,7 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 import { Input, Select } from '../../components/common/FormField'
 import { IconPlus } from '../../components/common/Icons'
 import { users as initialUsers, roleColor } from '../../mock/misc'
@@ -115,16 +115,16 @@ export default function SystemManage() {
 
         <ListPageToolbar>
           <h2 className="text-base font-semibold text-gray-800">用户列表</h2>
-          <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新增用户</Button>
+          <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新建</Button>
         </ListPageToolbar>
 
         <Table embedded columns={columns} dataSource={filtered} />
       </ListPageCard>
 
       {/* 新增用户弹窗 */}
-      <Modal open={createOpen} title="新增用户"
+      <Drawer open={createOpen} title="新增用户"
         onCancel={() => { setCreateOpen(false); setCreateForm(emptyCreate); setCreateErrors({}) }}
-        onOk={handleCreateUser} okText="确认添加"
+        onOk={handleCreateUser} okText="确定"
       >
         {(() => {
           const fieldCls = (err) => `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
@@ -169,16 +169,16 @@ export default function SystemManage() {
             </div>
           )
         })()}
-      </Modal>
+      </Drawer>
 
-      {/* 编辑用户弹窗 */}
-      <Modal open={!!editing} title="编辑用户" onCancel={() => setEditing(null)} onOk={handleSave} okText="保存">
+      {/* 编辑用户抽屉 */}
+      <Drawer open={!!editing} title="编辑用户" onCancel={() => setEditing(null)} onOk={handleSave} okText="保存">
         <div className="space-y-4">
           <Input label="昵称" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} />
           <Select label="角色" value={form.role} options={roles.map((r) => ({ value: r, label: r }))} onChange={(e) => setForm({ ...form, role: e.target.value })} />
           <Select label="状态" value={form.status} options={['启用', '停用'].map((s) => ({ value: s, label: s }))} onChange={(e) => setForm({ ...form, status: e.target.value })} />
         </div>
-      </Modal>
+      </Drawer>
     </div>
   )
 }

@@ -3,7 +3,8 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import { useAuth } from '../../context/AuthContext'
@@ -123,8 +124,8 @@ export default function RoleManage() {
   }
 
   const columns = [
-    { title: '角色ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
-    { title: '角色名称', dataIndex: 'name', render: (v) => <span className="font-medium">{v}</span> },
+    { title: '角色ID', dataIndex: 'id', render: (v) => <span className="text-gray-700">{v}</span> },
+    { title: '角色名称', dataIndex: 'name', render: (v) => <span className="text-gray-800">{v}</span> },
     { title: '描述', dataIndex: 'description', render: (v) => <span className="text-gray-500 max-w-xs truncate block" title={v}>{v}</span> },
     { title: '权限数', dataIndex: 'moduleCount' },
     { title: '成员数', dataIndex: 'memberCount' },
@@ -200,20 +201,19 @@ export default function RoleManage() {
         <ListPageToolbar>
           <h2 className="text-base font-semibold text-gray-800">角色列表</h2>
           {can('system.role.create') && (
-            <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新建角色</Button>
+            <Button variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>新建</Button>
           )}
         </ListPageToolbar>
         <Table embedded columns={columns} dataSource={filtered} />
       </ListPageCard>
 
-        <Modal
+        <Drawer
           open={createOpen}
           title="新建角色"
           onCancel={() => { setCreateOpen(false); resetCreateForm() }}
           onOk={handleCreate}
-          okText="确认创建"
-          width={920}
-          fitViewport
+          okText="确定"
+          width="min(920px, calc(100vw - var(--layout-sidebar-width, 13rem)))"
         >
           {(() => {
             const fCls = (err) => `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${err ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`
@@ -230,7 +230,15 @@ export default function RoleManage() {
                 </div>
                 <div>
                   <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">描述<span className="text-red-500">*</span></label>
-                  <input placeholder="请输入描述" value={createForm.description} onChange={(e) => setC('description', e.target.value)} className={fCls(createErrors.description)} />
+                  <textarea
+                    rows={3}
+                    placeholder="请输入描述"
+                    value={createForm.description}
+                    onChange={(e) => setC('description', e.target.value.slice(0, 500))}
+                    maxLength={500}
+                    className={`w-full resize-none rounded-md border px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${createErrors.description ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
+                  />
+                  <p className="mt-1 text-right text-xs text-gray-400">{createForm.description.length}/500</p>
                   {createErrors.description && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
                 </div>
                 <div>
@@ -248,21 +256,13 @@ export default function RoleManage() {
               </div>
             )
           })()}
-        </Modal>
+        </Drawer>
 
-        <Modal
+        <DeleteConfirmModal
           open={!!deleteTarget}
-          title="删除角色"
           onCancel={() => setDeleteTarget(null)}
-          onOk={confirmDelete}
-          okText="确定删除"
-          width={480}
-        >
-          <p className="text-sm leading-relaxed text-gray-600">
-            确定删除角色「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
-            删除后不可恢复，且该角色将无法分配给用户。
-          </p>
-        </Modal>
+          onConfirm={confirmDelete}
+        />
 
         <RolePermissionModal
           open={!!permTarget}

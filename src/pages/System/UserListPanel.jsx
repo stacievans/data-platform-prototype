@@ -7,7 +7,9 @@ import Badge from '../../components/common/Badge'
 
 import Button from '../../components/common/Button'
 
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { DescriptionField, PasswordInput } from '../../components/common/FormField'
 
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 
@@ -110,86 +112,6 @@ const emptyEdit = {
 function toStoreStatus(status) {
 
   return status === '停用' ? '停用' : '启用'
-
-}
-
-
-
-function PasswordInput({ value, onChange, className, error }) {
-
-  const [show, setShow] = useState(false)
-
-  return (
-
-    <div className="relative">
-
-      <input
-
-        type={show ? 'text' : 'password'}
-
-        value={value}
-
-        onChange={onChange}
-
-        placeholder="请输入密码"
-
-        className={className}
-
-      />
-
-      <button
-
-        type="button"
-
-        onClick={() => setShow((v) => !v)}
-
-        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-xs text-gray-400 hover:text-gray-600"
-
-      >
-
-        {show ? '隐藏' : '显示'}
-
-      </button>
-
-      {error && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
-
-    </div>
-
-  )
-
-}
-
-
-
-function RemarkField({ value, onChange, max = 500, label = '备注', placeholder = '请输入备注信息' }) {
-
-  return (
-
-    <div>
-
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
-
-      <textarea
-
-        rows={4}
-
-        value={value}
-
-        maxLength={max}
-
-        onChange={onChange}
-
-        placeholder={placeholder}
-
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-
-      />
-
-      <p className="mt-1 text-right text-xs text-gray-400">{value.length} / {max}</p>
-
-    </div>
-
-  )
 
 }
 
@@ -724,9 +646,9 @@ export default function UserListPanel({
 
   const columns = [
 
-    { title: '用户ID', dataIndex: 'uid', render: (v) => <span className="font-medium text-gray-700">{v ?? '—'}</span> },
+    { title: '用户ID', dataIndex: 'uid', render: (v) => <span className="text-gray-700">{v ?? '—'}</span> },
 
-    { title: '用户名', dataIndex: 'username', render: (v) => <span className="font-medium text-gray-800">{v}</span> },
+    { title: '用户名', dataIndex: 'username', render: (v) => <span className="text-gray-800">{v}</span> },
 
     {
       title: '描述',
@@ -843,7 +765,7 @@ export default function UserListPanel({
 
   const createTitle = variant === 'org' ? '新建组织管理员' : '新建用户'
 
-  const createButtonLabel = variant === 'org' ? '新建组织管理员' : '新建用户'
+  const createButtonLabel = '新建'
 
 
 
@@ -909,9 +831,7 @@ export default function UserListPanel({
 
               onChange={(e) => setForm('password', e.target.value)}
 
-              className={fieldCls(errors.password)}
-
-              error={errors.password}
+              error={Boolean(errors.password)}
 
             />
 
@@ -1041,15 +961,11 @@ export default function UserListPanel({
 
 
 
-        <RemarkField
+        <DescriptionField
 
           value={form.remark}
 
           onChange={(e) => setForm('remark', e.target.value)}
-
-          label={isCreate ? '备注' : '描述'}
-
-          placeholder={isCreate ? '请输入备注信息' : '请输入描述'}
 
         />
 
@@ -1197,7 +1113,7 @@ export default function UserListPanel({
 
 
 
-      <Modal
+      <Drawer
 
         open={createOpen && variant === 'org'}
 
@@ -1217,13 +1133,11 @@ export default function UserListPanel({
 
         okText="确定"
 
-        width={520}
-
       >
 
         {renderUserFormFields({ mode: 'create' })}
 
-      </Modal>
+      </Drawer>
 
 
 
@@ -1255,7 +1169,7 @@ export default function UserListPanel({
 
 
 
-      <Modal
+      <Drawer
 
         open={!!editingUser}
 
@@ -1267,41 +1181,19 @@ export default function UserListPanel({
 
         okText="保存"
 
-        width={520}
-
       >
 
         {renderUserFormFields({ mode: 'edit' })}
 
-      </Modal>
+      </Drawer>
 
 
 
-      <Modal
-
+      <DeleteConfirmModal
         open={!!deleteTarget}
-
-        title="删除用户"
-
         onCancel={() => setDeleteTarget(null)}
-
-        onOk={confirmDelete}
-
-        okText="确定删除"
-
-        width={480}
-
-      >
-
-        <p className="text-sm leading-relaxed text-gray-600">
-
-          确定删除用户「<strong className="text-gray-800">{deleteTarget?.nickname}</strong>」（{deleteTarget?.username}）？
-
-          删除后该用户将无法登录平台，此操作不可恢复。
-
-        </p>
-
-      </Modal>
+        onConfirm={confirmDelete}
+      />
 
     </div>
 

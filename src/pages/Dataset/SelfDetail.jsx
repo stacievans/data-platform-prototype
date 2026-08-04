@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Button from '../../components/common/Button'
@@ -431,7 +431,7 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   )
 }
 
-function ConversionsTab({ jobs, convertedDatasets, onGoToConvertedDataset }) {
+function ConversionsTab({ jobs, convertedDatasets, onOpenConvertedDetail }) {
   const [qId, setQId] = useState('')
   const [qType, setQType] = useState('全部')
   const [qStatus, setQStatus] = useState('全部')
@@ -466,7 +466,7 @@ function ConversionsTab({ jobs, convertedDatasets, onGoToConvertedDataset }) {
         return (
           <button
             type="button"
-            onClick={() => onGoToConvertedDataset?.(converted.id)}
+            onClick={() => onOpenConvertedDetail?.(converted.id)}
             className="cursor-pointer text-left text-sm font-medium text-blue-600 hover:text-blue-500"
           >
             {v}
@@ -529,21 +529,11 @@ function ConversionsTab({ jobs, convertedDatasets, onGoToConvertedDataset }) {
   )
 }
 
-function ConvertedDatasetsTab({ records, focusId, onFocusConsumed }) {
+function ConvertedDatasetsTab({ records, onOpenDetail }) {
   const [qId, setQId] = useState('')
   const [qName, setQName] = useState('')
   const [qType, setQType] = useState('全部')
   const [filters, setFilters] = useState({})
-
-  useEffect(() => {
-    if (!focusId) return
-    const record = records.find((r) => r.id === focusId)
-    if (record) {
-      setQName(record.name)
-      setFilters({ name: record.name.trim() })
-    }
-    onFocusConsumed?.()
-  }, [focusId, records, onFocusConsumed])
 
   const filtered = useMemo(() => {
     const { id, name, type } = filters
@@ -559,7 +549,20 @@ function ConvertedDatasetsTab({ records, focusId, onFocusConsumed }) {
 
   const columns = [
     { title: '转换数据集ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
-    { title: '数据集名称', dataIndex: 'name', wrap: true },
+    {
+      title: '数据集名称',
+      dataIndex: 'name',
+      wrap: true,
+      render: (v, row) => (
+        <button
+          type="button"
+          onClick={() => onOpenDetail?.(row.id)}
+          className="cursor-pointer text-left text-sm font-medium text-blue-600 hover:text-blue-500"
+        >
+          {v}
+        </button>
+      ),
+    },
     { title: '数据集类型', dataIndex: 'type' },
     { title: '文件数量', dataIndex: 'fileCount', render: (v) => v.toLocaleString() },
     { title: '创建人', dataIndex: 'createdBy' },
@@ -606,7 +609,6 @@ export default function SelfDatasetDetail() {
   const [dataset, setDataset] = useState(() => getDatasetById(id))
   const [tab, setTab] = useState('overview')
   const [convTick, setConvTick] = useState(0)
-  const [convertedFocusId, setConvertedFocusId] = useState(null)
 
   const refreshConversions = useCallback(() => setConvTick((t) => t + 1), [])
 
@@ -642,10 +644,9 @@ export default function SelfDatasetDetail() {
     [dataset],
   )
 
-  const handleGoToConvertedDataset = useCallback((convertedId) => {
-    setConvertedFocusId(convertedId)
-    setTab('converted')
-  }, [])
+  const handleOpenConvertedDetail = useCallback((convertedId) => {
+    navigate(`/dataset/self/${id}/converted/${convertedId}`)
+  }, [id, navigate])
 
   const handleConversionStart = useCallback(({ taskType, operator, entryCount }) => {
     if (!dataset) return
@@ -711,31 +712,24 @@ export default function SelfDatasetDetail() {
         </div>
       )}
       {tab === 'entries' && (
-        <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <EntriesTab
-            dataset={dataset}
-            onConversionStart={handleConversionStart}
-            onRemoveEntry={handleRemoveEntry}
-          />
-        </div>
+        <EntriesTab
+          dataset={dataset}
+          onConversionStart={handleConversionStart}
+          onRemoveEntry={handleRemoveEntry}
+        />
       )}
       {tab === 'conversions' && (
-        <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <ConversionsTab
-            jobs={conversionJobs}
-            convertedDatasets={convertedDatasets}
-            onGoToConvertedDataset={handleGoToConvertedDataset}
-          />
-        </div>
+        <ConversionsTab
+          jobs={conversionJobs}
+          convertedDatasets={convertedDatasets}
+          onOpenConvertedDetail={handleOpenConvertedDetail}
+        />
       )}
       {tab === 'converted' && (
-        <div className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <ConvertedDatasetsTab
-            records={convertedDatasets}
-            focusId={convertedFocusId}
-            onFocusConsumed={() => setConvertedFocusId(null)}
-          />
-        </div>
+        <ConvertedDatasetsTab
+          records={convertedDatasets}
+          onOpenDetail={handleOpenConvertedDetail}
+        />
       )}
     </div>
   )

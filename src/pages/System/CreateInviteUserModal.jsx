@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import { DescriptionField, PasswordInput } from '../../components/common/FormField'
 import { SelectChevronWrap } from '../../components/common/SelectControl'
 import { isUsernameTakenInOrg } from '../../mock/organizations'
 
@@ -28,45 +29,6 @@ function ReadonlyField({ label, value }) {
     <div>
       <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
       <input readOnly value={value} className={fieldCls(false, true)} />
-    </div>
-  )
-}
-
-function PasswordInput({ value, onChange, error }) {
-  const [show, setShow] = useState(false)
-  return (
-    <div className="relative">
-      <input
-        type={show ? 'text' : 'password'}
-        value={value}
-        onChange={onChange}
-        placeholder="请输入密码"
-        className={fieldCls(error)}
-      />
-      <button
-        type="button"
-        onClick={() => setShow((v) => !v)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-xs text-gray-400 hover:text-gray-600"
-      >
-        {show ? '隐藏' : '显示'}
-      </button>
-      {error && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
-    </div>
-  )
-}
-
-function RemarkField({ value, onChange }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">备注</label>
-      <textarea
-        rows={3}
-        value={value}
-        maxLength={500}
-        onChange={onChange}
-        placeholder="请输入备注（选填）"
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-      />
     </div>
   )
 }
@@ -206,7 +168,7 @@ function RoleMultiSelect({ value = [], onChange, options, error }) {
   )
 }
 
-function SearchableUserSelect({ users, orgMap, value, onChange, error }) {
+function SearchableUserSelect({ users, value, onChange, error }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const selected = users.find((u) => u.id === value)
@@ -216,13 +178,13 @@ function SearchableUserSelect({ users, orgMap, value, onChange, error }) {
     if (!kw) return users
     return users.filter((u) =>
       u.username.toLowerCase().includes(kw)
-      || u.nickname.includes(k)
+      || u.nickname.includes(kw)
       || u.uid?.toLowerCase().includes(kw),
     )
   }, [users, q])
 
   useEffect(() => {
-    if (selected) setQ(`${selected.username} · ${selected.nickname}`)
+    if (selected) setQ(selected.username)
     else if (!value) setQ('')
   }, [selected, value])
 
@@ -251,14 +213,11 @@ function SearchableUserSelect({ users, orgMap, value, onChange, error }) {
                 className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                 onClick={() => {
                   onChange(u.id)
-                  setQ(`${u.username} · ${u.nickname}`)
+                  setQ(u.username)
                   setOpen(false)
                 }}
               >
-                <span className="font-medium">{u.username}</span>
-                <span className="mx-1 text-gray-300">·</span>
-                <span className="text-gray-500">{u.nickname}</span>
-                <span className="ml-2 text-xs text-gray-400">{orgMap.get(u.orgId) ?? '—'}</span>
+                {u.username}
               </button>
             ))}
           </div>
@@ -363,14 +322,12 @@ export default function CreateInviteUserModal({
   }
 
   return (
-    <Modal
+    <Drawer
       open={open}
       title="新建/邀请用户"
       onCancel={onCancel}
       onOk={handleOk}
       okText="确定"
-      width={560}
-      fitViewport
     >
       <ModeToggle value={mode} onChange={setMode} />
 
@@ -426,7 +383,7 @@ export default function CreateInviteUserModal({
               className={fieldCls(false)}
             />
           </div>
-          <RemarkField
+          <DescriptionField
             value={createForm.remark}
             onChange={(e) => setCreate('remark', e.target.value)}
           />
@@ -437,7 +394,6 @@ export default function CreateInviteUserModal({
             <Req label="用户名" />
             <SearchableUserSelect
               users={inviteCandidates}
-              orgMap={orgMap}
               value={inviteForm.userId}
               onChange={(userId) => setInvite('userId', userId)}
               error={errs.userId}
@@ -459,12 +415,12 @@ export default function CreateInviteUserModal({
           </div>
           <ReadonlyField label="手机号" value={selectedInviteUser?.phone ?? ''} />
           <ReadonlyField label="邮箱" value={selectedInviteUser?.email ?? ''} />
-          <RemarkField
+          <DescriptionField
             value={inviteForm.remark}
             onChange={(e) => setInvite('remark', e.target.value)}
           />
         </div>
       )}
-    </Modal>
+    </Drawer>
   )
 }

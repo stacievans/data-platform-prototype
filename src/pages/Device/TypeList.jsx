@@ -3,7 +3,9 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
+import Drawer from '../../components/common/Drawer'
 import Modal from '../../components/common/Modal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { IconPlus, IconUpload, IconClose } from '../../components/common/Icons'
 import {
@@ -11,6 +13,7 @@ import {
   isDeviceTypeNameTaken,
   setDeviceTypes,
 } from '../../mock/devices'
+import { isDeviceTypeBoundToTask } from '../../mock/tasks'
 import {
   getBodyTypeTagNames,
   getEndTypeTagNames,
@@ -25,7 +28,11 @@ const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200
 const selectCls = `${inputCls} bg-white`
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
+const DESC_MAX = 500
 const nowDatetime = () => nowDateTime()
+const DELETE_DISABLED_TIP = '该设备类型已绑定任务，无法删除'
+const deleteEnabledCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
+const deleteDisabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
 
 const URDF_FILE_MAX_BYTES = 100 * 1024 * 1024
 const URDF_ACCEPT = '.zip,application/zip'
@@ -256,61 +263,68 @@ function TypeModal({ open, editing, onCancel, onOk }) {
     )
   }
 
+  const formBody = (
+    <div className="space-y-4">
+      <Field label="类型名称" required error={errs.name}>
+        <input
+          placeholder="请输入类型名称"
+          value={form.name}
+          onChange={(e) => set('name', e.target.value)}
+          className={inputCls + (errs.name ? ' border-red-400 focus:ring-red-100' : '')}
+        />
+        <p className="mt-1 text-xs text-gray-400">参考：{referencePreview}</p>
+      </Field>
+      <Field label="本体机型" required={!isEdit} error={errs.body}>
+        {renderBodyField()}
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="左末端类型" required={!isEdit} error={errs.leftEnd}>
+          {renderEndField('左', form.leftEnd, 'leftEnd')}
+        </Field>
+        <Field label="右末端类型" required={!isEdit} error={errs.rightEnd}>
+          {renderEndField('右', form.rightEnd, 'rightEnd')}
+        </Field>
+      </div>
+      <Field label="描述">
+        <textarea
+          rows={3}
+          placeholder="请输入描述（选填）"
+          value={form.description}
+          onChange={(e) => set('description', e.target.value.slice(0, DESC_MAX))}
+          maxLength={DESC_MAX}
+          className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <p className="mt-1 text-right text-xs text-gray-400">
+          {form.description.length}/{DESC_MAX}
+        </p>
+      </Field>
+      <Field label="URDF">
+        <UrdfFileUpload
+          fileName={form.urdfFileName}
+          error={urdfError}
+          onSelect={(name, err) => {
+            setForm((f) => ({ ...f, urdfFileName: name }))
+            setUrdfError(err)
+          }}
+          onClear={() => {
+            setForm((f) => ({ ...f, urdfFileName: '' }))
+            setUrdfError('')
+          }}
+        />
+      </Field>
+    </div>
+  )
+
   return (
-    <Modal
+    <Drawer
       open={open}
       title={isEdit ? '编辑设备类型' : '新建设备类型'}
       onCancel={onCancel}
       onOk={handleOk}
-      okText={isEdit ? '确定' : '创建'}
-      width={520}
+      okText="确定"
     >
-      <div className="space-y-4">
-        <Field label="类型名称" required error={errs.name}>
-          <input
-            placeholder="请输入类型名称"
-            value={form.name}
-            onChange={(e) => set('name', e.target.value)}
-            className={inputCls + (errs.name ? ' border-red-400 focus:ring-red-100' : '')}
-          />
-          <p className="mt-1 text-xs text-gray-400">参考：{referencePreview}</p>
-        </Field>
-        <Field label="本体机型" required={!isEdit} error={errs.body}>
-          {renderBodyField()}
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="左末端类型" required={!isEdit} error={errs.leftEnd}>
-            {renderEndField('左', form.leftEnd, 'leftEnd')}
-          </Field>
-          <Field label="右末端类型" required={!isEdit} error={errs.rightEnd}>
-            {renderEndField('右', form.rightEnd, 'rightEnd')}
-          </Field>
-        </div>
-        <Field label="描述">
-          <textarea
-            rows={2}
-            placeholder="请输入描述（选填）"
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </Field>
-        <Field label="URDF">
-          <UrdfFileUpload
-            fileName={form.urdfFileName}
-            error={urdfError}
-            onSelect={(name, err) => {
-              setForm((f) => ({ ...f, urdfFileName: name }))
-              setUrdfError(err)
-            }}
-            onClear={() => {
-              setForm((f) => ({ ...f, urdfFileName: '' }))
-              setUrdfError('')
-            }}
-          />
-        </Field>
-      </div>
-    </Modal>
+      {formBody}
+    </Drawer>
   )
 }
 
@@ -411,6 +425,7 @@ export default function TypeList() {
 
   const confirmDelete = () => {
     if (!deleteTarget) return
+    if (isDeviceTypeBoundToTask(deleteTarget)) return
     const typeId = deleteTarget.id
     setDeviceTypes((prev) => prev.filter((t) => t.id !== typeId))
     setDeleteTarget(null)
@@ -441,7 +456,9 @@ export default function TypeList() {
     {
       title: '操作',
       key: 'actions',
-      render: (_, row) => (
+      render: (_, row) => {
+        const boundToTask = isDeviceTypeBoundToTask(row)
+        return (
         <div className="flex items-center gap-2">
           <PermAction
             permission="device.edit"
@@ -450,15 +467,20 @@ export default function TypeList() {
           >
             编辑
           </PermAction>
-          <PermAction
-            permission="device.delete"
-            className="cursor-pointer text-sm text-red-500 hover:text-red-400"
-            onClick={() => setDeleteTarget(row)}
-          >
-            删除
-          </PermAction>
+          {boundToTask ? (
+            <span className={deleteDisabledCls} title={DELETE_DISABLED_TIP}>删除</span>
+          ) : (
+            <PermAction
+              permission="device.delete"
+              className={deleteEnabledCls}
+              onClick={() => setDeleteTarget(row)}
+            >
+              删除
+            </PermAction>
+          )}
         </div>
-      ),
+        )
+      },
     },
   ]
 
@@ -519,9 +541,9 @@ export default function TypeList() {
       </ListPageFilter>
 
       <ListPageToolbar>
-        <h2 className="text-base font-semibold text-gray-800">设备类型</h2>
+        <h2 className="text-base font-semibold text-gray-800">设备类型列表</h2>
         <PermButton permission="device.create" variant="primary" icon={<IconPlus />} onClick={() => { setEditingRow(null); setModalOpen(true) }}>
-          新建类型
+          新建
         </PermButton>
       </ListPageToolbar>
 
@@ -536,22 +558,11 @@ export default function TypeList() {
         onClose={() => setPreviewTarget(null)}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除设备类型"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定删除"
-        cancelText="取消"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除类型「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-gray-500">
-          仅移除该设备类型选项，不影响历史任务和条目中已记录的类型信息。
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

@@ -426,7 +426,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">采集方案列表</h2>
         <ProjectMutateGate projectStatus={projectStatus}>
-          <PermButton permission="collection.project.create" variant="primary" onClick={openCreate}>+ 新建</PermButton>
+          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
         </ProjectMutateGate>
       </ListPageToolbar>
       <Table
@@ -984,7 +984,6 @@ function LayoutTab({ projectId, projectStatus }) {
 
       <DeleteConfirmModal
         open={!!deleteTarget}
-        message="确定要删除这个布局配置吗？"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (!deleteTarget) return
@@ -998,7 +997,7 @@ function LayoutTab({ projectId, projectStatus }) {
         title={editTarget ? '编辑播放布局' : '新建播放布局'}
         onCancel={closeModal}
         onOk={handleSave}
-        okText={editTarget ? '保存' : '创建'}
+        okText={editTarget ? '保存' : '确定'}
       >
         <div className="space-y-4">
           <div>
@@ -1035,13 +1034,13 @@ function LayoutTab({ projectId, projectStatus }) {
             <label className="mb-1.5 block text-sm text-gray-600">布局描述</label>
             <textarea
               rows={3}
-              maxLength={200}
+              maxLength={500}
               placeholder="请输入布局描述（选填）"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 200) })}
+              onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 500) })}
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
-            <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/200</p>
+            <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/500</p>
           </div>
         </div>
       </Drawer>

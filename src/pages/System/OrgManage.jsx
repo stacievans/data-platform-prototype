@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import {
@@ -37,7 +38,7 @@ function StatusSwitch({ enabled, onToggle }) {
 
 function OrgFormModal({ open, title, form, errors, onChange, onCancel, onOk }) {
   return (
-    <Modal open={open} title={title} onCancel={onCancel} onOk={onOk} okText="确定" width={480}>
+    <Drawer open={open} title={title} onCancel={onCancel} onOk={onOk} okText="确定">
       <div className="space-y-4">
         <div>
           <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
@@ -53,19 +54,19 @@ function OrgFormModal({ open, title, form, errors, onChange, onCancel, onOk }) {
           {errors.name === 'duplicate' && <p className="mt-1 text-xs text-red-500">组织名称已存在</p>}
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">备注</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">描述</label>
           <textarea
             rows={4}
             maxLength={500}
-            placeholder="请输入备注信息"
+            placeholder="请输入描述（选填）"
             value={form.remark}
-            onChange={(e) => onChange('remark', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            onChange={(e) => onChange('remark', e.target.value.slice(0, 500))}
+            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
-          <p className="mt-1 text-right text-xs text-gray-400">{form.remark.length} / 500</p>
+          <p className="mt-1 text-right text-xs text-gray-400">{form.remark.length}/500</p>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   )
 }
 
@@ -154,7 +155,7 @@ export default function OrgManage() {
   }
 
   const columns = [
-    { title: '组织ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    { title: '组织ID', dataIndex: 'id', render: (v) => <span className="text-gray-700">{v}</span> },
     {
       title: '组织名称',
       dataIndex: 'name',
@@ -162,14 +163,14 @@ export default function OrgManage() {
         <button
           type="button"
           onClick={() => navigate(`/system/org/${row.id}`)}
-          className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500"
+          className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
         >
           {v}
         </button>
       ),
     },
     {
-      title: '备注',
+      title: '描述',
       dataIndex: 'remark',
       render: (v) => (
         <span className="block max-w-xs truncate text-gray-500" title={v || undefined}>{v || '—'}</span>
@@ -230,7 +231,7 @@ export default function OrgManage() {
         <ListPageToolbar>
           <h2 className="text-base font-semibold text-gray-800">组织列表</h2>
           <Button variant="primary" icon={<IconPlus />} onClick={() => { setCreateForm(emptyForm); setCreateErrors({}); setCreateOpen(true) }}>
-            新建组织
+            新建
           </Button>
         </ListPageToolbar>
 
@@ -257,19 +258,11 @@ export default function OrgManage() {
         onOk={handleEdit}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除组织"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定删除"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除组织「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
-          将同时删除该组织下全部用户，关联项目与采集数据不受影响，此操作不可恢复。
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
 
       {ToastNode}
     </div>

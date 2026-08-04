@@ -57,6 +57,7 @@ export const sceneTypeTreeSeed = [
   {
     id: 'SC-001',
     name: '家居服务',
+    value: 'home_service',
     description: '家庭室内环境下的机器人服务采集场景',
     creator: '李明',
     createdAt: ts('2026-03-12'),
@@ -88,6 +89,7 @@ export const sceneTypeTreeSeed = [
   {
     id: 'SC-002',
     name: '工业服务',
+    value: 'industrial_service',
     description: '工厂或仓库等工业环境下的操作采集场景',
     creator: '李明',
     createdAt: ts('2026-03-12'),
@@ -119,6 +121,7 @@ export const sceneTypeTreeSeed = [
   {
     id: 'SC-003',
     name: '公共服务',
+    value: 'public_service',
     description: '商场、餐厅等公共场所服务场景',
     creator: '王芳',
     createdAt: ts('2026-04-02'),

@@ -475,11 +475,11 @@ function OverallAnnotationEditor({
           rows={3}
           maxLength={500}
           value={form.auditComment}
-          onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, auditComment: e.target.value.slice(0, 500) }))}
           placeholder="请输入描述"
           className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
         />
-        <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length} / 500</p>
+        <p className="mt-1 text-right text-xs text-gray-400">{form.auditComment.length}/500</p>
       </div>
     </div>
   )
@@ -504,11 +504,11 @@ function AcceptanceEditor({ acceptForm, setAcceptForm }) {
           rows={3}
           maxLength={500}
           value={acceptForm.acceptComment}
-          onChange={(e) => setAcceptForm((f) => ({ ...f, acceptComment: e.target.value }))}
+          onChange={(e) => setAcceptForm((f) => ({ ...f, acceptComment: e.target.value.slice(0, 500) }))}
           placeholder="请输入描述"
           className={`w-full resize-none rounded-md border px-3 py-2 text-xs text-gray-800 outline-none ${editFieldCls} focus:ring-2 focus:ring-blue-100`}
         />
-        <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptComment.length} / 500</p>
+        <p className="mt-1 text-right text-xs text-gray-400">{acceptForm.acceptComment.length}/500</p>
       </div>
     </div>
   )

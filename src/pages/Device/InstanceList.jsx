@@ -3,7 +3,8 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { IconPlus } from '../../components/common/Icons'
 import {
   getAllDeviceInstances,
@@ -13,6 +14,7 @@ import {
   isDeviceSnTaken,
   setDeviceInstances,
 } from '../../mock/devices'
+import { isDeviceInstanceBoundToTask } from '../../mock/tasks'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
@@ -20,7 +22,11 @@ const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outl
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
+const DESC_MAX = 500
 const now = () => nowDateTime()
+const DELETE_DISABLED_TIP = '该设备实例已绑定任务，无法删除'
+const deleteEnabledCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
+const deleteDisabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
 
 function Field({ label, required, error, errorMsg, children }) {
   return (
@@ -41,7 +47,7 @@ function Field({ label, required, error, errorMsg, children }) {
   )
 }
 
-function InstanceModal({ open, editing, defaultCode, onCancel, onOk }) {
+function InstanceForm({ open, editing, defaultCode, onCancel, onOk }) {
   const isEdit = Boolean(editing)
   const [code, setCode] = useState('')
   const [sn, setSn] = useState('')
@@ -93,49 +99,56 @@ function InstanceModal({ open, editing, defaultCode, onCancel, onOk }) {
     })
   }
 
+  const formBody = (
+    <div className="space-y-4">
+      <Field label="设备名称" required error={codeError}>
+        <input
+          placeholder="请输入设备名称"
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setCodeError(false) }}
+          className={inputCls + (codeError ? ' border-red-400 focus:ring-red-100' : '')}
+        />
+      </Field>
+
+      <Field label="SN" required={!isEdit} error={snError}>
+        {isEdit ? (
+          <input readOnly value={sn} className={readOnlyCls} />
+        ) : (
+          <input
+            placeholder="请输入 SN 号"
+            value={sn}
+            onChange={(e) => { setSn(e.target.value); setSnError(false) }}
+            className={inputCls + (snError ? ' border-red-400 focus:ring-red-100' : '')}
+          />
+        )}
+      </Field>
+
+      <Field label="描述">
+        <textarea
+          placeholder="选填，简要说明设备用途或部署位置"
+          value={description}
+          onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
+          maxLength={DESC_MAX}
+          rows={3}
+          className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <p className="mt-1 text-right text-xs text-gray-400">
+          {description.length}/{DESC_MAX}
+        </p>
+      </Field>
+    </div>
+  )
+
   return (
-    <Modal
+    <Drawer
       open={open}
       title={isEdit ? '编辑设备实例' : '新建设备实例'}
       onCancel={onCancel}
       onOk={handleOk}
-      okText={isEdit ? '确定' : '创建'}
-      width={520}
+      okText="确定"
     >
-      <div className="space-y-4">
-        <Field label="设备名称" required error={codeError}>
-          <input
-            placeholder="请输入设备名称"
-            value={code}
-            onChange={(e) => { setCode(e.target.value); setCodeError(false) }}
-            className={inputCls + (codeError ? ' border-red-400 focus:ring-red-100' : '')}
-          />
-        </Field>
-
-        <Field label="SN" required={!isEdit} error={snError}>
-          {isEdit ? (
-            <input readOnly value={sn} className={readOnlyCls} />
-          ) : (
-            <input
-              placeholder="请输入 SN 号"
-              value={sn}
-              onChange={(e) => { setSn(e.target.value); setSnError(false) }}
-              className={inputCls + (snError ? ' border-red-400 focus:ring-red-100' : '')}
-            />
-          )}
-        </Field>
-
-        <Field label="描述">
-          <textarea
-            placeholder="选填，简要说明设备用途或部署位置"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </Field>
-      </div>
-    </Modal>
+      {formBody}
+    </Drawer>
   )
 }
 
@@ -198,6 +211,7 @@ export default function InstanceList() {
 
   const confirmDelete = () => {
     if (!deleteTarget) return
+    if (isDeviceInstanceBoundToTask(deleteTarget)) return
     setDeviceInstances((prev) => prev.filter((i) => i.id !== deleteTarget.id))
     refresh()
     setDeleteTarget(null)
@@ -205,21 +219,17 @@ export default function InstanceList() {
 
   const columns = [
     {
-      title: '编号',
+      title: '设备ID',
       dataIndex: 'id',
-      render: (v) => <span className="font-mono text-xs text-gray-700">{v ?? '—'}</span>,
+      render: (v) => v ?? '—',
     },
-    {
-      title: '设备名称',
-      dataIndex: 'code',
-      render: (v) => <span className="font-mono text-xs font-medium text-gray-800">{v}</span>,
-    },
-    { title: 'SN', dataIndex: 'sn', render: (v) => <span className="font-mono text-xs">{v}</span> },
+    { title: '设备名称', dataIndex: 'code' },
+    { title: 'SN', dataIndex: 'sn' },
     {
       title: '描述',
       dataIndex: 'description',
       render: (v) => (
-        <span className="block max-w-xs truncate text-sm text-gray-600" title={v?.trim() || undefined}>
+        <span className="block max-w-xs truncate text-gray-500" title={v?.trim() || undefined}>
           {v?.trim() ? v : '—'}
         </span>
       ),
@@ -229,12 +239,19 @@ export default function InstanceList() {
     {
       title: '操作',
       key: 'actions',
-      render: (_, row) => (
+      render: (_, row) => {
+        const boundToTask = isDeviceInstanceBoundToTask(row)
+        return (
         <div className="flex items-center gap-2">
           <PermAction permission="device.edit" className="cursor-pointer text-sm text-blue-600 hover:text-blue-500" onClick={() => { setEditingRow(row); setModalOpen(true) }}>编辑</PermAction>
-          <PermAction permission="device.delete" className="cursor-pointer text-sm text-red-500 hover:text-red-400" onClick={() => setDeleteTarget(row)}>删除</PermAction>
+          {boundToTask ? (
+            <span className={deleteDisabledCls} title={DELETE_DISABLED_TIP}>删除</span>
+          ) : (
+            <PermAction permission="device.delete" className={deleteEnabledCls} onClick={() => setDeleteTarget(row)}>删除</PermAction>
+          )}
         </div>
-      ),
+        )
+      },
     },
   ]
 
@@ -271,16 +288,16 @@ export default function InstanceList() {
       </ListPageFilter>
 
       <ListPageToolbar>
-        <h2 className="text-base font-semibold text-gray-800">设备实例</h2>
+        <h2 className="text-base font-semibold text-gray-800">设备实例列表</h2>
         <PermButton permission="device.create" variant="primary" icon={<IconPlus />} onClick={openCreateModal}>
-          新建实例
+          新建
         </PermButton>
       </ListPageToolbar>
 
       <Table embedded columns={columns} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
       </ListPageCard>
 
-      <InstanceModal
+      <InstanceForm
         open={modalOpen}
         editing={editingRow}
         defaultCode={nextCode}
@@ -288,19 +305,11 @@ export default function InstanceList() {
         onOk={handleSave}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除设备实例"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定"
-        cancelText="取消"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除实例「<strong className="text-gray-800">{deleteTarget?.code}</strong>」？删除后不可恢复。
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

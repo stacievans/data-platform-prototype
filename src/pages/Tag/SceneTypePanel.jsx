@@ -3,14 +3,15 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
-import Modal from '../../components/common/Modal'
-import { CreatorReadonlyField } from '../../components/common/FormField'
+import { IconPlus } from '../../components/common/Icons'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { getSceneTypeTree, setSceneTypeTree } from '../../mock/tags'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 import SceneTypeModal from './SceneTypeModal'
-import TagTableActions from './TagTableActions'
+import { isSceneTypeBoundToTask } from '../../mock/tasks'
+import TagTableActions, { TAG_BOUND_TIP } from './TagTableActions'
 
 const saveMoment = () => nowDateTime()
 
@@ -29,24 +30,17 @@ function deepCloneTree(tree) {
 function sceneMatches(scene, nameQ, valueQ) {
   if (!nameQ && !valueQ) return true
   const hitName = nameQ && scene.name.includes(nameQ)
-  const hitValue = valueQ && scene.name.includes(valueQ)
+  const hitValue = valueQ && (scene.value?.includes(valueQ) || scene.name.includes(valueQ))
   if (hitName || hitValue) return true
   return scene.subScenes.some((sub) => {
     if (nameQ && sub.name.includes(nameQ)) return true
-    if (valueQ && sub.name.includes(valueQ)) return true
     return sub.tags.some((tag) => {
-      const val = tag.name
+      const tagValue = tag.value ?? tag.name
       if (nameQ && tag.name.includes(nameQ)) return true
-      if (valueQ && val.includes(valueQ)) return true
+      if (valueQ && tagValue.includes(valueQ)) return true
       return false
     })
   })
-}
-
-function countCascade(scene) {
-  const subCount = scene.subScenes.length
-  const tagCount = scene.subScenes.reduce((n, sub) => n + sub.tags.length, 0)
-  return { subCount, tagCount }
 }
 
 /** 与顶栏当前登录用户一致，由调用方传入 */
@@ -78,60 +72,77 @@ function formToScene(form, existingScene, currentUser) {
   const sceneId = existingScene?.id ?? `SC-${String(Date.now()).slice(-6)}`
 
   const sceneName = form.name.trim()
+  const sceneValue = form.value.trim()
   const sceneDesc = form.description.trim()
   const sceneMetaChanged = isNewScene
     || existingScene.name !== sceneName
+    || (existingScene.value ?? '') !== sceneValue
     || (existingScene.description ?? '') !== sceneDesc
 
   const oldSubMap = new Map()
+  const oldTagMap = new Map()
   existingScene?.subScenes.forEach((sub) => {
     oldSubMap.set(sub.id, sub)
+    sub.tags.forEach((tag) => oldTagMap.set(tag.id, { sub, tag }))
   })
 
-  const subScenes = form.subScenes.map((sub, si) => {
-    const subIsNew = isNewId(sub.id)
-    const oldSub = oldSubMap.get(sub.id)
-    const subId = subIsNew
-      ? `${sceneId}-${String(si + 1).padStart(2, '0')}`
-      : sub.id
-    const subName = sub.name.trim()
+  const subScenes = form.subTags.map((subRow, si) => {
+    const subIsNew = isNewId(subRow.id)
+    const oldSub = oldSubMap.get(subRow.id)
+    const subId = oldSub?.id ?? `${sceneId}-${String(si + 1).padStart(2, '0')}`
+    const subName = subRow.name.trim()
+    const subValue = subRow.value.trim()
     const subNameChanged = subIsNew || !oldSub || oldSub.name !== subName
-
-    const oldTagMap = new Map()
-    oldSub?.tags.forEach((tag) => oldTagMap.set(tag.id, tag))
-
-    const tags = sub.tags.map((tag, ti) => {
-      const tagIsNew = isNewId(tag.id)
-      const oldTag = oldTagMap.get(tag.id)
-      const tagId = tagIsNew
-        ? `${sceneId}-T${si + 1}-${ti + 1}`
-        : tag.id
-      const tagName = tag.name.trim()
-      const tagNameChanged = tagIsNew || !oldTag || oldTag.name !== tagName
-      const meta = mergeItemMeta({
-        isNew: tagIsNew,
-        nameChanged: tagNameChanged,
-        oldItem: oldTag,
-        saveTime,
-        currentUser,
-      })
-      return { id: tagId, name: tagName, ...meta }
-    })
+    const subValueChanged = subIsNew || !oldSub || (oldSub.value ?? '') !== subValue
 
     const subMeta = mergeItemMeta({
       isNew: subIsNew,
-      nameChanged: subNameChanged,
+      nameChanged: subNameChanged || subValueChanged,
       oldItem: oldSub,
       saveTime,
       currentUser,
     })
 
-    return { id: subId, name: subName, ...subMeta, tags }
+    const tags = subRow.children.map((child, ti) => {
+      const tagIsNew = isNewId(child.id)
+      const oldPair = oldTagMap.get(child.id)
+      const oldTag = oldPair?.tag
+      const tagId = tagIsNew ? `${sceneId}-T${si + 1}-${ti + 1}` : child.id
+      const tagName = child.name.trim()
+      const tagValue = child.value.trim()
+      const tagChanged = tagIsNew || !oldTag
+        || oldTag.name !== tagName
+        || (oldTag.value ?? oldTag.name) !== tagValue
+
+      const tagMeta = mergeItemMeta({
+        isNew: tagIsNew,
+        nameChanged: tagChanged,
+        oldItem: oldTag,
+        saveTime,
+        currentUser,
+      })
+
+      return {
+        id: tagId,
+        name: tagName,
+        value: tagValue,
+        ...tagMeta,
+      }
+    })
+
+    return {
+      id: subId,
+      name: subName,
+      value: subValue,
+      ...subMeta,
+      tags,
+    }
   })
 
   return {
     id: sceneId,
     name: sceneName,
+    value: sceneValue,
     description: sceneDesc,
     creator: isNewScene ? currentUser : existingScene.creator,
     createdAt: isNewScene ? saveTime : existingScene.createdAt,
@@ -151,7 +162,7 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
       level: 1,
       rowType: 'scene',
       name: scene.name,
-      value: '—',
+      value: scene.value ?? '—',
       description: scene.description,
       creator: scene.creator,
       createdAt: scene.createdAt,
@@ -165,7 +176,7 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
 
     scene.subScenes.forEach((sub) => {
       if (nameQ || valueQ) {
-        const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && scene.name.includes(valueQ))
+        const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && (scene.value?.includes(valueQ) || scene.name.includes(valueQ)))
         const subHit = (nameQ && sub.name.includes(nameQ)) || (valueQ && sub.name.includes(valueQ))
         const tagHit = sub.tags.some((t) => (nameQ && t.name.includes(nameQ)) || (valueQ && t.name.includes(valueQ)))
         if (!sceneHit && !subHit && !tagHit) return
@@ -176,7 +187,7 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
         level: 2,
         rowType: 'subScene',
         name: sub.name,
-        value: '—',
+        value: sub.value ?? '—',
         description: '—',
         creator: sub.creator,
         createdAt: sub.createdAt,
@@ -190,7 +201,7 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
 
       sub.tags.forEach((tag) => {
         if (nameQ || valueQ) {
-          const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && scene.name.includes(valueQ))
+          const sceneHit = (nameQ && scene.name.includes(nameQ)) || (valueQ && (scene.value?.includes(valueQ) || scene.name.includes(valueQ)))
           const subHit = (nameQ && sub.name.includes(nameQ)) || (valueQ && sub.name.includes(valueQ))
           const tagHit = (nameQ && tag.name.includes(nameQ)) || (valueQ && tag.name.includes(valueQ))
           if (!sceneHit && !subHit && !tagHit) return
@@ -200,7 +211,7 @@ function buildVisibleRows(scenes, expanded, nameQ, valueQ) {
           level: 3,
           rowType: 'tag',
           name: tag.name,
-          value: tag.name,
+          value: tag.value ?? tag.name,
           description: '—',
           creator: tag.creator,
           createdAt: tag.createdAt,
@@ -267,11 +278,13 @@ export default function SceneTypePanel() {
   }
 
   const openEdit = (scene) => {
+    if (isSceneTypeBoundToTask(scene)) return
     setEditingScene(scene)
     setModalOpen(true)
   }
 
   const handleSave = (form) => {
+    if (editingScene && isSceneTypeBoundToTask(editingScene)) return
     const nextScene = formToScene(form, editingScene, creatorName)
     if (editingScene) {
       syncTree(tree.map((s) => (s.id === editingScene.id ? nextScene : s)))
@@ -284,6 +297,7 @@ export default function SceneTypePanel() {
 
   const confirmDelete = () => {
     if (!deleteTarget) return
+    if (isSceneTypeBoundToTask(deleteTarget)) return
     syncTree(tree.filter((s) => s.id !== deleteTarget.id))
     setDeleteTarget(null)
   }
@@ -324,24 +338,27 @@ export default function SceneTypePanel() {
         )
       },
     },
+    { title: '创建人', dataIndex: 'creator', render: (v) => <span className="text-gray-600">{v || '—'}</span> },
     dtCol('创建时间', 'createdAt'),
-    dtCol('最后更新', 'updatedAt'),
+    dtCol('更新时间', 'updatedAt'),
     {
       title: '操作',
       key: 'actions',
       render: (_, row) => {
         if (row.level !== 1) return null
+        const bound = isSceneTypeBoundToTask(row.sceneRef)
         return (
           <TagTableActions
             onEdit={() => openEdit(row.sceneRef)}
             onDelete={() => setDeleteTarget(row.sceneRef)}
+            editDisabled={bound}
+            deleteDisabled={bound}
+            disabledTip={TAG_BOUND_TIP}
           />
         )
       },
     },
   ]
-
-  const { subCount, tagCount } = deleteTarget ? countCascade(deleteTarget) : { subCount: 0, tagCount: 0 }
 
   return (
     <ListPageCard>
@@ -369,7 +386,7 @@ export default function SceneTypePanel() {
           <Button onClick={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}>重置</Button>
           <Button variant="primary" onClick={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}>查询</Button>
         </div>
-        <PermButton permission="tag.create" variant="primary" onClick={openCreate}>+ 新建标签</PermButton>
+        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
       </div>
       </ListPageFilter>
 
@@ -382,20 +399,11 @@ export default function SceneTypePanel() {
         onOk={handleSave}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除场景"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定删除"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除场景「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？
-          将同时级联删除 <strong className="text-red-600">{subCount}</strong> 个子场景和{' '}
-          <strong className="text-red-600">{tagCount}</strong> 个标签，此操作不可恢复。
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
     </ListPageCard>
   )
 }

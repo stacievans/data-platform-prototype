@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Drawer from '../../components/common/Drawer'
+import { DescriptionField } from '../../components/common/FormField'
 import TreeTransfer from '../../components/common/TreeTransfer'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { projects } from '../../mock/projects'
@@ -152,15 +153,10 @@ export default function CreateDatasetModal({ open, datasets, onClose }) {
                 className={inputCls(errors.name)}
               />
             </FormRow>
-            <FormRow label="描述">
-              <textarea
-                rows={3}
-                placeholder="请输入描述（选填）"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </FormRow>
+            <DescriptionField
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
           </div>
         </section>
 

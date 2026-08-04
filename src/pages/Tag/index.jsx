@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
-import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
+import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
+import { IconPlus } from '../../components/common/Icons'
 import { PermButton } from '../../components/common/PermissionAction'
-import Modal from '../../components/common/Modal'
+import Drawer from '../../components/common/Drawer'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
@@ -23,9 +24,25 @@ import {
 } from '../../mock/tags'
 import AuditTemplateListPanel from './AuditTemplateListPanel'
 import SceneTypePanel from './SceneTypePanel'
+import {
+  isAtomicSkillTagBoundToTask,
+  isBodyTypeTagBoundToTask,
+  isCollectionMethodTagBoundToTask,
+  isEndTypeTagBoundToTask,
+  isTaskPurposeTagBoundToTask,
+} from '../../mock/tasks'
 import { useTagRowActions } from './TagTableActions'
 
+const TAG_BOUND_CHECKERS = {
+  taskPurpose: isTaskPurposeTagBoundToTask,
+  collectionMethod: isCollectionMethodTagBoundToTask,
+  atomicSkill: isAtomicSkillTagBoundToTask,
+  bodyType: isBodyTypeTagBoundToTask,
+  endType: isEndTypeTagBoundToTask,
+}
+
 const now = () => nowDateTime()
+const DESC_MAX = 500
 
 function Field({ label, required, error, children }) {
   return (
@@ -72,7 +89,7 @@ function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset
         <Button onClick={onReset}>重置</Button>
         <Button variant="primary" onClick={onSearch}>查询</Button>
       </div>
-      <PermButton permission="tag.create" variant="primary" onClick={onNew}>+ 新建标签</PermButton>
+      <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={onNew}>新建</PermButton>
     </div>
   )
 }
@@ -81,8 +98,9 @@ const baseColumns = [
   { title: '标签名称', dataIndex: 'name', render: (v) => <span className="font-bold text-gray-800">{v}</span> },
   { title: '标签值', dataIndex: 'value', render: (v, row) => <span className="text-gray-600">{v ?? row.name ?? '—'}</span> },
   { title: '描述', dataIndex: 'description', render: (v) => <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span> },
+  { title: '创建人', dataIndex: 'creator', render: (v) => <span className="text-gray-600">{v || '—'}</span> },
   dtCol('创建时间', 'createdAt'),
-  dtCol('最后更新', 'updatedAt'),
+  dtCol('更新时间', 'updatedAt'),
 ]
 
 function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
@@ -128,7 +146,7 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
   }
 
   return (
-    <Modal open={open} title={isEdit ? '编辑标签' : '新建标签'} onCancel={onCancel} onOk={handleOk} okText={isEdit ? '确定' : '创建'}>
+    <Drawer open={open} title={isEdit ? '编辑标签' : '新建标签'} onCancel={onCancel} onOk={handleOk} okText="确定">
       <div className="space-y-4">
         <Field label="标签名称" required error={errs.name}>
           <input placeholder="请输入标签名称" value={form.name} onChange={(e) => set('name', e.target.value)} className={inputCls(errs.name)} />
@@ -138,15 +156,17 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
         </Field>
         <Field label="描述">
           <textarea
-            rows={2}
+            rows={3}
             placeholder="请输入描述（选填）"
             value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            onChange={(e) => set('description', e.target.value.slice(0, DESC_MAX))}
+            maxLength={DESC_MAX}
+            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
+          <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/{DESC_MAX}</p>
         </Field>
       </div>
-    </Modal>
+    </Drawer>
   )
 }
 
@@ -188,7 +208,10 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
     setEditingRow(null)
   }
 
+  const isTagBound = (row) => TAG_BOUND_CHECKERS[panelKey]?.(row) ?? false
+
   const handleSave = (tag) => {
+    if (editingRow && isTagBound(editingRow)) return
     if (editingRow) {
       sync(data.map((r) => (r.id === tag.id ? tag : r)))
     } else {
@@ -198,6 +221,7 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
   }
 
   const { actionColumn, deleteConfirmModal } = useTagRowActions({
+    isBound: isTagBound,
     onEdit: (row) => { setEditingRow(row); setModalOpen(true) },
     onDelete: (row) => sync(data.filter((r) => r.id !== row.id)),
   })
@@ -242,17 +266,14 @@ const AUDIT_SUB_TABS = [
 
 const SECTION_CONFIG = {
   collect: {
-    title: '采集标签',
     subTabs: COLLECT_SUB_TABS,
     defaultSub: 'taskPurpose',
   },
   device: {
-    title: '设备标签',
     subTabs: DEVICE_SUB_TABS,
     defaultSub: 'bodyType',
   },
   audit: {
-    title: '审核模板',
     subTabs: AUDIT_SUB_TABS,
     defaultSub: 'template',
   },
@@ -372,12 +393,12 @@ export default function TagManage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-gray-100 bg-white px-5 pt-4 pb-5 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold text-gray-800">{config.title}</h2>
+      <div className="rounded-lg border border-gray-100 bg-white px-5 pt-4 shadow-sm">
         <Tabs items={config.subTabs} activeKey={activeSub} onChange={handleSubChange} />
-        <div key={contentKey} className="mt-4">
-          <SectionContent section={section} subTab={activeSub} />
-        </div>
+      </div>
+
+      <div key={contentKey}>
+        <SectionContent section={section} subTab={activeSub} />
       </div>
     </div>
   )

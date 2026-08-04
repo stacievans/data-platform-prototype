@@ -9,6 +9,7 @@ import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { selfDatasets as initialDatasets, prependSelfDataset } from '../../mock/datasets'
 import { getDatasetListStats, matchesDatasetListFilter } from '../../utils/datasetMetrics'
 import CreateDatasetModal from './CreateDatasetModal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { dtCol, formatDateTime } from '../../utils/formatDateTime'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
@@ -46,42 +47,6 @@ function CardMenu({ onViewDetail, onDeleteClick }) {
           <PermMenuItem permission="dataset.self.delete" label="删除" onClick={close(onDeleteClick)} danger />
         </div>
       )}
-    </div>
-  )
-}
-
-/* ── 删除确认弹窗 ── */
-function DeleteConfirmModal({ dataset, open, onCancel, onConfirm }) {
-  if (!open || !dataset) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <h2 className="text-base font-semibold text-red-600">删除数据集</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-gray-500">
-            确定删除数据集「<strong className="text-gray-800">{dataset.name}</strong>」？此操作不可逆。
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button
-            onClick={onCancel}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            onClick={onConfirm}
-            className="cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-          >
-            确定删除
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -288,7 +253,6 @@ export default function SelfDataset() {
       </ListPageCard>
 
       <DeleteConfirmModal
-        dataset={deleteTarget}
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}

@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { getTaskById } from '../../mock/tasks'
 
 const routes = [
   { match: /^\/intro/, crumbs: [['数采介绍']] },
@@ -11,9 +12,10 @@ const routes = [
   { match: /^\/collection\/project/, crumbs: [['采集项目']] },
   {
     match: /^\/collection\/task\/.+/,
-    crumbs: [['采集项目', '/collection/project'], ['任务详情']],
+    crumbs: [['采集项目', '/collection/project'], ['项目详情'], ['任务详情']],
   },
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
+  { match: /^\/dataset\/self\/[^/]+\/converted\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情'], ['转换数据集详情']] },
   { match: /^\/dataset\/self\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情']] },
   { match: /^\/dataset\/self/, crumbs: [['数据集管理'], ['真机数据集']] },
   { match: /^\/tag\/audit-template\/.+/, crumbs: [['标签管理'], ['审核模板', '/tag/audit'], ['模板详情']] },
@@ -33,7 +35,30 @@ export default function Breadcrumb() {
   const { pathname } = useLocation()
 
   const route = routes.find((r) => r.match.test(pathname))
-  const crumbs = route?.crumbs
+  let crumbs = route?.crumbs
+
+  const taskMatch = pathname.match(/^\/collection\/task\/([^/]+)/)
+  if (taskMatch && crumbs) {
+    const task = getTaskById(taskMatch[1])
+    if (task?.projectId) {
+      crumbs = [
+        ['采集项目', '/collection/project'],
+        ['项目详情', `/collection/project/${task.projectId}`],
+        ['任务详情'],
+      ]
+    }
+  }
+
+  const convertedMatch = pathname.match(/^\/dataset\/self\/([^/]+)\/converted\/.+/)
+  if (convertedMatch) {
+    const datasetId = convertedMatch[1]
+    crumbs = [
+      ['数据集管理'],
+      ['真机数据集', '/dataset/self'],
+      ['数据集详情', `/dataset/self/${datasetId}`],
+      ['转换数据集详情'],
+    ]
+  }
 
   if (!crumbs?.length) return null
 

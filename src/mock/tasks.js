@@ -2,7 +2,7 @@
 // status: 草稿 | 已发布 | 已归档
 import { nowDateTime } from '../utils/formatDateTime'
 import { getPlanById, resolvePlanDeviceTypeId, resolveDeviceTypeName } from './plans'
-import { getAllDeviceInstances } from './devices'
+import { getAllDeviceInstances, getAllDeviceTypes } from './devices'
 
 export const tasks = [
   {
@@ -242,6 +242,94 @@ export function syncTasks(updater) {
   const next = typeof updater === 'function' ? updater([...tasks]) : updater
   tasks.splice(0, tasks.length, ...next)
   return [...tasks]
+}
+
+/** 设备实例是否已绑定采集任务（含 deviceInstanceId 及历史 device 编号匹配） */
+export function isDeviceInstanceBoundToTask(instance) {
+  if (!instance?.id) return false
+  const { id, code, sn } = instance
+  return tasks.some((t) => {
+    if (t.deviceInstanceId === id) return true
+    if (code && t.device === code) return true
+    if (sn && t.device === sn) return true
+    return false
+  })
+}
+
+/** 设备类型是否已绑定采集任务（含 task.deviceTypeId 及采集方案关联解析） */
+export function isDeviceTypeBoundToTask(deviceType) {
+  if (!deviceType?.id) return false
+  const typeId = deviceType.id
+  return tasks.some((t) => resolveTaskDeviceTypeId(t) === typeId)
+}
+
+function tagFieldMatches(tag, fieldValue) {
+  if (!tag || fieldValue == null || fieldValue === '') return false
+  const values = [tag.name, tag.value].filter(Boolean)
+  return values.includes(fieldValue)
+}
+
+function collectionMethodMatches(tag, method) {
+  if (!method) return false
+  if (tagFieldMatches(tag, method)) return true
+  if (method === '外骨骼' && String(tag.name ?? '').includes('外骨骼')) return true
+  return false
+}
+
+/** 任务用途标签是否已绑定采集任务 */
+export function isTaskPurposeTagBoundToTask(tag) {
+  return tasks.some((t) => tagFieldMatches(tag, t.purpose))
+}
+
+/** 采集方式标签是否已绑定采集任务（含任务与方案上的 method） */
+export function isCollectionMethodTagBoundToTask(tag) {
+  return tasks.some((t) => {
+    if (collectionMethodMatches(tag, t.method)) return true
+    const plan = getPlanById(t.planId)
+    return plan && collectionMethodMatches(tag, plan.method)
+  })
+}
+
+/** 原子技能标签是否已绑定采集任务（方案步骤引用） */
+export function isAtomicSkillTagBoundToTask(tag) {
+  const keys = [tag?.name, tag?.value].filter(Boolean)
+  if (!keys.length) return false
+  return tasks.some((t) => {
+    const plan = getPlanById(t.planId)
+    return plan?.steps?.some((step) => keys.includes(step.atomicSkill))
+  })
+}
+
+/** 本体机型标签是否已绑定采集任务（经设备类型间接关联） */
+export function isBodyTypeTagBoundToTask(tag) {
+  const bodyName = tag?.name
+  if (!bodyName) return false
+  const typeIds = getAllDeviceTypes()
+    .filter((dt) => dt.body === bodyName)
+    .map((dt) => dt.id)
+  if (!typeIds.length) return false
+  return tasks.some((t) => typeIds.includes(resolveTaskDeviceTypeId(t)))
+}
+
+/** 末端类型标签是否已绑定采集任务（经设备类型间接关联） */
+export function isEndTypeTagBoundToTask(tag) {
+  const endName = tag?.name
+  if (!endName) return false
+  const typeIds = getAllDeviceTypes()
+    .filter((dt) => dt.leftEnd === endName || dt.rightEnd === endName)
+    .map((dt) => dt.id)
+  if (!typeIds.length) return false
+  return tasks.some((t) => typeIds.includes(resolveTaskDeviceTypeId(t)))
+}
+
+/** 场景标签（一级）是否已绑定采集任务（方案 scenePath 引用） */
+export function isSceneTypeBoundToTask(scene) {
+  if (!scene?.id) return false
+  return tasks.some((t) => {
+    const plan = getPlanById(t.planId)
+    const scenePath = plan?.scenePath
+    return scenePath?.sceneId === scene.id
+  })
 }
 
 export function getTaskById(id) {

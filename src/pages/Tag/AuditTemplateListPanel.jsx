@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
-import Modal from '../../components/common/Modal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { PermAction, PermButton } from '../../components/common/PermissionAction'
-import { IconCopy } from '../../components/common/Icons'
+import { IconCopy, IconPlus } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
@@ -18,6 +18,9 @@ import {
   upsertAuditTemplate,
 } from '../../mock/tags'
 import AuditTemplateModal from './AuditTemplateModal'
+
+const NOT_CREATOR_TIP = '仅创建人可编辑或删除'
+const disabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
 
 function cloneDeep(obj) {
   return JSON.parse(JSON.stringify(obj))
@@ -40,14 +43,14 @@ function CopyIconBtn({ onClick }) {
       permission="tag.create"
       mode="disable"
       aria-label="复制"
-      title="复制"
+      title="创建副本"
       className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
       onClick={onClick}
     >
       <IconCopy />
     </PermAction>
   )
-  return <TooltipWrap label="复制">{btn}</TooltipWrap>
+  return <TooltipWrap label="创建副本">{btn}</TooltipWrap>
 }
 
 export default function AuditTemplateListPanel() {
@@ -81,6 +84,7 @@ export default function AuditTemplateListPanel() {
   }
 
   const handleSave = ({ name, description }) => {
+    if (editing && editing.creator !== creatorName) return
     const ts = nowDateTime()
     if (editing) {
       upsertAuditTemplate({
@@ -126,6 +130,7 @@ export default function AuditTemplateListPanel() {
   }
 
   const requestDelete = (row) => {
+    if (row.creator !== creatorName) return
     if (row.taskCount > 0) {
       showToast('当前标注模板已绑定采集任务，无法删除。')
       return
@@ -135,6 +140,7 @@ export default function AuditTemplateListPanel() {
 
   const confirmDelete = () => {
     if (!deleteTarget) return
+    if (deleteTarget.creator !== creatorName) return
     softDeleteAuditTemplate(deleteTarget.id)
     refresh()
     setDeleteTarget(null)
@@ -155,12 +161,19 @@ export default function AuditTemplateListPanel() {
         <span className="max-w-xs truncate block text-gray-500" title={v}>{v || '—'}</span>
       ),
     },
+    {
+      title: '创建人',
+      dataIndex: 'creator',
+      render: (v) => <span className="text-gray-600">{v || '—'}</span>,
+    },
     dtCol('创建时间', 'createdAt'),
     dtCol('更新时间', 'updatedAt'),
     {
       title: '操作',
       key: 'actions',
-      render: (_, row) => (
+      render: (_, row) => {
+        const canManage = row.creator === creatorName
+        return (
         <div className="flex flex-wrap items-center justify-center gap-2">
           <CopyIconBtn onClick={() => handleCopy(row)} />
           <PermAction
@@ -170,22 +183,31 @@ export default function AuditTemplateListPanel() {
           >
             详情
           </PermAction>
-          <PermAction
-            permission="tag.edit"
-            className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
-            onClick={() => openEdit(row)}
-          >
-            编辑
-          </PermAction>
-          <PermAction
-            permission="tag.delete"
-            className="cursor-pointer text-sm text-red-500 hover:text-red-400"
-            onClick={() => requestDelete(row)}
-          >
-            删除
-          </PermAction>
+          {canManage ? (
+            <PermAction
+              permission="tag.edit"
+              className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
+              onClick={() => openEdit(row)}
+            >
+              编辑
+            </PermAction>
+          ) : (
+            <span className={disabledCls} title={NOT_CREATOR_TIP}>编辑</span>
+          )}
+          {canManage ? (
+            <PermAction
+              permission="tag.delete"
+              className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+              onClick={() => requestDelete(row)}
+            >
+              删除
+            </PermAction>
+          ) : (
+            <span className={disabledCls} title={NOT_CREATOR_TIP}>删除</span>
+          )}
         </div>
-      ),
+        )
+      },
     },
   ]
 
@@ -217,8 +239,8 @@ export default function AuditTemplateListPanel() {
             查询
           </Button>
         </div>
-        <PermButton permission="tag.create" variant="primary" onClick={openCreate}>
-          + 新建模板
+        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>
+          新建
         </PermButton>
       </div>
       </ListPageFilter>
@@ -233,18 +255,11 @@ export default function AuditTemplateListPanel() {
         onOk={handleSave}
       />
 
-      <Modal
+      <DeleteConfirmModal
         open={!!deleteTarget}
-        title="删除模板"
         onCancel={() => setDeleteTarget(null)}
-        onOk={confirmDelete}
-        okText="确定删除"
-        width={480}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">
-          确定删除模板「<strong className="text-gray-800">{deleteTarget?.name}</strong>」？此操作为软删除，删除后列表不再展示。
-        </p>
-      </Modal>
+        onConfirm={confirmDelete}
+      />
 
       {ToastNode}
     </ListPageCard>

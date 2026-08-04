@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { IconPlus } from '../../components/common/Icons'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
 import CreateSamplingBatchModal from '../Project/CreateSamplingBatchModal'
@@ -365,8 +366,8 @@ export default function TaskList({
               抽样验收
             </Button>
             <ProjectMutateGate projectStatus={projectStatus}>
-              <PermButton permission="collection.task.create" variant="primary" onClick={() => setCreateOpen(true)}>
-                + 新建
+              <PermButton permission="collection.task.create" variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
+                新建
               </PermButton>
             </ProjectMutateGate>
           </div>
