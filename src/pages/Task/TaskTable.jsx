@@ -11,6 +11,7 @@ import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
 import CreateTaskModal from './CreateTaskModal'
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 
 const ACTION_BAR_CLS = 'inline-flex flex-nowrap items-center justify-center gap-1.5'
 
@@ -75,14 +76,14 @@ function DuplicateBtn({ onClick }) {
   return btn
 }
 
-function LinkAction({ permission, onClick, children, danger = false }) {
+function LinkAction({ permission, onClick, children, danger = false, warn = false }) {
   return (
     <PermButton
       permission={permission}
       mode="disable"
       variant={danger ? 'linkDanger' : 'link'}
       size="sm"
-      className="shrink-0 px-1"
+      className={`shrink-0 px-1${warn ? ' !text-amber-600 hover:!text-amber-500' : ''}`}
       onClick={onClick}
     >
       {children}
@@ -128,40 +129,6 @@ function ExportMenu({ onExport }) {
           </div>
         </>
       )}
-    </div>
-  )
-}
-
-/* ── 二次确认弹窗（归档）── */
-function ActionConfirmModal({ open, task, onCancel, onConfirm }) {
-  if (!open || !task) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          <div className="mb-3">
-            <h2 className="text-base font-semibold text-gray-800">归档任务</h2>
-          </div>
-          <p className="text-sm text-gray-500">
-            {`确认归档任务「${task.name}」？归档后不可继续采集。`}
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button
-            onClick={onCancel}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            onClick={onConfirm}
-            className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
-          >
-            确认
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -264,7 +231,7 @@ export default function TaskTable({
           <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'review')}>标注</LinkAction>
           <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'accept')}>验收</LinkAction>
           <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
-          <LinkAction permission="collection.task.edit" onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
+          <LinkAction permission="collection.task.edit" warn onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
         </ActionBar>
       )
     }
@@ -379,11 +346,15 @@ export default function TaskTable({
         pageResetKey={pageResetKey}
       />
 
-      <ActionConfirmModal
-        open={confirm.open}
-        task={confirm.task}
+      <DeleteConfirmModal
+        open={confirm.open && confirm.type === 'archive'}
         onCancel={closeConfirm}
         onConfirm={handleConfirm}
+        message={
+          confirm.task
+            ? `确认归档任务「${confirm.task.name}」？归档后不可继续采集。`
+            : ''
+        }
       />
 
       {editTask && (

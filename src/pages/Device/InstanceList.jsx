@@ -5,6 +5,7 @@ import Button from '../../components/common/Button'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
 import Drawer from '../../components/common/Drawer'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { DescriptionField } from '../../components/common/FormField'
 import { IconPlus } from '../../components/common/Icons'
 import {
   getAllDeviceInstances,
@@ -22,7 +23,6 @@ const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outl
 const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
-const DESC_MAX = 500
 const now = () => nowDateTime()
 const DELETE_DISABLED_TIP = '该设备实例已绑定任务，无法删除'
 const deleteEnabledCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
@@ -123,19 +123,10 @@ function InstanceForm({ open, editing, defaultCode, onCancel, onOk }) {
         )}
       </Field>
 
-      <Field label="描述">
-        <textarea
-          placeholder="选填，简要说明设备用途或部署位置"
-          value={description}
-          onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
-          maxLength={DESC_MAX}
-          rows={3}
-          className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-        <p className="mt-1 text-right text-xs text-gray-400">
-          {description.length}/{DESC_MAX}
-        </p>
-      </Field>
+      <DescriptionField
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
     </div>
   )
 

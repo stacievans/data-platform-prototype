@@ -6,6 +6,7 @@ import { PermButton, PermAction } from '../../components/common/PermissionAction
 import Drawer from '../../components/common/Drawer'
 import Modal from '../../components/common/Modal'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { DescriptionField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { IconPlus, IconUpload, IconClose } from '../../components/common/Icons'
 import {
@@ -28,7 +29,6 @@ const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200
 const selectCls = `${inputCls} bg-white`
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
-const DESC_MAX = 500
 const nowDatetime = () => nowDateTime()
 const DELETE_DISABLED_TIP = '该设备类型已绑定任务，无法删除'
 const deleteEnabledCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
@@ -285,19 +285,10 @@ function TypeModal({ open, editing, onCancel, onOk }) {
           {renderEndField('右', form.rightEnd, 'rightEnd')}
         </Field>
       </div>
-      <Field label="描述">
-        <textarea
-          rows={3}
-          placeholder="请输入描述（选填）"
-          value={form.description}
-          onChange={(e) => set('description', e.target.value.slice(0, DESC_MAX))}
-          maxLength={DESC_MAX}
-          className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-        <p className="mt-1 text-right text-xs text-gray-400">
-          {form.description.length}/{DESC_MAX}
-        </p>
-      </Field>
+      <DescriptionField
+        value={form.description}
+        onChange={(e) => set('description', e.target.value)}
+      />
       <Field label="URDF">
         <UrdfFileUpload
           fileName={form.urdfFileName}

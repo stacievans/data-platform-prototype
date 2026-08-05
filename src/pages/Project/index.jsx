@@ -344,19 +344,6 @@ function ProjectCard({
   )
 }
 
-/* ── archive confirm modal ── */
-function ArchiveConfirmModal({ project, open, onCancel, onConfirm }) {
-  if (!open || !project) return null
-  return (
-    <Modal open={open} title="归档项目" onCancel={onCancel} onOk={onConfirm} okText="确定归档" width={480}>
-      <p className="text-sm leading-relaxed text-gray-600">
-        确认归档项目「<strong className="text-gray-800">{project.name}</strong>」？
-      </p>
-    </Modal>
-  )
-}
-
-
 /* ── form field wrapper with error ── */
 function FormRow({ label, required, error, children }) {
   return (
@@ -728,11 +715,17 @@ export default function ProjectList() {
         onConfirm={confirmDelete}
       />
 
-      <ArchiveConfirmModal
-        project={archiveTarget}
+      <DeleteConfirmModal
         open={!!archiveTarget}
         onCancel={() => setArchiveTarget(null)}
         onConfirm={confirmArchive}
+        message={
+          archiveTarget ? (
+            <>
+              确认归档项目「<strong className="text-gray-800">{archiveTarget.name}</strong>」？
+            </>
+          ) : ''
+        }
       />
 
       {ToastNode}

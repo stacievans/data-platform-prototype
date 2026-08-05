@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext'
 import RolePermissionModal from './RolePermissionModal'
 import MenuPermissionTree, { normalizeRolePermissions } from './MenuPermissionTree'
 import ProjectDataTransfer from './ProjectDataTransfer'
+import { DescriptionField } from '../../components/common/FormField'
 import { projects } from '../../mock/projects'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 
@@ -68,7 +69,6 @@ export default function RoleManage() {
   const handleCreate = () => {
     const errs = {}
     if (!createForm.name.trim()) errs.name = true
-    if (!createForm.description.trim()) errs.description = true
     if (Object.keys(errs).length) { setCreateErrors(errs); return }
     addRole({
       id: nextRoleId,
@@ -150,7 +150,7 @@ export default function RoleManage() {
         return (
           <div className="flex items-center justify-center gap-2">
             {can('system.role.assignPerm')
-              ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑权限</Button>
+              ? <Button variant="link" size="sm" onClick={() => setPermTarget(row)}>编辑</Button>
               : <span className="text-xs text-gray-300">—</span>}
             {!isBuiltin && (
               <button
@@ -220,27 +220,14 @@ export default function RoleManage() {
             return (
               <div className="space-y-5">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">角色ID</label>
-                  <input readOnly value={nextRoleId} className="h-8 w-full rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none cursor-default" />
-                </div>
-                <div>
                   <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">角色名称<span className="text-red-500">*</span></label>
                   <input placeholder="请输入角色名称" value={createForm.name} onChange={(e) => setC('name', e.target.value)} className={fCls(createErrors.name)} />
                   {createErrors.name && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
                 </div>
-                <div>
-                  <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">描述<span className="text-red-500">*</span></label>
-                  <textarea
-                    rows={3}
-                    placeholder="请输入描述"
-                    value={createForm.description}
-                    onChange={(e) => setC('description', e.target.value.slice(0, 500))}
-                    maxLength={500}
-                    className={`w-full resize-none rounded-md border px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${createErrors.description ? 'border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
-                  />
-                  <p className="mt-1 text-right text-xs text-gray-400">{createForm.description.length}/500</p>
-                  {createErrors.description && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
-                </div>
+                <DescriptionField
+                  value={createForm.description}
+                  onChange={(e) => setC('description', e.target.value)}
+                />
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">菜单权限</label>
                   <MenuPermissionTree value={createMenuPermissions} onChange={setCreateMenuPermissions} />

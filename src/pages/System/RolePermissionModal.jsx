@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Drawer from '../../components/common/Drawer'
+import { DescriptionField } from '../../components/common/FormField'
 import { isRoleNameTaken } from '../../mock/rbac'
 import { projects } from '../../mock/projects'
 import MenuPermissionTree, { normalizeRolePermissions } from './MenuPermissionTree'
@@ -13,10 +14,6 @@ const inputCls = (err, disabled = false) =>
         ? 'border-red-400 focus:ring-red-100'
         : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
-
-const DESC_MAX = 500
-const textareaCls =
-  'w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 export default function RolePermissionModal({ open, role, onCancel, onSave }) {
   const isBuiltin = role?.type === '内置'
@@ -91,18 +88,10 @@ export default function RolePermissionModal({ open, role, onCancel, onSave }) {
           )}
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">描述</label>
-          <textarea
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
-            maxLength={DESC_MAX}
-            placeholder="请输入描述（选填）"
-            className={textareaCls}
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">{description.length}/{DESC_MAX}</p>
-        </div>
+        <DescriptionField
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-gray-700">菜单权限</label>

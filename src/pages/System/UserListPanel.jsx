@@ -450,7 +450,7 @@ export default function UserListPanel({
 
     if (!createForm.password.trim()) errs.password = true
 
-    if (!createForm.nickname.trim()) errs.nickname = true
+    if (variant !== 'org' && !createForm.nickname.trim()) errs.nickname = true
 
     if (Object.keys(errs).length) { setCreateErrors(errs); return }
 
@@ -472,7 +472,7 @@ export default function UserListPanel({
 
       username: createForm.username.trim(),
 
-      nickname: createForm.nickname.trim(),
+      nickname: variant === 'org' ? createForm.username.trim() : createForm.nickname.trim(),
 
       phone: createForm.phone.trim(),
 
@@ -835,11 +835,11 @@ export default function UserListPanel({
 
           <div>
 
-            <Req label="账号" />
+            <Req label={variant === 'org' ? '用户名' : '账号'} />
 
             <input
 
-              placeholder="请输入账号"
+              placeholder={variant === 'org' ? '请输入用户名' : '请输入账号'}
 
               value={form.username}
 
@@ -937,7 +937,7 @@ export default function UserListPanel({
 
 
 
-        {isCreate && (
+        {isCreate && variant !== 'org' && (
 
           <div>
 
@@ -1058,7 +1058,7 @@ export default function UserListPanel({
 
 
 
-        {isCreate && (
+        {isCreate && variant !== 'org' && (
 
           <StatusRadio
 

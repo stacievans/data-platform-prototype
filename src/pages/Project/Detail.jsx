@@ -105,7 +105,7 @@ function PlanCopyBtn({ onClick }) {
   return <PlanTooltipWrap label="创建副本">{btn}</PlanTooltipWrap>
 }
 
-function PlanLinkAction({ permission, onClick, children, danger = false }) {
+function PlanLinkAction({ permission, onClick, children, danger = false, warn = false }) {
   return (
     <PermButton
       permission={permission}
@@ -113,45 +113,16 @@ function PlanLinkAction({ permission, onClick, children, danger = false }) {
       variant="link"
       size="sm"
       onClick={onClick}
-      className={danger ? 'text-red-500 hover:text-red-600' : undefined}
+      className={
+        danger
+          ? 'text-red-500 hover:text-red-600'
+          : warn
+            ? '!text-amber-600 hover:!text-amber-500'
+            : undefined
+      }
     >
       {children}
     </PermButton>
-  )
-}
-
-function PlanActionConfirmModal({ open, plan, onCancel, onConfirm }) {
-  if (!open || !plan) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl">
-        <div className="p-6">
-          <div className="mb-3">
-            <h2 className="text-base font-semibold text-gray-800">归档采集方案</h2>
-          </div>
-          <p className="text-sm text-gray-500">
-            {`确认将方案「${plan.name}」归档？归档后不可再创建任务。`}
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          >
-            确认
-          </button>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -296,7 +267,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
-          <PlanLinkAction permission="collection.project.edit" onClick={() => setArchiveTarget(row)}>归档</PlanLinkAction>
+          <PlanLinkAction permission="collection.project.edit" warn onClick={() => setArchiveTarget(row)}>归档</PlanLinkAction>
           {canProjectMutate(projectStatus) && (
             <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
           )}
@@ -495,11 +466,15 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         </div>
       </Drawer>
 
-      <PlanActionConfirmModal
+      <DeleteConfirmModal
         open={!!archiveTarget}
-        plan={archiveTarget}
         onCancel={() => setArchiveTarget(null)}
         onConfirm={confirmArchive}
+        message={
+          archiveTarget
+            ? `确认将方案「${archiveTarget.name}」归档？归档后不可再创建任务。`
+            : ''
+        }
       />
 
       <DeleteConfirmModal

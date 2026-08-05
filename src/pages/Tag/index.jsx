@@ -7,6 +7,7 @@ import Button from '../../components/common/Button'
 import { IconPlus } from '../../components/common/Icons'
 import { PermButton } from '../../components/common/PermissionAction'
 import Drawer from '../../components/common/Drawer'
+import { DescriptionField } from '../../components/common/FormField'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
@@ -42,7 +43,6 @@ const TAG_BOUND_CHECKERS = {
 }
 
 const now = () => nowDateTime()
-const DESC_MAX = 500
 
 function Field({ label, required, error, children }) {
   return (
@@ -154,17 +154,10 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
         <Field label="标签值" required error={errs.value}>
           <input placeholder="请输入标签值" value={form.value} onChange={(e) => set('value', e.target.value)} className={inputCls(errs.value)} />
         </Field>
-        <Field label="描述">
-          <textarea
-            rows={3}
-            placeholder="请输入描述（选填）"
-            value={form.description}
-            onChange={(e) => set('description', e.target.value.slice(0, DESC_MAX))}
-            maxLength={DESC_MAX}
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">{form.description.length}/{DESC_MAX}</p>
-        </Field>
+        <DescriptionField
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+        />
       </div>
     </Drawer>
   )

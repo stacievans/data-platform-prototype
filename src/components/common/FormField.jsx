@@ -46,7 +46,7 @@ export function DescriptionField({
   label = '描述',
   value = '',
   onChange,
-  placeholder = '请输入描述（选填）',
+  placeholder = '请输入描述',
   rows = 3,
   maxLength = DESC_MAX,
   required = false,

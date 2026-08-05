@@ -132,7 +132,7 @@ export default function AuditTemplateListPanel() {
   const requestDelete = (row) => {
     if (row.creator !== creatorName) return
     if (row.taskCount > 0) {
-      showToast('当前标注模板已绑定采集任务，无法删除。')
+      showToast('当前审核模板已绑定采集任务，无法删除。')
       return
     }
     setDeleteTarget(row)

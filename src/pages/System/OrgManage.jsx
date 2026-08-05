@@ -5,6 +5,7 @@ import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/
 import Button from '../../components/common/Button'
 import Drawer from '../../components/common/Drawer'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { DescriptionField } from '../../components/common/FormField'
 import { IconPlus, IconSearch } from '../../components/common/Icons'
 import { useToast } from '../../components/common/Toast'
 import {
@@ -53,18 +54,10 @@ function OrgFormModal({ open, title, form, errors, onChange, onCancel, onOk }) {
           {errors.name === 'required' && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
           {errors.name === 'duplicate' && <p className="mt-1 text-xs text-red-500">组织名称已存在</p>}
         </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">描述</label>
-          <textarea
-            rows={4}
-            maxLength={500}
-            placeholder="请输入描述（选填）"
-            value={form.remark}
-            onChange={(e) => onChange('remark', e.target.value.slice(0, 500))}
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">{form.remark.length}/500</p>
-        </div>
+        <DescriptionField
+          value={form.remark}
+          onChange={(e) => onChange('remark', e.target.value)}
+        />
       </div>
     </Drawer>
   )

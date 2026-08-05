@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import Drawer from '../../components/common/Drawer'
+import { DescriptionField } from '../../components/common/FormField'
 import { IconPlus } from '../../components/common/Icons'
-
-const DESC_MAX = 500
 
 const inputCls = (err) =>
   `h-8 w-full rounded-md border px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 ${
@@ -10,9 +9,6 @@ const inputCls = (err) =>
       ? 'border-red-400 focus:ring-red-100'
       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
-
-const textareaCls =
-  'w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 function Field({ label, required, error, children }) {
   return (
@@ -289,19 +285,10 @@ export default function SceneTypeModal({ open, scene, onCancel, onOk }) {
           />
         </Field>
 
-        <Field label="描述">
-          <textarea
-            rows={3}
-            value={form.description}
-            onChange={(e) => setField('description', e.target.value.slice(0, DESC_MAX))}
-            maxLength={DESC_MAX}
-            placeholder="请输入描述（选填）"
-            className={textareaCls}
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">
-            {form.description.length}/{DESC_MAX}
-          </p>
-        </Field>
+        <DescriptionField
+          value={form.description}
+          onChange={(e) => setField('description', e.target.value)}
+        />
 
         <div>
           <div className="mb-3 text-sm font-medium text-gray-700">子标签</div>

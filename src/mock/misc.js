@@ -24,13 +24,6 @@ export const collectTagGroups = {
   ],
 }
 
-// 标注模板
-export const annotationTemplates = [
-  { id: 'AT-301', name: '桌面抓取标注模板', createdAt: '2026-03-18 00:00:00', updatedAt: '2026-04-20 00:00:00' },
-  { id: 'AT-302', name: '导航避障模板', createdAt: '2026-03-26 00:00:00', updatedAt: '2026-03-26 00:00:00' },
-  { id: 'AT-303', name: '回流标注模板', createdAt: '2026-05-01 00:00:00', updatedAt: '2026-05-14 00:00:00' },
-]
-
 // 兼容旧引用（部分页面可能还在 import）
 export const collectTags = Object.values(collectTagGroups).flat()
 
