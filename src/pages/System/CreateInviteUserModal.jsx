@@ -56,7 +56,7 @@ function ModeToggle({ value, onChange }) {
   )
 }
 
-function RoleMultiSelect({ value = [], onChange, options, error }) {
+export function RoleMultiSelect({ value = [], onChange, options, error }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
@@ -228,7 +228,7 @@ function SearchableUserSelect({ users, value, onChange, error }) {
   )
 }
 
-function formatRoles(roles) {
+export function formatRoles(roles) {
   if (!roles.length) return ''
   if (roles.length === 1) return roles[0]
   return roles.join('&')

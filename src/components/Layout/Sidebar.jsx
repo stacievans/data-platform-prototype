@@ -23,6 +23,7 @@ const menu = [
       { key: '/dataset/self', label: '真机数据集', permission: 'dataset.self.view' },
     ],
   },
+  { key: '/device', label: '设备管理', icon: <IconDevice />, permission: 'device.view' },
   {
     key: 'tag',
     label: '标签管理',
@@ -33,7 +34,6 @@ const menu = [
       { key: '/tag/audit', label: '审核模板', permission: 'tag.view' },
     ],
   },
-  { key: '/device', label: '设备管理', icon: <IconDevice />, permission: 'device.view' },
   {
     key: 'system',
     label: '系统管理',

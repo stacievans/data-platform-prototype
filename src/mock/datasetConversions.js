@@ -50,8 +50,49 @@ const initialConvertedDatasets = [
   },
 ]
 
+/** 送标记录：转换数据集推送到标注平台的操作日志（与转换记录 conversion jobs 独立） */
+const initialLabelSubmissionRecords = [
+  {
+    id: 'LS-4001',
+    convertedDatasetId: 'CDS-3001',
+    inputDatasetName: '家庭整理操作数据集 v2_转图片',
+    targetDatasetName: '标注平台_家庭整理_v2',
+    status: '已完成',
+    operator: 'liming',
+    operatedAt: '2026-06-07 14:30:00',
+  },
+  {
+    id: 'LS-4002',
+    convertedDatasetId: 'CDS-3001',
+    inputDatasetName: '家庭整理操作数据集 v2_转图片',
+    targetDatasetName: '标注平台_家庭整理_v2_补标批次',
+    status: '进行中',
+    operator: 'wangfang',
+    operatedAt: '2026-06-08 09:15:00',
+  },
+  {
+    id: 'LS-4003',
+    convertedDatasetId: 'CDS-3001',
+    inputDatasetName: '家庭整理操作数据集 v2_转图片',
+    targetDatasetName: '标注平台_家庭整理_试标',
+    status: '失败',
+    operator: 'liuwei',
+    operatedAt: '2026-06-06 18:42:00',
+  },
+  {
+    id: 'LS-4004',
+    convertedDatasetId: 'CDS-3002',
+    inputDatasetName: '工业装配力控数据集_转视频',
+    targetDatasetName: '标注平台_工业装配力控',
+    status: '已完成',
+    operator: 'zhanghua',
+    operatedAt: '2026-06-09 17:20:00',
+  },
+]
+
 let runtimeJobs = [...initialConversionJobs.map((j) => ({ ...j }))]
 let runtimeConverted = [...initialConvertedDatasets.map((d) => ({ ...d }))]
+let runtimeLabelSubmissions = [...initialLabelSubmissionRecords.map((r) => ({ ...r }))]
 
 export function getConversionJobsByDatasetId(datasetId) {
   return runtimeJobs
@@ -67,6 +108,12 @@ export function getConvertedDatasetsByDatasetId(datasetId) {
 
 export function getConvertedDatasetById(id) {
   return runtimeConverted.find((d) => d.id === id) ?? null
+}
+
+export function getLabelSubmissionRecordsByConvertedId(convertedDatasetId) {
+  return runtimeLabelSubmissions
+    .filter((r) => r.convertedDatasetId === convertedDatasetId)
+    .sort((a, b) => b.operatedAt.localeCompare(a.operatedAt))
 }
 
 export function getConversionJobById(id) {
@@ -164,3 +211,4 @@ export function completeConversionJob(job) {
 export const CONVERSION_TASK_TYPES = ['全部', '转图片', '转视频']
 export const CONVERSION_STATUSES = ['全部', '进行中', '已完成', '失败']
 export const CONVERTED_DATASET_TYPES = ['全部', '图片', '视频']
+export const LABEL_SUBMISSION_STATUSES = ['进行中', '已完成', '失败']

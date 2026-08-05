@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import Table from '../../components/common/Table'
@@ -42,7 +43,12 @@ function StatusSwitch({ enabled, disabled, onToggle }) {
 function ProjectStatusSwitch({ row, onClose, onOpen }) {
   const status = normalizeProjectStatus(row.status)
   if (status === 'archived') {
-    return <StatusSwitch enabled={false} disabled onToggle={() => {}} />
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm text-gray-400">
+        <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+        归档
+      </span>
+    )
   }
 
   const enabled = status === 'open'
@@ -159,6 +165,89 @@ function projectCollectProgress(project) {
   const target = project.target ?? 0
   const percent = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0
   return { collected, target, percent }
+}
+
+function CollectProgressHeader() {
+  const triggerRef = useRef(null)
+  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const hint = '已采集数/目标采集数'
+
+  const updatePos = useCallback(() => {
+    const el = triggerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    setPos({ top: rect.top - 6, left: rect.left + rect.width / 2 })
+  }, [])
+
+  const show = () => { updatePos(); setVisible(true) }
+  const hide = () => setVisible(false)
+
+  useEffect(() => {
+    if (!visible) return undefined
+    const onReposition = () => updatePos()
+    window.addEventListener('scroll', onReposition, true)
+    window.addEventListener('resize', onReposition)
+    return () => {
+      window.removeEventListener('scroll', onReposition, true)
+      window.removeEventListener('resize', onReposition)
+    }
+  }, [visible, updatePos])
+
+  const tooltip = visible ? createPortal(
+    <div
+      style={{ position: 'fixed', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+      className="pointer-events-none whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs font-normal text-white shadow"
+      role="tooltip"
+    >
+      {hint}
+    </div>,
+    document.body,
+  ) : null
+
+  return (
+    <>
+      <span className="inline-flex items-center justify-center gap-1">
+        采集进度
+        <span
+          ref={triggerRef}
+          className="inline-flex cursor-help"
+          aria-label={hint}
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          onFocus={show}
+          onBlur={hide}
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" className="text-gray-800" aria-hidden>
+            <circle cx="8" cy="8" r="7" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M8 4.5v4.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <circle cx="8" cy="11.2" r="0.75" fill="currentColor" />
+          </svg>
+        </span>
+      </span>
+      {tooltip}
+    </>
+  )
+}
+
+function CollectProgressCell({ row }) {
+  const { collected, target, percent } = projectCollectProgress(row)
+  const barColor = percent >= 100 ? 'bg-emerald-500' : 'bg-blue-500'
+
+  return (
+    <div className="min-w-[9rem] text-left">
+      <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
+        <span className="tabular-nums">{collected}/{target} 条</span>
+        <span className="tabular-nums">{percent}%</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 function ProjectCard({
@@ -292,7 +381,7 @@ function ViewDetailBtn({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
+      className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-sm font-medium text-white transition hover:bg-blue-700"
     >
       查看详情
     </button>
@@ -303,10 +392,10 @@ function ProjectListActions({ row, onViewDetail, onEdit, onArchive, onDelete }) 
   const status = normalizeProjectStatus(row.status)
   const isArchived = status === 'archived'
 
-  const linkCls = 'cursor-pointer px-1 py-0.5 text-xs text-blue-600 hover:text-blue-500'
-  const warnCls = 'cursor-pointer px-1 py-0.5 text-xs text-amber-600 hover:text-amber-500'
-  const dangerCls = 'cursor-pointer px-1 py-0.5 text-xs text-red-500 hover:text-red-400'
-  const disabledCls = 'px-1 py-0.5 text-xs text-gray-300 cursor-not-allowed select-none'
+  const linkCls = 'cursor-pointer px-1 py-0.5 text-sm text-blue-600 hover:text-blue-500'
+  const warnCls = 'cursor-pointer px-1 py-0.5 text-sm text-amber-600 hover:text-amber-500'
+  const dangerCls = 'cursor-pointer px-1 py-0.5 text-sm text-red-500 hover:text-red-400'
+  const disabledCls = 'px-1 py-0.5 text-sm text-gray-300 cursor-not-allowed select-none'
 
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -471,16 +560,21 @@ export default function ProjectList() {
         {v}
       </button>
     ) },
-    { title: '任务数',   dataIndex: 'taskCount' },
-    { title: '创建人',   dataIndex: 'creator' },
     { title: '项目描述', dataIndex: 'description', render: (v) => <span className="block max-w-56 truncate text-gray-500" title={v}>{v}</span> },
+    { title: '任务数', dataIndex: 'taskCount' },
     {
-      title: '状态',
+      title: <CollectProgressHeader />,
+      dataIndex: 'collected',
+      render: (_, row) => <CollectProgressCell row={row} />,
+    },
+    {
+      title: '项目状态',
       dataIndex: 'status',
       render: (_, row) => (
         <ProjectStatusSwitch row={row} onClose={handleCloseProject} onOpen={handleOpenProject} />
       ),
     },
+    { title: '创建人', dataIndex: 'creator' },
     dtCol('创建时间', 'createdAt'),
     dtCol('更新时间', 'updatedAt'),
     {

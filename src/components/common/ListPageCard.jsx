@@ -1,3 +1,5 @@
+import { Children } from 'react'
+
 /** 检索栏 + 列表/表格统一白色容器 */
 export default function ListPageCard({ children, className = '' }) {
   return (
@@ -14,9 +16,18 @@ export function ListPageFilter({ children, className = '' }) {
 
 /** 标题栏 + 操作按钮（列表标题与新建等） */
 export function ListPageToolbar({ children, className = '', first = false }) {
+  const childArray = Children.toArray(children)
+  const left = childArray[0] ?? null
+  const right = childArray.slice(1)
+
   return (
-    <div className={`flex items-center justify-between border-b border-gray-100 px-4 pb-3 ${first ? 'pt-4' : 'pt-3'} ${className}`}>
-      {children}
+    <div className={`flex items-center justify-between gap-3 border-b border-gray-100 px-4 pb-3 ${first ? 'pt-4' : 'pt-3'} ${className}`}>
+      <div className="min-w-0">{left}</div>
+      {right.length > 0 && (
+        <div className="flex shrink-0 items-center gap-3">
+          {right}
+        </div>
+      )}
     </div>
   )
 }

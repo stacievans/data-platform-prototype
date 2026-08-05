@@ -38,7 +38,7 @@ import {
 } from '../../mock/organizations'
 
 import { useAuth } from '../../context/AuthContext'
-import CreateInviteUserModal from './CreateInviteUserModal'
+import CreateInviteUserModal, { RoleMultiSelect, formatRoles } from './CreateInviteUserModal'
 import { dtCol, formatRelativeTime, nowDateTime } from '../../utils/formatDateTime'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
@@ -97,13 +97,15 @@ const emptyCreate = {
 
 const emptyEdit = {
 
+  password: '',
+
   phone: '',
 
   email: '',
 
   remark: '',
 
-  role: '',
+  roles: [],
 
 }
 
@@ -261,6 +263,10 @@ export default function UserListPanel({
 
   const [createErrors, setCreateErrors] = useState({})
 
+  const [editErrors, setEditErrors] = useState({})
+
+  const [passwordEditing, setPasswordEditing] = useState(false)
+
   const [deleteTarget, setDeleteTarget] = useState(null)
 
 
@@ -364,11 +370,11 @@ export default function UserListPanel({
 
     const names = new Set(assignableRoleNames)
 
-    if (editForm.role) names.add(editForm.role)
+    editForm.roles.forEach((r) => names.add(r))
 
     return [...names]
 
-  }, [assignableRoleNames, editForm.role])
+  }, [assignableRoleNames, editForm.roles])
 
 
 
@@ -574,15 +580,21 @@ export default function UserListPanel({
 
     setEditForm({
 
+      password: '',
+
       phone: user.phone ?? '',
 
       email: user.email ?? '',
 
       remark: user.remark ?? '',
 
-      role: user.role,
+      roles: (user.role ?? '').split('&').filter(Boolean),
 
     })
+
+    setEditErrors({})
+
+    setPasswordEditing(false)
 
   }
 
@@ -592,7 +604,19 @@ export default function UserListPanel({
 
     if (!editingUser) return
 
-    updateRuntimeUser(editingUser.id, {
+    const nextErrs = {}
+
+    if (variant !== 'org' && !editForm.roles.length) nextErrs.roles = true
+
+    if (Object.keys(nextErrs).length) {
+
+      setEditErrors(nextErrs)
+
+      return
+
+    }
+
+    const patch = {
 
       phone: editForm.phone.trim(),
 
@@ -600,13 +624,25 @@ export default function UserListPanel({
 
       remark: editForm.remark.trim(),
 
-      role: variant === 'org' ? ORG_ADMIN_ROLE : editForm.role,
+      role: variant === 'org' ? ORG_ADMIN_ROLE : formatRoles(editForm.roles),
 
-    })
+    }
+
+    if (passwordEditing && editForm.password.trim()) {
+
+      patch.password = editForm.password.trim()
+
+    }
+
+    updateRuntimeUser(editingUser.id, patch)
 
     refreshUsers()
 
     setEditingUser(null)
+
+    setEditErrors({})
+
+    setPasswordEditing(false)
 
   }
 
@@ -779,9 +815,15 @@ export default function UserListPanel({
 
       ? (k, v) => setC(k, v)
 
-      : (k, v) => setEditForm((f) => ({ ...f, [k]: v }))
+      : (k, v) => {
 
-    const errors = isCreate ? createErrors : {}
+        setEditForm((f) => ({ ...f, [k]: v }))
+
+        if (k === 'roles') setEditErrors((e) => ({ ...e, roles: false }))
+
+      }
+
+    const errors = isCreate ? createErrors : editErrors
 
 
 
@@ -819,7 +861,7 @@ export default function UserListPanel({
 
 
 
-        {isCreate && (
+        {isCreate ? (
 
           <div>
 
@@ -834,6 +876,60 @@ export default function UserListPanel({
               error={Boolean(errors.password)}
 
             />
+
+          </div>
+
+        ) : passwordEditing ? (
+
+          <div>
+
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">密码</label>
+
+            <PasswordInput
+
+              value={form.password}
+
+              onChange={(e) => setForm('password', e.target.value)}
+
+            />
+
+            <p className="mt-1 text-xs text-gray-500">修改后将覆盖旧密码</p>
+
+          </div>
+
+        ) : (
+
+          <div>
+
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">密码</label>
+
+            <div className="flex items-center gap-2">
+
+              <input
+
+                readOnly
+
+                value="********"
+
+                className="h-8 flex-1 cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
+
+              />
+
+              <button
+
+                type="button"
+
+                onClick={() => setPasswordEditing(true)}
+
+                className="h-8 shrink-0 cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+
+              >
+
+                修改
+
+              </button>
+
+            </div>
 
           </div>
 
@@ -875,7 +971,7 @@ export default function UserListPanel({
 
           <ReadonlyField label="角色" value={ORG_ADMIN_ROLE} />
 
-        ) : (
+        ) : isCreate ? (
 
           <div>
 
@@ -884,12 +980,12 @@ export default function UserListPanel({
             <select
               value={form.role}
               onChange={(e) => setForm('role', e.target.value)}
-              className={fSelCls(isCreate && errors.role)}
+              className={fSelCls(errors.role)}
             >
 
-              {isCreate && <option value="" disabled hidden>请选择角色</option>}
+              <option value="" disabled hidden>请选择角色</option>
 
-              {(isCreate ? assignableRoleNames : editRoleOptions).map((r) => (
+              {assignableRoleNames.map((r) => (
 
                 <option key={r} value={r}>{r}</option>
 
@@ -897,7 +993,24 @@ export default function UserListPanel({
 
             </select>
 
-            {isCreate && errors.role && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+            {errors.role && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+
+          </div>
+
+        ) : (
+
+          <div>
+
+            <Req label="角色" />
+
+            <RoleMultiSelect
+              value={form.roles}
+              onChange={(roles) => setForm('roles', roles)}
+              options={editRoleOptions}
+              error={errors.roles}
+            />
+
+            {errors.roles && <p className="mt-1 text-xs text-red-500">请至少选择一个角色</p>}
 
           </div>
 
@@ -1175,7 +1288,7 @@ export default function UserListPanel({
 
         title="编辑"
 
-        onCancel={() => setEditingUser(null)}
+        onCancel={() => { setEditingUser(null); setEditErrors({}); setPasswordEditing(false) }}
 
         onOk={handleSave}
 

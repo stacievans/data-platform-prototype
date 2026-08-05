@@ -1,15 +1,28 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import Table from '../../components/common/Table'
+import Tabs from '../../components/common/Tabs'
 import ListPageCard, { ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
 import {
   getConvertedDatasetById,
   getConvertedDatasetFiles,
+  getLabelSubmissionRecordsByConvertedId,
 } from '../../mock/datasetConversions'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, formatDateTime } from '../../utils/formatDateTime'
+
+const DETAIL_TABS = [
+  { key: 'files', label: '文件列表' },
+  { key: 'labelSubmission', label: '送标记录' },
+]
+
+const LABEL_STATUS_COLOR = {
+  进行中: 'blue',
+  已完成: 'green',
+  失败: 'red',
+}
 
 function FilesList({ convertedId }) {
   const files = useMemo(() => getConvertedDatasetFiles(convertedId), [convertedId])
@@ -23,7 +36,7 @@ function FilesList({ convertedId }) {
   ]
 
   return (
-    <ListPageCard>
+    <>
       <ListPageToolbar first>
         <h3 className="text-sm font-semibold text-gray-800">数据集文件列表</h3>
         <span />
@@ -36,13 +49,60 @@ function FilesList({ convertedId }) {
         rowKey="id"
         pageSize={LIST_PAGE_SIZE}
       />
-    </ListPageCard>
+    </>
+  )
+}
+
+function LabelSubmissionList({ convertedId }) {
+  const records = useMemo(
+    () => getLabelSubmissionRecordsByConvertedId(convertedId),
+    [convertedId],
+  )
+
+  const columns = [
+    {
+      title: '输入数据集',
+      dataIndex: 'inputDatasetName',
+      wrap: true,
+      render: (v) => <span className="text-gray-700">{v}</span>,
+    },
+    {
+      title: '目标数据集',
+      dataIndex: 'targetDatasetName',
+      wrap: true,
+      render: (v) => <span className="text-gray-700">{v}</span>,
+    },
+    {
+      title: '送标状态',
+      dataIndex: 'status',
+      render: (v) => <Badge color={LABEL_STATUS_COLOR[v] ?? 'gray'} dot>{v}</Badge>,
+    },
+    { title: '操作人', dataIndex: 'operator' },
+    dtCol('操作时间', 'operatedAt'),
+  ]
+
+  return (
+    <>
+      <ListPageToolbar first>
+        <h3 className="text-sm font-semibold text-gray-800">送标任务列表</h3>
+        <span />
+      </ListPageToolbar>
+
+      <Table
+        embedded
+        columns={columns}
+        dataSource={records}
+        rowKey="id"
+        pageSize={LIST_PAGE_SIZE}
+      />
+    </>
   )
 }
 
 export default function ConvertedDatasetDetail() {
   const { datasetId, convertedId } = useParams()
   const navigate = useNavigate()
+  const [tab, setTab] = useState('files')
 
   const converted = useMemo(() => getConvertedDatasetById(convertedId), [convertedId])
 
@@ -79,7 +139,16 @@ export default function ConvertedDatasetDetail() {
         </div>
       </div>
 
-      <FilesList convertedId={converted.id} />
+      <ListPageCard>
+        <div className="border-b border-gray-100 px-4 pt-4">
+          <Tabs items={DETAIL_TABS} activeKey={tab} onChange={setTab} />
+        </div>
+
+        {tab === 'files' && <FilesList convertedId={converted.id} />}
+        {tab === 'labelSubmission' && (
+          <LabelSubmissionList convertedId={converted.id} />
+        )}
+      </ListPageCard>
     </div>
   )
 }

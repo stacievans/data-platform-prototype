@@ -274,14 +274,14 @@ function TypeModal({ open, editing, onCancel, onOk }) {
         />
         <p className="mt-1 text-xs text-gray-400">参考：{referencePreview}</p>
       </Field>
-      <Field label="本体机型" required={!isEdit} error={errs.body}>
+      <Field label="本体机型" required error={errs.body}>
         {renderBodyField()}
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="左末端类型" required={!isEdit} error={errs.leftEnd}>
+        <Field label="左末端类型" required error={errs.leftEnd}>
           {renderEndField('左', form.leftEnd, 'leftEnd')}
         </Field>
-        <Field label="右末端类型" required={!isEdit} error={errs.rightEnd}>
+        <Field label="右末端类型" required error={errs.rightEnd}>
           {renderEndField('右', form.rightEnd, 'rightEnd')}
         </Field>
       </div>

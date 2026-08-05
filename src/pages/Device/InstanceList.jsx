@@ -110,7 +110,7 @@ function InstanceForm({ open, editing, defaultCode, onCancel, onOk }) {
         />
       </Field>
 
-      <Field label="SN" required={!isEdit} error={snError}>
+      <Field label="SN" required error={snError}>
         {isEdit ? (
           <input readOnly value={sn} className={readOnlyCls} />
         ) : (

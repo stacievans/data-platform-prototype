@@ -976,9 +976,11 @@ function LayoutTab({ projectId, projectStatus }) {
       {ToastNode}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-800">布局列表</h2>
-        <ProjectMutateGate projectStatus={projectStatus}>
-          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
-        </ProjectMutateGate>
+        <div className="flex items-center gap-3">
+          <ProjectMutateGate projectStatus={projectStatus}>
+            <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
+          </ProjectMutateGate>
+        </div>
       </div>
       <Table columns={columns} dataSource={displayLayouts} />
 
