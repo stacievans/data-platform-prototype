@@ -6,6 +6,27 @@ import { IconChevronDown } from '../../components/common/Icons'
 const CHECKBOX_CLS = 'h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-gray-300 accent-blue-600'
 const ROW_HEIGHT = 28
 
+function buildActionNodes(moduleId, actions) {
+  return actions
+    .filter((action) => action !== 'view')
+    .map((action) => ({
+      id: `${moduleId}.${action}`,
+      name: ACTION_LABELS[action] ?? action,
+      nodeType: 'action',
+      permissionKey: `${moduleId}.${action}`,
+    }))
+}
+
+function buildMenuNode(leaf) {
+  return {
+    id: leaf.id,
+    name: leaf.name,
+    nodeType: 'menu',
+    permissionKey: `${leaf.id}.view`,
+    children: buildActionNodes(leaf.id, leaf.actions),
+  }
+}
+
 function buildTree(catalog) {
   return catalog.map((group) => {
     if (group.children) {
@@ -13,36 +34,43 @@ function buildTree(catalog) {
         id: group.id,
         name: group.name,
         nodeType: 'directory',
-        children: group.children.map((leaf) => ({
-          id: leaf.id,
-          name: leaf.name,
-          nodeType: 'menu',
-          children: leaf.actions.map((action) => ({
-            id: `${leaf.id}.${action}`,
-            name: ACTION_LABELS[action] ?? action,
-            nodeType: 'action',
-            permissionKey: `${leaf.id}.${action}`,
-          })),
-        })),
+        children: group.children.map((leaf) => buildMenuNode(leaf)),
       }
     }
-    return {
-      id: group.id,
-      name: group.name,
-      nodeType: 'menu',
-      children: group.actions.map((action) => ({
-        id: `${group.id}.${action}`,
-        name: ACTION_LABELS[action] ?? action,
-        nodeType: 'action',
-        permissionKey: `${group.id}.${action}`,
-      })),
-    }
+    return buildMenuNode(group)
   })
 }
 
 function collectPermissionKeys(node) {
-  if (node.permissionKey) return [node.permissionKey]
-  return (node.children ?? []).flatMap(collectPermissionKeys)
+  const keys = node.permissionKey ? [node.permissionKey] : []
+  for (const child of node.children ?? []) {
+    keys.push(...collectPermissionKeys(child))
+  }
+  return keys
+}
+
+function getNodeCheckState(node, selected, parentChildLinkage) {
+  const keys = collectPermissionKeys(node)
+
+  if (parentChildLinkage) {
+    if (keys.length === 0) return { checked: false, indeterminate: false }
+    const selectedCount = keys.filter((k) => selected.has(k)).length
+    return {
+      checked: selectedCount === keys.length,
+      indeterminate: selectedCount > 0 && selectedCount < keys.length,
+    }
+  }
+
+  if (node.permissionKey) {
+    return { checked: selected.has(node.permissionKey), indeterminate: false }
+  }
+
+  if (keys.length === 0) return { checked: false, indeterminate: false }
+  const selectedCount = keys.filter((k) => selected.has(k)).length
+  return {
+    checked: selectedCount === keys.length,
+    indeterminate: false,
+  }
 }
 
 function collectExpandableIds(nodes) {
@@ -83,16 +111,9 @@ function TreeNode({
 }) {
   const hasChildren = (node.children?.length ?? 0) > 0
   const isExpanded = expanded.has(node.id)
-  const keys = collectPermissionKeys(node)
-  const checked = node.permissionKey
-    ? selected.has(node.permissionKey)
-    : keys.length > 0 && keys.every((k) => selected.has(k))
-  const indeterminate = !node.permissionKey
-    && keys.some((k) => selected.has(k))
-    && !checked
+  const { checked, indeterminate } = getNodeCheckState(node, selected, parentChildLinkage)
 
   const handleToggle = () => {
-    if (!parentChildLinkage && !node.permissionKey) return
     onToggleSelect(node, !checked)
   }
 
@@ -148,7 +169,7 @@ export default function MenuPermissionTree({ value = [], onChange }) {
   const expandableIds = useMemo(() => collectExpandableIds(tree), [tree])
   const selected = useMemo(() => new Set(value), [value])
   const [expanded, setExpanded] = useState(() => new Set())
-  const [parentChildLinkage, setParentChildLinkage] = useState(true)
+  const [parentChildLinkage, setParentChildLinkage] = useState(false)
 
   const allExpanded = expandableIds.length > 0 && expandableIds.every((id) => expanded.has(id))
   const allSelected = allKeys.length > 0 && allKeys.every((k) => selected.has(k))
@@ -182,6 +203,12 @@ export default function MenuPermissionTree({ value = [], onChange }) {
     } else if (node.permissionKey) {
       if (checked) next.add(node.permissionKey)
       else next.delete(node.permissionKey)
+    } else {
+      const keys = collectPermissionKeys(node)
+      keys.forEach((k) => {
+        if (checked) next.add(k)
+        else next.delete(k)
+      })
     }
     onChange([...next])
   }

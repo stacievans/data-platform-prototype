@@ -855,7 +855,21 @@ export default function UserListPanel({
 
         ) : (
 
-          <ReadonlyField label="用户名" value={editingUser?.username ?? ''} />
+          <div>
+
+            <Req label="用户名" />
+
+            <input
+
+              readOnly
+
+              value={editingUser?.username ?? ''}
+
+              className="h-8 w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
+
+            />
+
+          </div>
 
         )}
 
@@ -883,7 +897,7 @@ export default function UserListPanel({
 
           <div>
 
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">密码</label>
+            <Req label="密码" />
 
             <PasswordInput
 
@@ -891,9 +905,9 @@ export default function UserListPanel({
 
               onChange={(e) => setForm('password', e.target.value)}
 
-            />
+              placeholder="请输入新密码"
 
-            <p className="mt-1 text-xs text-gray-500">修改后将覆盖旧密码</p>
+            />
 
           </div>
 
@@ -901,35 +915,13 @@ export default function UserListPanel({
 
           <div>
 
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">密码</label>
+            <Req label="密码" />
 
-            <div className="flex items-center gap-2">
+            <Button variant="primary" onClick={() => setPasswordEditing(true)}>
 
-              <input
+              修改密码
 
-                readOnly
-
-                value="********"
-
-                className="h-8 flex-1 cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
-
-              />
-
-              <button
-
-                type="button"
-
-                onClick={() => setPasswordEditing(true)}
-
-                className="h-8 shrink-0 cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-
-              >
-
-                修改
-
-              </button>
-
-            </div>
+            </Button>
 
           </div>
 

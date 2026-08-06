@@ -7,9 +7,7 @@ import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectContr
 import SceneCascader from '../common/SceneCascader'
 import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags, getAuditTemplates, getAuditTemplateById } from '../../mock/tags'
 import { resolvePlanDeviceTypeId } from '../../mock/plans'
-import FragmentAnnotPreconfigPanel from './FragmentAnnotPreconfigPanel'
 import {
-  getDisplayFragmentTypes,
   resolveAnnotAutoFragment,
   resolveCustomFragmentTypesFromPlan,
   stripPresetFragmentTypes,
@@ -17,7 +15,10 @@ import {
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 
-export const COLLECT_PLAN_DRAWER_WIDTH = 'min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
+export const FRAGMENT_ANNOT_DRAWER_WIDTH = 'min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
+
+export const FRAGMENT_ANNOT_CONFIG_HINT =
+  '可在采集方案列表-操作-片段标注中查看/编辑片段标注配置'
 
 export const emptyCreatePlan = () => ({
   name: '',
@@ -260,14 +261,6 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
   const auditTemplates = useMemo(() => getAuditTemplates(), [])
   const templateName = getAuditTemplateById(form.annotTemplateId)?.name ?? '—'
   const autoFromPlan = form.annotAutoFragment !== false
-  const customTypes = useMemo(
-    () => stripPresetFragmentTypes(form.fragmentAnnotTypes ?? []),
-    [form.fragmentAnnotTypes],
-  )
-  const displayTypes = useMemo(
-    () => getDisplayFragmentTypes(autoFromPlan, customTypes),
-    [autoFromPlan, customTypes],
-  )
 
   const handleAutoToggle = (checked) => {
     onChange({
@@ -275,10 +268,6 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
       annotGenConfig: checked,
       annotPreLabel: checked,
     })
-  }
-
-  const handleFragmentTypesChange = (nextTypes) => {
-    onChange({ fragmentAnnotTypes: stripPresetFragmentTypes(nextTypes) })
   }
 
   if (readonly) {
@@ -289,15 +278,17 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
         </Field>
         <div>
           <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-          <p className="mb-2 text-sm text-gray-600">
-            {autoFromPlan ? '☑' : '☐'} 基于采集方案生成片段标注配置并预标注
-          </p>
-          <FragmentAnnotPreconfigPanel
-            readonly
-            types={displayTypes}
-            autoFromPlan={autoFromPlan}
-            onChange={() => {}}
-          />
+          <label className="mb-2 flex cursor-default items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={autoFromPlan}
+              readOnly
+              disabled
+              className="h-4 w-4 accent-blue-600"
+            />
+            基于采集方案生成片段标注配置并预标注
+          </label>
+          <p className="text-xs text-gray-400">{FRAGMENT_ANNOT_CONFIG_HINT}</p>
         </div>
       </div>
     )
@@ -315,7 +306,7 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
       </Field>
       <div>
         <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-        <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+        <label className="mb-2 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
             checked={autoFromPlan}
@@ -324,12 +315,7 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
           />
           基于采集方案生成片段标注配置并预标注
         </label>
-        <FragmentAnnotPreconfigPanel
-          types={displayTypes}
-          autoFromPlan={autoFromPlan}
-          onChange={handleFragmentTypesChange}
-          defaultExpanded={false}
-        />
+        <p className="text-xs text-gray-400">{FRAGMENT_ANNOT_CONFIG_HINT}</p>
       </div>
     </div>
   )
@@ -615,7 +601,7 @@ export function planToForm(plan) {
     annotAutoFragment: resolveAnnotAutoFragment(plan),
     annotGenConfig: plan.annotGenConfig !== false,
     annotPreLabel: plan.annotPreLabel !== false,
-    fragmentAnnotTypes: resolveCustomFragmentTypesFromPlan(plan),
+    fragmentAnnotTypes: plan?.fragmentAnnotTypes ?? [],
   }
 }
 
@@ -641,7 +627,7 @@ export function buildPlanPayloadFromForm(form) {
     annotAutoFragment: form.annotAutoFragment !== false,
     annotGenConfig: form.annotAutoFragment !== false,
     annotPreLabel: form.annotAutoFragment !== false,
-    fragmentAnnotTypes: stripPresetFragmentTypes(form.fragmentAnnotTypes ?? []),
+    fragmentAnnotTypes: form.fragmentAnnotTypes ?? [],
   }
 }
 

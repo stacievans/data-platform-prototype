@@ -13,7 +13,7 @@ export function nextFragmentId(prefix = 'frag') {
 }
 
 export function buildPresetFragmentTypes() {
-  const skillOptions = getAtomicSkillTags().map((t) => ({ name: t.name, value: t.name }))
+  const skillOptions = getAtomicSkillTags().map((t) => ({ name: t.name, value: t.name, isDefault: false }))
   return [
     {
       id: 'preset-action-semantics',
@@ -82,7 +82,23 @@ export function emptyFragmentAttribute() {
 }
 
 export function emptyFragmentOption() {
-  return { name: '', value: '' }
+  return { name: '', value: '', isDefault: false }
+}
+
+export function normalizeFragmentOption(option) {
+  return {
+    name: option?.name ?? '',
+    value: option?.value ?? '',
+    isDefault: Boolean(option?.isDefault),
+  }
+}
+
+export function normalizeFragmentOptions(options = [], inputType = 'multi') {
+  const normalized = options.map(normalizeFragmentOption)
+  if (inputType !== 'single') return normalized
+  const defaultIndex = normalized.findIndex((opt) => opt.isDefault)
+  if (defaultIndex < 0) return normalized
+  return normalized.map((opt, index) => ({ ...opt, isDefault: index === defaultIndex }))
 }
 
 export function mergePresetFragmentTypes(existing = []) {
@@ -95,9 +111,14 @@ export function stripPresetFragmentTypes(existing = []) {
   return (existing ?? []).filter((t) => !t.preset)
 }
 
-/** 表单仅存自定义类型；勾选时展示层合并预置大类 */
-export function getDisplayFragmentTypes(autoFromPlan, customTypes = []) {
-  const custom = (customTypes ?? []).filter((t) => !t.preset)
+/** 表单展示层合并预置大类；若已存预置类型则优先使用存储值 */
+export function getDisplayFragmentTypes(autoFromPlan, storedTypes = []) {
+  const all = storedTypes ?? []
+  const storedPresets = all.filter((t) => t.preset)
+  const custom = all.filter((t) => !t.preset)
+  if (storedPresets.length > 0) {
+    return [...storedPresets, ...custom]
+  }
   return autoFromPlan ? mergePresetFragmentTypes(custom) : custom
 }
 
@@ -107,8 +128,7 @@ export function resolveCustomFragmentTypesFromPlan(plan) {
 
 export function resolveFragmentTypesFromPlan(plan) {
   const auto = resolveAnnotAutoFragment(plan)
-  const custom = resolveCustomFragmentTypesFromPlan(plan)
-  return getDisplayFragmentTypes(auto, custom)
+  return getDisplayFragmentTypes(auto, plan?.fragmentAnnotTypes ?? [])
 }
 
 export function resolveAnnotAutoFragment(plan) {

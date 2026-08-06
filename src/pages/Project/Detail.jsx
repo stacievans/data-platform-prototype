@@ -46,10 +46,10 @@ import {
   buildPlanPayloadFromForm,
   calcPlanDurationMeta,
   CollectPlanFormFields,
-  COLLECT_PLAN_DRAWER_WIDTH,
   Field,
   readonlyCls,
 } from '../../components/collect/CollectPlanForm'
+import FragmentAnnotConfigDrawer from '../../components/collect/FragmentAnnotConfigDrawer'
 import { getAnyEntryIdByProjectId } from '../../mock/entries'
 import { tasks as taskStore, syncTasks, nowDatetime } from '../../mock/tasks'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
@@ -162,6 +162,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const [createTaskPlan, setCreateTaskPlan] = useState(null)
   const [archiveTarget, setArchiveTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [fragmentAnnotTarget, setFragmentAnnotTarget] = useState(null)
 
   const [qPlanId, setQPlanId] = useState('')
   const [qPlanName, setQPlanName] = useState('')
@@ -253,12 +254,19 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   }
 
   const renderPlanActions = (row) => {
+    const fragmentAnnotBtn = (
+      <PlanLinkAction permission="collection.project.edit" onClick={() => setFragmentAnnotTarget(row)}>
+        片段标注
+      </PlanLinkAction>
+    )
+
     if (row.status === '草稿') {
       return (
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => handlePublish(row)}>发布</PlanLinkAction>
+          {fragmentAnnotBtn}
           <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>
         </div>
       )
@@ -269,6 +277,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" warn onClick={() => setArchiveTarget(row)}>归档</PlanLinkAction>
+          {fragmentAnnotBtn}
           {canProjectMutate(projectStatus) && (
             <PlanLinkAction permission="collection.project.create" onClick={() => setCreateTaskPlan(row)}>创建任务</PlanLinkAction>
           )}
@@ -278,6 +287,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
+        {fragmentAnnotBtn}
         <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>
       </div>
     )
@@ -415,7 +425,6 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         title="查看采集方案"
         onCancel={() => setViewTarget(null)}
         footer={null}
-        width={COLLECT_PLAN_DRAWER_WIDTH}
       >
         {viewTarget && viewForm && (
           <div className="space-y-3">
@@ -447,7 +456,6 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         }}
         onOk={handleSave}
         okText="确定"
-        width={COLLECT_PLAN_DRAWER_WIDTH}
       >
         <div className="space-y-3">
           {editTarget && (
@@ -484,6 +492,13 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+
+      <FragmentAnnotConfigDrawer
+        open={!!fragmentAnnotTarget}
+        plan={fragmentAnnotTarget}
+        onClose={() => setFragmentAnnotTarget(null)}
+        onSaved={refreshPlans}
       />
 
       <CreateTaskModal

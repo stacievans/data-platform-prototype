@@ -12,17 +12,17 @@ export const ACTION_LABELS = {
 }
 
 /**
- * 权限目录：与侧边栏模块对齐
+ * 权限目录：与侧边栏及功能模块对齐
  * leaf 节点 id 即 permission key 前缀，如 collection.project.view
  */
 export const permissionCatalog = [
   { id: 'dashboard', name: '运营看板', actions: ['view'] },
   {
     id: 'collection',
-    name: '数据采集',
+    name: '采集项目',
     children: [
-      { id: 'collection.project', name: '采集项目', actions: ['view', 'create', 'edit', 'delete', 'archive'] },
-      { id: 'collection.task', name: '采集任务', actions: ['view', 'create', 'edit', 'delete'] },
+      { id: 'collection.project', name: '项目与方案', actions: ['view', 'create', 'edit', 'delete', 'archive'] },
+      { id: 'collection.task', name: '采集任务', actions: ['view', 'create', 'edit', 'delete', 'archive'] },
       { id: 'collection.upload', name: '采集条目', actions: ['view', 'download', 'delete'] },
     ],
   },
@@ -31,17 +31,16 @@ export const permissionCatalog = [
     name: '数据集管理',
     children: [
       { id: 'dataset.self', name: '真机数据集', actions: ['view', 'create', 'edit', 'delete', 'update', 'download'] },
-      { id: 'dataset.open', name: '开源数据集', actions: ['view', 'import', 'download'] },
     ],
   },
-  { id: 'tag', name: '标签管理', actions: ['view', 'create', 'edit', 'delete'] },
   { id: 'device', name: '设备管理', actions: ['view', 'create', 'edit', 'delete'] },
+  { id: 'tag', name: '标签管理', actions: ['view', 'create', 'edit', 'delete'] },
   {
     id: 'system',
     name: '系统管理',
     children: [
       { id: 'system.user', name: '用户管理', actions: ['view', 'create', 'edit', 'delete'] },
-      { id: 'system.role', name: '角色权限', actions: ['view', 'create', 'assignPerm'] },
+      { id: 'system.role', name: '角色管理', actions: ['view', 'create', 'assignPerm'] },
       { id: 'system.org', name: '组织管理', actions: ['view'] },
     ],
   },
@@ -126,8 +125,6 @@ const COLLECTOR_ANNOTATOR_KEYS = [
   'collection.upload.download',
   'dataset.self.view',
   'dataset.self.download',
-  'dataset.open.view',
-  'dataset.open.download',
   'tag.view',
   'device.view',
 ]
@@ -155,8 +152,6 @@ export function buildRolePermissionPreset(roleName) {
         'dashboard.view',
         'dataset.self.view',
         'dataset.self.download',
-        'dataset.open.view',
-        'dataset.open.download',
         'tag.view',
         'device.view',
       ]
@@ -164,7 +159,6 @@ export function buildRolePermissionPreset(roleName) {
       return [
         'dashboard.view',
         'dataset.self.view',
-        'dataset.open.view',
         'tag.view',
         'device.view',
       ]

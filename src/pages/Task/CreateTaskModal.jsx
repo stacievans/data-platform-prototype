@@ -16,7 +16,6 @@ import {
   validatePlanForm,
   buildPlanPayloadFromForm,
   CollectPlanFormFields,
-  COLLECT_PLAN_DRAWER_WIDTH,
 } from '../../components/collect/CollectPlanForm'
 import { tasks, nextTaskId, nowDatetime } from '../../mock/tasks'
 import {
@@ -635,7 +634,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   return (
     <Drawer
       open={open}
-      width={isPlanView ? COLLECT_PLAN_DRAWER_WIDTH : undefined}
       title={
         isPlanView ? (
           <div className="flex items-center gap-1">

@@ -5,6 +5,7 @@ import {
   emptyCustomFragmentType,
   emptyFragmentAttribute,
   emptyFragmentOption,
+  normalizeFragmentOptions,
 } from './fragmentAnnotPreconfig'
 
 const INPUT_CLS =
@@ -36,17 +37,32 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
     })
   }
 
+  const toggleDefault = (index, checked) => {
+    if (attribute.inputType === 'single') {
+      onChange({
+        ...attribute,
+        options: attribute.options.map((opt, i) => ({
+          ...opt,
+          isDefault: i === index ? checked : false,
+        })),
+      })
+      return
+    }
+    updateOption(index, { isDefault: checked })
+  }
+
   return (
     <div className="mt-2 rounded-md border border-gray-100 bg-gray-50/80 p-2.5">
       <p className="mb-2 text-xs font-medium text-gray-500">属性选项</p>
-      <div className="mb-1 grid grid-cols-[1fr_1fr_28px] gap-2 px-0.5 text-xs text-gray-400">
+      <div className="mb-1 grid grid-cols-[1fr_1fr_88px_28px] gap-2 px-0.5 text-xs text-gray-400">
         <span>名称</span>
         <span>值</span>
+        <span className="text-center">设为默认值</span>
         <span />
       </div>
       <div className="space-y-2">
         {(attribute.options ?? []).map((opt, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_28px] items-center gap-2">
+          <div key={i} className="grid grid-cols-[1fr_1fr_88px_28px] items-center gap-2">
             <input
               readOnly={locked}
               disabled={locked}
@@ -63,6 +79,15 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
               placeholder="请输入选项值"
               className={fieldCls(locked)}
             />
+            <div className="flex justify-center">
+              <input
+                type="checkbox"
+                disabled={locked}
+                checked={Boolean(opt.isDefault)}
+                onChange={(e) => toggleDefault(i, e.target.checked)}
+                className="h-4 w-4 accent-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
             {!locked ? (
               <button
                 type="button"
@@ -132,12 +157,16 @@ function AttributeRow({ attribute, locked, onChange, onRemove }) {
             value={attribute.inputType}
             onChange={(e) => {
               const inputType = e.target.value
+              const nextOptions = inputType === 'single' || inputType === 'multi'
+                ? normalizeFragmentOptions(
+                  attribute.options?.length ? attribute.options : [emptyFragmentOption()],
+                  inputType,
+                )
+                : []
               onChange({
                 ...attribute,
                 inputType,
-                options: inputType === 'single' || inputType === 'multi'
-                  ? (attribute.options?.length ? attribute.options : [emptyFragmentOption()])
-                  : [],
+                options: nextOptions,
               })
             }}
             className={locked ? READONLY_CLS : SELECT_CLS}
@@ -272,8 +301,9 @@ export default function FragmentAnnotPreconfigPanel({
   onChange,
   readonly = false,
   defaultExpanded = false,
+  embedded = false,
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded)
+  const [expanded, setExpanded] = useState(defaultExpanded || embedded)
   const [selectedId, setSelectedId] = useState(null)
 
   useEffect(() => {
@@ -303,29 +333,79 @@ export default function FragmentAnnotPreconfigPanel({
     setExpanded(true)
   }
 
-  if (readonly) {
+  const isTypeLocked = (typeItem) => readonly || (autoFromPlan && typeItem.preset)
+
+  const panelBody = !types.length ? (
+    <p className="px-4 py-6 text-sm text-gray-400">暂无配置</p>
+  ) : (
+    <div className="flex min-h-[320px]">
+      <aside className="w-[148px] shrink-0 border-r border-gray-200 bg-white p-2">
+        <div className="space-y-1">
+          {types.map((t) => {
+            const active = t.id === selectedId
+            const locked = isTypeLocked(t)
+            return (
+              <div
+                key={t.id}
+                className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs ${
+                  active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(t.id)}
+                  className="min-w-0 flex-1 cursor-pointer truncate text-left"
+                >
+                  {t.name || '未命名类型'}
+                </button>
+                {!readonly && !locked && (
+                  <button
+                    type="button"
+                    title="删除类型"
+                    onClick={() => removeType(t.id)}
+                    className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded text-red-500 hover:bg-red-50"
+                  >
+                    <IconTrash className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {!readonly && (
+          <button
+            type="button"
+            onClick={addCustomType}
+            className="mt-2 flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-600 transition hover:border-blue-400 hover:text-blue-600"
+          >
+            + 添加类型
+          </button>
+        )}
+      </aside>
+
+      <div className="min-w-0 flex-1 bg-white">
+        {selectedType ? (
+          <TypeDetailEditor
+            typeItem={selectedType}
+            locked={isTypeLocked(selectedType)}
+            onChange={updateType}
+          />
+        ) : (
+          <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-sm text-gray-400">
+            <svg className="mb-2 h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            请先在左侧选择一个类别
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  if (embedded) {
     return (
       <div className="rounded-md border border-gray-200 bg-gray-50/80">
-        <div className="px-4 py-3">
-          <p className="text-sm font-medium text-gray-800">片段标注配置</p>
-          {!types.length ? (
-            <p className="mt-2 text-sm text-gray-400">暂无配置</p>
-          ) : (
-            <div className="mt-2 space-y-2">
-              {types.map((t) => (
-                <div key={t.id} className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
-                  <p className="font-medium text-gray-800">{t.name || '—'}</p>
-                  <p className="text-xs text-gray-500">{t.value || '—'}</p>
-                  {(t.attributes ?? []).length > 0 && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      属性：{(t.attributes ?? []).map((a) => a.name).join('、')}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {panelBody}
       </div>
     )
   }
@@ -339,73 +419,16 @@ export default function FragmentAnnotPreconfigPanel({
       >
         <div>
           <p className="text-sm font-medium text-gray-800">片段标注配置</p>
-          <p className="mt-0.5 text-xs text-gray-400">类型、属性与选项可在创建前编辑</p>
+          <p className="mt-0.5 text-xs text-gray-400">
+            {readonly ? '点击展开查看类型、属性与选项' : '类型、属性与选项可在创建前编辑'}
+          </p>
         </div>
         <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>{CHEVRON}</span>
       </button>
 
       {expanded && (
         <div className="border-t border-gray-200">
-          <div className="flex min-h-[320px]">
-            <aside className="w-[148px] shrink-0 border-r border-gray-200 bg-white p-2">
-              <div className="space-y-1">
-                {types.map((t) => {
-                  const active = t.id === selectedId
-                  const locked = autoFromPlan && t.preset
-                  return (
-                    <div
-                      key={t.id}
-                      className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs ${
-                        active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(t.id)}
-                        className="min-w-0 flex-1 cursor-pointer truncate text-left"
-                      >
-                        {t.name || '未命名类型'}
-                      </button>
-                      {!locked && (
-                        <button
-                          type="button"
-                          title="删除类型"
-                          onClick={() => removeType(t.id)}
-                          className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded text-red-500 hover:bg-red-50"
-                        >
-                          <IconTrash className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={addCustomType}
-                className="mt-2 flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 py-2 text-xs text-gray-600 transition hover:border-blue-400 hover:text-blue-600"
-              >
-                + 添加类型
-              </button>
-            </aside>
-
-            <div className="min-w-0 flex-1 bg-white">
-              {selectedType ? (
-                <TypeDetailEditor
-                  typeItem={selectedType}
-                  locked={autoFromPlan && selectedType.preset}
-                  onChange={updateType}
-                />
-              ) : (
-                <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-sm text-gray-400">
-                  <svg className="mb-2 h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-                  </svg>
-                  请先在左侧选择一个类别
-                </div>
-              )}
-            </div>
-          </div>
+          {panelBody}
         </div>
       )}
     </div>
