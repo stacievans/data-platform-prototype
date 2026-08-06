@@ -5,6 +5,7 @@ import {
   emptyCustomFragmentType,
   emptyFragmentAttribute,
   emptyFragmentOption,
+  isMandatoryFragmentType,
   normalizeFragmentOptions,
 } from './fragmentAnnotPreconfig'
 
@@ -329,6 +330,8 @@ export default function FragmentAnnotPreconfigPanel({
   }
 
   const removeType = (typeId) => {
+    const target = types.find((t) => t.id === typeId)
+    if (isMandatoryFragmentType(target)) return
     onChange(types.filter((t) => t.id !== typeId))
   }
 
@@ -340,6 +343,7 @@ export default function FragmentAnnotPreconfigPanel({
   }
 
   const isTypeLocked = (typeItem) => readonly || (autoFromPlan && typeItem.preset)
+  const isTypeDeletable = (typeItem) => !readonly && !isMandatoryFragmentType(typeItem) && !(autoFromPlan && typeItem.preset)
 
   const panelBody = !types.length ? (
     <p className="px-4 py-6 text-sm text-gray-400">暂无配置</p>
@@ -349,7 +353,6 @@ export default function FragmentAnnotPreconfigPanel({
         <div className="space-y-1">
           {types.map((t) => {
             const active = t.id === selectedId
-            const locked = isTypeLocked(t)
             return (
               <div
                 key={t.id}
@@ -364,7 +367,9 @@ export default function FragmentAnnotPreconfigPanel({
                 >
                   {formatTypeSidebarLabel(t)}
                 </button>
-                {!readonly && !locked && (
+                {!isTypeDeletable(t) ? (
+                  <span className="h-6 w-6 shrink-0" />
+                ) : (
                   <button
                     type="button"
                     title="删除类型"

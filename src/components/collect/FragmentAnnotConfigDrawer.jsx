@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Drawer from '../common/Drawer'
 import { FRAGMENT_ANNOT_DRAWER_WIDTH } from './CollectPlanForm'
 import FragmentAnnotPreconfigPanel from './FragmentAnnotPreconfigPanel'
-import { resolveFragmentTypesFromPlan } from './fragmentAnnotPreconfig'
+import { ensureMandatoryFragmentTypes, resolveFragmentTypesFromPlan } from './fragmentAnnotPreconfig'
 import { updatePlanInStore } from '../../mock/plans'
 import { nowDatetime } from '../../mock/tasks'
 
@@ -21,7 +21,7 @@ export default function FragmentAnnotConfigDrawer({ open, plan, onClose, onSaved
   const handleSave = () => {
     if (!plan) return
     updatePlanInStore(plan.id, {
-      fragmentAnnotTypes: cloneFragmentTypes(types),
+      fragmentAnnotTypes: cloneFragmentTypes(ensureMandatoryFragmentTypes(types)),
       updatedAt: nowDatetime(),
     })
     onSaved?.()

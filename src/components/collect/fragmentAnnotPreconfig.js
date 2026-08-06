@@ -12,7 +12,26 @@ export function nextFragmentId(prefix = 'frag') {
   return `${prefix}-${Date.now()}-${uid}`
 }
 
-export function buildPresetFragmentTypes() {
+export const MANDATORY_FRAGMENT_TYPE_ID = 'preset-event-marking'
+
+function buildEventMarkingType() {
+  return {
+    id: MANDATORY_FRAGMENT_TYPE_ID,
+    preset: true,
+    mandatory: true,
+    name: '采集打点',
+    value: 'Event Marking',
+    color: '#52c41a',
+    forbidOverlap: false,
+    attributes: [],
+  }
+}
+
+export function isMandatoryFragmentType(typeItem) {
+  return typeItem?.id === MANDATORY_FRAGMENT_TYPE_ID || typeItem?.mandatory === true
+}
+
+export function buildOptionalPresetFragmentTypes() {
   const skillOptions = getAtomicSkillTags().map((t) => ({ name: t.name, value: t.name, isDefault: false }))
   return [
     {
@@ -56,22 +75,47 @@ export function buildPresetFragmentTypes() {
         },
       ],
     },
-    {
-      id: 'preset-event-marking',
-      preset: true,
-      name: '采集打点',
-      value: 'Event Marking',
-      color: '#52c41a',
-      forbidOverlap: false,
-      attributes: [],
-    },
   ]
 }
 
-function mergeStoredPresetsWithCatalog(storedPresets = []) {
-  const catalog = buildPresetFragmentTypes()
-  const storedById = new Map(storedPresets.map((t) => [t.id, t]))
+export function buildPresetFragmentTypes() {
+  return [buildEventMarkingType(), ...buildOptionalPresetFragmentTypes()]
+}
+
+function resolveMandatoryFragmentType(storedPresets = []) {
+  const stored = storedPresets.find((t) => t.id === MANDATORY_FRAGMENT_TYPE_ID)
+  const base = buildEventMarkingType()
+  if (!stored) return base
+  return {
+    ...base,
+    ...stored,
+    id: MANDATORY_FRAGMENT_TYPE_ID,
+    preset: true,
+    mandatory: true,
+  }
+}
+
+function mergeOptionalPresetsWithCatalog(storedPresets = []) {
+  const catalog = buildOptionalPresetFragmentTypes()
+  const storedById = new Map(
+    storedPresets
+      .filter((t) => t.id !== MANDATORY_FRAGMENT_TYPE_ID)
+      .map((t) => [t.id, t]),
+  )
   return catalog.map((preset) => storedById.get(preset.id) ?? preset)
+}
+
+function mergeStoredPresetsWithCatalog(storedPresets = []) {
+  return [
+    resolveMandatoryFragmentType(storedPresets),
+    ...mergeOptionalPresetsWithCatalog(storedPresets),
+  ]
+}
+
+export function ensureMandatoryFragmentTypes(types = []) {
+  const mandatory = resolveMandatoryFragmentType(types.filter((t) => t.preset))
+  const rest = types.filter((t) => t.id !== MANDATORY_FRAGMENT_TYPE_ID)
+  return [mandatory, ...rest]
 }
 
 export function emptyCustomFragmentType() {
@@ -126,18 +170,21 @@ export function stripPresetFragmentTypes(existing = []) {
   return (existing ?? []).filter((t) => !t.preset)
 }
 
-/** 表单展示层合并预置大类；若已存预置类型则优先使用存储值 */
+/** 表单展示层合并预置大类；采集打点始终存在且置顶 */
 export function getDisplayFragmentTypes(autoFromPlan, storedTypes = []) {
   const all = storedTypes ?? []
   const storedPresets = all.filter((t) => t.preset)
   const custom = all.filter((t) => !t.preset)
+  const mandatory = resolveMandatoryFragmentType(storedPresets)
+
+  let optionalPresets = []
   if (storedPresets.length > 0 || autoFromPlan) {
-    const presets = storedPresets.length > 0
-      ? mergeStoredPresetsWithCatalog(storedPresets)
-      : buildPresetFragmentTypes()
-    return [...presets, ...custom]
+    optionalPresets = storedPresets.length > 0
+      ? mergeOptionalPresetsWithCatalog(storedPresets)
+      : buildOptionalPresetFragmentTypes()
   }
-  return custom
+
+  return [mandatory, ...optionalPresets, ...custom]
 }
 
 export function resolveCustomFragmentTypesFromPlan(plan) {

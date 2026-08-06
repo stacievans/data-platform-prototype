@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '../../../components/common/Button'
 import { PlanStepsReadonly } from '../../../components/collect/CollectPlanForm'
+import { resolveFragmentTypesFromPlan } from '../../../components/collect/fragmentAnnotPreconfig'
 import { plans } from '../../../mock/plans'
 import { tasks } from '../../../mock/tasks'
 import { PROBLEM_TAG_OPTIONS, QUALITY_OPTIONS } from '../constants/workbenchTags'
-import SegmentAnnotateModal from './SegmentAnnotateModal'
+import {
+  formatAnnotationDisplayText,
+  formatAnnotationTooltipLines,
+  createBlankSegment,
+  hasAnyFragmentSegments,
+} from '../utils/fragmentSegments'
+import { AttributeValueEditor } from './SegmentAttributeEditors'
 
 const CHEVRON = (
   <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -16,17 +23,12 @@ function PlaceholderDash() {
   return <div className="text-xs text-gray-800">-</div>
 }
 
-function hasOverallAnnotation(entry, form, actionSegments, regionFrames) {
+function hasOverallAnnotation(entry, form, fragmentSegmentsByType) {
   return Boolean(
     entry?.auditResult
     || form.auditConclusion
-    || actionSegments.length
-    || regionFrames.length,
+    || hasAnyFragmentSegments(fragmentSegmentsByType),
   )
-}
-
-function hasFragmentData(actionSegments, regionFrames) {
-  return actionSegments.length > 0 || regionFrames.length > 0
 }
 
 function hasAcceptanceData(entry, acceptForm) {
@@ -242,138 +244,190 @@ function IconActionBtn({ title, onClick, disabled, children, danger = false }) {
   )
 }
 
+function AnnotationTooltip({ lines }) {
+  if (!lines.length) return null
+  return (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden min-w-[220px] max-w-[320px] rounded-md bg-gray-800 px-3 py-2 text-left text-xs leading-relaxed text-white shadow-lg group-hover/annot:block">
+      {lines.map(({ label, value }) => (
+        <div key={label} className="py-0.5">
+          <span className="text-gray-300">{label}：</span>
+          {value}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function InlineFragmentAttrs({ fragmentType, attrs, onChange }) {
+  const attributes = fragmentType?.attributes ?? []
+  if (!attributes.length) return null
+  return (
+    <div className="space-y-1.5">
+      {attributes.map((attr) => (
+        <AttributeValueEditor
+          key={attr.id ?? attr.value}
+          attribute={attr}
+          value={attrs?.[attr.value]}
+          onChange={(next) => onChange({ ...attrs, [attr.value]: next })}
+          compact
+          hidePlaceholder
+        />
+      ))}
+    </div>
+  )
+}
+
 function FragmentTable({
-  title,
-  type,
+  fragmentType,
   rows,
   editable,
   onSeek,
   onChange,
 }) {
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editIndex, setEditIndex] = useState(null)
+  const [editingIndex, setEditingIndex] = useState(null)
+  const colSpan = editable ? 5 : (onSeek ? 5 : 4)
 
-  const openAdd = () => {
-    setEditIndex(null)
-    setModalOpen(true)
+  const updateRow = (index, patch) => {
+    onChange(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
   }
 
-  const openEdit = (index) => {
-    setEditIndex(index)
-    setModalOpen(true)
+  const updateRowAttrs = (index, attrs) => {
+    onChange(rows.map((r, i) => (i === index ? { ...r, attrs } : r)))
   }
 
-  const handleConfirm = (row) => {
-    if (editIndex === null) {
-      onChange([...rows, row])
-    } else {
-      onChange(rows.map((r, i) => (i === editIndex ? { ...r, ...row } : r)))
-    }
-    setModalOpen(false)
+  const handleAdd = () => {
+    setEditingIndex(null)
+    onChange([...rows, createBlankSegment()])
   }
 
-  const annotationText = (row) => (type === 'action' ? (row.desc || row.skill || '—') : (row.label || '—'))
+  const toggleEdit = (index) => {
+    setEditingIndex((prev) => (prev === index ? null : index))
+  }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-gray-600">{title}</p>
-      <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
-        <table className="w-full text-xs">
+      <p className="text-xs font-medium text-gray-600">{fragmentType.name}</p>
+      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+        <table className="w-full min-w-[280px] table-fixed text-xs">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              <th className="w-10 px-2 py-1.5 text-center font-medium">序号</th>
-              <th className="w-16 px-2 py-1.5 text-center font-medium">起始帧</th>
-              <th className="w-16 px-2 py-1.5 text-center font-medium">结束帧</th>
+              <th className="w-9 px-1 py-1.5 text-center font-medium">序号</th>
+              <th className="w-14 px-1 py-1.5 text-center font-medium">起始帧</th>
+              <th className="w-14 px-1 py-1.5 text-center font-medium">结束帧</th>
               <th className="px-2 py-1.5 text-left font-medium">标注</th>
-              {editable && <th className="w-[72px] px-1 py-1.5 text-center font-medium">操作</th>}
-              {!editable && onSeek && <th className="w-10 px-1 py-1.5 text-center font-medium">预览</th>}
+              {editable && <th className="w-[68px] px-1 py-1.5 text-center font-medium">操作</th>}
+              {!editable && onSeek && <th className="w-9 px-1 py-1.5 text-center font-medium">预览</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={editable ? 5 : (onSeek ? 5 : 4)} className="px-2 py-4 text-center text-gray-400">暂无标注</td>
+                <td colSpan={colSpan} className="px-2 py-4 text-center text-gray-400">暂无标注</td>
               </tr>
-            ) : rows.map((row, i) => (
-              <tr key={`${type}-${row.startFrame}-${row.endFrame}-${i}`}>
-                <td className="px-2 py-1.5 text-center text-gray-600">{i + 1}</td>
-                <td className="px-1 py-1.5">
-                  {editable ? (
-                    <input
-                      type="number"
-                      min={0}
-                      value={row.startFrame}
-                      onChange={(e) => onChange(rows.map((r, idx) => idx === i ? { ...r, startFrame: Number(e.target.value) || 0 } : r))}
-                      className="h-7 w-full rounded border border-gray-200 px-1 text-center"
-                    />
-                  ) : (
-                    <span className="block text-center text-gray-700">{row.startFrame}</span>
-                  )}
-                </td>
-                <td className="px-1 py-1.5">
-                  {editable ? (
-                    <input
-                      type="number"
-                      min={0}
-                      value={row.endFrame}
-                      onChange={(e) => onChange(rows.map((r, idx) => idx === i ? { ...r, endFrame: Number(e.target.value) || 0 } : r))}
-                      className="h-7 w-full rounded border border-gray-200 px-1 text-center"
-                    />
-                  ) : (
-                    <span className="block text-center text-gray-700">{row.endFrame}</span>
-                  )}
-                </td>
-                <td className="max-w-[80px] truncate px-2 py-1.5 text-gray-700" title={annotationText(row)}>
-                  {annotationText(row)}
-                </td>
-                {editable ? (
-                  <td className="px-1 py-1">
-                    <div className="flex items-center justify-center gap-0.5">
-                      <IconActionBtn title="编辑" onClick={() => openEdit(i)}>
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </IconActionBtn>
-                      <IconActionBtn title="预览" onClick={() => onSeek?.(row.startFrame)}>
-                        <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" /></svg>
-                      </IconActionBtn>
-                      <IconActionBtn title="删除" danger onClick={() => onChange(rows.filter((_, idx) => idx !== i))}>
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </IconActionBtn>
-                    </div>
-                  </td>
-                ) : onSeek && (
-                  <td className="px-1 py-1">
-                    <div className="flex items-center justify-center">
-                      <IconActionBtn title="预览" onClick={() => onSeek(row.startFrame)}>
-                        <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" /></svg>
-                      </IconActionBtn>
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
+            ) : rows.map((row, i) => {
+              const displayText = formatAnnotationDisplayText(fragmentType, row)
+              const tooltipLines = formatAnnotationTooltipLines(fragmentType, row)
+              const editing = editable && editingIndex === i
+              return (
+                <tr key={`${fragmentType.id}-row-${i}`}>
+                    <td className="px-1 py-1.5 text-center align-top text-gray-600">{i + 1}</td>
+                    <td className="px-1 py-1.5 align-top">
+                      {editable ? (
+                        <input
+                          type="number"
+                          min={0}
+                          value={row.startFrame === '' ? '' : row.startFrame}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            updateRow(i, { startFrame: v === '' ? '' : Number(v) || 0 })
+                          }}
+                          className="h-7 w-full rounded border border-gray-200 px-1 text-center"
+                        />
+                      ) : (
+                        <span className="block text-center text-gray-700">{row.startFrame}</span>
+                      )}
+                    </td>
+                    <td className="px-1 py-1.5 align-top">
+                      {editable ? (
+                        <input
+                          type="number"
+                          min={0}
+                          value={row.endFrame === '' ? '' : row.endFrame}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            updateRow(i, { endFrame: v === '' ? '' : Number(v) || 0 })
+                          }}
+                          className="h-7 w-full rounded border border-gray-200 px-1 text-center"
+                        />
+                      ) : (
+                        <span className="block text-center text-gray-700">{row.endFrame}</span>
+                      )}
+                    </td>
+                    <td className="group/annot relative min-w-0 px-2 py-1.5 align-top text-gray-700">
+                      {editing ? (
+                        <InlineFragmentAttrs
+                          fragmentType={fragmentType}
+                          attrs={row.attrs ?? {}}
+                          onChange={(attrs) => updateRowAttrs(i, attrs)}
+                        />
+                      ) : (
+                        <span className="block cursor-default whitespace-pre-wrap break-words text-xs leading-relaxed">
+                          {displayText}
+                        </span>
+                      )}
+                      {!editable && tooltipLines.length > 0 && (
+                        <AnnotationTooltip lines={tooltipLines} />
+                      )}
+                    </td>
+                    {editable ? (
+                      <td className="px-1 py-1 align-top">
+                        <div className="flex items-center justify-center gap-0.5">
+                          <IconActionBtn title={editing ? '收起' : '编辑'} onClick={() => toggleEdit(i)}>
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </IconActionBtn>
+                          <IconActionBtn title="预览" onClick={() => onSeek?.(row.startFrame)}>
+                            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" /></svg>
+                          </IconActionBtn>
+                          <IconActionBtn
+                            title="删除"
+                            danger
+                            onClick={() => {
+                              onChange(rows.filter((_, idx) => idx !== i))
+                              setEditingIndex((prev) => (prev === i ? null : prev > i ? prev - 1 : prev))
+                            }}
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </IconActionBtn>
+                        </div>
+                      </td>
+                    ) : onSeek && (
+                      <td className="px-1 py-1 align-top">
+                        <div className="flex items-center justify-center">
+                          <IconActionBtn title="预览" onClick={() => onSeek(row.startFrame)}>
+                            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" /></svg>
+                          </IconActionBtn>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
       {editable && (
         <button
           type="button"
-          onClick={openAdd}
+          onClick={handleAdd}
           className="flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 bg-white py-2 text-xs text-gray-500 transition hover:border-blue-400 hover:text-blue-600"
         >
           + 添加标注
         </button>
       )}
-      <SegmentAnnotateModal
-        open={modalOpen}
-        type={type}
-        initial={editIndex === null ? null : rows[editIndex]}
-        onCancel={() => setModalOpen(false)}
-        onConfirm={handleConfirm}
-      />
     </div>
   )
 }
@@ -509,10 +563,8 @@ export default function WorkbenchSidePanel({
   setForm,
   acceptForm,
   setAcceptForm,
-  actionSegments,
-  setActionSegments,
-  regionFrames,
-  setRegionFrames,
+  fragmentSegmentsByType,
+  setFragmentSegmentsForType,
   onSeek,
   onSave,
   saveDisabled,
@@ -525,13 +577,13 @@ export default function WorkbenchSidePanel({
 
   const [basicInfoOpen, setBasicInfoOpen] = useState(true)
   const [annotationOpen, setAnnotationOpen] = useState(true)
-  const [fragmentOpen, setFragmentOpen] = useState(false)
+  const [fragmentOpen, setFragmentOpen] = useState(mode === 'review' || mode === 'accept')
   const [acceptOpen, setAcceptOpen] = useState(mode === 'accept')
 
   const panelTitle = mode === 'accept' ? '验收' : mode === 'review' ? '标注' : '播放'
 
-  const hasOverall = hasOverallAnnotation(entry, form, actionSegments, regionFrames)
-  const hasFragment = hasFragmentData(actionSegments, regionFrames)
+  const hasOverall = hasOverallAnnotation(entry, form, fragmentSegmentsByType)
+  const hasFragment = hasAnyFragmentSegments(fragmentSegmentsByType)
   const hasAcceptance = hasAcceptanceData(entry, acceptForm)
 
   const ctx = (() => {
@@ -539,6 +591,11 @@ export default function WorkbenchSidePanel({
     const plan = plans.find((p) => p.id === task?.planId)
     return { projectName: task?.projectName ?? '—', taskName: task?.name ?? '—', plan, task }
   })()
+
+  const fragmentTypes = useMemo(
+    () => resolveFragmentTypesFromPlan(ctx.plan ?? {}),
+    [ctx.plan],
+  )
 
   const durationSec = entry.duration?.includes(':')
     ? `${parseInt(entry.duration.split(':')[0], 10) * 60 + parseInt(entry.duration.split(':')[1], 10)}s`
@@ -572,22 +629,16 @@ export default function WorkbenchSidePanel({
     if (mode === 'play' && !hasFragment) return <PlaceholderDash />
     return (
       <div className="space-y-4">
-        <FragmentTable
-          title="动作语义"
-          type="action"
-          rows={actionSegments}
-          editable={annotationEditable}
-          onSeek={onSeek}
-          onChange={setActionSegments}
-        />
-        <FragmentTable
-          title="区域帧"
-          type="region"
-          rows={regionFrames}
-          editable={annotationEditable}
-          onSeek={onSeek}
-          onChange={setRegionFrames}
-        />
+        {fragmentTypes.map((fragmentType) => (
+          <FragmentTable
+            key={fragmentType.id}
+            fragmentType={fragmentType}
+            rows={fragmentSegmentsByType[fragmentType.id] ?? []}
+            editable={annotationEditable}
+            onSeek={onSeek}
+            onChange={(rows) => setFragmentSegmentsForType(fragmentType.id, rows)}
+          />
+        ))}
       </div>
     )
   }

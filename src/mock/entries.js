@@ -8,6 +8,10 @@ import {
 import { plans } from './plans'
 import { buildEntryQcResults, entryQcSeed } from '../utils/qcResults'
 import { PROBLEM_TAG_OPTIONS, QUALITY_OPTIONS, normalizeAuditQuality } from '../pages/Review/constants/workbenchTags'
+import {
+  buildDefaultFragmentSegmentsMock,
+  buildEntryFragmentPayload,
+} from '../pages/Review/utils/fragmentSegments'
 
 /** 采集条目数据状态（平台主流程） */
 export const DATA_STATUSES = [
@@ -339,11 +343,16 @@ function pickProblemTags(id, count = 2) {
 }
 
 function enrichAnnotationData(entry) {
+  const withFragmentSegments = ['已标注', '验收不通过', '已验收', '标注不通过'].includes(entry.dataStatus)
+  if (withFragmentSegments && !entry.fragmentSegmentsByType) {
+    entry.fragmentSegmentsByType = buildDefaultFragmentSegmentsMock()
+  }
+  if (entry.fragmentSegmentsByType) {
+    Object.assign(entry, buildEntryFragmentPayload(entry.fragmentSegmentsByType))
+  }
+
   const annotated = ['已标注', '验收不通过', '已验收'].includes(entry.dataStatus)
   if (!annotated) return
-
-  if (!entry.actionSegments?.length) entry.actionSegments = DEFAULT_ACTION_SEGMENTS
-  if (!entry.regionFrames?.length) entry.regionFrames = DEFAULT_REGION_FRAMES
 
   if (!entry.auditResult) entry.auditResult = '通过'
 

@@ -8,6 +8,9 @@ import {
   updateEntry,
 } from '../../mock/entries'
 import { syncBatchesAfterEntryAccept } from '../../mock/samplingBatches'
+import { plans } from '../../mock/plans'
+import { tasks } from '../../mock/tasks'
+import { resolveFragmentTypesFromPlan } from '../../components/collect/fragmentAnnotPreconfig'
 import { useAuth } from '../../context/AuthContext'
 import { nowDateTime } from '../../utils/formatDateTime'
 import NoPermission from '../System/NoPermission'
@@ -17,6 +20,11 @@ import LayoutToggle from './components/LayoutToggle'
 import WorkbenchSidePanel from './components/WorkbenchSidePanel'
 import { normalizeAuditQuality } from './constants/workbenchTags'
 import { generateSignalSeries } from './mock/signalData'
+import {
+  buildEntryFragmentPayload,
+  deriveLegacySegments,
+  loadFragmentSegmentsFromEntry,
+} from './utils/fragmentSegments'
 
 const SPEEDS = [0.5, 1, 1.5, 2]
 
@@ -36,10 +44,12 @@ const MODE_LABELS = {
   accept: '验收',
 }
 
-const SIDE_PANEL_WIDTH = 340
+const SIDE_PANEL_WIDTH_DEFAULT = 340
+const SIDE_PANEL_WIDTH_MIN = 280
+const SIDE_PANEL_WIDTH_MAX = 560
 
-function buildPanelSnapshot(form, actionSegments, regionFrames) {
-  return JSON.stringify({ form, actionSegments, regionFrames })
+function buildPanelSnapshot(form, fragmentSegmentsByType) {
+  return JSON.stringify({ form, fragmentSegmentsByType })
 }
 
 function IconLayoutSidebarRight({ className = 'h-4 w-4' }) {
@@ -245,6 +255,8 @@ export default function Workbench() {
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [panelCollapsed, setPanelCollapsed] = useState(false)
+  const [sidePanelWidth, setSidePanelWidth] = useState(SIDE_PANEL_WIDTH_DEFAULT)
+  const panelResizeRef = useRef({ dragging: false, startX: 0, startWidth: SIDE_PANEL_WIDTH_DEFAULT })
   const [mainLayout, setMainLayout] = useState('B')
 
   const [form, setForm] = useState({
@@ -261,9 +273,22 @@ export default function Workbench() {
     acceptRejectReason: '',
   })
 
-  const [actionSegments, setActionSegments] = useState([])
-  const [regionFrames, setRegionFrames] = useState([])
+  const [fragmentSegmentsByType, setFragmentSegmentsByType] = useState({})
   const [savedSnapshot, setSavedSnapshot] = useState('')
+
+  const { actionSegments, regionFrames } = useMemo(
+    () => deriveLegacySegments(fragmentSegmentsByType),
+    [fragmentSegmentsByType],
+  )
+
+  const setFragmentSegmentsForType = useCallback((typeId, rows) => {
+    setFragmentSegmentsByType((prev) => ({ ...prev, [typeId]: rows }))
+  }, [])
+
+  const fragmentPayload = useMemo(
+    () => buildEntryFragmentPayload(fragmentSegmentsByType),
+    [fragmentSegmentsByType],
+  )
 
   const taskEntries = useMemo(
     () => (entry ? getEntriesByTaskId(entry.taskId) : []),
@@ -287,8 +312,6 @@ export default function Workbench() {
         ?? e.auditRejectReason
         ?? (e.auditResult && e.auditResult !== '通过' ? '' : ''),
     }
-    const nextActions = e.actionSegments ?? []
-    const nextRegions = e.regionFrames ?? []
     const nextAcceptForm = {
       acceptConclusion: e.acceptResult === '通过'
         ? 'pass'
@@ -297,11 +320,16 @@ export default function Workbench() {
           : null,
       acceptComment: e.acceptComment ?? '',
     }
+    const task = tasks.find((t) => t.id === e.taskId)
+    const plan = plans.find((p) => p.id === task?.planId)
+    const nextFragments = loadFragmentSegmentsFromEntry(
+      e,
+      resolveFragmentTypesFromPlan(plan ?? {}),
+    )
     setForm(nextForm)
     setAcceptForm(nextAcceptForm)
-    setActionSegments(nextActions)
-    setRegionFrames(nextRegions)
-    setSavedSnapshot(buildPanelSnapshot(nextForm, nextActions, nextRegions))
+    setFragmentSegmentsByType(nextFragments)
+    setSavedSnapshot(buildPanelSnapshot(nextForm, nextFragments))
     setCurrentFrame(Math.min(388, (e.totalFrames ?? 3140) - 1))
     setPlaying(false)
   }, [])
@@ -356,6 +384,45 @@ export default function Workbench() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const handlePanelResizeStart = useCallback((e) => {
+    e.preventDefault()
+    panelResizeRef.current = {
+      dragging: true,
+      startX: e.clientX,
+      startWidth: sidePanelWidth,
+    }
+  }, [sidePanelWidth])
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!panelResizeRef.current.dragging) return
+      const delta = panelResizeRef.current.startX - e.clientX
+      const next = Math.min(
+        SIDE_PANEL_WIDTH_MAX,
+        Math.max(SIDE_PANEL_WIDTH_MIN, panelResizeRef.current.startWidth + delta),
+      )
+      setSidePanelWidth(next)
+    }
+    const onUp = () => {
+      panelResizeRef.current.dragging = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    const onMoveWithCursor = (e) => {
+      if (panelResizeRef.current.dragging) {
+        document.body.style.cursor = 'col-resize'
+        document.body.style.userSelect = 'none'
+      }
+      onMove(e)
+    }
+    window.addEventListener('mousemove', onMoveWithCursor)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMoveWithCursor)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [])
+
   const goSibling = (delta) => {
     const next = taskEntries[currentIndex + delta]
     if (next) navigate(`/review/${next.id}?mode=${mode}`)
@@ -370,8 +437,8 @@ export default function Workbench() {
   }
 
   const currentSnapshot = useMemo(
-    () => buildPanelSnapshot(form, actionSegments, regionFrames),
-    [form, actionSegments, regionFrames],
+    () => buildPanelSnapshot(form, fragmentSegmentsByType),
+    [form, fragmentSegmentsByType],
   )
 
   const isDirty = currentSnapshot !== savedSnapshot
@@ -382,8 +449,7 @@ export default function Workbench() {
       auditQuality: form.auditQuality,
       auditTags: form.auditTags,
       auditComment: form.auditComment,
-      actionSegments,
-      regionFrames,
+      ...fragmentPayload,
     })
     setEntry(updated)
     setSavedSnapshot(currentSnapshot)
@@ -425,8 +491,7 @@ export default function Workbench() {
         auditQuality: form.auditQuality,
         auditTags: form.auditTags,
         auditComment: form.auditComment,
-        actionSegments,
-        regionFrames,
+        ...fragmentPayload,
         reviewClaimedBy: null,
         reviewClaimedAt: null,
         reviewTime: nowDateTime(),
@@ -438,8 +503,7 @@ export default function Workbench() {
         auditQuality: form.auditQuality,
         auditTags: form.auditTags,
         auditComment: form.auditComment,
-        actionSegments,
-        regionFrames,
+        ...fragmentPayload,
         reviewClaimedBy: null,
         reviewClaimedAt: null,
         reviewTime: nowDateTime(),
@@ -607,7 +671,14 @@ export default function Workbench() {
         </div>
 
         {!panelCollapsed && (
-          <div className="relative shrink-0 overflow-hidden" style={{ width: SIDE_PANEL_WIDTH }}>
+          <div className="relative shrink-0 overflow-hidden" style={{ width: sidePanelWidth }}>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="调整面板宽度"
+              onMouseDown={handlePanelResizeStart}
+              className="absolute left-0 top-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize touch-none bg-transparent hover:bg-blue-400/30 active:bg-blue-500/40"
+            />
             <WorkbenchSidePanel
               mode={isLayoutPreview ? 'play' : mode}
               entry={entry}
@@ -615,10 +686,8 @@ export default function Workbench() {
               setForm={setForm}
               acceptForm={acceptForm}
               setAcceptForm={setAcceptForm}
-              actionSegments={actionSegments}
-              setActionSegments={setActionSegments}
-              regionFrames={regionFrames}
-              setRegionFrames={setRegionFrames}
+              fragmentSegmentsByType={fragmentSegmentsByType}
+              setFragmentSegmentsForType={setFragmentSegmentsForType}
               onSeek={setCurrentFrame}
               onSave={handlePanelSave}
               saveDisabled={mode === 'review' ? saveDisabled : false}
