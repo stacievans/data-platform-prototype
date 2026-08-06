@@ -377,16 +377,7 @@ export default function Workbench() {
   const isDirty = currentSnapshot !== savedSnapshot
   const saveDisabled = !isDirty
 
-  const ensureReviewSaved = () => {
-    if (isDirty) {
-      showToast('请先保存标注')
-      return false
-    }
-    return true
-  }
-
-  const handleSaveDraft = () => {
-    if (mode !== 'review') return
+  const persistReviewDraft = () => {
     const updated = updateEntry(entryId, {
       auditQuality: form.auditQuality,
       auditTags: form.auditTags,
@@ -396,31 +387,65 @@ export default function Workbench() {
     })
     setEntry(updated)
     setSavedSnapshot(currentSnapshot)
+    return updated
+  }
+
+  const handleSaveDraft = () => {
+    if (mode !== 'review') return
+    persistReviewDraft()
     showToast('保存成功')
   }
 
-  const handlePass = () => {
-    if (mode === 'play' || isLayoutPreview || mode !== 'review') return
-    if (!ensureReviewSaved()) return
-    if (form.auditConclusion !== 'pass') {
-      setForm((f) => ({ ...f, auditConclusion: 'pass' }))
+  const handleSaveAcceptDraft = () => {
+    if (mode !== 'accept') return
+    const updated = updateEntry(entryId, {
+      acceptComment: acceptForm.acceptComment.trim(),
+    })
+    setEntry(updated)
+    showToast('保存成功')
+  }
+
+  const handleReviewSubmit = () => {
+    if (mode !== 'review' || isLayoutPreview) return
+    persistReviewDraft()
+
+    if (!form.auditConclusion) {
+      showToast('请选择标注结论')
+      return
     }
-    if (!form.auditQuality) {
+    if (form.auditConclusion === 'pass' && !form.auditQuality) {
       showToast('请选择质量标签')
       return
     }
-    syncFromEntry(updateEntry(entryId, {
-      dataStatus: '已标注',
-      auditResult: '通过',
-      auditQuality: form.auditQuality,
-      auditTags: form.auditTags,
-      auditComment: form.auditComment,
-      actionSegments,
-      regionFrames,
-      reviewClaimedBy: null,
-      reviewClaimedAt: null,
-      reviewTime: nowDateTime(),
-    }))
+
+    if (form.auditConclusion === 'pass') {
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '已标注',
+        auditResult: '通过',
+        auditQuality: form.auditQuality,
+        auditTags: form.auditTags,
+        auditComment: form.auditComment,
+        actionSegments,
+        regionFrames,
+        reviewClaimedBy: null,
+        reviewClaimedAt: null,
+        reviewTime: nowDateTime(),
+      }))
+    } else {
+      syncFromEntry(updateEntry(entryId, {
+        dataStatus: '标注不通过',
+        auditResult: '不通过',
+        auditQuality: form.auditQuality,
+        auditTags: form.auditTags,
+        auditComment: form.auditComment,
+        actionSegments,
+        regionFrames,
+        reviewClaimedBy: null,
+        reviewClaimedAt: null,
+        reviewTime: nowDateTime(),
+      }))
+    }
+    showToast('提交成功')
     goNextAfterSubmit()
   }
 
@@ -441,6 +466,7 @@ export default function Workbench() {
         acceptTime: nowDateTime(),
       }))
       syncBatchesAfterEntryAccept(entryId, 'reject')
+      showToast('提交成功')
       goNextAfterSubmit()
       return
     }
@@ -453,29 +479,13 @@ export default function Workbench() {
       acceptTime: nowDateTime(),
     }))
     syncBatchesAfterEntryAccept(entryId, 'pass')
+    showToast('提交成功')
     goNextAfterSubmit()
   }
 
-  const handleReject = () => {
-    if (mode === 'play' || isLayoutPreview || mode !== 'review') return
-    if (!ensureReviewSaved()) return
-    if (form.auditConclusion !== 'reject') {
-      setForm((f) => ({ ...f, auditConclusion: 'reject' }))
-    }
-    syncFromEntry(updateEntry(entryId, {
-      dataStatus: '标注不通过',
-      auditResult: '不通过',
-      auditQuality: form.auditQuality,
-      auditTags: form.auditTags,
-      auditComment: form.auditComment,
-      actionSegments,
-      regionFrames,
-      reviewClaimedBy: null,
-      reviewClaimedAt: null,
-      reviewTime: nowDateTime(),
-    }))
-    goNextAfterSubmit()
-  }
+  const handlePanelSave = mode === 'accept' ? handleSaveAcceptDraft : handleSaveDraft
+  const handlePanelSubmit = mode === 'accept' ? handleAcceptSubmit : handleReviewSubmit
+  const showPanelActions = (mode === 'review' || mode === 'accept') && !isLayoutPreview
 
   const totalFrames = entry?.totalFrames ?? 3140
   const signalSeries = useMemo(
@@ -610,13 +620,11 @@ export default function Workbench() {
               regionFrames={regionFrames}
               setRegionFrames={setRegionFrames}
               onSeek={setCurrentFrame}
-              onSave={handleSaveDraft}
-              saveDisabled={saveDisabled}
-              showSave={mode === 'review' && !isLayoutPreview}
-              showSubmit={mode === 'accept' && !isLayoutPreview}
-              onAcceptSubmit={handleAcceptSubmit}
-              onPass={handlePass}
-              onReject={handleReject}
+              onSave={handlePanelSave}
+              saveDisabled={mode === 'review' ? saveDisabled : false}
+              showSave={showPanelActions}
+              showSubmit={showPanelActions}
+              onSubmit={handlePanelSubmit}
             />
           </div>
         )}

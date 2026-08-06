@@ -18,7 +18,7 @@ export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 export const FRAGMENT_ANNOT_DRAWER_WIDTH = 'min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
 
 export const FRAGMENT_ANNOT_CONFIG_HINT =
-  '可在采集方案列表-操作-片段标注中查看/编辑片段标注配置'
+  '可在采集方案列表-操作-片段标注配置中查看/编辑片段标注配置'
 
 export const emptyCreatePlan = () => ({
   name: '',
@@ -31,7 +31,6 @@ export const emptyCreatePlan = () => ({
   steps: [{ ...EMPTY_STEP }],
   totalDeviation: '',
   annotTemplateId: '',
-  annotAutoFragment: true,
   annotGenConfig: true,
   annotPreLabel: true,
   fragmentAnnotTypes: [],
@@ -260,15 +259,49 @@ function SearchableAuditTemplateSelect({ templates, value, onChange, error }) {
 function AnnotationManagementBlock({ form, errors, onChange, readonly = false }) {
   const auditTemplates = useMemo(() => getAuditTemplates(), [])
   const templateName = getAuditTemplateById(form.annotTemplateId)?.name ?? '—'
-  const autoFromPlan = form.annotAutoFragment !== false
+  const genConfigEnabled = form.annotGenConfig !== false
+  const preLabelEnabled = form.annotPreLabel !== false
 
-  const handleAutoToggle = (checked) => {
+  const handleGenConfigToggle = (checked) => {
     onChange({
-      annotAutoFragment: checked,
       annotGenConfig: checked,
-      annotPreLabel: checked,
+      ...(checked ? { annotPreLabel: true } : { annotPreLabel: false }),
     })
   }
+
+  const handlePreLabelToggle = (checked) => {
+    onChange({ annotPreLabel: checked })
+  }
+
+  const fragmentAnnotOptions = (
+    <div className="space-y-2">
+      <label className={`flex items-center gap-2 text-sm text-gray-700 ${readonly ? 'cursor-default' : 'cursor-pointer'}`}>
+        <input
+          type="checkbox"
+          checked={genConfigEnabled}
+          readOnly={readonly}
+          disabled={readonly}
+          onChange={readonly ? undefined : (e) => handleGenConfigToggle(e.target.checked)}
+          className="h-4 w-4 accent-blue-600"
+        />
+        基于采集方案生成标注配置
+      </label>
+      {genConfigEnabled && (
+        <label className={`flex items-center gap-2 text-sm text-gray-700 ${readonly ? 'cursor-default' : 'cursor-pointer'}`}>
+          <input
+            type="checkbox"
+            checked={preLabelEnabled}
+            readOnly={readonly}
+            disabled={readonly}
+            onChange={readonly ? undefined : (e) => handlePreLabelToggle(e.target.checked)}
+            className="h-4 w-4 accent-blue-600"
+          />
+          基于采集方案预标注
+        </label>
+      )}
+      <p className="text-xs text-gray-400">{FRAGMENT_ANNOT_CONFIG_HINT}</p>
+    </div>
+  )
 
   if (readonly) {
     return (
@@ -278,17 +311,7 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
         </Field>
         <div>
           <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-          <label className="mb-2 flex cursor-default items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={autoFromPlan}
-              readOnly
-              disabled
-              className="h-4 w-4 accent-blue-600"
-            />
-            基于采集方案生成片段标注配置并预标注
-          </label>
-          <p className="text-xs text-gray-400">{FRAGMENT_ANNOT_CONFIG_HINT}</p>
+          {fragmentAnnotOptions}
         </div>
       </div>
     )
@@ -306,16 +329,7 @@ function AnnotationManagementBlock({ form, errors, onChange, readonly = false })
       </Field>
       <div>
         <p className="mb-1.5 text-sm font-medium text-gray-700">片段标注配置</p>
-        <label className="mb-2 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={autoFromPlan}
-            onChange={(e) => handleAutoToggle(e.target.checked)}
-            className="h-4 w-4 accent-blue-600"
-          />
-          基于采集方案生成片段标注配置并预标注
-        </label>
-        <p className="text-xs text-gray-400">{FRAGMENT_ANNOT_CONFIG_HINT}</p>
+        {fragmentAnnotOptions}
       </div>
     </div>
   )
@@ -541,9 +555,8 @@ export function PlanReadonlyDetails({ plan, deviceTypes }) {
           readonly
           form={{
             annotTemplateId: plan.annotTemplateId ?? '',
-            annotAutoFragment: resolveAnnotAutoFragment(plan),
-            annotGenConfig: plan.annotGenConfig,
-            annotPreLabel: plan.annotPreLabel,
+            annotGenConfig: plan.annotGenConfig != null ? plan.annotGenConfig !== false : resolveAnnotAutoFragment(plan),
+            annotPreLabel: plan.annotPreLabel != null ? plan.annotPreLabel !== false : resolveAnnotAutoFragment(plan),
             fragmentAnnotTypes: resolveCustomFragmentTypesFromPlan(plan),
           }}
           onChange={() => {}}
@@ -587,6 +600,7 @@ export function planToForm(plan) {
     atomicSkills: normalizeAtomicSkills(s),
     duration: s.duration ?? '',
   }))
+  const legacyAuto = resolveAnnotAutoFragment(plan)
   return {
     name: plan.name ?? '',
     sceneId: plan.scenePath?.sceneId ?? '',
@@ -598,9 +612,8 @@ export function planToForm(plan) {
     steps,
     totalDeviation,
     annotTemplateId: plan.annotTemplateId ?? '',
-    annotAutoFragment: resolveAnnotAutoFragment(plan),
-    annotGenConfig: plan.annotGenConfig !== false,
-    annotPreLabel: plan.annotPreLabel !== false,
+    annotGenConfig: plan.annotGenConfig != null ? plan.annotGenConfig !== false : legacyAuto,
+    annotPreLabel: plan.annotPreLabel != null ? plan.annotPreLabel !== false : legacyAuto,
     fragmentAnnotTypes: plan?.fragmentAnnotTypes ?? [],
   }
 }
@@ -624,9 +637,9 @@ export function buildPlanPayloadFromForm(form) {
     durationMax,
     steps: normalizeStepsForSave(form.steps),
     annotTemplateId: form.annotTemplateId,
-    annotAutoFragment: form.annotAutoFragment !== false,
-    annotGenConfig: form.annotAutoFragment !== false,
-    annotPreLabel: form.annotAutoFragment !== false,
+    annotGenConfig: form.annotGenConfig !== false,
+    annotPreLabel: form.annotGenConfig !== false && form.annotPreLabel !== false,
+    annotAutoFragment: form.annotGenConfig !== false && form.annotPreLabel !== false,
     fragmentAnnotTypes: form.fragmentAnnotTypes ?? [],
   }
 }
@@ -866,8 +879,9 @@ function deriveActionSemantic(step) {
 
 export function isPlanAnnotConfigEnabled(plan) {
   if (!plan) return false
+  if (plan.annotGenConfig != null) return plan.annotGenConfig !== false
   if (plan.annotAutoFragment != null) return plan.annotAutoFragment !== false
-  return plan.annotGenConfig !== false || plan.annotPreLabel !== false
+  return plan.annotPreLabel !== false
 }
 
 export function buildAnnotationConfigRows(plan) {

@@ -56,7 +56,22 @@ export function buildPresetFragmentTypes() {
         },
       ],
     },
+    {
+      id: 'preset-event-marking',
+      preset: true,
+      name: '采集打点',
+      value: 'Event Marking',
+      color: '#52c41a',
+      forbidOverlap: false,
+      attributes: [],
+    },
   ]
+}
+
+function mergeStoredPresetsWithCatalog(storedPresets = []) {
+  const catalog = buildPresetFragmentTypes()
+  const storedById = new Map(storedPresets.map((t) => [t.id, t]))
+  return catalog.map((preset) => storedById.get(preset.id) ?? preset)
 }
 
 export function emptyCustomFragmentType() {
@@ -102,9 +117,9 @@ export function normalizeFragmentOptions(options = [], inputType = 'multi') {
 }
 
 export function mergePresetFragmentTypes(existing = []) {
-  const presets = buildPresetFragmentTypes()
+  const storedPresets = (existing ?? []).filter((t) => t.preset)
   const custom = (existing ?? []).filter((t) => !t.preset)
-  return [...presets, ...custom]
+  return [...mergeStoredPresetsWithCatalog(storedPresets), ...custom]
 }
 
 export function stripPresetFragmentTypes(existing = []) {
@@ -116,10 +131,13 @@ export function getDisplayFragmentTypes(autoFromPlan, storedTypes = []) {
   const all = storedTypes ?? []
   const storedPresets = all.filter((t) => t.preset)
   const custom = all.filter((t) => !t.preset)
-  if (storedPresets.length > 0) {
-    return [...storedPresets, ...custom]
+  if (storedPresets.length > 0 || autoFromPlan) {
+    const presets = storedPresets.length > 0
+      ? mergeStoredPresetsWithCatalog(storedPresets)
+      : buildPresetFragmentTypes()
+    return [...presets, ...custom]
   }
-  return autoFromPlan ? mergePresetFragmentTypes(custom) : custom
+  return custom
 }
 
 export function resolveCustomFragmentTypesFromPlan(plan) {
@@ -132,6 +150,7 @@ export function resolveFragmentTypesFromPlan(plan) {
 }
 
 export function resolveAnnotAutoFragment(plan) {
+  if (plan?.annotGenConfig != null) return plan.annotGenConfig !== false
   if (plan?.annotAutoFragment != null) return plan.annotAutoFragment !== false
-  return plan?.annotGenConfig !== false && plan?.annotPreLabel !== false
+  return plan?.annotPreLabel !== false
 }

@@ -93,22 +93,14 @@ function PlanDetailsExpandable({ plan }) {
   )
 }
 
-function ConclusionButtons({ value, onChange, onPass, onReject, disabled }) {
+function ConclusionButtons({ value, onChange, disabled }) {
   const selectPass = () => {
     if (disabled) return
-    if (value === 'pass') {
-      onPass?.()
-    } else {
-      onChange('pass')
-    }
+    onChange('pass')
   }
   const selectReject = () => {
     if (disabled) return
-    if (value === 'reject') {
-      onReject?.()
-    } else {
-      onChange('reject')
-    }
+    onChange('reject')
   }
   const defaultBtnCls = 'flex-1 cursor-pointer rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50'
   return (
@@ -389,8 +381,6 @@ function FragmentTable({
 function OverallAnnotationEditor({
   form,
   setForm,
-  onPass,
-  onReject,
 }) {
   const readOnlyFieldCls = 'cursor-default border-gray-200 bg-white text-gray-800'
   const editFieldCls = 'border-gray-300 bg-white focus:border-blue-500'
@@ -415,8 +405,6 @@ function OverallAnnotationEditor({
         <ConclusionButtons
           value={form.auditConclusion}
           onChange={setConclusion}
-          onPass={onPass}
-          onReject={onReject}
         />
       </div>
 
@@ -530,9 +518,7 @@ export default function WorkbenchSidePanel({
   saveDisabled,
   showSave,
   showSubmit,
-  onAcceptSubmit,
-  onPass,
-  onReject,
+  onSubmit,
 }) {
   const annotationEditable = mode === 'review'
   const acceptEditable = mode === 'accept'
@@ -576,8 +562,6 @@ export default function WorkbenchSidePanel({
         <OverallAnnotationEditor
           form={form}
           setForm={setForm}
-          onPass={onPass}
-          onReject={onReject}
         />
       )
     }
@@ -641,28 +625,29 @@ export default function WorkbenchSidePanel({
         </div>
       </div>
 
-      {showSave && (
+      {(showSave || showSubmit) && (
         <div className="shrink-0 border-t border-gray-100 p-3">
-          <Button
-            variant="primary"
-            className="h-9 w-full text-sm font-medium"
-            disabled={saveDisabled}
-            onClick={onSave}
-          >
-            保存
-          </Button>
-        </div>
-      )}
-
-      {showSubmit && (
-        <div className="shrink-0 border-t border-gray-100 p-3">
-          <Button
-            variant="primary"
-            className="h-9 w-full text-sm font-medium"
-            onClick={onAcceptSubmit}
-          >
-            提交
-          </Button>
+          <div className="flex gap-2">
+            {showSave && (
+              <Button
+                variant="default"
+                className="h-9 flex-1 text-sm font-medium"
+                disabled={saveDisabled}
+                onClick={onSave}
+              >
+                保存
+              </Button>
+            )}
+            {showSubmit && (
+              <Button
+                variant="primary"
+                className="h-9 flex-1 text-sm font-medium"
+                onClick={onSubmit}
+              >
+                提交
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

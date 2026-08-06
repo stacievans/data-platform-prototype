@@ -20,7 +20,6 @@ import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
 const inputCls = 'h-8 w-full rounded-md border border-gray-300 px-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-const readOnlyCls = 'h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none'
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
 const now = () => nowDateTime()
@@ -90,10 +89,13 @@ function InstanceForm({ open, editing, defaultCode, onCancel, onOk }) {
 
     if (!trimmedCode) { setCodeError('required'); return }
     if (isDeviceCodeTaken(trimmedCode, editing.id)) { setCodeError('duplicate_code'); return }
+    if (!trimmedSn) { setSnError('required'); return }
+    if (isDeviceSnTaken(trimmedSn, editing.id)) { setSnError('duplicate'); return }
 
     onOk({
       ...editing,
       code: trimmedCode,
+      sn: trimmedSn,
       description: description.trim(),
       updatedAt: now(),
     })
@@ -111,16 +113,12 @@ function InstanceForm({ open, editing, defaultCode, onCancel, onOk }) {
       </Field>
 
       <Field label="SN" required error={snError}>
-        {isEdit ? (
-          <input readOnly value={sn} className={readOnlyCls} />
-        ) : (
-          <input
-            placeholder="请输入 SN 号"
-            value={sn}
-            onChange={(e) => { setSn(e.target.value); setSnError(false) }}
-            className={inputCls + (snError ? ' border-red-400 focus:ring-red-100' : '')}
-          />
-        )}
+        <input
+          placeholder="请输入 SN 号"
+          value={sn}
+          onChange={(e) => { setSn(e.target.value); setSnError(false) }}
+          className={inputCls + (snError ? ' border-red-400 focus:ring-red-100' : '')}
+        />
       </Field>
 
       <DescriptionField

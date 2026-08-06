@@ -31,7 +31,7 @@ export default function FragmentAnnotConfigDrawer({ open, plan, onClose, onSaved
   return (
     <Drawer
       open={open}
-      title="片段标注"
+      title="片段标注配置"
       onCancel={onClose}
       onOk={handleSave}
       okText="确定"

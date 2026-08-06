@@ -27,6 +27,12 @@ function fieldCls(locked) {
   return locked ? READONLY_CLS : INPUT_CLS
 }
 
+function formatTypeSidebarLabel(typeItem) {
+  const name = typeItem.name || '未命名类型'
+  const value = typeItem.value?.trim()
+  return value ? `${name}(${value})` : name
+}
+
 function AttributeOptionsEditor({ attribute, locked, onChange }) {
   if (attribute.inputType !== 'single' && attribute.inputType !== 'multi') return null
 
@@ -339,7 +345,7 @@ export default function FragmentAnnotPreconfigPanel({
     <p className="px-4 py-6 text-sm text-gray-400">暂无配置</p>
   ) : (
     <div className="flex min-h-[320px]">
-      <aside className="w-[148px] shrink-0 border-r border-gray-200 bg-white p-2">
+      <aside className="w-[220px] shrink-0 border-r border-gray-200 bg-white p-2">
         <div className="space-y-1">
           {types.map((t) => {
             const active = t.id === selectedId
@@ -356,7 +362,7 @@ export default function FragmentAnnotPreconfigPanel({
                   onClick={() => setSelectedId(t.id)}
                   className="min-w-0 flex-1 cursor-pointer truncate text-left"
                 >
-                  {t.name || '未命名类型'}
+                  {formatTypeSidebarLabel(t)}
                 </button>
                 {!readonly && !locked && (
                   <button

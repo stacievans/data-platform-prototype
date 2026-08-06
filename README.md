@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台** · 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块 Drawer** + **独立片段标注 Drawer** · 设备管理（实例/类型编辑抽屉必填 `*` 标识）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（预置 **动作语义 / 区域帧 / 采集打点**）· 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（配置任务 **选填**；无任务自动移出列表）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -218,7 +218,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 页面 | 受控操作 |
 |---|---|
 | 采集项目 | **+ 新建**（Drawer）；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态；**列表无验收入口**） |
-| 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**抽样验收** Tab、运营看板；采集方案列表含 **片段标注** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
+| 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**抽样验收** Tab、运营看板；采集方案列表含 **片段标注配置** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、标注、验收、导出、归档、删除（**已发布无删除、已归档无复制**） |
 | 采集条目 | 下载、删除 |
 | 真机数据集 | 新建（Drawer）、删除、下载说明；详情数据条目 Tab：**转图片/转视频**（范围弹窗 + 配置 Drawer）、**CLI 批量下载**、删除（`DeleteConfirmModal`）；卡片菜单删除 |
@@ -409,7 +409,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 质检配置 | `QcTab` | 固定质检项列表，开关启停 + 规则说明编辑（见下文） |
 | 播放布局 | `LayoutTab` | 系统默认布局 + 项目自建布局；新建/编辑/下载/删除 |
 
-> **标注方案**不再作为独立 Tab。方案 **Drawer 模块三** 仅配置整体标签模板与「基于采集方案生成片段标注配置并预标注」复选框；**具体片段类型/属性/选项** 在列表操作 **「片段标注」** 独立 Drawer 中编辑（任意方案状态均可编辑）。
+> **标注方案**不再作为独立 Tab。方案 **Drawer 模块三** 配置 **整体标签模板**（必填）与 **片段标注配置** 两个独立复选框（见下文）；**具体片段类型/属性/选项** 在列表操作 **「片段标注配置」** 独立 Drawer 中编辑（任意方案状态均可编辑）。
 
 #### 采集方案子 Tab（`CollectConfigTab` + `CollectPlanForm.jsx`）
 
@@ -423,9 +423,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 状态 | 操作 |
 |---|---|
-| 草稿 | 复制 · 编辑 · 发布 · **片段标注** · 删除 |
-| 已发布 | 复制 · 查看 · 归档 · **片段标注** · **创建任务**（仅项目 **开启** 时显示） |
-| 已归档 | 查看 · **片段标注** · 删除 |
+| 草稿 | 复制 · 编辑 · 发布 · **片段标注配置** · 删除 |
+| 已发布 | 复制 · 查看 · 归档 · **片段标注配置** · **创建任务**（仅项目 **开启** 时显示） |
+| 已归档 | 查看 · **片段标注配置** · 删除 |
 
 - **复制**：图标按钮，生成草稿副本，其余字段同原方案
 - **编辑**：仅草稿可编辑；已发布需先复制为草稿
@@ -433,7 +433,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **删除**：`DeleteConfirmModal`
 - **归档**：`DeleteConfirmModal`（样式同删除确认；正文含方案名与后果说明）；操作栏「归档」为 **橙色**
 - **查看**（已发布/已归档）：只读采集方案 **Drawer**（`CollectPlanFormFields` readonly）
-- **片段标注**：打开 **`FragmentAnnotConfigDrawer`**（宽 `min(960px, …)`）；展示类型列表 + 类型/属性/选项编辑器（`FragmentAnnotPreconfigPanel` embedded）；**全字段可编辑**（含预置大类）；**不受方案状态限制**；属性选项含 **「设为默认值」** 列（单选限 1 个、多选可多个，默认均不勾选）
+- **片段标注配置**：打开 **`FragmentAnnotConfigDrawer`**（标题「片段标注配置」；宽 `min(960px, …)`）；左侧类型列表展示 **`中文名(类型值)`**（如 `动作语义(action_semantics)`）；右侧类型/属性/选项编辑器（`FragmentAnnotPreconfigPanel` embedded）；**全字段可编辑**（含预置大类）；**不受方案状态限制**；属性选项含 **「设为默认值」** 列（单选限 1 个、多选可多个，默认均不勾选）；预置类型见下表
 - **创建任务**：打开 `CreateTaskModal`（Drawer）并锁定当前方案为 `initialPlan`（**隐藏「配置」按钮**）
 
 **新建/编辑/查看**（**右侧 Drawer**，默认宽 = 主内容区 **1/3**；与新建任务「创建新方案」字段对齐，共用 `CollectPlanFormFields`）分为 **三个模块**（各模块左上角加粗小标题）：
@@ -451,13 +451,22 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **模块三：标注配置**（无外层 Card 线框，与表单融为一体）
 - **整体标签模板**（必填）：`SearchableAuditTemplateSelect` 模糊搜索下拉
-- **片段标注配置**：
-  - 单个复选框（默认勾选）：**基于采集方案生成片段标注配置并预标注**
-  - 下方提示：「可在采集方案列表-操作-片段标注中查看/编辑片段标注配置」
-  - **不含**内嵌折叠编辑器（已移至列表 **「片段标注」** Drawer）
+- **片段标注配置**（两个独立复选框，默认 **均勾选**）：
+  1. **基于采集方案生成标注配置**（`annotGenConfig`）— 控制是否自动生成/合并预置片段类型
+  2. **基于采集方案预标注**（`annotPreLabel`）— **仅当第 1 项勾选时显示**；取消第 1 项时隐藏并自动置为 `false`；重新勾选第 1 项时第 2 项默认恢复勾选
+  - 下方提示：「可在采集方案列表-操作-片段标注配置中查看/编辑片段标注配置」
+  - **不含**内嵌折叠编辑器（已移至列表 **「片段标注配置」** Drawer）
 - **不含**指定采集设备（设备在任务级选择）
 
-方案 payload 含 `annotTemplateId`、`annotAutoFragment`（兼容写入 `annotGenConfig` / `annotPreLabel`）、`fragmentAnnotTypes`（片段标注 Drawer 保存的完整类型配置；若含预置大类则优先使用存储值，否则按勾选态动态合并预置 **动作语义** / **区域帧**）。
+**片段标注配置预置类型**（`fragmentAnnotPreconfig.js` → `buildPresetFragmentTypes`；Drawer 保存时可覆盖；已存方案打开 Drawer 时经 `mergeStoredPresetsWithCatalog` 合并 catalog，**新增预置会自动出现**）：
+
+| 类型名称 | 类型值 | 颜色 | 禁止重叠 | 属性（摘要） |
+|---|---|---|---|---|
+| 动作语义 | `action_semantics` | 蓝 `#1890ff` | 是 | 步骤描述（文本）、技能标签（多选，选项来自原子技能标签） |
+| 区域帧 | `region_frame` | 橙 `#faad14` | 是 | 区域名称（文本） |
+| 采集打点 | `Event Marking` | 绿 `#52c41a` | 否 | 无（可后续在 Drawer 内添加属性） |
+
+方案 payload 含 `annotTemplateId`、`annotGenConfig`、`annotPreLabel`（兼容写入 `annotAutoFragment` = 两者均为 true）、`fragmentAnnotTypes`（片段标注配置 Drawer 保存的完整类型配置；若含预置大类则优先使用存储值，否则在 `annotGenConfig !== false` 时动态合并上述预置类型）。
 
 **运行时 API**（`plans.js`）：`getPlansByProjectId`、`appendPlan`、`updatePlanInStore`、`deletePlanFromStore`、`publishPlanInStore`、`copyPlanInStore`、`resolvePlanDeviceTypeId`
 
@@ -520,7 +529,12 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
   1. **角色**（必选，**多选** pill）：采集员 / 标注员（`RoleMultiPicker`）
   2. **选择用户**（必选，**多选**）：`PersonMultiDropdownSelect`；须先选角色；排除项目创建人与已在项目中的成员
   3. **配置任务**（必选 `*`，`TaskCheckboxList` 多选项目任务）
-- **配置任务**（**右侧 Drawer**，宽 `min(960px, …)`；底部 **取消 / 确定**）：成员只读、角色多选、**配置任务**（必选 `*`，`TreeTransfer`）
+- **配置任务**（**右侧 Drawer**，标题「配置任务」；宽 `min(960px, …)`；底部 **取消 / 确定**）：
+  - **成员**（只读）
+  - **角色**（必选，多选 pill）
+  - **配置任务**（**选填**，`TreeTransfer` 项目-任务树形穿梭框）
+  - 字段下方灰色提示：**「无任务时，自动将该成员从项目成员列表中移除」**
+  - 保存时若 `taskIds` 为空，经 `pruneEmptyMembers` 从成员列表移除该人，并同步从相关任务的采集员/标注员字段中剔除
 - **分配校验**：
   - 若仍有未分配任务 → 打开 **任务分配矩阵** Modal（无底部「关闭」、无左下角未完成提示文案）
   - 若全部已分配 → 顶部居中 **成功 Toast**「任务已全部完成分配！」（白底绿勾，`Toast` `placement: top` + `variant: success`）
@@ -733,8 +747,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | mode | 顶栏右侧 | 基础信息 | 整体标注 | 片段标注 | 验收模块 | 底部按钮 |
 |---|---|---|---|---|---|---|
 | `play` | 上一条 / 下一条 | 只读 | 只读（未标注显示 `-`） | 只读（无数据显示 `-`） | 只读（未验收显示 `-`） | 无 |
-| `review` | 上一条 / 下一条 | 只读 | **可编辑** + 标注结论双次点击提交 | **可编辑** | 只读 | **保存** |
-| `accept` | 上一条 / 下一条 | 只读 | 只读（反显标注员数据） | 只读 | **可编辑** + 验收结论 | **提交** |
+| `review` | 上一条 / 下一条 | 只读 | **可编辑**（标注结论仅选择，不提交） | **可编辑** | 只读 | **保存** + **提交** |
+| `accept` | 上一条 / 下一条 | 只读 | 只读（反显标注员数据） | 只读 | **可编辑** + 验收结论 | **保存** + **提交** |
 
 **顶栏布局**：
 - **左侧**：模式文字（播放 / 标注 / 验收）+ **布局 A / 布局 B** 切换
@@ -745,14 +759,14 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 **右侧面板四模块**（均可折叠）：
 1. **基础信息**：采集项目 → 采集任务 → 采集员 → 设备类型 → 采集设备 → 采集方式 → 格式·时长 → 「采集方案详情」
 2. **整体标注**：标注结论（通过/驳回）；通过时质量标签 + 描述；驳回时问题标签 + 驳回理由
-3. **片段标注**：动作语义表、区域帧表
+3. **片段标注**：动作语义表、区域帧表、采集打点（按方案 `fragmentAnnotTypes` 配置展示）
 4. **验收**：验收结论（通过/驳回，样式同标注结论按钮）；通过时描述（选填）；驳回时驳回理由（必填）
 
 **提交逻辑**：
-- **标注 · 保存** → 草稿写入条目；未保存就点标注结论提交 → Toast「请先保存标注」
-- **标注 · 通过/驳回** → `已标注` / `标注不通过`
-- **验收 · 提交** → 侧栏验收模块校验后写入 `已验收` / `验收不通过`；联动 `syncBatchesAfterEntryAccept`
-- 提交后跳转同任务下一条，末条回任务详情
+- **保存**（标注 / 验收）→ 暂存当前填写内容（标注含质量标签、问题标签、描述、片段；验收含描述）；未改动时保存按钮禁用
+- **提交**（标注 / 验收）→ 校验结论与必填项后写入最终状态（标注 `已标注` / `标注不通过`；验收 `已验收` / `验收不通过`），并跳转同任务下一条；末条回任务详情
+- **上一条 / 下一条**（顶栏）→ 仅切换条目，不保存、不提交
+- 验收提交联动 `syncBatchesAfterEntryAccept`
 
 **左侧主区**：相机 + 信号图（布局 A/B）+ 时间轴（`review` 可编辑片段轨）
 
@@ -890,7 +904,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **列表字段**：标签名称（加粗）、**标签值**、描述、**创建人**、创建时间、**更新时间**、操作（树形缩进展示层级）
 - **编辑/删除**：场景节点被任务绑定时同样置灰（`isSceneTypeBoundToTask`）
 
-> **采集方案标注配置**：**模块三** 在方案 Drawer 内配置 **整体标签模板** + **自动生成片段标注** 复选框；具体类型/属性/选项在列表 **「片段标注」** Drawer（`FragmentAnnotConfigDrawer`）维护。**整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
+> **采集方案标注配置**：**模块三** 在方案 Drawer 内配置 **整体标签模板** + **annotGenConfig / annotPreLabel** 两个复选框；具体类型/属性/选项在列表 **「片段标注配置」** Drawer（`FragmentAnnotConfigDrawer`）维护。**整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
 
 ---
 
@@ -909,11 +923,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **操作**：编辑、删除（`DeleteConfirmModal`；已绑定任务的实例置灰不可删）
 
-##### 新建/编辑实例弹窗
+##### 新建/编辑实例 Drawer
 | 字段 | 新建 | 编辑 |
 |---|---|---|
 | 设备名称 | 必填 `*`；默认自动填入 `DEV-XXX` 递增编号；`isDeviceCodeTaken` 唯一校验 | 可编辑 `*`；唯一校验排除自身 |
-| SN | 必填 `*` 手动录入；`isDeviceSnTaken` 唯一校验 | **只读**（仍显示必填 `*`） |
+| SN | 必填 `*` 手动录入；`isDeviceSnTaken` 唯一校验 | **可编辑** `*`；必填；`isDeviceSnTaken` 唯一校验排除自身 |
 | 描述 | 选填 | 选填 |
 
 - **已移除**弹窗内「设备类型」字段；实例 `typeId` 在数据层仍保留历史快照逻辑
@@ -1050,9 +1064,9 @@ src/
 ├── components/
 │   ├── collect/
 │   │   ├── CollectPlanForm.jsx           # 采集方案三模块表单 + 标注配置摘要区块
-│   │   ├── FragmentAnnotConfigDrawer.jsx # 列表「片段标注」独立 Drawer（宽 960px）
-│   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注类型/属性/选项编辑器（支持 embedded / 折叠）
-│   │   └── fragmentAnnotPreconfig.js     # 预置大类 + 类型合并、选项 isDefault
+│   │   ├── FragmentAnnotConfigDrawer.jsx # 列表「片段标注配置」独立 Drawer（宽 960px）
+│   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注类型/属性/选项编辑器（左侧 中文名(类型值)；embedded / 折叠）
+│   │   └── fragmentAnnotPreconfig.js     # 预置三大类 + mergeStoredPresetsWithCatalog、选项 isDefault
 │   ├── entry/
 │   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/标注/验收/流转弹窗）
 │   ├── task/
@@ -1111,14 +1125,14 @@ src/
 │   │   ├── SamplingBatchDetailModal.jsx
 │   │   ├── BatchAcceptProcessModal.jsx
 │   │   ├── BulkAcceptProcessModal.jsx
-│   │   └── MembersTab.jsx             # 项目成员（Drawer 添加/配置任务；分配校验矩阵；10 条/页）
+│   │   └── MembersTab.jsx             # 项目成员（Drawer 添加/配置任务；配置任务选填+无任务自动移除；分配校验矩阵）
 │   ├── Task/
 │   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，5 列筛选网格）
 │   │   ├── Detail.jsx             # 任务详情（摘要卡 + EntryListPanel）
 │   │   ├── TaskTable.jsx          # 可复用任务表格（含按状态分操作栏、showProjectColumn）
 │   │   └── CreateTaskModal.jsx    # 新建/编辑任务（Drawer；plan 视图内嵌配置采集方案）
 │   ├── Review/
-│   │   ├── Workbench.jsx          # 标注工作台（独立全屏；四模块侧栏；验收侧栏提交）
+│   │   ├── Workbench.jsx          # 标注工作台（独立全屏；四模块侧栏；底部保存+提交）
 │   │   ├── constants/
 │   │   │   └── workbenchTags.js   # 质量标签 / 问题标签 21 项 + normalizeAuditQuality
 │   │   ├── mock/signalData.js     # 信号图 mock 数据生成
@@ -1154,7 +1168,7 @@ src/
 │   │   └── SceneTypeModal.jsx
 │   ├── Device/
 │   │   ├── index.jsx              # 设备实例 / 设备类型 Tab 容器
-│   │   ├── InstanceList.jsx       # 实例列表（设备名称 + SN）
+│   │   ├── InstanceList.jsx       # 实例列表（设备名称 + SN；编辑 SN 可改）
 │   │   └── TypeList.jsx           # 设备类型列表
 │   └── System/
 │       ├── UserManage.jsx         # 用户管理（薄包装 → UserListPanel global）
@@ -1227,7 +1241,7 @@ scripts/
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员** |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`projectIds[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
-| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存草稿 / 通过驳回提交** 后更新会话内状态 |
+| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存暂存 / 提交写入** 后更新会话内状态 |
 | 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
@@ -1243,7 +1257,8 @@ scripts/
 | 筛选布局惯例 | 任务列表：**5 列响应式网格** + 「展开筛选」第二行；操作按钮末行右对齐。**条目列表（任务详情）**：固定 **5 列首行**（条目ID、文件名称、数据格式、质检/标注状态）+ 展开 **1 列**（验收状态）。**采集条目页** 首行含所属项目/任务名称，展开行含三工序状态。**项目详情**内采集方案/质检配置筛选与重置/查询 **同一行** |
 | 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
 | 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer（默认 1/3 宽）；`modalView` 切换任务/方案配置（返回箭头）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
-| 片段标注 Drawer | `FragmentAnnotConfigDrawer`：宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；采集方案 Drawer 仍为默认 1/3 宽 |
+| 片段标注配置 Drawer | `FragmentAnnotConfigDrawer`：标题「片段标注配置」；宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；左侧类型名 `中文(value)`；预置 **动作语义 / 区域帧 / 采集打点**；采集方案 Drawer 仍为默认 1/3 宽 |
+| 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：**配置任务选填**；`taskIds` 为空时 `pruneEmptyMembers` 自动移出成员列表；提示「无任务时，自动将该成员从项目成员列表中移除」 |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
 | 抽样验收 | 仅项目详情 Tab；任务维度抽检；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
 | 条目操作列 | `EntryActions`：标注不通过→验收；验收不通过→标注；质检不通过→无中间按钮 |
@@ -1258,7 +1273,7 @@ scripts/
 | 真机数据集 runtime | `getDatasetById`、`patchSelfDataset`、`prependSelfDataset`；详情条目删除仅更新 `entryIds` 并重算指标 |
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
 | 标签 runtime | `tags.js`：`getAuditTemplates` / `upsertAuditTemplate` / `saveAuditTemplateTagTree`；平铺标签 getter/setter；`getSceneTypeTree`；`APPLICATION_SCOPE_OPTIONS`（全局/通过/驳回）；工作台整体标签仍读 `workbenchTags.js` |
-| 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：模块三仅 **整体标签模板**（必填）+ **annotAutoFragment** 复选框 + 跳转提示；详情编辑见 `FragmentAnnotConfigDrawer` + `FragmentAnnotPreconfigPanel`（类型/属性/单选·多选选项 + **设为默认值** `isDefault`） |
+| 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：模块三 **整体标签模板**（必填）+ **annotGenConfig / annotPreLabel** 两复选框（第 2 项依赖第 1 项显示）+ 跳转提示；详情编辑见 `FragmentAnnotConfigDrawer` + `FragmentAnnotPreconfigPanel`（类型/属性/单选·多选选项 + **设为默认值** `isDefault`） |
 | 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob` / `getConvertedDatasetById` / `getConvertedDatasetFiles` / `getLabelSubmissionRecordsByConvertedId`；`ConversionRangeModal` + `ConvertDatasetDrawer` 提交转换；转图片默认抽帧间隔 0、三条相机路径；详情页 mock 约 2.5s 自动完成；**转换数据集详情** 含文件列表 + 送标记录两 Tab |
 | 共享表单组件 | `FormField.jsx` → `DescriptionField`（全平台标准「描述」字段：placeholder「请输入描述」、选填、输入框外 **`n/500`**）；`PasswordInput`（闭眼 `IconEyeOff` / 睁眼 `IconEyeOpen`）；`CreateInviteUserModal` 导出 `RoleMultiSelect`；用户/组织/角色/设备/标签/数据集等已统一接入 |
 | 用户密码编辑 | 用户管理 **编辑 Drawer**：默认 **「修改密码」** 主按钮 → 点击后 `PasswordInput`；有输入才 `updateRuntimeUser` 覆盖 `password` |
@@ -1274,7 +1289,8 @@ scripts/
 | 系统列表 ID/名称列 | 组织/角色/用户列表 **ID 与名称列常规字重**（不加粗），名称列仍可点击跳转 |
 | 用户登录方式 | 字段 `loginMethod`（`账号密码` / `飞书SSO`）；未设置时默认「账号密码」；列表与筛选展示 |
 | 角色管理 UI | 新建 Drawer **无角色ID**、描述选填；列表操作「编辑」→ `RolePermissionModal`（标题「编辑权限」）；`MenuPermissionTree`（**父子联动默认关**、权限树对齐侧栏架构）+ `ProjectDataTransfer` |
-| 标注工作台 | 三模式共用 **四模块** 侧栏：`play` 全只读；`review` 可编辑整体/片段 + 底部保存 + 标注结论提交；`accept` 侧栏验收模块提交（**无顶栏通过/驳回**）；`syncBatchesAfterEntryAccept` |
+| 标注工作台 | 三模式共用 **四模块** 侧栏：`play` 全只读；`review` / `accept` 底部 **保存 + 提交**（保存暂存、提交校验后写入并跳下一条；标注结论按钮**仅选择**不提交）；顶栏 **上一条 / 下一条** 仅导航；验收提交联动 `syncBatchesAfterEntryAccept` |
+| 设备实例 SN | `InstanceList` 编辑 Drawer：**SN 可编辑**，保存时 `isDeviceSnTaken(sn, excludeId)` 唯一校验 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
@@ -1285,7 +1301,20 @@ scripts/
 | 数据类型 | 条数 / 说明 |
 |---|---|
 | 采集项目 | 8 条（status：**open** ×6、**closed** P-1006、**archived** P-1007；mock 仍含 `projectType`，UI 不展示；`createdAt` 精确到秒） |
-| 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布/已归档**；含 `deviceTypeId`、场景路径、步骤、**annotTemplateId**、`annotAutoFragment`、`fragmentAnnotTypes`（含预置/自定义类型及选项 `isDefault`）等） |
+| 采集方案 | 18 条（每项目 2~3 条；状态 **草稿/已发布/已归档**；含 `deviceTypeId`、场景路径、步骤、**annotTemplateId**、`annotGenConfig`、`annotPreLabel`（兼容 `annotAutoFragment`）、`fragmentAnnotTypes`（预置 **动作语义 / 区域帧 / 采集打点** + 自定义类型及选项 `isDefault`）等） |
+
+**采集方案单条字段（`plans.js` 摘要）**：`id`, `projectId`, `name`, `status`, `deviceTypeId`, `method`, `scenePath` / `sceneLabel`, `initialScene`, `steps[]`, `durationMin/Max`, `totalDeviation`, `annotTemplateId`, `annotGenConfig`, `annotPreLabel`, `fragmentAnnotTypes[]`, `taskCount`, `creator`, `createdAt`, `updatedAt`
+
+**`fragmentAnnotTypes[]` 类型结构**（`FragmentAnnotConfigDrawer` 持久化；`preset: true` 为系统预置）：
+
+| 字段 | 说明 |
+|---|---|
+| `id` | 类型唯一 ID（预置如 `preset-action-semantics`；自定义 `custom-type-{ts}`） |
+| `preset` | 是否预置大类（Drawer 内 `autoFromPlan=false` 时仍可编辑/删除） |
+| `name` / `value` | 类型名称 / 类型值（左侧列表展示 `name(value)`） |
+| `color` | 时间轴/片段轨颜色 |
+| `forbidOverlap` | 是否禁止片段重叠 |
+| `attributes[]` | 属性列表：`name`, `value`, `inputType`（text/single/multi）, `options[]`（含 `isDefault`） |
 | 质检项 | 每项目固定 **7 条**（8 项目 × 7 = 56 条；含**掉帧检查**；mock 初始 **全部 enabled: true**；`plans.js` → `getQcItemsByProjectId`） |
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
 | 采集任务 | 15 条（分布于 7 个项目；P-1007 暂无任务；状态 **草稿/已发布/已归档**；**采集员为单人字符串**、标注员为单人） |
@@ -1403,6 +1432,11 @@ scripts/
 
 ### 项目成员单条字段
 `id`, `name`, `roles[]`, `taskIds[]`, `joinedAt`（`YYYY-MM-DD HH:mm:ss`）
+
+**成员列表维护规则**（`MembersTab.jsx`）：
+- `taskIds.length === 0` 的成员不会出现在列表（`pruneEmptyMembers`）
+- **添加成员** Drawer 仍要求至少选 1 个任务；**配置任务** Drawer 允许清空任务并保存以移出成员
+- 配置任务保存时同步更新 `projectTasks` 上对应任务的 `collectors` / `annotators`（及兼容字段 `collector` / `reviewer`）
 
 ---
 

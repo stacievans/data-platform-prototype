@@ -256,7 +256,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   const renderPlanActions = (row) => {
     const fragmentAnnotBtn = (
       <PlanLinkAction permission="collection.project.edit" onClick={() => setFragmentAnnotTarget(row)}>
-        片段标注
+        片段标注配置
       </PlanLinkAction>
     )
 

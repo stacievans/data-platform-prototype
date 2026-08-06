@@ -917,7 +917,6 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
     const errs = {}
     if (!configTaskForm.roles.length) errs.roles = true
-    if (!configTaskForm.taskIds.length) errs.taskIds = true
     if (Object.keys(errs).length) {
       setConfigTaskErrors(errs)
       return
@@ -961,10 +960,12 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       prev.map((t) => nextTasks.find((n) => n.id === t.id) ?? t),
     )
     commitMembers((list) =>
-      list.map((m) =>
-        m.id === configTaskMember.id
-          ? { ...m, roles: [...roles], taskIds: [...taskIds] }
-          : m,
+      pruneEmptyMembers(
+        list.map((m) =>
+          m.id === configTaskMember.id
+            ? { ...m, roles: [...roles], taskIds: [...taskIds] }
+            : m,
+        ),
       ),
     )
     setConfigTaskMember(null)
@@ -1284,9 +1285,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
               error={configTaskErrors.roles}
             />
             <div>
-              <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 配置任务
-                <span className="text-red-500">*</span>
               </label>
               <TreeTransfer
                 key={configTaskMember.id}
@@ -1295,10 +1295,9 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
                 value={configTaskForm.taskIds}
                 onChange={(taskIds) => {
                   setConfigTaskForm((f) => ({ ...f, taskIds }))
-                  setConfigTaskErrors((e) => ({ ...e, taskIds: false }))
                 }}
               />
-              {configTaskErrors.taskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+              <p className="mt-1.5 text-xs text-gray-400">无任务时，自动将该成员从项目成员列表中移除</p>
             </div>
           </div>
         )}
