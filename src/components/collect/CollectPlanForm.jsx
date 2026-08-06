@@ -17,6 +17,8 @@ import {
 
 export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 
+export const COLLECT_PLAN_DRAWER_WIDTH = 'min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
+
 export const emptyCreatePlan = () => ({
   name: '',
   sceneId: '',

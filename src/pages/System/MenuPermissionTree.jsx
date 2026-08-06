@@ -77,14 +77,24 @@ function TreeNode({
   depth,
   expanded,
   selected,
+  parentChildLinkage,
   onToggleExpand,
   onToggleSelect,
 }) {
   const hasChildren = (node.children?.length ?? 0) > 0
   const isExpanded = expanded.has(node.id)
   const keys = collectPermissionKeys(node)
-  const checked = keys.length > 0 && keys.every((k) => selected.has(k))
-  const indeterminate = keys.some((k) => selected.has(k)) && !checked
+  const checked = node.permissionKey
+    ? selected.has(node.permissionKey)
+    : keys.length > 0 && keys.every((k) => selected.has(k))
+  const indeterminate = !node.permissionKey
+    && keys.some((k) => selected.has(k))
+    && !checked
+
+  const handleToggle = () => {
+    if (!parentChildLinkage && !node.permissionKey) return
+    onToggleSelect(node, !checked)
+  }
 
   return (
     <div>
@@ -106,7 +116,7 @@ function TreeNode({
         <IndeterminateCheckbox
           checked={checked}
           indeterminate={indeterminate}
-          onChange={() => onToggleSelect(node, !checked)}
+          onChange={handleToggle}
           className={CHECKBOX_CLS}
         />
         <span className="min-w-0 flex-1 truncate text-sm text-gray-800">{node.name}</span>
@@ -123,6 +133,7 @@ function TreeNode({
           depth={depth + 1}
           expanded={expanded}
           selected={selected}
+          parentChildLinkage={parentChildLinkage}
           onToggleExpand={onToggleExpand}
           onToggleSelect={onToggleSelect}
         />
@@ -137,6 +148,7 @@ export default function MenuPermissionTree({ value = [], onChange }) {
   const expandableIds = useMemo(() => collectExpandableIds(tree), [tree])
   const selected = useMemo(() => new Set(value), [value])
   const [expanded, setExpanded] = useState(() => new Set())
+  const [parentChildLinkage, setParentChildLinkage] = useState(true)
 
   const allExpanded = expandableIds.length > 0 && expandableIds.every((id) => expanded.has(id))
   const allSelected = allKeys.length > 0 && allKeys.every((k) => selected.has(k))
@@ -160,12 +172,17 @@ export default function MenuPermissionTree({ value = [], onChange }) {
   }
 
   const toggleSelect = (node, checked) => {
-    const keys = collectPermissionKeys(node)
     const next = new Set(value)
-    keys.forEach((k) => {
-      if (checked) next.add(k)
-      else next.delete(k)
-    })
+    if (parentChildLinkage) {
+      const keys = collectPermissionKeys(node)
+      keys.forEach((k) => {
+        if (checked) next.add(k)
+        else next.delete(k)
+      })
+    } else if (node.permissionKey) {
+      if (checked) next.add(node.permissionKey)
+      else next.delete(node.permissionKey)
+    }
     onChange([...next])
   }
 
@@ -190,6 +207,15 @@ export default function MenuPermissionTree({ value = [], onChange }) {
           />
           全选/全不选
         </label>
+        <label className="inline-flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            className={CHECKBOX_CLS}
+            checked={parentChildLinkage}
+            onChange={(e) => setParentChildLinkage(e.target.checked)}
+          />
+          父子联动
+        </label>
       </div>
       <div className="max-h-64 overflow-y-auto p-2">
         {tree.map((node) => (
@@ -199,6 +225,7 @@ export default function MenuPermissionTree({ value = [], onChange }) {
             depth={0}
             expanded={expanded}
             selected={selected}
+            parentChildLinkage={parentChildLinkage}
             onToggleExpand={toggleExpand}
             onToggleSelect={toggleSelect}
           />

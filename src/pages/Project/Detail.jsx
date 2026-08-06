@@ -46,6 +46,7 @@ import {
   buildPlanPayloadFromForm,
   calcPlanDurationMeta,
   CollectPlanFormFields,
+  COLLECT_PLAN_DRAWER_WIDTH,
   Field,
   readonlyCls,
 } from '../../components/collect/CollectPlanForm'
@@ -414,6 +415,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         title="查看采集方案"
         onCancel={() => setViewTarget(null)}
         footer={null}
+        width={COLLECT_PLAN_DRAWER_WIDTH}
       >
         {viewTarget && viewForm && (
           <div className="space-y-3">
@@ -445,6 +447,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         }}
         onOk={handleSave}
         okText="确定"
+        width={COLLECT_PLAN_DRAWER_WIDTH}
       >
         <div className="space-y-3">
           {editTarget && (
