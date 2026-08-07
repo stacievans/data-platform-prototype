@@ -14,9 +14,8 @@ import { resolveFragmentTypesFromPlan } from '../../components/collect/fragmentA
 import { useAuth } from '../../context/AuthContext'
 import { nowDateTime } from '../../utils/formatDateTime'
 import NoPermission from '../System/NoPermission'
-import WorkbenchLayoutA from './components/WorkbenchLayoutA'
 import WorkbenchLayoutB from './components/WorkbenchLayoutB'
-import LayoutToggle from './components/LayoutToggle'
+import WorkbenchModeBadge from './components/WorkbenchModeBadge'
 import WorkbenchSidePanel from './components/WorkbenchSidePanel'
 import { normalizeAuditQuality } from './constants/workbenchTags'
 import { generateSignalSeries } from './mock/signalData'
@@ -38,11 +37,6 @@ function parseMode(raw) {
   return 'play'
 }
 
-const MODE_LABELS = {
-  play: '播放',
-  review: '标注',
-  accept: '验收',
-}
 
 const SIDE_PANEL_WIDTH_DEFAULT = 340
 const SIDE_PANEL_WIDTH_MIN = 280
@@ -257,7 +251,6 @@ export default function Workbench() {
   const [panelCollapsed, setPanelCollapsed] = useState(false)
   const [sidePanelWidth, setSidePanelWidth] = useState(SIDE_PANEL_WIDTH_DEFAULT)
   const panelResizeRef = useRef({ dragging: false, startX: 0, startWidth: SIDE_PANEL_WIDTH_DEFAULT })
-  const [mainLayout, setMainLayout] = useState('B')
 
   const [form, setForm] = useState({
     auditConclusion: null,
@@ -584,8 +577,7 @@ export default function Workbench() {
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-white">
       <header className="relative flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-2.5">
         <div className="flex shrink-0 items-center gap-3">
-          <span className="text-sm font-medium text-gray-800">{MODE_LABELS[mode]}</span>
-          <LayoutToggle value={mainLayout} onChange={setMainLayout} />
+          <WorkbenchModeBadge mode={mode} />
         </div>
         <div className="pointer-events-none absolute left-1/2 max-w-[min(520px,50vw)] -translate-x-1/2 truncate px-4 text-center">
           <span className="text-sm font-semibold text-gray-900">{displayName}</span>
@@ -642,19 +634,11 @@ export default function Workbench() {
 
       <div className="relative flex min-h-0 flex-1 p-2.5">
         <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${panelCollapsed ? '' : 'mr-2.5'}`}>
-          {mainLayout === 'A' ? (
-            <WorkbenchLayoutA
-              playPct={playPct}
-              signalSeries={signalSeries}
-              totalFrames={totalFrames}
-            />
-          ) : (
-            <WorkbenchLayoutB
-              playPct={playPct}
-              signalSeries={signalSeries}
-              totalFrames={totalFrames}
-            />
-          )}
+          <WorkbenchLayoutB
+            playPct={playPct}
+            signalSeries={signalSeries}
+            totalFrames={totalFrames}
+          />
 
           <TimelinePanel
             totalFrames={totalFrames}

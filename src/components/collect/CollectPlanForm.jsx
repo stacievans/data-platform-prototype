@@ -517,7 +517,7 @@ export function PlanReadonlyDetails({ plan, deviceTypes }) {
   if (!plan) return null
 
   return (
-    <div className="space-y-3 rounded-md border border-gray-200 bg-white p-3">
+    <div className="space-y-3">
       <SceneCascadeFields
         readonly
         form={{
@@ -570,7 +570,7 @@ export function PlanReadonlySection({ plan, deviceTypes }) {
   if (!plan) return <p className="text-sm text-gray-400">未找到绑定方案</p>
   return (
     <div className="space-y-3">
-      <Field label="采集方案名称">
+      <Field label="采集方案">
         <input readOnly value={`${plan.id} · ${plan.name}`} className={readonlyCls} />
       </Field>
       <PlanReadonlyDetails plan={plan} deviceTypes={deviceTypes} />

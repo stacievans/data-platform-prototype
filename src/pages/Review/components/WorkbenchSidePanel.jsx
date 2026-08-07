@@ -12,6 +12,7 @@ import {
   hasAnyFragmentSegments,
 } from '../utils/fragmentSegments'
 import { AttributeValueEditor } from './SegmentAttributeEditors'
+import WorkbenchModeBadge from './WorkbenchModeBadge'
 
 const CHEVRON = (
   <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -575,12 +576,10 @@ export default function WorkbenchSidePanel({
   const annotationEditable = mode === 'review'
   const acceptEditable = mode === 'accept'
 
-  const [basicInfoOpen, setBasicInfoOpen] = useState(true)
-  const [annotationOpen, setAnnotationOpen] = useState(true)
-  const [fragmentOpen, setFragmentOpen] = useState(mode === 'review' || mode === 'accept')
-  const [acceptOpen, setAcceptOpen] = useState(mode === 'accept')
-
-  const panelTitle = mode === 'accept' ? '验收' : mode === 'review' ? '标注' : '播放'
+  const [basicInfoOpen, setBasicInfoOpen] = useState(false)
+  const [annotationOpen, setAnnotationOpen] = useState(false)
+  const [fragmentOpen, setFragmentOpen] = useState(false)
+  const [acceptOpen, setAcceptOpen] = useState(false)
 
   const hasOverall = hasOverallAnnotation(entry, form, fragmentSegmentsByType)
   const hasFragment = hasAnyFragmentSegments(fragmentSegmentsByType)
@@ -652,7 +651,7 @@ export default function WorkbenchSidePanel({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div className="flex shrink-0 items-center border-b border-gray-100 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-800">{panelTitle}</h3>
+        <WorkbenchModeBadge mode={mode} />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">

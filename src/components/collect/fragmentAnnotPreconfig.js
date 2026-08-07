@@ -22,7 +22,7 @@ function buildEventMarkingType() {
     name: '采集打点',
     value: 'Event Marking',
     color: '#52c41a',
-    forbidOverlap: false,
+    forbidOverlap: true,
     attributes: [],
   }
 }

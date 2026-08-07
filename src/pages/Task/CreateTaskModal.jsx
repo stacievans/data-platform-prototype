@@ -4,25 +4,17 @@ import Button from '../../components/common/Button'
 import { IconChevronLeft } from '../../components/common/Icons'
 import { SelectChevronWrap } from '../../components/common/SelectControl'
 import {
-  EMPTY_STEP,
-  emptyCreatePlan,
   Field,
   inputCls,
   selectCls,
   formatSceneLabel,
-  calcPlanDurationMeta,
   PlanReadonlySection,
   PlanReadonlyDetails,
-  validatePlanForm,
-  buildPlanPayloadFromForm,
-  CollectPlanFormFields,
 } from '../../components/collect/CollectPlanForm'
 import { tasks, nextTaskId, nowDatetime } from '../../mock/tasks'
 import {
   getPlansByProjectId,
   getPlanById,
-  appendPlan,
-  nextPlanId,
   resolvePlanDeviceTypeId,
   playLayouts,
 } from '../../mock/plans'
@@ -57,37 +49,6 @@ function taskFormFromTask(task, instances) {
     deviceInstanceId,
     layoutId: task.layoutId != null && task.layoutId !== '' ? String(task.layoutId) : '',
   }
-}
-
-function cloneCreatePlan(form) {
-  return {
-    ...form,
-    steps: form.steps.map((s) => ({ ...s, atomicSkills: [...(s.atomicSkills ?? [])] })),
-  }
-}
-
-function ModeToggle({ value, onChange, disabled }) {
-  const opts = [
-    { key: 'existing', label: '选择已有方案' },
-    { key: 'create', label: '创建新方案' },
-  ]
-  return (
-    <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
-      {opts.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          disabled={disabled}
-          onClick={() => onChange(o.key)}
-          className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-            value === o.key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
 }
 
 function SearchablePlanSelect({ plans, value, onChange, error }) {
@@ -212,12 +173,8 @@ function PlanConfigPanel({
   projectPlans,
   deviceTypes,
   lockExistingPlan,
-  planMode,
-  onPlanModeChange,
   existingPlanId,
   onExistingPlanIdChange,
-  createPlan,
-  onCreatePlanChange,
   errors,
 }) {
   const selectedExistingPlan = useMemo(
@@ -225,63 +182,24 @@ function PlanConfigPanel({
     [projectPlans, existingPlanId],
   )
 
-  const createDurationMeta = useMemo(
-    () => calcPlanDurationMeta(createPlan.steps, createPlan.totalDeviation),
-    [createPlan.steps, createPlan.totalDeviation],
-  )
-
-  const setCreate = (patch) => {
-    onCreatePlanChange({ ...createPlan, ...patch })
-  }
-
-  const updateStep = (i, field, value) =>
-    onCreatePlanChange({
-      ...createPlan,
-      steps: createPlan.steps.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)),
-    })
-
-  const addStep = () =>
-    onCreatePlanChange({ ...createPlan, steps: [...createPlan.steps, { ...EMPTY_STEP }] })
-
-  const removeStep = (i) =>
-    onCreatePlanChange({ ...createPlan, steps: createPlan.steps.filter((_, idx) => idx !== i) })
-
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-      {lockExistingPlan ? (
-        <PlanReadonlySection plan={selectedExistingPlan} deviceTypes={deviceTypes} />
-      ) : (
-        <>
-          <ModeToggle value={planMode} onChange={onPlanModeChange} disabled={false} />
-          {planMode === 'create' ? (
-            <CollectPlanFormFields
-              form={createPlan}
-              errors={errors}
-              deviceTypes={deviceTypes}
-              durationMeta={createDurationMeta}
-              onChange={setCreate}
-              updateStep={updateStep}
-              addStep={addStep}
-              removeStep={removeStep}
-            />
-          ) : (
-            <div className="space-y-3">
-              <Field label="采集方案名称" required error={errors.existingPlanId}>
-                <SearchablePlanSelect
-                  plans={projectPlans}
-                  value={existingPlanId}
-                  onChange={onExistingPlanIdChange}
-                  error={errors.existingPlanId}
-                />
-              </Field>
-              {selectedExistingPlan && (
-                <PlanReadonlyDetails plan={selectedExistingPlan} deviceTypes={deviceTypes} />
-              )}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+    lockExistingPlan ? (
+      <PlanReadonlySection plan={selectedExistingPlan} deviceTypes={deviceTypes} />
+    ) : (
+      <div className="space-y-3">
+        <Field label="采集方案" required error={errors.existingPlanId}>
+          <SearchablePlanSelect
+            plans={projectPlans}
+            value={existingPlanId}
+            onChange={onExistingPlanIdChange}
+            error={errors.existingPlanId}
+          />
+        </Field>
+        {selectedExistingPlan && (
+          <PlanReadonlyDetails plan={selectedExistingPlan} deviceTypes={deviceTypes} />
+        )}
+      </div>
+    )
   )
 }
 
@@ -291,7 +209,7 @@ function resolvePlanTypeName(plan, deviceTypes) {
   return deviceTypes.find((t) => t.id === typeId)?.name ?? plan.deviceTypeName ?? '—'
 }
 
-function buildPlanSummaryLines({ planMode, existingPlanId, createPlan, projectPlans, deviceTypes, boundPlan }) {
+function buildPlanSummaryLines({ existingPlanId, projectPlans, deviceTypes, boundPlan }) {
   if (boundPlan) {
     return {
       name: boundPlan.name ?? '—',
@@ -299,19 +217,12 @@ function buildPlanSummaryLines({ planMode, existingPlanId, createPlan, projectPl
       method: boundPlan.method ?? '—',
     }
   }
-  if (planMode === 'existing') {
-    const plan = projectPlans.find((p) => p.id === existingPlanId)
-    if (!plan) return null
-    return {
-      name: plan.name ?? '—',
-      deviceType: resolvePlanTypeName(plan, deviceTypes),
-      method: plan.method ?? '—',
-    }
-  }
+  const plan = projectPlans.find((p) => p.id === existingPlanId)
+  if (!plan) return null
   return {
-    name: createPlan.name.trim() || '—',
-    deviceType: deviceTypes.find((t) => t.id === createPlan.deviceTypeId)?.name ?? '—',
-    method: createPlan.method || '—',
+    name: plan.name ?? '—',
+    deviceType: resolvePlanTypeName(plan, deviceTypes),
+    method: plan.method ?? '—',
   }
 }
 
@@ -343,7 +254,7 @@ function PlanConfigSection({ lines, onConfigure, showAction = true }) {
             </p>
           </>
         ) : (
-          <p className="text-gray-400">点击配置按钮选择或新建采集方案</p>
+          <p className="text-gray-400">点击配置按钮选择采集方案</p>
         )}
       </div>
     </div>
@@ -371,8 +282,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   )
 
   const [taskForm, setTaskForm] = useState(emptyTaskForm)
-  const [planMode, setPlanMode] = useState('existing')
-  const [createPlan, setCreatePlan] = useState(emptyCreatePlan)
   const [existingPlanId, setExistingPlanId] = useState('')
   const [planConfigured, setPlanConfigured] = useState(false)
   const [modalView, setModalView] = useState('task')
@@ -391,19 +300,14 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     }
     if (isEdit) return editBoundPlan ? resolvePlanDeviceTypeId(editBoundPlan) : ''
     if (!planConfigured) return ''
-    if (planMode === 'existing') {
-      return selectedExistingPlan ? resolvePlanDeviceTypeId(selectedExistingPlan) : ''
-    }
-    return createPlan.deviceTypeId
+    return selectedExistingPlan ? resolvePlanDeviceTypeId(selectedExistingPlan) : ''
   }, [
     taskForm.deviceInstanceId,
     allInstances,
     isEdit,
     editBoundPlan,
     planConfigured,
-    planMode,
     selectedExistingPlan,
-    createPlan.deviceTypeId,
   ])
 
   const activeDeviceTypeName = useMemo(
@@ -419,9 +323,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     }
     if (!planConfigured) return null
     return buildPlanSummaryLines({
-      planMode,
       existingPlanId,
-      createPlan,
       projectPlans,
       deviceTypes,
     })
@@ -429,9 +331,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     isEdit,
     editBoundPlan,
     planConfigured,
-    planMode,
     existingPlanId,
-    createPlan,
     projectPlans,
     deviceTypes,
   ])
@@ -450,8 +350,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       return
     }
     setTaskForm(emptyTaskForm())
-    setPlanMode('existing')
-    setCreatePlan(emptyCreatePlan())
     setExistingPlanId(initialPlan?.id ?? '')
     setPlanConfigured(!!initialPlan)
     setModalView('task')
@@ -461,11 +359,7 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   }, [open, isEdit, editTask, initialPlan?.id, allInstances])
 
   const openPlanConfig = () => {
-    setPlanDraft({
-      planMode,
-      existingPlanId,
-      createPlan: cloneCreatePlan(createPlan),
-    })
+    setPlanDraft({ existingPlanId })
     setPlanErrors({})
     setModalView('plan')
   }
@@ -477,26 +371,12 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
   }
 
   const patchPlanDraft = (patch) => {
-    setPlanDraft((draft) => {
-      if (!draft) return draft
-      const next = { ...draft, ...patch }
-      if (patch.createPlan) {
-        next.createPlan = patch.createPlan
-      }
-      return next
-    })
+    setPlanDraft((draft) => (draft ? { ...draft, ...patch } : draft))
     setPlanErrors((e) => {
       const next = { ...e }
       Object.keys(patch).forEach((k) => {
-        if (k === 'createPlan' && patch.createPlan) {
-          Object.keys(patch.createPlan).forEach((pk) => { delete next[`plan_${pk}`] })
-          if ('sceneId' in patch.createPlan || 'subSceneId' in patch.createPlan || 'tagId' in patch.createPlan) {
-            delete next.scene
-          }
-        } else {
-          delete next[k]
-          delete next.existingPlanId
-        }
+        delete next[k]
+        delete next.existingPlanId
       })
       return next
     })
@@ -504,23 +384,11 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
 
   const handlePlanConfirm = () => {
     if (!planDraft) return
-    const nextErrs = {}
-    if (planDraft.planMode === 'create') {
-      Object.assign(nextErrs, validatePlanForm(planDraft.createPlan))
-    } else if (!planDraft.existingPlanId) {
-      nextErrs.existingPlanId = true
-    }
-    if (Object.keys(nextErrs).length) {
-      setPlanErrors(nextErrs)
+    if (!planDraft.existingPlanId) {
+      setPlanErrors({ existingPlanId: true })
       return
     }
-    setPlanMode(planDraft.planMode)
     setExistingPlanId(planDraft.existingPlanId)
-    setCreatePlan(
-      planDraft.planMode === 'create'
-        ? cloneCreatePlan(planDraft.createPlan)
-        : emptyCreatePlan(),
-    )
     setPlanConfigured(true)
     setModalView('task')
     setPlanDraft(null)
@@ -540,14 +408,6 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       return next
     })
   }
-
-  const buildPlanFromCreate = () => ({
-    id: nextPlanId(),
-    projectId: effectiveProjectId,
-    ...buildPlanPayloadFromForm(createPlan),
-    taskCount: 0,
-    status: '已发布',
-  })
 
   const handleOk = () => {
     const errs = {}
@@ -573,26 +433,12 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
     }
 
     if (!planConfigured) errs.plan = true
-
-    let boundPlan = selectedExistingPlan
-
-    if (planConfigured && planMode === 'create') {
-      Object.assign(errs, validatePlanForm(createPlan))
-    } else if (planConfigured && planMode === 'existing' && !existingPlanId) {
-      errs.plan = true
-    }
+    else if (!existingPlanId) errs.plan = true
 
     if (Object.keys(errs).length) { setErrors(errs); return }
 
-    let planId = boundPlan?.id
-    let planSnapshot = boundPlan
-
-    if (planMode === 'create') {
-      planSnapshot = buildPlanFromCreate()
-      appendPlan(planSnapshot)
-      planId = planSnapshot.id
-      boundPlan = planSnapshot
-    }
+    const boundPlan = selectedExistingPlan
+    const planId = boundPlan?.id
 
     const instanceTypeName = instance
       ? deviceTypes.find((t) => t.id === instance.typeId)?.name ?? '—'
@@ -624,8 +470,8 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
       status: '草稿',
       creator,
       layoutId: taskForm.layoutId || null,
-      annotGenConfig: planMode === 'create' ? createPlan.annotGenConfig : boundPlan?.annotGenConfig,
-      annotPreLabel: planMode === 'create' ? createPlan.annotPreLabel : boundPlan?.annotPreLabel,
+      annotGenConfig: boundPlan?.annotGenConfig,
+      annotPreLabel: boundPlan?.annotPreLabel,
       createdAt: now,
       updatedAt: now,
     })
@@ -669,12 +515,8 @@ export default function CreateTaskModal({ open, onClose, projectId, initialPlan 
           projectPlans={projectPlans}
           deviceTypes={deviceTypes}
           lockExistingPlan={!!initialPlan}
-          planMode={planDraft.planMode}
-          onPlanModeChange={(mode) => patchPlanDraft({ planMode: mode })}
           existingPlanId={planDraft.existingPlanId}
           onExistingPlanIdChange={(id) => patchPlanDraft({ existingPlanId: id })}
-          createPlan={planDraft.createPlan}
-          onCreatePlanChange={(form) => patchPlanDraft({ createPlan: form })}
           errors={planErrors}
         />
       ) : (
