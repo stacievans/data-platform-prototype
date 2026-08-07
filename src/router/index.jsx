@@ -19,6 +19,9 @@ import OrgDetail from '../pages/System/OrgDetail'
 import ReviewWorkbench from '../pages/Review/Workbench'
 import IntroPage from '../pages/Intro'
 import BackflowPage from '../pages/Backflow'
+import BackflowDevicesPage from '../pages/Backflow/Devices'
+import BackflowEventsPage from '../pages/Backflow/Events'
+import BackflowTriggersPage from '../pages/Backflow/Triggers'
 
 function ProjectSamplingRedirect() {
   const { id } = useParams()
@@ -41,6 +44,9 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/login" replace /> },
       { path: 'intro', element: <IntroPage /> },
       { path: 'backflow', element: <BackflowPage /> },
+      { path: 'backflow/devices', element: <BackflowDevicesPage /> },
+      { path: 'backflow/events', element: <BackflowEventsPage /> },
+      { path: 'backflow/triggers', element: <BackflowTriggersPage /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'collection/project', element: <ProjectList /> },
       { path: 'collection/project/:id/sampling', element: <ProjectSamplingRedirect /> },

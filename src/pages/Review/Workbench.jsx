@@ -82,6 +82,7 @@ function TimelinePanel({
   speed,
   onSpeedChange,
   editable,
+  minimal = false,
 }) {
   const trackRef = useRef(null)
   const maxFrame = totalFrames - 1
@@ -113,23 +114,25 @@ function TimelinePanel({
     window.addEventListener('pointerup', onUp)
   }
 
-  const rowLabels = ['', '动作', '区域', '']
+  const rowLabels = minimal ? ['', ''] : ['', '动作', '区域', '']
 
   return (
     <div className="shrink-0 rounded-lg border border-gray-200/80 bg-white p-2.5">
       <div className="flex gap-2">
-        <div className="flex w-[52px] shrink-0 flex-col gap-1.5 pt-0.5">
-          {rowLabels.map((lbl, i) => (
-            <div
-              key={lbl || i}
-              className={`flex shrink-0 items-center text-[10px] text-gray-400 ${
-                i === 0 ? 'h-5' : i === 3 ? 'h-4' : i === 1 ? 'h-8' : 'h-6'
-              }`}
-            >
-              {lbl}
-            </div>
-          ))}
-        </div>
+        {!minimal && (
+          <div className="flex w-[52px] shrink-0 flex-col gap-1.5 pt-0.5">
+            {rowLabels.map((lbl, i) => (
+              <div
+                key={lbl || i}
+                className={`flex shrink-0 items-center text-[10px] text-gray-400 ${
+                  i === 0 ? 'h-5' : i === 3 ? 'h-4' : i === 1 ? 'h-8' : 'h-6'
+                }`}
+              >
+                {lbl}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div ref={trackRef} className="relative min-w-0 flex-1">
           <div
@@ -137,7 +140,7 @@ function TimelinePanel({
             style={{ left: `${playPct}%`, transform: 'translateX(-50%)' }}
           />
 
-          <div className="relative mb-1.5 h-5 shrink-0">
+          <div className={`relative shrink-0 ${minimal ? 'mb-2 h-5' : 'mb-1.5 h-5'}`}>
             <div className="flex justify-between px-0.5 font-mono text-[10px] text-gray-400">
               {tickFrames.map((f) => (
                 <span key={f}>{f}</span>
@@ -146,46 +149,50 @@ function TimelinePanel({
             <div className="absolute bottom-0 left-0 right-0 border-b border-gray-200" />
           </div>
 
-          <div className="relative mb-1.5 h-8 overflow-hidden rounded border border-gray-200/80 bg-gray-50/50">
-            {actionSegments.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-[10px] text-gray-400">
-                {editable ? '暂无片段' : '暂无预标注'}
+          {!minimal && (
+            <>
+              <div className="relative mb-1.5 h-8 overflow-hidden rounded border border-gray-200/80 bg-gray-50/50">
+                {actionSegments.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-[10px] text-gray-400">
+                    {editable ? '暂无片段' : '暂无预标注'}
+                  </div>
+                ) : (
+                  actionSegments.map((seg, i) => (
+                    <div
+                      key={`${seg.startFrame}-${seg.skill}-${i}`}
+                      className={`absolute top-0.5 bottom-0.5 flex items-center justify-center overflow-hidden rounded px-1 text-[10px] font-medium ${
+                        SEGMENT_TONE[seg.tone ?? (seg.skill === 'move' ? 'gray' : 'blue')]
+                      }`}
+                      style={{
+                        left: `${pct(seg.startFrame)}%`,
+                        width: `${Math.max(pct(seg.endFrame) - pct(seg.startFrame), 1.2)}%`,
+                      }}
+                      title={`${seg.skill} · ${seg.desc}`}
+                    >
+                      <span className="truncate">{seg.desc || seg.skill}</span>
+                    </div>
+                  ))
+                )}
               </div>
-            ) : (
-              actionSegments.map((seg, i) => (
-                <div
-                  key={`${seg.startFrame}-${seg.skill}-${i}`}
-                  className={`absolute top-0.5 bottom-0.5 flex items-center justify-center overflow-hidden rounded px-1 text-[10px] font-medium ${
-                    SEGMENT_TONE[seg.tone ?? (seg.skill === 'move' ? 'gray' : 'blue')]
-                  }`}
-                  style={{
-                    left: `${pct(seg.startFrame)}%`,
-                    width: `${Math.max(pct(seg.endFrame) - pct(seg.startFrame), 1.2)}%`,
-                  }}
-                  title={`${seg.skill} · ${seg.desc}`}
-                >
-                  <span className="truncate">{seg.desc || seg.skill}</span>
-                </div>
-              ))
-            )}
-          </div>
 
-          <div className="relative mb-2 h-6 overflow-hidden rounded border border-gray-200/80 bg-gray-50/50">
-            {regionFrames.map((reg, i) => (
-              <div
-                key={`${reg.startFrame}-${reg.label}-${i}`}
-                className="absolute top-0.5 bottom-0.5 bg-amber-100/70"
-                style={{
-                  left: `${pct(reg.startFrame)}%`,
-                  width: `${Math.max(pct(reg.endFrame) - pct(reg.startFrame), 1.2)}%`,
-                }}
-                title={reg.label}
-              />
-            ))}
-          </div>
+              <div className="relative mb-2 h-6 overflow-hidden rounded border border-gray-200/80 bg-gray-50/50">
+                {regionFrames.map((reg, i) => (
+                  <div
+                    key={`${reg.startFrame}-${reg.label}-${i}`}
+                    className="absolute top-0.5 bottom-0.5 bg-amber-100/70"
+                    style={{
+                      left: `${pct(reg.startFrame)}%`,
+                      width: `${Math.max(pct(reg.endFrame) - pct(reg.startFrame), 1.2)}%`,
+                    }}
+                    title={reg.label}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           <div
-            className="relative h-1.5 cursor-pointer rounded-full bg-gray-100"
+            className={`relative cursor-pointer rounded-full bg-gray-100 ${minimal ? 'h-1.5' : 'h-1.5'}`}
             onPointerDown={onProgressPointerDown}
             role="slider"
             aria-valuemin={0}
@@ -204,7 +211,7 @@ function TimelinePanel({
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-3 pl-[60px]">
+      <div className={`mt-2.5 flex items-center justify-between gap-3 ${minimal ? '' : 'pl-[60px]'}`}>
         <div className="flex items-center gap-2">
           <IconBtn title="上一帧" onClick={() => onFrameChange(Math.max(0, currentFrame - 1))}>
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z" /></svg>
@@ -243,6 +250,7 @@ export default function Workbench() {
   const mode = parseMode(searchParams.get('mode'))
   const layoutPreviewName = searchParams.get('layoutPreview')
   const isLayoutPreview = Boolean(layoutPreviewName)
+  const isBackflowPlay = mode === 'play' && searchParams.get('source') === 'backflow'
 
   const [entry, setEntry] = useState(() => getEntryById(entryId))
   const [currentFrame, setCurrentFrame] = useState(388)
@@ -418,7 +426,10 @@ export default function Workbench() {
 
   const goSibling = (delta) => {
     const next = taskEntries[currentIndex + delta]
-    if (next) navigate(`/review/${next.id}?mode=${mode}`)
+    if (!next) return
+    const qs = new URLSearchParams(searchParams)
+    if (!qs.get('mode')) qs.set('mode', mode)
+    navigate(`/review/${next.id}?${qs.toString()}`)
   }
 
   const goNextAfterSubmit = () => {
@@ -609,15 +620,17 @@ export default function Workbench() {
               </button>
             </>
           )}
-          <button
-            type="button"
-            aria-label="切换右侧面板"
-            title="切换右侧面板"
-            onClick={() => setPanelCollapsed((p) => !p)}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-blue-600"
-          >
-            <IconLayoutSidebarRight className="ti-layout-sidebar-right h-[18px] w-[18px]" />
-          </button>
+          {!isBackflowPlay && (
+            <button
+              type="button"
+              aria-label="切换右侧面板"
+              title="切换右侧面板"
+              onClick={() => setPanelCollapsed((p) => !p)}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-blue-600"
+            >
+              <IconLayoutSidebarRight className="ti-layout-sidebar-right h-[18px] w-[18px]" />
+            </button>
+          )}
           <button
             type="button"
             title="布局设置"
@@ -633,7 +646,7 @@ export default function Workbench() {
       </header>
 
       <div className="relative flex min-h-0 flex-1 p-2.5">
-        <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${panelCollapsed ? '' : 'mr-2.5'}`}>
+        <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${panelCollapsed || isBackflowPlay ? '' : 'mr-2.5'}`}>
           <WorkbenchLayoutB
             playPct={playPct}
             signalSeries={signalSeries}
@@ -651,10 +664,11 @@ export default function Workbench() {
             speed={speed}
             onSpeedChange={setSpeed}
             editable={mode === 'review'}
+            minimal={isBackflowPlay}
           />
         </div>
 
-        {!panelCollapsed && (
+        {!isBackflowPlay && !panelCollapsed && (
           <div className="relative shrink-0 overflow-hidden" style={{ width: sidePanelWidth }}>
             <div
               role="separator"

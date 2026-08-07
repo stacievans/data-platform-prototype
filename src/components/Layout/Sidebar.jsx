@@ -3,6 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   IconIntro,
   IconDashboard,
+  IconBackflowBoard,
+  IconBackflowDevice,
+  IconBackflowEvents,
+  IconBackflowTrigger,
   IconProject,
   IconDataset,
   IconTag,
@@ -11,7 +15,7 @@ import {
   IconChevron,
 } from '../common/Icons'
 
-const menu = [
+const collectionMenu = [
   { key: '/intro', label: '数采介绍', icon: <IconIntro /> },
   { key: '/dashboard', label: '运营看板', icon: <IconDashboard />, permission: 'dashboard.view' },
   { key: '/collection/project', label: '采集项目', icon: <IconProject />, permission: 'collection.project.view' },
@@ -46,8 +50,17 @@ const menu = [
   },
 ]
 
+const backflowMenu = [
+  { key: '/backflow', label: '回流看板', icon: <IconBackflowBoard />, end: true },
+  { key: '/backflow/devices', label: '回流设备', icon: <IconBackflowDevice /> },
+  { key: '/backflow/events', label: '事件中心', icon: <IconBackflowEvents /> },
+  { key: '/backflow/triggers', label: '触发器', icon: <IconBackflowTrigger /> },
+]
+
 export default function Sidebar({ collapsed }) {
   const location = useLocation()
+  const isBackflowModule = location.pathname.startsWith('/backflow')
+  const menu = isBackflowModule ? backflowMenu : collectionMenu
   const [openKeys, setOpenKeys] = useState(['dataset', 'tag', 'system'])
 
   const isChildActive = (childKey) => {
@@ -77,6 +90,7 @@ export default function Sidebar({ collapsed }) {
               <NavLink
                 key={item.key}
                 to={item.key}
+                end={item.end}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   `${itemBase} ${collapsed ? 'justify-center' : ''} ${

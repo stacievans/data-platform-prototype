@@ -4,7 +4,10 @@ import { getTaskById } from '../../mock/tasks'
 const routes = [
   { match: /^\/intro/, crumbs: [['数采介绍']] },
   { match: /^\/dashboard/, crumbs: [['运营看板']] },
-  { match: /^\/backflow/, crumbs: [['真机回流']] },
+  { match: /^\/backflow\/events/, crumbs: [['真机回流'], ['事件中心']] },
+  { match: /^\/backflow\/triggers/, crumbs: [['真机回流'], ['触发器配置']] },
+  { match: /^\/backflow\/devices/, crumbs: [['真机回流'], ['回流设备']] },
+  { match: /^\/backflow/, crumbs: [['真机回流'], ['回流看板']] },
   {
     match: /^\/collection\/project\/.+/,
     crumbs: [['采集项目', '/collection/project'], ['项目详情']],

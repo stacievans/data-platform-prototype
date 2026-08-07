@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（配置任务 **选填**；无任务自动移出列表）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（配置任务 **选填**；无任务自动移出列表）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -19,6 +19,7 @@
   - [创建人自动填充](#创建人自动填充)
 - [功能模块总览](#功能模块总览)
   - [数采介绍](#数采介绍)
+  - [真机回流](#真机回流)
   - [系统管理](#系统管理二级导航)
 - [目录结构](#目录结构)
 - [技术说明](#技术说明)
@@ -54,11 +55,13 @@ npm run preview
 | 区域 | 说明 |
 |---|---|
 | 顶栏 `Header` | 深色顶栏（`bg-slate-900`）：Logo + 折叠按钮 + **模块 Tab**（**数采中心** → `/dashboard`、**真机回流** → `/backflow`）；右侧 **外部连接** 下拉（帮助文档 / 标注平台 / 数据看板，新标签打开）+ **用户下拉**（切换组织、退出登录） |
-| 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**原型阶段展示全部菜单项**；**采集项目**为一级菜单（文件夹图标 `IconProject`），不再嵌套「数据采集」父级 |
-| 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」 |
+| 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**按顶栏模块 Tab 切换菜单**：**数采中心** 展示采集/数据集/设备/标签/系统管理；**真机回流** 展示回流看板 / 回流设备 / 事件中心 / 触发器（`/backflow` 使用 `end: true` 精确匹配激活态）；**原型阶段展示全部菜单项** |
+| 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」；真机回流为「真机回流 / 回流看板|回流设备|事件中心|触发器配置」 |
 | 内容区 | 各业务页面；背景 `#f0f2f5`；**原型阶段不因 RBAC 拦截** |
 
-**侧边栏菜单（自上而下）**：数采介绍 · 运营看板 · **采集项目** · 数据集管理（真机数据集）· **设备管理** · 标签管理（采集/设备/审核模板）· 系统管理（用户/角色/组织）
+**侧边栏菜单（数采中心，自上而下）**：数采介绍 · 运营看板 · **采集项目** · 数据集管理（真机数据集）· **设备管理** · 标签管理（采集/设备/审核模板）· 系统管理（用户/角色/组织）
+
+**侧边栏菜单（真机回流）**：回流看板 · 回流设备 · 事件中心 · 触发器
 
 > **已下线侧栏入口**：「数据采集」父菜单、「采集任务」「采集条目」；路由 `/collection/task`、`/collection/upload` **重定向至** `/collection/project`（任务详情 `/collection/task/:id` 仍可直接访问）。
 
@@ -287,9 +290,68 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ---
 
-### 真机回流（/backflow）
-- 顶栏模块 Tab「真机回流」入口；面包屑「当前位置：真机回流」
-- 占位页：「功能开发中」
+### 真机回流
+
+顶栏模块 Tab「**真机回流**」→ `/backflow`；面包屑前缀均为「真机回流 / …」。侧边栏切换为回流专用四项菜单。模块内项目统一为 **智魔方**、**机场**（`mock/backflowProjects.js`）。
+
+#### 回流看板 `/backflow`
+
+- **页头**：标题「回流看板」+ 右上 **所属项目** 下拉（全部项目 / 智魔方 / 机场）
+- **指标卡**（5 张）：今日回流量、累计回流量、总回流设备、总存储量、总回流时长
+- **周期切换**（胶囊）：今天 / 近7天 / 近1个月 / 全部；联动下方图表 mock 缩放（`backflowDashboard.js` → `getBackflowDashboard`）
+- **图表区**（**recharts**；Tooltip **无漂移动画**，`STATIC_TOOLTIP_PROPS`）：
+  - **数据回流趋势**：面积折线；右上切换 **条数 / 时长**
+  - **各项目回流占比**：环形图 + 外侧标签
+  - **单设备回流排行**：横向柱状图；**点击设备名称可复制 SN**（Toast）
+  - **回流数据分布**：上报来源分析 + 问题类型分布（双环形图）；标题旁展示本期上报总数
+
+#### 回流设备 `/backflow/devices`
+
+- **容器**：`ListPageCard`（筛选 + 表格同一白卡片）
+- **筛选区**：左侧 **组合搜索**（字段下拉：设备编号 / 设备名称 / 关联任务 + 关键字 + 蓝色查询按钮）；右侧 **所属项目** 下拉；点击查询生效
+- **列表字段**：设备名称（常规字重）、**设备别名**（hover 显示铅笔 → 行内编辑 ✓× 确认）、设备SN、**配置的回流规则**（蓝色 pill「N 条规则」→ 弹窗）、系统版本、所属项目（Badge）
+- **设备生效规则弹窗**：标题含设备编号；展示别名/SN/系统版本摘要 + 规则表（规则ID、Trigger 标识、生效时间、活跃状态、操作）；**`footer={null}`**（无底部关闭按钮）
+
+#### 事件中心 `/backflow/events`
+
+- **筛选区**（两行；点「查询」生效）：所属项目、来源、数据状态、设备SN、设备别名、事件名称（带搜索按钮）、Trigger、日期范围；右侧 **查看问题明细**（展示按钮，无交互）
+- **标题栏**：`ListPageToolbar` →「**事件列表**」
+- **列表字段**：事件ID、事件名称、Trigger（mono Badge）、**等级**（**致命** / **严重**）、触发时间、来源（自动上报 / 人工上报）、回流设备、设备SN、设备别名、所属项目、**数据状态**（待上传 / 上传中 / 已完成 / 上传失败）、数据大小、数据时长、上传时间、操作
+- **操作**：**播放** / **下载日志** / **下载**；仅 `dataStatus === 'done'` 时可操作；否则置灰
+- **播放**：新标签页 `/review/{entryId}?mode=play&source=backflow`（见 [回流播放工作台](#回流播放工作台)）
+- **下载类**：Toast 占位
+- **URL 筛选**：支持 `?trigger={Trigger标识}`；从触发器页「关联事件」跳转时自动写入 Trigger 筛选项并应用（`useSearchParams`）
+
+#### 触发器配置 `/backflow/triggers`
+
+- **页头**（单行 `justify-between`）：左侧 **图标 +「触发器配置」+ 搜索框**（280px，Enter 或放大镜查询 Trigger 标识/名称）；右侧 **+ 新建触发器**
+- **列表字段**：触发器 ID、Trigger 标识（mono 截断）、事件名称、**触发规则**（`</>` 图标 + 规则说明，可点击）、**关联回流设备**（「N 台」pill 可点击；**全部 台** 为只读 Badge）、**状态**（生效中 / 已停用）、**同步情况**（已同步 / 部分同步 / 未同步，带色点）、**关联事件**（「N 条记录」+ 外链图标 → `/backflow/events?trigger=…`）、**操作**
+- **操作**：**推送**（Toast）· **停用/启用** · **编辑** · **删除**（`DeleteConfirmModal`）
+
+**新建/编辑触发器弹窗**（居中 Modal）：
+- 字段：Trigger 标识（英文字符，编辑时只读）、事件名称、规则说明、触发规则定义（代码，mono 文本域）；均必填 `*`
+- 底部提示：「此规则将下发至设备端进行边缘计算拦截。」
+- 按钮：**取消 / 保存并应用**
+
+**触发规则代码详情弹窗**（点击「触发规则」列）：深色代码块展示 `ruleCode`；**`footer={null}`**
+
+**关联回流设备弹窗**（点击「N 台」）：
+- 标题「关联回流设备 - {事件名称}」+ Trigger 标识 mono 摘要
+- 右上 **+ 批量添加设备** → 二级弹窗「选择设备添加」（`align="nested"`；勾选卡片列表；**确认添加**）
+- 表格：勾选、设备 SN、设备别名、**推送状态**（推送成功 / 推送失败 / 待推送 Badge）、**移除**
+- 底部：已选择 N 台 · **取消 / 保存**
+
+**运行时 API**（`backflowTriggers.js`）：`getBackflowTriggers`、`filterBackflowTriggers`、`addBackflowTrigger`、`updateBackflowTrigger`、`toggleBackflowTriggerStatus`、`deleteBackflowTrigger`、`updateBackflowTriggerDevices`、`getAvailableDevicesForTrigger`；设备池 `BACKFLOW_TRIGGER_DEVICE_POOL`（9 台）
+
+#### 回流播放工作台
+
+事件中心「播放」打开 `/review/:entryId?mode=play&source=backflow`（独立全屏，无 AppLayout）：
+
+| 行为 | 说明 |
+|---|---|
+| 时间轴 `minimal` | 隐藏动作/区域轨道，保留进度条与播放控制 |
+| 右侧面板 | **隐藏**；面板折叠按钮隐藏 |
+| 上一条 / 下一条 | 切换条目时 **保留** `mode` 与 `source=backflow` query |
 
 ---
 
@@ -746,13 +808,14 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | mode | Badge 色 | 顶栏右侧 | 基础信息 | 整体标注 | 片段标注 | 验收模块 | 底部按钮 |
 |---|---|---|---|---|---|---|---|
 | `play` | 灰 | 上一条 / 下一条 | 只读 | 只读（未标注显示 `-`） | 只读（无数据显示空） | 只读（未验收显示 `-`） | 无 |
+| `play` + `source=backflow` | 灰 | 上一条 / 下一条 | — | — | — | — | 无（**右侧面板隐藏**；时间轴 **minimal** 仅进度条） |
 | `review` | 蓝 | 上一条 / 下一条 | 只读 | **可编辑**（标注结论仅选择，不提交） | **可编辑** | 只读 | **保存** + **提交** |
 | `accept` | 橙 | 上一条 / 下一条 | 只读 | 只读（反显标注员数据） | 只读 | **可编辑** + 验收结论 | **保存** + **提交** |
 
 **顶栏布局**：
 - **左侧**：**模式 Badge**（`WorkbenchModeBadge`：播放灰 / 标注蓝 / 验收橙）
 - **正中**：条目文件名（加粗居中）
-- **右侧**：**上一条 / 下一条** → 右侧面板折叠 → 布局设置（占位）
+- **右侧**：**上一条 / 下一条** → 右侧面板折叠 → 布局设置（占位）；**`source=backflow` 时隐藏右侧面板与折叠按钮**
 - **已移除**布局 A / 布局 B 切换（固定 **布局 B**，`WorkbenchLayoutB`）
 
 **右侧面板**：
@@ -1102,7 +1165,7 @@ src/
 │       ├── PermissionAction.jsx # IfPerm / PermButton / PermAction / PermMenuItem
 │       ├── ProjectMutateGate.jsx # 项目关闭/归档时禁用新建类操作 + Tooltip
 │       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
-│       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconEyeOpen/IconEyeOff 等）
+│       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconBackflowBoard/Device/Events/Trigger、IconCode/Send/Pause/Play 等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
 │       ├── Toast.jsx          # useToast hook — 轻量 Toast（支持 placement: top、variant: success）
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
@@ -1115,7 +1178,10 @@ src/
 │   ├── Intro/
 │   │   └── index.jsx              # 数采介绍（静态流程原图）
 │   ├── Backflow/
-│   │   └── index.jsx              # 真机回流占位页
+│   │   ├── index.jsx              # 回流看板（指标卡 + recharts 图表）
+│   │   ├── Devices.jsx            # 回流设备列表 + 规则详情弹窗 + 别名行内编辑
+│   │   ├── Events.jsx             # 事件中心（多维筛选 + 播放/下载）
+│   │   └── Triggers.jsx           # 触发器配置（CRUD + 规则/设备/批量添加弹窗）
 │   ├── Login/LoginPage.jsx
 │   ├── Dashboard/
 │   │   ├── index.jsx
@@ -1222,6 +1288,11 @@ src/
 │   ├── rbac.js                    # 角色 runtime（DEMO_PERSONAS 保留供扩展）
 │   ├── organizations.js           # 组织 + 用户 runtime store（seed 来自 misc.js）
 │   ├── dashboard.js               # 运营看板 mock
+│   ├── backflowProjects.js        # 真机回流统一项目（智魔方 / 机场）
+│   ├── backflowDashboard.js       # 回流看板 mock + getBackflowDashboard
+│   ├── backflowDevices.js         # 回流设备 runtime（别名可改）
+│   ├── backflowEvents.js          # 回流事件 mock + filterBackflowEvents
+│   ├── backflowTriggers.js        # 触发器 runtime（CRUD + 关联设备池）
 │   └── misc.js                    # 用户 seed、项目成员
 └── router/index.jsx
 
@@ -1242,7 +1313,7 @@ scripts/
 | 图表库 | 运营看板为手写 SVG（`BarChart`、`DonutChart` 等）；标注工作台信号图使用 **recharts** |
 | 产品名称 | 浏览器标签与顶栏均为 **ABC-Data**（`index.html` / `Header.jsx` / 登录页） |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
-| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 真机回流占位；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
+| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 回流看板；`/backflow/devices|events|triggers` 回流子页；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由（支持 `?mode=play&source=backflow`）；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
 | ListPageCard | 检索 `ListPageFilter`（底部分割线）+ 工具栏 `ListPageToolbar`（底部分割线）+ `Table embedded` / `ListPageBody` 同一白容器；已用于项目/任务/用户/角色/组织/设备/标签/条目等列表页 |
 | 新建项目 Drawer | `Drawer.jsx` 默认宽度 `calc((100vw - var(--layout-sidebar-width)) / 3)`；Layout 在 `<main>` 设置 `--layout-sidebar-width`（`13rem` / `4rem`） |
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
@@ -1298,7 +1369,8 @@ scripts/
 | 系统列表 ID/名称列 | 组织/角色/用户列表 **ID 与名称列常规字重**（不加粗），名称列仍可点击跳转 |
 | 用户登录方式 | 字段 `loginMethod`（`账号密码` / `飞书SSO`）；未设置时默认「账号密码」；列表与筛选展示 |
 | 角色管理 UI | 新建 Drawer **无角色ID**、描述选填；列表操作「编辑」→ `RolePermissionModal`（标题「编辑权限」）；`MenuPermissionTree`（**父子联动默认关**、权限树对齐侧栏架构）+ `ProjectDataTransfer` |
-| 标注工作台 | 三模式共用 **四模块** 侧栏（**默认收起**）；**模式 Badge** 顶栏+侧栏标题；**布局 B** 单布局；侧栏 **左缘拖拽** 280~560px；`play` 全只读；`review` / `accept` 底部 **保存 + 提交**；片段 **行内增删改**（无弹窗/属性网格）；顶栏 **上一条 / 下一条** 仅导航；验收提交联动 `syncBatchesAfterEntryAccept` |
+| 标注工作台 | 三模式共用 **四模块** 侧栏（**默认收起**）；**模式 Badge** 顶栏+侧栏标题；**布局 B** 单布局；侧栏 **左缘拖拽** 280~560px；`play` 全只读；**`play` + `source=backflow`** 隐藏右侧面板、时间轴 minimal；`review` / `accept` 底部 **保存 + 提交**；片段 **行内增删改**（无弹窗/属性网格）；顶栏 **上一条 / 下一条** 仅导航（回流播放保留 query）；验收提交联动 `syncBatchesAfterEntryAccept` |
+| 真机回流 runtime | `backflowDevices.js` → `updateBackflowDeviceAlias`；`backflowTriggers.js` → 触发器 CRUD + 关联设备保存；事件/看板为会话内只读 mock（刷新恢复 seed） |
 | 设备实例 SN | `InstanceList` 编辑 Drawer：**SN 可编辑**，保存时 `isDeviceSnTaken(sn, excludeId)` 唯一校验 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
@@ -1356,6 +1428,23 @@ scripts/
 | 项目成员 | 按项目ID 组织；`joinedAt` 精确到 `YYYY-MM-DD HH:mm:ss` |
 | 系统日志 mock | 15 条（`misc.js` → `systemLogs`，**UI 已移除**） |
 | 运营看板（真机） | `realDashboard.all` 汇总 8 项目；各 `P-1001`~`P-1008` 独立 metrics + 精简 ranking；全局 ranking 采集员/标注员各 12 名 |
+| 回流看板 | `backflowDashboard.js`：按项目 + 周期返回 summary / trend / projectShare / deviceRanking / reportSource / problemTypes |
+| 回流设备 | 4 条初始（`backflowDevices.js`）；含 `rules[]`（Trigger 标识 + 生效时间 + active/inactive）；别名会话内可改 |
+| 回流事件 | 8 条（`backflowEvents.js`）；等级 fatal/serious；数据状态 pending/uploading/done/failed；播放关联条目 `entryId`（E-200101~106 等） |
+| 回流触发器 | 4 条初始（`backflowTriggers.js` TRG-001~004）；含 `ruleCode`、`devices[]`（pushStatus）、`syncStatus`、静态 `eventCount`；设备池 9 台 |
+
+### Mock 回流触发器（`backflowTriggers.js` 摘要）
+
+| ID | Trigger 标识 | 事件名称 | 状态 | 同步 | 关联设备 |
+|---|---|---|---|---|---|
+| TRG-001 | NETWORK_COMM_STATUS_ERROR | 网络通信状态异常 | 生效中 | 已同步 | 5 台 |
+| TRG-002 | COFFEE_MACHINE_HT_ALARM | 咖啡机高温报警 | 生效中 | 部分同步 | 2 台 |
+| TRG-003 | MQTT_ORDER_BRIDGE_DISPATCH_FAIL | 订单流转失败 | 已停用 | 未同步 | 1 台 |
+| TRG-004 | PERCEPTION_DATA_HEARTBEAT_LOSS | 感知数据心跳丢失 | 生效中 | 已同步 | **全部 台** |
+
+**触发器单条字段**：`id`, `triggerKey`, `eventName`, `ruleDescription`, `ruleCode`, `deviceMode`（`count` / `all`）, `devices[]`（`sn`, `alias`, `pushStatus`）, `status`（active/inactive）, `syncStatus`（synced/partial/unsynced）, `eventCount`
+
+**运行时 API**：`getBackflowTriggers`, `addBackflowTrigger`, `updateBackflowTrigger`, `toggleBackflowTriggerStatus`, `deleteBackflowTrigger`, `updateBackflowTriggerDevices`, `getAvailableDevicesForTrigger`
 
 ### Mock 组织（`organizations.js` → `initialOrganizations`）
 
@@ -1457,7 +1546,10 @@ scripts/
 | `/login` | 登录 | — |
 | `/` | 重定向 → `/login` | — |
 | `/intro` | 数采介绍（静态流程图） | — |
-| `/backflow` | 真机回流（占位） | — |
+| `/backflow` | 回流看板 | — |
+| `/backflow/devices` | 回流设备 | — |
+| `/backflow/events` | 事件中心（支持 `?trigger=` 筛选） | — |
+| `/backflow/triggers` | 触发器配置 | — |
 | `/dashboard` | 运营看板 | `dashboard.view` |
 | `/collection/project` | 采集项目列表 | `collection.project.view` |
 | `/collection/project/:id` | 项目详情 | 同上 |
