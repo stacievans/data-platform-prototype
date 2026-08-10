@@ -91,6 +91,19 @@ function LinkAction({ permission, onClick, children, danger = false, warn = fals
   )
 }
 
+function DisabledLinkAction({ children, title = '任务已归档，不可操作' }) {
+  return (
+    <button
+      type="button"
+      disabled
+      title={title}
+      className="shrink-0 cursor-not-allowed px-1 text-sm text-gray-300"
+    >
+      {children}
+    </button>
+  )
+}
+
 /* ── 导出 ▾（仅导出子项下拉，操作本身平铺）── */
 function ExportMenu({ onExport }) {
   const [open, setOpen] = useState(false)
@@ -240,6 +253,8 @@ export default function TaskTable({
     return (
       <ActionBar>
         <ViewBtn onClick={goView} />
+        <DisabledLinkAction>标注</DisabledLinkAction>
+        <DisabledLinkAction>验收</DisabledLinkAction>
         <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
         {onDeleteClick && (
           <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>

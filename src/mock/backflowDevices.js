@@ -5,7 +5,6 @@ export { BACKFLOW_PROJECT_OPTIONS as BACKFLOW_DEVICE_PROJECT_OPTIONS }
 export const BACKFLOW_DEVICE_SEARCH_FIELDS = [
   { value: 'code', label: '设备编号' },
   { value: 'alias', label: '设备名称' },
-  { value: 'task', label: '关联任务' },
 ]
 
 const INITIAL_DEVICES = [
@@ -115,7 +114,6 @@ export function filterBackflowDevices(list, { searchField, keyword, projectKey }
     if (!q) return true
     if (searchField === 'code') return d.code.toLowerCase().includes(q)
     if (searchField === 'alias') return (d.alias || '').toLowerCase().includes(q)
-    if (searchField === 'task') return (d.relatedTask || '').toLowerCase().includes(q)
     return true
   })
 }
