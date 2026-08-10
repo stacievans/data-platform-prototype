@@ -240,6 +240,7 @@ export default function TaskTable({
     return (
       <ActionBar>
         <ViewBtn onClick={goView} />
+        <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
         {onDeleteClick && (
           <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>
         )}
