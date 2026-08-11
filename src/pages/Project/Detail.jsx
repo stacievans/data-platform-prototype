@@ -286,6 +286,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
     }
     return (
       <div className={PLAN_ACTION_BAR_CLS}>
+        <PlanCopyBtn onClick={() => handleCopy(row)} />
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
         {fragmentAnnotBtn}
         <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>

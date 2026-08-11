@@ -252,6 +252,7 @@ export default function TaskTable({
     /* 已归档 */
     return (
       <ActionBar>
+        <DuplicateBtn onClick={() => onCopy?.(row)} />
         <ViewBtn onClick={goView} />
         <DisabledLinkAction>标注</DisabledLinkAction>
         <DisabledLinkAction>验收</DisabledLinkAction>
