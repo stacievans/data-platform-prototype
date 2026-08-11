@@ -18,7 +18,7 @@ export const EMPTY_STEP = { description: '', atomicSkills: [], duration: '' }
 export const FRAGMENT_ANNOT_DRAWER_WIDTH = 'min(960px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
 
 export const FRAGMENT_ANNOT_CONFIG_HINT =
-  '可在采集方案列表-操作-片段标注配置中查看/编辑片段标注配置'
+  '发布采集方案后，可在列表操作-片段标注配置中查看/编辑片段标注配置'
 
 export const emptyCreatePlan = () => ({
   name: '',

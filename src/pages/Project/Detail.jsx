@@ -266,7 +266,6 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => handlePublish(row)}>发布</PlanLinkAction>
-          {fragmentAnnotBtn}
           <PlanLinkAction permission="collection.project.delete" danger onClick={() => setDeleteTarget(row)}>删除</PlanLinkAction>
         </div>
       )
