@@ -55,6 +55,27 @@ export const auditReviewTagTreeSeed = [
 
 export const sceneTypeTreeSeed = [
   {
+    id: 'SC-004',
+    name: '演示场景',
+    value: 'demo_scene',
+    description: '【走查用】未绑定任务，可测试场景标签编辑/删除',
+    creator: '张华',
+    createdAt: ts('2026-08-14'),
+    updatedAt: ts('2026-08-14'),
+    subScenes: [
+      {
+        id: 'SC-004-01',
+        name: '走查工位',
+        creator: '张华',
+        createdAt: ts('2026-08-14'),
+        updatedAt: ts('2026-08-14'),
+        tags: [
+          { id: 'CT-204-01', name: '流程验证', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
+        ],
+      },
+    ],
+  },
+  {
     id: 'SC-001',
     name: '家居服务',
     value: 'home_service',
@@ -153,6 +174,7 @@ export const sceneTypeTreeSeed = [
 ]
 
 const atomicSkillSeed = [
+  { id: 'SK-010', name: 'rotate', value: 'rotate', description: '【走查用】旋转动作，未绑定任务', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
   { id: 'SK-001', name: 'close', value: 'close', description: '关闭动作，如关门、关抽屉', creator: '刘伟', createdAt: ts('2026-03-18'), updatedAt: ts('2026-03-18') },
   { id: 'SK-002', name: 'open', value: 'open', description: '打开动作，如开门、开抽屉', creator: '刘伟', createdAt: ts('2026-03-18'), updatedAt: ts('2026-03-18') },
   { id: 'SK-003', name: 'press', value: 'press', description: '按压动作，如按按钮、按开关', creator: '刘伟', createdAt: ts('2026-03-20'), updatedAt: ts('2026-03-20') },
@@ -165,6 +187,7 @@ const atomicSkillSeed = [
 ]
 
 const collectionMethodSeed = [
+  { id: 'CM-006', name: '演示遥操', value: '0', description: '【走查用】未绑定任务，可测试采集方式编辑/删除', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
   { id: 'CM-001', name: '算法采集', value: '5', description: '基于算法自动生成或补全轨迹数据', creator: '张华', createdAt: ts('2026-03-15'), updatedAt: ts('2026-03-15') },
   { id: 'CM-002', name: '便携设备遥操', value: '4', description: '使用便携遥操设备进行示教采集', creator: '张华', createdAt: ts('2026-03-16'), updatedAt: ts('2026-03-16') },
   { id: 'CM-003', name: 'VR遥操', value: '3', description: '使用 VR 头显进行遥操作数据采集', creator: '张华', createdAt: ts('2026-03-15'), updatedAt: ts('2026-03-15') },
@@ -173,16 +196,19 @@ const collectionMethodSeed = [
 ]
 
 const taskPurposeSeed = [
+  { id: 'TP-003', name: '演示采集', value: '演示采集', description: '【走查用】未绑定任务，可测试任务用途编辑/删除', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
   { id: 'TP-001', name: '正式采集', value: '正式采集', description: '正式采集任务，计入统计和质检流程', creator: '张华', createdAt: ts('2026-03-10'), updatedAt: ts('2026-03-10') },
   { id: 'TP-002', name: '试采集', value: '试采集', description: '试验性采集，数据仅供内部参考', creator: '张华', createdAt: ts('2026-03-10'), updatedAt: ts('2026-04-01') },
 ]
 
 const bodyTypeSeed = [
+  { id: 'BT-003', name: 'DemoBot', value: 'demo', description: '【走查用】演示本体，未绑定任务', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
   { id: 'BT-001', name: 'AlphaBot2', value: '2', description: 'AlphaLoop 第二代双臂协作机器人本体', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-05-20') },
   { id: 'BT-002', name: 'AlphaBot1', value: '1', description: 'AlphaLoop 自研单臂机器人本体，适配多种末端', creator: '张华', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
 ]
 
 const endTypeSeed = [
+  { id: 'ET-205', name: '演示·测试夹爪', value: '演示·测试夹爪', description: '【走查用】演示末端，未绑定任务', creator: '张华', createdAt: ts('2026-08-14'), updatedAt: ts('2026-08-14') },
   { id: 'ET-201', name: '因时·RH56DFX 灵巧手', value: '因时·RH56DFX 灵巧手', description: '因时 RH56DFX 灵巧手，适用于精细操作与触觉采集', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-03-08') },
   { id: 'ET-202', name: '因时·RH56BFX 灵巧手', value: '因时·RH56BFX 灵巧手', description: '因时 RH56BFX 灵巧手，双臂协作场景常用型号', creator: '李明', createdAt: ts('2026-03-08'), updatedAt: ts('2026-04-10') },
   { id: 'ET-203', name: '因时·EG2-4B 夹爪', value: '因时·EG2-4B 夹爪', description: '因时 EG2-4B 平行夹爪，适合规则形状物体抓取', creator: '王芳', createdAt: ts('2026-04-01'), updatedAt: ts('2026-04-01') },

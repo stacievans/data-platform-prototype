@@ -974,6 +974,18 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 > **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示。**任务绑定校验**：采集标签（任务用途/采集方式/原子技能）、设备标签（本体/末端）、场景标签、审核模板若已被采集任务引用，点击 **编辑/删除** 时 Toast 提示「{实体名}已绑定任务，无法编辑/删除」（`taskBindingTips.js` + `tasks.js` 绑定 helper）；未绑定时删除仍走 `DeleteConfirmModal`。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
 
+**走查用未绑定样本**（描述含「【走查用】」或名称含「演示」；可正常打开编辑弹窗 / 删除确认）：
+
+| 模块 | 走查行（名称） | 已绑定对照（点编辑/删除应 Toast） |
+|---|---|---|
+| 任务用途标签 | **演示采集** | 正式采集 |
+| 采集方式标签 | **演示遥操**（或 算法采集 / 便携设备遥操 / 自定义采集） | VR遥操 |
+| 原子技能标签 | **rotate**（或 close / pick / place） | grasp |
+| 场景标签（一级） | **演示场景** | 家居服务 |
+| 本体机型标签 | **DemoBot** | AlphaBot1 |
+| 末端类型标签 | **演示·测试夹爪** | 因时·EG2-4B 夹爪 |
+| 审核模板 | **试采集专用模板**（ATM-002，`taskCount: 0`） | 标准标注模板 |
+
 **运行时 store**（`tags.js`）：各 Tab 通过 getter/setter 读写会话内状态，刷新页面恢复 seed。下游消费方包括 `CollectPlanForm`（场景树、采集方式、任务用途、**整体标签模板**）、`CreateTaskModal`、`plans.js` 等。
 
 #### 审核模板 Tab（`AuditTemplateListPanel` + 详情页）
@@ -1039,6 +1051,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 **分页**：**10 条/页**
 
 **操作**：编辑、删除（`DeleteConfirmModal`；已绑定任务时点击删除 Toast「{设备名}已绑定任务，无法删除」，设备名取 `code`，无则 `sn`）
+
+> **走查用未绑定样本**：设备实例 **DEV-DEMO**（描述含「【走查用】」）；设备类型 **DemoBot · 演示夹爪+演示夹爪**（DTY-007）。已绑定对照：DEV-A01、AlphaBot1 · 夹爪+夹爪 等。
 
 ##### 新建/编辑实例 Drawer
 | 字段 | 新建 | 编辑 |
@@ -1462,15 +1476,15 @@ scripts/
 | 转换记录 / 转换数据集 | 初始各 2 条（`CJ-2001`/`CJ-2002`、`CDS-3001`/`CDS-3002`）；转换完成后写入 runtime；详情页 **文件列表 + 送标记录** 两 Tab；`getConvertedDatasetFiles` / `getLabelSubmissionRecordsByConvertedId` |
 | 开源数据集 | 10 条（ODS-001~010）；侧栏已下线，看板 Tab 仍引用；组件支持 Excel 导入追加 |
 | 审核标签 | 审核模板 Tab：3 个初始模板（ATM-001~003），每模板含独立 `tagTree`（应用范围：全局/通过/驳回）；**工作台问题标签**另有 21 项常量（`workbenchTags.js`） |
-| 场景标签 | 三层树（3 个一级场景） |
-| 原子技能标签 | 9 条（含 place、pick） |
-| 本体机型标签 | 2 条（AlphaBot2 / AlphaBot1） |
-| 末端类型标签 | 4 条（灵巧手 ×2、夹爪 ×2） |
-| 采集方式标签 | 5 条 |
-| 任务用途标签 | 2 条（正式采集/试采集） |
-| 设备形态选项 | 本体机型标签 2 条、末端类型标签 4 条（`getBodyTypeTags()` / `getEndTypeTags()`，标签管理 Tab CRUD） |
-| 设备类型 | 5 条（`DTY-001`~`005`）；`hasUrdf`：**DTY-002** 为 `false`，其余为 `true`；**列表无实例数量列**；类型 **随时可删** |
-| 设备实例 | 10 条；含 `code`（设备名称）、`status`、`battery`、`description`、`createdAt`、`updatedAt`；列表展示 **设备名称** / SN / 描述（**无设备类型/在线/电量列**） |
+| 场景标签 | 三层树（**4** 个一级场景；**演示场景** 未绑定，供走查） |
+| 原子技能标签 | **10** 条（**rotate** 为走查用；close / pick / place 亦未绑定） |
+| 本体机型标签 | **3** 条（**DemoBot** 走查用） |
+| 末端类型标签 | **5** 条（**演示·测试夹爪** 走查用） |
+| 采集方式标签 | **6** 条（**演示遥操** 走查用；算法采集 / 便携设备遥操 / 自定义采集 亦未绑定） |
+| 任务用途标签 | **3** 条（**演示采集** 走查用；正式采集/试采集 已绑定） |
+| 设备形态选项 | 本体机型标签 **3** 条、末端类型标签 **5** 条（`getBodyTypeTags()` / `getEndTypeTags()`，标签管理 Tab CRUD） |
+| 设备类型 | **7** 条（`DTY-001`~`007`；**DTY-007 DemoBot** 走查用未绑定）；`hasUrdf`：**DTY-002** 为 `false`，其余为 `true`（DTY-007 无 URDF）；**列表无实例数量列** |
+| 设备实例 | **11** 条；含 **DEV-DEMO** 走查用未绑定；`code`（设备名称）、`status`、`battery`、`description`、`createdAt`、`updatedAt`；列表展示 **设备名称** / SN / 描述（**无设备类型/在线/电量列**） |
 | 设备类型数据源 | 任务/条目/方案创建时快照 `deviceTypeName`（及条目 `deviceTypeId`）；运行时 `enrichTask` 仅用于 seed 生成，历史展示读快照 |
 | 审核模板 | 3 条（`tags.js` → `auditTemplateSeed`，UI 在「审核模板」Tab） |
 | 组织 | 4 条（`organizations.js`）；含 `remark`、启停状态、动态 `memberCount` |
