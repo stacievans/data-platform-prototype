@@ -15,7 +15,9 @@ import {
 } from '../../mock/tags'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import AuditReviewTagModal from './AuditReviewTagModal'
-import TagTableActions, { TAG_BOUND_TIP } from './TagTableActions'
+import { useToast } from '../../components/common/Toast'
+import TagTableActions from './TagTableActions'
+import { boundDeleteTip, boundEditTip } from '../../utils/taskBindingTips'
 
 const DELETE_NOT_CREATOR_TIP = '仅创建人可删除'
 
@@ -181,6 +183,7 @@ function ExpandToggle({ expanded, hasChildren, onClick }) {
 
 export default function AuditReviewTagPanel({ templateId }) {
   const creatorName = useCurrentNickname()
+  const { ToastNode, show: showToast } = useToast()
   const template = getAuditTemplateById(templateId)
   const [tree, setTree] = useState(() => deepCloneTree(template?.tagTree ?? []))
   const [expanded, setExpanded] = useState(() => new Set())
@@ -244,6 +247,27 @@ export default function AuditReviewTagPanel({ templateId }) {
   }
 
   const canDeleteGroup = (group) => group?.creator === creatorName
+  const templateBound = (template?.taskCount ?? 0) > 0
+
+  const requestEdit = (group) => {
+    if (templateBound) {
+      showToast(boundEditTip(template.name))
+      return
+    }
+    openEdit(group)
+  }
+
+  const requestDelete = (group) => {
+    if (templateBound) {
+      showToast(boundDeleteTip(template.name))
+      return
+    }
+    if (!canDeleteGroup(group)) {
+      showToast(DELETE_NOT_CREATOR_TIP)
+      return
+    }
+    setDeleteTarget(group)
+  }
 
   const columns = [
     {
@@ -292,13 +316,10 @@ export default function AuditReviewTagPanel({ templateId }) {
       key: 'actions',
       render: (_, row) => {
         if (row.level !== 1) return null
-        const deleteDisabled = !canDeleteGroup(row.groupRef)
         return (
           <TagTableActions
-            onEdit={() => openEdit(row.groupRef)}
-            onDelete={() => setDeleteTarget(row.groupRef)}
-            deleteDisabled={deleteDisabled}
-            disabledTip={deleteDisabled ? DELETE_NOT_CREATOR_TIP : TAG_BOUND_TIP}
+            onEdit={() => requestEdit(row.groupRef)}
+            onDelete={() => requestDelete(row.groupRef)}
           />
         )
       },
@@ -384,6 +405,7 @@ export default function AuditReviewTagPanel({ templateId }) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />
+      {ToastNode}
     </ListPageCard>
   )
 }

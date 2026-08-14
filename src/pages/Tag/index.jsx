@@ -8,7 +8,9 @@ import { IconPlus } from '../../components/common/Icons'
 import { PermButton } from '../../components/common/PermissionAction'
 import Drawer from '../../components/common/Drawer'
 import { DescriptionField } from '../../components/common/FormField'
+import { useToast } from '../../components/common/Toast'
 import { useCurrentNickname } from '../../context/AuthContext'
+import { boundEditTip } from '../../utils/taskBindingTips'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 import {
@@ -164,6 +166,7 @@ function FlatTagModal({ open, editing, onCancel, onOk, idPrefix = 'TAG' }) {
 }
 
 function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
+  const { ToastNode, show: showToast } = useToast()
   const [data, setLocalData] = useState(() => [...getData()])
   const [nameQuery, setNameQuery] = useState('')
   const [valueQuery, setValueQuery] = useState('')
@@ -204,7 +207,10 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
   const isTagBound = (row) => TAG_BOUND_CHECKERS[panelKey]?.(row) ?? false
 
   const handleSave = (tag) => {
-    if (editingRow && isTagBound(editingRow)) return
+    if (editingRow && isTagBound(editingRow)) {
+      showToast(boundEditTip(editingRow.name))
+      return
+    }
     if (editingRow) {
       sync(data.map((r) => (r.id === tag.id ? tag : r)))
     } else {
@@ -215,6 +221,8 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
 
   const { actionColumn, deleteConfirmModal } = useTagRowActions({
     isBound: isTagBound,
+    getEntityName: (row) => row.name,
+    showToast,
     onEdit: (row) => { setEditingRow(row); setModalOpen(true) },
     onDelete: (row) => sync(data.filter((r) => r.id !== row.id)),
   })
@@ -237,6 +245,7 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
       <Table embedded columns={cols} dataSource={filtered} pageSize={LIST_PAGE_SIZE} pageResetKey={pageResetKey} />
       <FlatTagModal open={modalOpen} editing={editingRow} onCancel={closeModal} onOk={handleSave} idPrefix={idPrefix} />
       {deleteConfirmModal}
+      {ToastNode}
     </ListPageCard>
   )
 }

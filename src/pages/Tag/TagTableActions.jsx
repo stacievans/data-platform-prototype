@@ -1,23 +1,12 @@
 import { useState } from 'react'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { PermAction } from '../../components/common/PermissionAction'
+import { boundDeleteTip, boundEditTip } from '../../utils/taskBindingTips'
 
-export const TAG_BOUND_TIP = '该标签已绑定任务，无法编辑或删除'
-
-const disabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
-
-export default function TagTableActions({
-  onEdit,
-  onDelete,
-  editDisabled = false,
-  deleteDisabled = false,
-  disabledTip = TAG_BOUND_TIP,
-}) {
+export default function TagTableActions({ onEdit, onDelete }) {
   return (
     <div className="flex items-center gap-2">
-      {editDisabled ? (
-        <span className={disabledCls} title={disabledTip}>编辑</span>
-      ) : (
+      {onEdit && (
         <PermAction
           permission="tag.edit"
           className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
@@ -26,9 +15,7 @@ export default function TagTableActions({
           编辑
         </PermAction>
       )}
-      {deleteDisabled ? (
-        <span className={disabledCls} title={disabledTip}>删除</span>
-      ) : (
+      {onDelete && (
         <PermAction
           permission="tag.delete"
           className="cursor-pointer text-sm text-red-500 hover:text-red-400"
@@ -41,39 +28,48 @@ export default function TagTableActions({
   )
 }
 
-export function tagActionColumn({ onEdit, onDelete, isBound } = {}) {
-  return {
-    title: '操作',
-    key: 'actions',
-    render: (_, row) => {
-      const bound = isBound?.(row) ?? false
-      return (
-        <TagTableActions
-          onEdit={onEdit && !bound ? () => onEdit(row) : undefined}
-          onDelete={onDelete && !bound ? () => onDelete(row) : undefined}
-          editDisabled={bound}
-          deleteDisabled={bound}
-        />
-      )
-    },
-  }
-}
-
-export function useTagRowActions({ onDelete, onEdit, isBound }) {
+export function useTagRowActions({
+  onDelete,
+  onEdit,
+  isBound,
+  getEntityName = (row) => row?.name ?? '—',
+  showToast,
+}) {
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const tryEdit = (row) => {
+    if (isBound?.(row)) {
+      showToast?.(boundEditTip(getEntityName(row)))
+      return
+    }
+    onEdit?.(row)
+  }
+
+  const tryDelete = (row) => {
+    if (isBound?.(row)) {
+      showToast?.(boundDeleteTip(getEntityName(row)))
+      return
+    }
+    setDeleteTarget(row)
+  }
 
   const handleConfirm = () => {
     if (!deleteTarget) return
     if (isBound?.(deleteTarget)) return
-    onDelete(deleteTarget)
+    onDelete?.(deleteTarget)
     setDeleteTarget(null)
   }
 
-  const actionColumn = tagActionColumn({
-    onEdit,
-    onDelete: (row) => setDeleteTarget(row),
-    isBound,
-  })
+  const actionColumn = {
+    title: '操作',
+    key: 'actions',
+    render: (_, row) => (
+      <TagTableActions
+        onEdit={onEdit ? () => tryEdit(row) : undefined}
+        onDelete={onDelete ? () => tryDelete(row) : undefined}
+      />
+    ),
+  }
 
   const deleteConfirmModal = (
     <DeleteConfirmModal
@@ -83,10 +79,5 @@ export function useTagRowActions({ onDelete, onEdit, isBound }) {
     />
   )
 
-  return { actionColumn, deleteConfirmModal }
-}
-
-/** @deprecated use useTagRowActions */
-export function useTagDeleteAction(onDelete) {
-  return useTagRowActions({ onDelete })
+  return { actionColumn, deleteConfirmModal, tryEdit, tryDelete }
 }

@@ -4,14 +4,15 @@ import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCa
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
 import { IconPlus } from '../../components/common/Icons'
-import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import { useToast } from '../../components/common/Toast'
 import { useCurrentNickname } from '../../context/AuthContext'
+import { boundEditTip } from '../../utils/taskBindingTips'
 import { getSceneTypeTree, setSceneTypeTree } from '../../mock/tags'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, nowDateTime } from '../../utils/formatDateTime'
 import SceneTypeModal from './SceneTypeModal'
 import { isSceneTypeBoundToTask } from '../../mock/tasks'
-import TagTableActions, { TAG_BOUND_TIP } from './TagTableActions'
+import TagTableActions, { useTagRowActions } from './TagTableActions'
 
 const saveMoment = () => nowDateTime()
 
@@ -247,9 +248,9 @@ export default function SceneTypePanel() {
   const [valueQuery, setValueQuery] = useState('')
   const [appliedName, setAppliedName] = useState('')
   const [appliedValue, setAppliedValue] = useState('')
+  const { ToastNode, show: showToast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingScene, setEditingScene] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const syncTree = (next) => {
     setTree(next)
@@ -278,13 +279,23 @@ export default function SceneTypePanel() {
   }
 
   const openEdit = (scene) => {
-    if (isSceneTypeBoundToTask(scene)) return
     setEditingScene(scene)
     setModalOpen(true)
   }
 
+  const { deleteConfirmModal, tryEdit, tryDelete } = useTagRowActions({
+    isBound: (row) => isSceneTypeBoundToTask(row.sceneRef),
+    getEntityName: (row) => row.name,
+    showToast,
+    onEdit: (row) => openEdit(row.sceneRef),
+    onDelete: (row) => syncTree(tree.filter((s) => s.id !== row.sceneRef.id)),
+  })
+
   const handleSave = (form) => {
-    if (editingScene && isSceneTypeBoundToTask(editingScene)) return
+    if (editingScene && isSceneTypeBoundToTask(editingScene)) {
+      showToast(boundEditTip(editingScene.name))
+      return
+    }
     const nextScene = formToScene(form, editingScene, creatorName)
     if (editingScene) {
       syncTree(tree.map((s) => (s.id === editingScene.id ? nextScene : s)))
@@ -293,13 +304,6 @@ export default function SceneTypePanel() {
     }
     setModalOpen(false)
     setEditingScene(null)
-  }
-
-  const confirmDelete = () => {
-    if (!deleteTarget) return
-    if (isSceneTypeBoundToTask(deleteTarget)) return
-    syncTree(tree.filter((s) => s.id !== deleteTarget.id))
-    setDeleteTarget(null)
   }
 
   const columns = [
@@ -346,14 +350,10 @@ export default function SceneTypePanel() {
       key: 'actions',
       render: (_, row) => {
         if (row.level !== 1) return null
-        const bound = isSceneTypeBoundToTask(row.sceneRef)
         return (
           <TagTableActions
-            onEdit={() => openEdit(row.sceneRef)}
-            onDelete={() => setDeleteTarget(row.sceneRef)}
-            editDisabled={bound}
-            deleteDisabled={bound}
-            disabledTip={TAG_BOUND_TIP}
+            onEdit={() => tryEdit(row)}
+            onDelete={() => tryDelete(row)}
           />
         )
       },
@@ -399,11 +399,8 @@ export default function SceneTypePanel() {
         onOk={handleSave}
       />
 
-      <DeleteConfirmModal
-        open={!!deleteTarget}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-      />
+      {deleteConfirmModal}
+      {ToastNode}
     </ListPageCard>
   )
 }

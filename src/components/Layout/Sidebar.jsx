@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import VersionInfo from './VersionInfo'
 import {
   IconIntro,
   IconDashboard,
@@ -79,11 +80,11 @@ export default function Sidebar({ collapsed }) {
 
   return (
     <aside
-      className={`fixed bottom-0 left-0 top-14 z-20 overflow-y-auto bg-slate-900 transition-all duration-200 ${
+      className={`fixed bottom-0 left-0 top-14 z-20 flex flex-col bg-slate-900 transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-52'
       }`}
     >
-      <nav className="space-y-1 p-2.5">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2.5">
         {menu.map((item) => {
           if (!item.children) {
             return (
@@ -151,6 +152,7 @@ export default function Sidebar({ collapsed }) {
           )
         })}
       </nav>
+      <VersionInfo collapsed={collapsed} />
     </aside>
   )
 }

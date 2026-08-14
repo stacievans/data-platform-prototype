@@ -17,6 +17,7 @@ import {
   softDeleteAuditTemplate,
   upsertAuditTemplate,
 } from '../../mock/tags'
+import { boundDeleteTip, boundEditTip } from '../../utils/taskBindingTips'
 import AuditTemplateModal from './AuditTemplateModal'
 
 const NOT_CREATOR_TIP = '仅创建人可编辑或删除'
@@ -129,10 +130,19 @@ export default function AuditTemplateListPanel() {
     showToast('复制成功')
   }
 
+  const requestEdit = (row) => {
+    if (row.creator !== creatorName) return
+    if (row.taskCount > 0) {
+      showToast(boundEditTip(row.name))
+      return
+    }
+    openEdit(row)
+  }
+
   const requestDelete = (row) => {
     if (row.creator !== creatorName) return
     if (row.taskCount > 0) {
-      showToast('当前审核模板已绑定采集任务，无法删除。')
+      showToast(boundDeleteTip(row.name))
       return
     }
     setDeleteTarget(row)
@@ -187,7 +197,7 @@ export default function AuditTemplateListPanel() {
             <PermAction
               permission="tag.edit"
               className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
-              onClick={() => openEdit(row)}
+              onClick={() => requestEdit(row)}
             >
               编辑
             </PermAction>

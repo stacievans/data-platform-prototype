@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签不可编辑/删除**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（配置任务 **选填**；无任务自动移出列表）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（配置任务 **选填**；无任务自动移出列表）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **单采集员** 绑定 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -12,6 +12,7 @@
 ## 目录
 
 - [快速启动](#快速启动)
+- [版本与发版记录](#版本与发版记录)
 - [全局布局](#全局布局)
 - [RBAC 权限体系](#rbac-权限体系)
   - [平台角色与项目成员角色](#平台角色与项目成员角色)
@@ -48,6 +49,52 @@ npm run preview
 
 ---
 
+## 版本与发版记录
+
+原型采用 **配置文件 + 发版日志** 管理版本，便于演示时确认当前版本、Git 回溯与回滚。
+
+### 左下角版本信息（`VersionInfo.jsx`）
+
+挂载于侧边栏底部（`Sidebar.jsx`），导航区可滚动，版本栏固定不遮挡主操作区：
+
+| 状态 | 说明 |
+|---|---|
+| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.0 (2026-08-14)`**；侧边栏折叠时仅显示 **`v0.1.0`** |
+| 点击 | 上方弹出小卡片，展示 **当前版本** 的简要更新说明（`summary`）；再点或点外部关闭 |
+| 数据 | 读取 **`src/release.js`**，不在组件内硬编码 |
+
+`release.js` 结构：
+
+```js
+{
+  version: '0.1.0',
+  date: '2026-08-14',
+  summary: '绑定校验交互调整为点击后查询提示；新增版本信息展示',
+}
+```
+
+### 发版日志（`CHANGELOG.md`）
+
+项目根目录 **`CHANGELOG.md`** 按时间倒序记录各版本变更；**每次发版在最上方插入新条目**，不覆盖历史。条目格式示例：
+
+```markdown
+## v0.1.0 (2026-08-14)
+
+- 绑定校验交互调整为点击后查询提示（…）
+- 新增版本信息展示（左下角）
+```
+
+### 推荐发版流程
+
+1. 更新 **`src/release.js`**（`version` / `date` / `summary`）
+2. 在 **`CHANGELOG.md` 顶部**追加同版本详细条目
+3. （可选）同步 **`package.json`** 的 `version` 字段
+4. 提交并 push；需要回滚时对应该版本打 Git tag（如 `v0.1.0`）后重新 build / deploy
+
+> commit message 可保持简洁；**以 `release.js` + `CHANGELOG.md` + Git tag 作为清晰锚点**，不必依赖逐条 commit 描述回溯。
+
+---
+
 ## 全局布局
 
 登录后进入带侧边栏的主框架（`Layout/index.jsx`），内容区由 `PermissionGuard` 包裹后再渲染子路由：
@@ -55,7 +102,7 @@ npm run preview
 | 区域 | 说明 |
 |---|---|
 | 顶栏 `Header` | 深色顶栏（`bg-slate-900`）：Logo + 折叠按钮 + **模块 Tab**（**数采中心** → `/dashboard`、**真机回流** → `/backflow`）；右侧 **外部连接** 下拉（帮助文档 / 标注平台 / 数据看板，新标签打开）+ **用户下拉**（切换组织、退出登录） |
-| 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**按顶栏模块 Tab 切换菜单**：**数采中心** 展示采集/数据集/设备/标签/系统管理；**真机回流** 展示回流看板 / 回流设备 / 事件中心 / 触发器（`/backflow` 使用 `end: true` 精确匹配激活态）；**原型阶段展示全部菜单项** |
+| 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**按顶栏模块 Tab 切换菜单**：**数采中心** 展示采集/数据集/设备/标签/系统管理；**真机回流** 展示回流看板 / 回流设备 / 事件中心 / 触发器（`/backflow` 使用 `end: true` 精确匹配激活态）；**原型阶段展示全部菜单项**；底部 **`VersionInfo`** 展示当前版本号与日期，点击展开本版说明 |
 | 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」；真机回流为「真机回流 / 回流看板|回流设备|事件中心|触发器配置」 |
 | 内容区 | 各业务页面；背景 `#f0f2f5`；**原型阶段不因 RBAC 拦截** |
 
@@ -925,7 +972,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **布局**：一级 Tab 栏（采集标签 / 设备标签 / 审核模板）与下方列表区为 **两张独立白卡片**（`space-y-4` 间距），对齐设备管理页模式；**无页面级 h2 大标题**，仅保留面包屑。URL 支持 `/tag/collect`、`/tag/device`、`/tag/audit` 及 `?sub=` 二级 Tab；历史 `?tab=` 会自动迁移至路径形式。
 
-> **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示。**任务绑定校验**：采集标签（任务用途/采集方式/原子技能）、设备标签（本体/末端）、场景标签若已被采集任务引用，则 **编辑/删除置灰**，Tooltip「该标签已绑定任务，无法编辑或删除」（`tasks.js` 绑定 helper + `TagTableActions.jsx`）。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
+> **标签值**：平铺标签、场景标签、审核模板详情标签树均含 **标签值** 列与筛选项；**标签名称**列加粗展示。**任务绑定校验**：采集标签（任务用途/采集方式/原子技能）、设备标签（本体/末端）、场景标签、审核模板若已被采集任务引用，点击 **编辑/删除** 时 Toast 提示「{实体名}已绑定任务，无法编辑/删除」（`taskBindingTips.js` + `tasks.js` 绑定 helper）；未绑定时删除仍走 `DeleteConfirmModal`。**标注工作台整体标签**仍读独立常量 `workbenchTags.js`，与审核模板详情内的标签树相互独立。
 
 **运行时 store**（`tags.js`）：各 Tab 通过 getter/setter 读写会话内状态，刷新页面恢复 seed。下游消费方包括 `CollectPlanForm`（场景树、采集方式、任务用途、**整体标签模板**）、`CreateTaskModal`、`plans.js` 等。
 
@@ -933,13 +980,13 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 - **列表**：模板ID（黑色）、模板名称（加粗）、关联任务数、描述、**创建人**、创建时间、**更新时间**；筛选：**模板名称**（点「查询」生效；**无创建人筛选项**）
 - **操作**：**创建副本**（操作列最左侧复制图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、**详情**、编辑、删除
-- **权限**：**仅创建人**可编辑/删除；非创建人操作置灰，Tooltip「仅创建人可编辑或删除」；`taskCount > 0` 时删除 Toast「当前审核模板已绑定采集任务，无法删除。」
+- **权限**：**仅创建人**可编辑/删除；非创建人操作置灰，Tooltip「仅创建人可编辑或删除」；`taskCount > 0` 时编辑/删除 Toast「{模板名}已绑定任务，无法编辑/删除」
 - **新建/编辑模板**：`AuditTemplateModal`（名称、描述；**无创建人字段**；后台新建仍写入 `creator`）
 - **模板详情** `/tag/audit-template/:templateId`（`AuditTemplateDetail` + `AuditReviewTagPanel`）：
   - 顶部卡片：模板名称、描述、关联任务数、创建人（**无「返回模板列表」按钮**）；标签面板 **无额外外层包裹 Card**
   - 标签树列表：一级分组 + 二级叶子；列含 **标签名称**（加粗）、**标签值**、**描述**、**应用范围**（全局/通过/驳回）、**创建人**、创建/更新时间；筛选：标签名称、标签值、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
   - 新建/编辑标签组：`AuditReviewTagModal`（**Drawer**）— 标签名称*、标签值*、应用范围*、描述（0/500）、**子标签**（扁平名称/值行，最多 2 级，默认空 children）；编辑模式 Drawer 底部左侧提示「该操作会影响相关采集条目的标注标签」
-  - **删除**：**仅创建人**可删；非创建人置灰「仅创建人可删除」；已绑定任务时置灰「该标签已绑定任务，无法编辑或删除」
+  - **删除**：**仅创建人**可删（非创建人点击 Toast「仅创建人可删除」）；模板已绑定任务时 Toast「{模板名}已绑定任务，无法编辑/删除」（绑定校验优先于创建人校验）
   - **分页** 10 条/页
 
 **Mock 初始模板**（`auditTemplateSeed`）：标准标注模板 ATM-001、试采集专用 ATM-002、工业场景 ATM-003
@@ -965,14 +1012,14 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **筛选**：标签名称、**标签值**（点「查询」生效）
 - **列表字段**：标签名称（**加粗**）、**标签值**、描述、**创建人**、创建时间、**更新时间**、操作
 - **新建/编辑弹窗**：标签名称（必填）、**标签值**（必填）、描述（选填，0/500）；**无创建人字段**（后台新建写入 `creator`）
-- **编辑/删除**：若标签已被任务绑定 → 置灰 + Tooltip「该标签已绑定任务，无法编辑或删除」；否则删除走 `DeleteConfirmModal`
+- **编辑/删除**：若标签已被任务绑定 → 点击 Toast「{标签名}已绑定任务，无法编辑/删除」；否则删除走 `DeleteConfirmModal`
 - **分页**：10 条/页
 
 #### 场景标签 Tab（`SceneTypePanel`）
 
 - **筛选**：标签名称、**标签值**（点「查询」生效）
 - **列表字段**：标签名称（加粗）、**标签值**、描述、**创建人**、创建时间、**更新时间**、操作（树形缩进展示层级）
-- **编辑/删除**：场景节点被任务绑定时同样置灰（`isSceneTypeBoundToTask`）
+- **编辑/删除**：场景节点被任务绑定时同样点击 Toast（`isSceneTypeBoundToTask`）
 
 > **采集方案标注配置**：**模块三** 在方案 Drawer 内配置 **整体标签模板** + **annotGenConfig / annotPreLabel** 两个复选框；具体类型/属性/选项在列表 **「片段标注配置」** Drawer（`FragmentAnnotConfigDrawer`）维护。**整体标签模板**（`annotTemplateId`）绑定审核模板，供验收/标注标签体系对齐（工作台 mock 仍用 `workbenchTags.js`）。
 
@@ -991,7 +1038,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **分页**：**10 条/页**
 
-**操作**：编辑、删除（`DeleteConfirmModal`；已绑定任务的实例置灰不可删）
+**操作**：编辑、删除（`DeleteConfirmModal`；已绑定任务时点击删除 Toast「{设备名}已绑定任务，无法删除」，设备名取 `code`，无则 `sn`）
 
 ##### 新建/编辑实例 Drawer
 | 字段 | 新建 | 编辑 |
@@ -1015,7 +1062,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 类型名称（必填 `*`）、本体/左末端/右末端（新建可填 `*`，**编辑时三字段只读但仍显示必填 `*`**）、描述
 - **新建与编辑均支持 URDF 上传**（`.urdf` / `.xacro`，≤20MB）；编辑时已有 URDF 显示「当前 URDF 文件」
 
-**删除类型**：**随时可删**（不再因绑定实例置灰）；删除走 `DeleteConfirmModal`；变更类型库 **不回写** 历史任务/条目中的类型快照
+**删除类型**：删除走 `DeleteConfirmModal`；已绑定任务时点击删除 Toast「{类型名}已绑定任务，无法删除」；变更类型库 **不回写** 历史任务/条目中的类型快照
 
 **设备类型快照**（任务/方案/条目）：新建任务时写入 `deviceTypeId` / `deviceTypeName`（`tasks.js` / `CreateTaskModal`）；采集方案 `plans.js`、条目 `entries.js` 在生成时写入同名快照字段（`buildEntryExtras` → `enrichTask`）。列表与工作台 **优先读条目/任务上的快照**，变更设备类型库或实例绑定 **不回写** 历史记录。
 
@@ -1126,7 +1173,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 ## 目录结构
 
 ```
+CHANGELOG.md                     # 发版记录（新版本条目插入顶部）
 src/
+├── release.js                   # 当前版本号 / 日期 / 简要说明（VersionInfo 读取）
 ├── assets/
 │   ├── logo.png
 │   ├── intro/                 # 数采介绍页原图（同步复制至 public/intro/）
@@ -1144,7 +1193,8 @@ src/
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
 │   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
-│   │   ├── Sidebar.jsx        # 侧边栏（采集项目一级菜单；原型展示全部菜单）
+│   │   ├── Sidebar.jsx        # 侧边栏（flex 布局；导航可滚动；底部 VersionInfo）
+│   │   ├── VersionInfo.jsx    # 左下角版本号 + 点击展开本版说明
 │   │   ├── PermissionGuard.jsx # 路由守卫（原型不拦截）
 │   │   └── Breadcrumb.jsx     # 面包屑（当前位置：…）
 │   └── common/
@@ -1238,7 +1288,7 @@ src/
 │   │   ├── AuditTemplateDetail.jsx  # 审核模板详情页（/tag/audit-template/:id）
 │   │   ├── AuditReviewTagPanel.jsx  # 模板下标签树（应用范围筛选/列）
 │   │   ├── AuditReviewTagModal.jsx
-│   │   ├── TagTableActions.jsx    # 标签行内编辑/删除 + 任务绑定置灰 Tooltip
+│   │   ├── TagTableActions.jsx    # 标签行内编辑/删除 + useTagRowActions 绑定校验 Toast
 │   │   ├── SceneTypePanel.jsx
 │   │   └── SceneTypeModal.jsx
 │   ├── Device/
@@ -1270,6 +1320,7 @@ src/
 │   ├── projectStatus.js           # 采集项目三态、canProjectMutate、canAcceptProject
 │   ├── qcResults.js               # 条目质检结果（掉帧检查帧率/标准差）
 │   ├── deviceDisplay.jsx          # CollectDeviceCell、formatDeviceSelectLabel（设备名称+SN）
+│   ├── taskBindingTips.js         # boundEditTip / boundDeleteTip（任务绑定 Toast 文案）
 │   ├── samplingHelpers.js         # 抽样验收：calcSampledCount（下限 1）、任务候选筛选、按任务抽样、recalcBatchAfterProcess、批次/项目批量处理、工作台打开
 │   ├── openDatasetMetrics.js      # 开源数据集：dataSize/trajCount 解析
 │   └── deviceTypeName.js          # buildTypeName / buildTypeNameReference
@@ -1312,6 +1363,7 @@ scripts/
 |---|---|
 | 图表库 | 运营看板为手写 SVG（`BarChart`、`DonutChart` 等）；标注工作台信号图使用 **recharts** |
 | 产品名称 | 浏览器标签与顶栏均为 **ABC-Data**（`index.html` / `Header.jsx` / 登录页） |
+| 版本与发版 | **`src/release.js`** 供 `VersionInfo` 渲染左下角 `vX.Y.Z (日期)`；点击展开 `summary`；完整历史见根目录 **`CHANGELOG.md`**；推荐发版时同步更新二者并打 Git tag |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
 | 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 回流看板；`/backflow/devices|events|triggers` 回流子页；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由（支持 `?mode=play&source=backflow`）；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
 | ListPageCard | 检索 `ListPageFilter`（底部分割线）+ 工具栏 `ListPageToolbar`（底部分割线）+ `Table embedded` / `ListPageBody` 同一白容器；已用于项目/任务/用户/角色/组织/设备/标签/条目等列表页 |
@@ -1358,7 +1410,7 @@ scripts/
 | 共享表单组件 | `FormField.jsx` → `DescriptionField`（全平台标准「描述」字段：placeholder「请输入描述」、选填、输入框外 **`n/500`**）；`PasswordInput`（闭眼 `IconEyeOff` / 睁眼 `IconEyeOpen`）；`CreateInviteUserModal` 导出 `RoleMultiSelect`；用户/组织/角色/设备/标签/数据集等已统一接入 |
 | 用户密码编辑 | 用户管理 **编辑 Drawer**：默认 **「修改密码」** 主按钮 → 点击后 `PasswordInput`；有输入才 `updateRuntimeUser` 覆盖 `password` |
 | 平台用户多角色 | `users.role` 存 `&` 连接字符串；新建/编辑用 `RoleMultiSelect`；列表 `renderRoleTags` 拆 Badge |
-| 标签任务绑定 | `tasks.js` → `isTaskPurposeTagBoundToTask`、`isCollectionMethodTagBoundToTask`、`isAtomicSkillTagBoundToTask`、`isBodyTypeTagBoundToTask`、`isEndTypeTagBoundToTask`、`isSceneTypeBoundToTask`；`TagTableActions.jsx` 统一置灰 + Tooltip |
+| 标签任务绑定 | `taskBindingTips.js` → `boundEditTip` / `boundDeleteTip`；`tasks.js` → `isTaskPurposeTagBoundToTask`、`isCollectionMethodTagBoundToTask`、`isAtomicSkillTagBoundToTask`、`isBodyTypeTagBoundToTask`、`isEndTypeTagBoundToTask`、`isSceneTypeBoundToTask`、`isDeviceInstanceBoundToTask`、`isDeviceTypeBoundToTask`；`TagTableActions.jsx` + 各列表页点击时 Toast |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |

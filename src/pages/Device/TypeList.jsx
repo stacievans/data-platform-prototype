@@ -14,7 +14,9 @@ import {
   isDeviceTypeNameTaken,
   setDeviceTypes,
 } from '../../mock/devices'
+import { useToast } from '../../components/common/Toast'
 import { isDeviceTypeBoundToTask } from '../../mock/tasks'
+import { boundDeleteTip } from '../../utils/taskBindingTips'
 import {
   getBodyTypeTagNames,
   getEndTypeTagNames,
@@ -30,9 +32,7 @@ const selectCls = `${inputCls} bg-white`
 const FILTER_CLS = 'h-8 w-full rounded-md border border-gray-200 bg-white px-2.5 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100'
 const LBL = 'mb-1 block text-xs text-gray-500'
 const nowDatetime = () => nowDateTime()
-const DELETE_DISABLED_TIP = '该设备类型已绑定任务，无法删除'
-const deleteEnabledCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
-const deleteDisabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
+const deleteCls = 'cursor-pointer text-sm text-red-500 hover:text-red-400'
 
 const URDF_FILE_MAX_BYTES = 100 * 1024 * 1024
 const URDF_ACCEPT = '.zip,application/zip'
@@ -352,6 +352,7 @@ function UrdfPreviewModal({ open, typeName, onClose }) {
 }
 
 export default function TypeList() {
+  const { ToastNode, show: showToast } = useToast()
   const [types, setTypes] = useState(() => getAllDeviceTypes())
   const bodyOptions = getBodyTypeTagNames()
   const endOptions = getEndTypeTagNames()
@@ -414,6 +415,14 @@ export default function TypeList() {
     closeModal()
   }
 
+  const requestDelete = (row) => {
+    if (isDeviceTypeBoundToTask(row)) {
+      showToast(boundDeleteTip(row.name))
+      return
+    }
+    setDeleteTarget(row)
+  }
+
   const confirmDelete = () => {
     if (!deleteTarget) return
     if (isDeviceTypeBoundToTask(deleteTarget)) return
@@ -447,9 +456,7 @@ export default function TypeList() {
     {
       title: '操作',
       key: 'actions',
-      render: (_, row) => {
-        const boundToTask = isDeviceTypeBoundToTask(row)
-        return (
+      render: (_, row) => (
         <div className="flex items-center gap-2">
           <PermAction
             permission="device.edit"
@@ -458,20 +465,15 @@ export default function TypeList() {
           >
             编辑
           </PermAction>
-          {boundToTask ? (
-            <span className={deleteDisabledCls} title={DELETE_DISABLED_TIP}>删除</span>
-          ) : (
-            <PermAction
-              permission="device.delete"
-              className={deleteEnabledCls}
-              onClick={() => setDeleteTarget(row)}
-            >
-              删除
-            </PermAction>
-          )}
+          <PermAction
+            permission="device.delete"
+            className={deleteCls}
+            onClick={() => requestDelete(row)}
+          >
+            删除
+          </PermAction>
         </div>
-        )
-      },
+      ),
     },
   ]
 
@@ -554,6 +556,7 @@ export default function TypeList() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />
+      {ToastNode}
     </div>
   )
 }
