@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import Table from '../../components/common/Table'
-import Badge from '../../components/common/Badge'
+import Tabs from '../../components/common/Tabs'
 import Modal from '../../components/common/Modal'
 import Drawer from '../../components/common/Drawer'
 import { IconPlus } from '../../components/common/Icons'
@@ -32,12 +32,10 @@ const ROLE_REVIEWER = '标注员'
 const ROLE_BOTH = '采集员&标注员'
 const ROLE_OPTIONS = [ROLE_COLLECTOR, ROLE_REVIEWER, ROLE_BOTH]
 const ADD_ROLE_OPTIONS = [ROLE_COLLECTOR, ROLE_REVIEWER]
-const ROLE_COLORS = {
-  [ROLE_COLLECTOR]: 'cyan',
-  [ROLE_REVIEWER]: 'orange',
-  [ROLE_BOTH]: 'purple',
-  平台运营: 'blue',
-}
+const MEMBER_TABS = [
+  { key: ROLE_COLLECTOR, label: ROLE_COLLECTOR },
+  { key: ROLE_REVIEWER, label: ROLE_REVIEWER },
+]
 const nowDatetime = () => nowDateTime()
 
 function hasCollector(task) {
@@ -58,20 +56,6 @@ function getAssignmentStatus(task) {
   return hasCollector(task) && hasReviewer(task) ? '已完成' : '未完成'
 }
 
-function memberHasDualRole(member) {
-  return member.roles.includes(ROLE_COLLECTOR) && member.roles.includes(ROLE_REVIEWER)
-}
-
-function displayMemberRoles(roles) {
-  if (roles.includes(ROLE_COLLECTOR) && roles.includes(ROLE_REVIEWER)) return [ROLE_BOTH]
-  return roles.filter((r) => r === ROLE_COLLECTOR || r === ROLE_REVIEWER)
-}
-
-function rolesToStore(role) {
-  if (role === ROLE_BOTH) return [ROLE_COLLECTOR, ROLE_REVIEWER]
-  return [role]
-}
-
 function memberTaskCount(member) {
   return member.taskIds?.length ?? 0
 }
@@ -87,8 +71,12 @@ function userMatchesRole(user, role) {
   return false
 }
 
-function userMatchesAnyRole(user, roles) {
-  return roles.some((role) => userMatchesRole(user, role))
+function userHasAllRoles(user, roles) {
+  return roles.every((role) => userMatchesRole(user, role))
+}
+
+function memberInRole(list, name, role) {
+  return list.some((m) => m.name === name && m.role === role)
 }
 
 function appendTaskPerson(task, role, name) {
@@ -525,8 +513,11 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const project = projects.find((p) => p.id === projectId)
   const { ToastNode, show: showToast } = useToast()
 
+  const [memberTab, setMemberTab] = useState(ROLE_COLLECTOR)
   const [members, setMembers] = useState(
-    () => (allProjectMembers[projectId] ?? []).filter((m) => !m.roles.includes('平台运营')),
+    () => pruneEmptyMembers(
+      (allProjectMembers[projectId] ?? []).filter((m) => m.role !== '平台运营'),
+    ),
   )
 
   const [addOpen, setAddOpen] = useState(false)
@@ -537,9 +528,13 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const [replaceConfirm, setReplaceConfirm] = useState(null)
 
   const [form, setForm] = useState({ name: '', roles: [], taskIds: [] })
-  const [addForm, setAddForm] = useState({ roles: [], names: [], taskIds: [] })
-  const [configTaskForm, setConfigTaskForm] = useState({ roles: [], taskIds: [] })
-  const [configTaskErrors, setConfigTaskErrors] = useState({})
+  const [addForm, setAddForm] = useState({
+    roles: [],
+    name: '',
+    collectorTaskIds: [],
+    reviewerTaskIds: [],
+  })
+  const [configTaskForm, setConfigTaskForm] = useState({ taskIds: [] })
   const [assignForm, setAssignForm] = useState({ collectors: [], reviewers: [] })
   const [assignSnapshot, setAssignSnapshot] = useState({ collectors: [], reviewers: [] })
   const [assignRoleLock, setAssignRoleLock] = useState({ collectors: false, reviewers: false })
@@ -556,14 +551,14 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     [project],
   )
 
+  const tabMembers = useMemo(
+    () => members.filter((m) => m.role === memberTab),
+    [members, memberTab],
+  )
+
   const incompleteTasks = useMemo(
     () => projectTasks.filter((t) => !hasCollector(t) || !hasReviewer(t)),
     [projectTasks],
-  )
-
-  const addFormTaskList = useMemo(
-    () => (addForm.roles.length ? projectTasks : []),
-    [addForm.roles, projectTasks],
   )
 
   const batchTaskList = useMemo(
@@ -577,8 +572,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       (u) =>
         u.status === '启用' &&
         u.nickname !== project?.creator &&
-        userMatchesAnyRole(u, form.roles) &&
-        !members.some((m) => m.name === u.nickname),
+        userHasAllRoles(u, form.roles) &&
+        !form.roles.some((role) => memberInRole(members, u.nickname, role)),
     )
   }, [form.roles, members, project?.creator])
 
@@ -588,18 +583,18 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       (u) =>
         u.status === '启用' &&
         u.nickname !== project?.creator &&
-        userMatchesAnyRole(u, addForm.roles) &&
-        !members.some((m) => m.name === u.nickname),
+        userHasAllRoles(u, addForm.roles) &&
+        !addForm.roles.some((role) => memberInRole(members, u.nickname, role)),
     )
   }, [addForm.roles, members, project?.creator])
 
   const collectorOptions = useMemo(
-    () => [...new Set([...collectors, ...members.filter((m) => m.roles.includes(ROLE_COLLECTOR)).map((m) => m.name)])],
+    () => [...new Set([...collectors, ...members.filter((m) => m.role === ROLE_COLLECTOR).map((m) => m.name)])],
     [members],
   )
 
   const reviewerOptions = useMemo(
-    () => [...new Set([...reviewers, ...members.filter((m) => m.roles.includes(ROLE_REVIEWER)).map((m) => m.name)])],
+    () => [...new Set([...reviewers, ...members.filter((m) => m.role === ROLE_REVIEWER).map((m) => m.name)])],
     [members],
   )
 
@@ -609,7 +604,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   }
 
   const resetAddForm = () => {
-    setAddForm({ roles: [], names: [], taskIds: [] })
+    setAddForm({ roles: [], name: '', collectorTaskIds: [], reviewerTaskIds: [] })
     setAddErrors({})
   }
 
@@ -625,11 +620,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
 
   const openConfigTask = (row) => {
     setConfigTaskMember(row)
-    setConfigTaskForm({
-      roles: row.roles.filter((r) => r === ROLE_COLLECTOR || r === ROLE_REVIEWER),
-      taskIds: [...(row.taskIds ?? [])],
-    })
-    setConfigTaskErrors({})
+    setConfigTaskForm({ taskIds: [...(row.taskIds ?? [])] })
   }
 
   const openAssign = (task) => {
@@ -648,55 +639,45 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const stripAnnotatorForTask = (list, taskId, excludeName = null) =>
     list.map((m) => {
       if (m.name === excludeName) return m
-      if (m.roles.includes(ROLE_REVIEWER) && m.taskIds.includes(taskId)) {
+      if (m.role === ROLE_REVIEWER && m.taskIds.includes(taskId)) {
         return { ...m, taskIds: m.taskIds.filter((t) => t !== taskId) }
       }
       return m
     })
 
-  const upsertMemberAssignment = (list, { name, roles, taskIds }) => {
-    let next = [...list]
-    let member = next.find((m) => m.name === name)
-    if (!member) {
-      member = {
-        id: `PM-${projectId}-${Date.now()}`,
-        name,
-        roles: [...roles],
-        taskIds: [],
-        joinedAt: nowDatetime(),
-      }
-      next.push(member)
-    } else {
-      const mergedRoles = [...new Set([...member.roles, ...roles])]
-      next = next.map((m) => (m.id === member.id ? { ...m, roles: mergedRoles } : m))
-      member = next.find((m) => m.id === member.id)
+  const upsertMemberAssignment = (list, { name, role, taskIds }) => {
+    const existing = list.find((m) => m.name === name && m.role === role)
+    if (existing) {
+      const merged = [...new Set([...(existing.taskIds ?? []), ...taskIds])]
+      return list.map((m) => (m.id === existing.id ? { ...m, taskIds: merged } : m))
     }
-    const merged = [...new Set([...(member.taskIds ?? []), ...taskIds])]
-    return next.map((m) => (m.id === member.id ? { ...m, taskIds: merged } : m))
+    return [
+      ...list,
+      {
+        id: `PM-${projectId}-${Date.now()}-${role}`,
+        name,
+        role,
+        taskIds: [...taskIds],
+        joinedAt: nowDatetime(),
+      },
+    ]
   }
 
   const syncMembersForTaskAssignment = (list, taskId, collectorNames, reviewerNames) => {
     let next = [...list]
     for (const name of collectorNames) {
-      next = upsertMemberAssignment(next, {
-        name,
-        roles: [ROLE_COLLECTOR],
-        taskIds: [taskId],
-      })
+      next = upsertMemberAssignment(next, { name, role: ROLE_COLLECTOR, taskIds: [taskId] })
     }
     for (const name of reviewerNames) {
-      next = upsertMemberAssignment(next, {
-        name,
-        roles: [ROLE_REVIEWER],
-        taskIds: [taskId],
-      })
+      next = upsertMemberAssignment(next, { name, role: ROLE_REVIEWER, taskIds: [taskId] })
     }
     return pruneEmptyMembers(
       next.map((m) => {
         if (!m.taskIds.includes(taskId)) return m
-        const keepAsCollector = m.roles.includes(ROLE_COLLECTOR) && collectorNames.includes(m.name)
-        const keepAsReviewer = m.roles.includes(ROLE_REVIEWER) && reviewerNames.includes(m.name)
-        if (keepAsCollector || keepAsReviewer) return m
+        const keep =
+          (m.role === ROLE_COLLECTOR && collectorNames.includes(m.name)) ||
+          (m.role === ROLE_REVIEWER && reviewerNames.includes(m.name))
+        if (keep) return m
         return { ...m, taskIds: m.taskIds.filter((id) => id !== taskId) }
       }),
     )
@@ -708,7 +689,6 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       reviewerName,
       resumeAdd,
       pendingAdd,
-      pendingNameIndex,
       processedMembers,
       processedTasks,
     } = replaceConfirm
@@ -717,13 +697,15 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       let membersDraft = processedMembers ? [...processedMembers] : [...members]
       let tasksDraft = processedTasks ? [...processedTasks] : [...projectTasks]
 
-      const startIdx = pendingNameIndex >= 0 ? pendingNameIndex : 0
-      for (let i = startIdx; i < pendingAdd.names.length; i += 1) {
+      for (const role of pendingAdd.roles) {
+        const taskIds =
+          role === ROLE_COLLECTOR ? pendingAdd.collectorTaskIds : pendingAdd.reviewerTaskIds
         const result = applySingleMemberAdd(membersDraft, tasksDraft, {
-          name: pendingAdd.names[i],
-          roles: pendingAdd.roles,
-          taskIds: pendingAdd.taskIds,
+          name: pendingAdd.name,
+          role,
+          taskIds,
         })
+        if (!result) return
         membersDraft = result.nextMembers
         tasksDraft = result.nextTasks
       }
@@ -743,7 +725,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     let nextMembers = stripAnnotatorForTask(members, taskId, reviewerName)
     nextMembers = upsertMemberAssignment(nextMembers, {
       name: reviewerName,
-      roles: [ROLE_REVIEWER],
+      role: ROLE_REVIEWER,
       taskIds: [taskId],
     })
     onTasksChange((prev) =>
@@ -768,7 +750,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         const owner = membersDraft.find(
           (m) =>
             m.name !== name &&
-            m.roles.includes(ROLE_REVIEWER) &&
+            m.role === ROLE_REVIEWER &&
             m.taskIds.includes(taskId),
         )
         if (owner) {
@@ -777,6 +759,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
             existingName: owner.name,
             reviewerName: name,
             resumeAdd: true,
+            pendingAdd: { name, roles, collectorTaskIds: roles.includes(ROLE_COLLECTOR) ? taskIds : [], reviewerTaskIds: roles.includes(ROLE_REVIEWER) ? taskIds : [] },
           })
           return null
         }
@@ -796,79 +779,67 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       return updated
     })
 
-    const existing = membersDraft.find((m) => m.name === name)
-    if (existing) {
-      membersDraft = membersDraft.map((m) =>
-        m.id === existing.id
-          ? {
-              ...m,
-              roles: [...new Set([...m.roles, ...roles])],
-              taskIds: [...new Set([...m.taskIds, ...taskIds])],
-            }
-          : m,
-      )
-    } else {
-      membersDraft = [
-        ...membersDraft,
-        {
-          id: `PM-${projectId}-${Date.now()}`,
-          name,
-          roles: [...roles],
-          taskIds,
-          joinedAt: nowDatetime(),
-        },
-      ]
+    for (const role of roles) {
+      membersDraft = upsertMemberAssignment(membersDraft, { name, role, taskIds })
     }
 
     return { nextTasks, nextMembers: membersDraft }
   }
 
-  const applySingleMemberAdd = (membersDraft, tasksDraft, { name, roles, taskIds }) => {
+  const applySingleMemberAdd = (membersDraft, tasksDraft, { name, role, taskIds }, resumeContext = null) => {
+    if (role === ROLE_REVIEWER) {
+      for (const taskId of taskIds) {
+        const owner = membersDraft.find(
+          (m) => m.name !== name && m.role === ROLE_REVIEWER && m.taskIds.includes(taskId),
+        )
+        if (owner) {
+          setReplaceConfirm({
+            taskId,
+            existingName: owner.name,
+            reviewerName: name,
+            resumeAdd: true,
+            pendingAdd: resumeContext?.pendingAdd ?? {
+              name,
+              roles: [role],
+              collectorTaskIds: [],
+              reviewerTaskIds: taskIds,
+            },
+            processedMembers: resumeContext?.membersDraft ?? membersDraft,
+            processedTasks: resumeContext?.tasksDraft ?? tasksDraft,
+          })
+          return null
+        }
+      }
+    }
+
     let nextMembers = membersDraft
     const nextTasks = tasksDraft.map((t) => {
       if (!taskIds.includes(t.id)) return t
       let updated = { ...t }
-      if (roles.includes(ROLE_COLLECTOR)) {
+      if (role === ROLE_COLLECTOR) {
         updated = appendTaskPerson(updated, ROLE_COLLECTOR, name)
       }
-      if (roles.includes(ROLE_REVIEWER)) {
+      if (role === ROLE_REVIEWER) {
+        nextMembers = stripAnnotatorForTask(nextMembers, t.id, name)
         updated = appendTaskPerson(updated, ROLE_REVIEWER, name)
       }
       return updated
     })
 
-    const existing = nextMembers.find((m) => m.name === name)
-    if (existing) {
-      nextMembers = nextMembers.map((m) =>
-        m.id === existing.id
-          ? {
-              ...m,
-              roles: [...new Set([...m.roles, ...roles])],
-              taskIds: [...new Set([...m.taskIds, ...taskIds])],
-            }
-          : m,
-      )
-    } else {
-      nextMembers = [
-        ...nextMembers,
-        {
-          id: `PM-${projectId}-${Date.now()}-${name}`,
-          name,
-          roles: [...roles],
-          taskIds,
-          joinedAt: nowDatetime(),
-        },
-      ]
-    }
-
+    nextMembers = upsertMemberAssignment(nextMembers, { name, role, taskIds })
     return { nextTasks, nextMembers }
   }
 
   const handleAddMemberSave = () => {
     const errs = {}
     if (!addForm.roles.length) errs.roles = true
-    if (!addForm.names.length) errs.names = true
-    if (!addForm.taskIds.length) errs.taskIds = true
+    if (!addForm.name) errs.name = true
+    if (addForm.roles.includes(ROLE_COLLECTOR) && !addForm.collectorTaskIds.length) {
+      errs.collectorTaskIds = true
+    }
+    if (addForm.roles.includes(ROLE_REVIEWER) && !addForm.reviewerTaskIds.length) {
+      errs.reviewerTaskIds = true
+    }
     if (Object.keys(errs).length) {
       setAddErrors(errs)
       return
@@ -877,12 +848,16 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     let membersDraft = [...members]
     let tasksDraft = [...projectTasks]
 
-    for (const name of addForm.names) {
-      const result = applySingleMemberAdd(membersDraft, tasksDraft, {
-        name,
-        roles: addForm.roles,
-        taskIds: addForm.taskIds,
-      })
+    for (const role of addForm.roles) {
+      const taskIds =
+        role === ROLE_COLLECTOR ? addForm.collectorTaskIds : addForm.reviewerTaskIds
+      const result = applySingleMemberAdd(
+        membersDraft,
+        tasksDraft,
+        { name: addForm.name, role, taskIds },
+        { pendingAdd: addForm, membersDraft, tasksDraft },
+      )
+      if (!result) return
       membersDraft = result.nextMembers
       tasksDraft = result.nextTasks
     }
@@ -915,36 +890,25 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const handleConfigTaskSave = () => {
     if (!configTaskMember) return
 
-    const errs = {}
-    if (!configTaskForm.roles.length) errs.roles = true
-    if (Object.keys(errs).length) {
-      setConfigTaskErrors(errs)
-      return
-    }
-
-    const { roles, taskIds } = configTaskForm
+    const role = configTaskMember.role
+    const { taskIds } = configTaskForm
     const name = configTaskMember.name
     const affectedIds = new Set([...(configTaskMember.taskIds ?? []), ...taskIds])
 
     const nextTasks = projectTasks.map((t) => {
       if (!affectedIds.has(t.id)) return t
 
+      const selected = taskIds.includes(t.id)
       let collectors = getTaskCollectors(t)
       let reviewers = getTaskAnnotators(t)
-      const selected = taskIds.includes(t.id)
 
-      if (selected && roles.includes(ROLE_COLLECTOR) && !collectors.includes(name)) {
-        collectors = [...collectors, name]
+      if (role === ROLE_COLLECTOR) {
+        if (selected && !collectors.includes(name)) collectors = [...collectors, name]
+        if (!selected) collectors = collectors.filter((n) => n !== name)
       }
-      if (!selected || !roles.includes(ROLE_COLLECTOR)) {
-        collectors = collectors.filter((n) => n !== name)
-      }
-
-      if (selected && roles.includes(ROLE_REVIEWER) && !reviewers.includes(name)) {
-        reviewers = [...reviewers, name]
-      }
-      if (!selected || !roles.includes(ROLE_REVIEWER)) {
-        reviewers = reviewers.filter((n) => n !== name)
+      if (role === ROLE_REVIEWER) {
+        if (selected && !reviewers.includes(name)) reviewers = [...reviewers, name]
+        if (!selected) reviewers = reviewers.filter((n) => n !== name)
       }
 
       return {
@@ -962,9 +926,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     commitMembers((list) =>
       pruneEmptyMembers(
         list.map((m) =>
-          m.id === configTaskMember.id
-            ? { ...m, roles: [...roles], taskIds: [...taskIds] }
-            : m,
+          m.id === configTaskMember.id ? { ...m, taskIds: [...taskIds] } : m,
         ),
       ),
     )
@@ -1025,8 +987,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   }
 
   const handleAddRolesChange = (roles) => {
-    setAddForm((f) => ({ ...f, roles, names: [], taskIds: [] }))
-    setAddErrors((e) => ({ ...e, roles: false, names: false }))
+    setAddForm((f) => ({ ...f, roles, name: '', collectorTaskIds: [], reviewerTaskIds: [] }))
+    setAddErrors((e) => ({ ...e, roles: false, name: false, collectorTaskIds: false, reviewerTaskIds: false }))
   }
 
   const addMemberFormContent = (
@@ -1042,40 +1004,56 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
           选择用户
           <span className="text-red-500">*</span>
         </label>
-        <PersonMultiDropdownSelect
-          value={addForm.names}
-          onChange={(names) => {
-            setAddForm((f) => ({ ...f, names }))
-            setAddErrors((er) => ({ ...er, names: false }))
+        <PersonDropdownSelect
+          value={addForm.name}
+          onChange={(name) => {
+            setAddForm((f) => ({ ...f, name }))
+            setAddErrors((er) => ({ ...er, name: false }))
           }}
           options={addFormUsers.map((u) => u.nickname)}
           placeholder={!addForm.roles.length ? '请先选择角色' : '请选择用户'}
           disabled={!addForm.roles.length}
           disabledPlaceholder="请先选择角色"
-          error={addErrors.names}
+          error={addErrors.name}
         />
-        {addErrors.names && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+        {addErrors.name && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
       </div>
 
-      <div>
-        <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
-          配置任务
-          <span className="text-red-500">*</span>
-        </label>
-        {!addForm.roles.length ? (
-          <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">请先选择角色</p>
-        ) : (
+      {addForm.roles.includes(ROLE_COLLECTOR) && (
+        <div>
+          <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+            配置任务（采集员）
+            <span className="text-red-500">*</span>
+          </label>
           <TaskCheckboxList
-            tasks={addFormTaskList}
-            selectedIds={addForm.taskIds}
+            tasks={projectTasks}
+            selectedIds={addForm.collectorTaskIds}
             onChange={(ids) => {
-              setAddForm((f) => ({ ...f, taskIds: ids }))
-              setAddErrors((er) => ({ ...er, taskIds: false }))
+              setAddForm((f) => ({ ...f, collectorTaskIds: ids }))
+              setAddErrors((er) => ({ ...er, collectorTaskIds: false }))
             }}
           />
-        )}
-        {addErrors.taskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
-      </div>
+          {addErrors.collectorTaskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+        </div>
+      )}
+
+      {addForm.roles.includes(ROLE_REVIEWER) && (
+        <div>
+          <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+            配置任务（标注员）
+            <span className="text-red-500">*</span>
+          </label>
+          <TaskCheckboxList
+            tasks={projectTasks}
+            selectedIds={addForm.reviewerTaskIds}
+            onChange={(ids) => {
+              setAddForm((f) => ({ ...f, reviewerTaskIds: ids }))
+              setAddErrors((er) => ({ ...er, reviewerTaskIds: false }))
+            }}
+          />
+          {addErrors.reviewerTaskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
+        </div>
+      )}
     </div>
   )
 
@@ -1129,17 +1107,6 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       render: (v) => <span className="font-medium text-gray-800">{v}</span>,
     },
     {
-      title: '角色',
-      dataIndex: 'roles',
-      render: (roles) => (
-        <div className="flex flex-wrap gap-1">
-          {displayMemberRoles(roles).map((r) => (
-            <Badge key={r} color={ROLE_COLORS[r] || 'gray'}>{r}</Badge>
-          ))}
-        </div>
-      ),
-    },
-    {
       title: '负责任务数',
       dataIndex: 'taskIds',
       render: (ids) => (
@@ -1157,10 +1124,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
             mode="disable"
             variant="link"
             size="sm"
-            onClick={() => {
-              const role = memberHasDualRole(row) ? ROLE_BOTH : displayMemberRoles(row.roles)[0] ?? ROLE_COLLECTOR
-              onViewMemberTasks?.(row.name, role === ROLE_BOTH ? ROLE_COLLECTOR : role)
-            }}
+            onClick={() => onViewMemberTasks?.(row.name, row.role)}
           >
             查看任务
           </PermButton>
@@ -1242,7 +1206,19 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
         </div>
       </div>
 
-      <Table columns={columns} dataSource={members} pageSize={LIST_PAGE_SIZE} pageResetKey={members.length} />
+      <Tabs
+        items={MEMBER_TABS}
+        activeKey={memberTab}
+        onChange={setMemberTab}
+        className="mb-1"
+      />
+
+      <Table
+        columns={columns}
+        dataSource={tabMembers}
+        pageSize={LIST_PAGE_SIZE}
+        pageResetKey={`${memberTab}-${tabMembers.length}`}
+      />
 
       <Drawer open={addOpen} title="添加成员" onCancel={() => setAddOpen(false)} onOk={handleAddMemberSave}>
         {addMemberFormContent}
@@ -1276,14 +1252,14 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
                 className="h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
               />
             </div>
-            <RoleMultiPicker
-              value={configTaskForm.roles}
-              onChange={(roles) => {
-                setConfigTaskForm((f) => ({ ...f, roles }))
-                setConfigTaskErrors((e) => ({ ...e, roles: false }))
-              }}
-              error={configTaskErrors.roles}
-            />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">角色</label>
+              <input
+                readOnly
+                value={configTaskMember.role}
+                className="h-8 w-full cursor-default rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-500 outline-none"
+              />
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 配置任务

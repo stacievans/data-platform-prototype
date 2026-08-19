@@ -40,7 +40,7 @@ export const users = [
   { id: 5, uid: 'U-005', username: 'zhoujie',  nickname: '周杰',   phone: '135****6627', role: '采集员',   status: '启用', orgId: 'ORG-002', email: 'zhoujie@ai2robotics.com', remark: '一线采集员', createdAt: '2026-03-15 09:45:00', lastLoginAt: '2026-06-16 08:30:00' },
   { id: 6, uid: 'U-006', username: 'sunli',    nickname: '孙丽',   phone: '188****4053', role: '标注员',   status: '启用', orgId: 'ORG-002', email: 'sunli@ai2robotics.com', remark: '数据标注专员', createdAt: '2026-03-18 13:10:00', lastLoginAt: '2026-06-15 14:18:00' },
   { id: 7, uid: 'U-007', username: 'hemin',    nickname: '何敏',   phone: '186****7740', role: '标注员',   status: '停用', orgId: 'ORG-002', email: 'hemin@ai2robotics.com', remark: '账号已停用', createdAt: '2026-03-20 15:00:00', lastLoginAt: '2026-06-10 11:20:00' },
-  { id: 8, uid: 'U-008', username: 'qianlin',  nickname: '钱琳',   phone: '158****1196', role: '标注员',   status: '启用', orgId: 'ORG-002', email: 'qianlin@ai2robotics.com', remark: '数据标注专员', createdAt: '2026-03-22 10:25:00', lastLoginAt: '2026-06-18 06:50:00' },
+  { id: 8, uid: 'U-008', username: 'qianlin',  nickname: '钱琳',   phone: '158****1196', role: '采集员&标注员', status: '启用', orgId: 'ORG-002', email: 'qianlin@ai2robotics.com', remark: '采集与标注双角色', createdAt: '2026-03-22 10:25:00', lastLoginAt: '2026-06-18 06:50:00' },
   { id: 9, uid: 'U-009', username: 'zhaoyan',  nickname: '赵研',   phone: '133****8801', role: '游客',     status: '启用', orgId: 'ORG-002', email: 'zhao.yan@ai2robotics.com', remark: '只读访问权限', createdAt: '2026-04-01 08:00:00', lastLoginAt: '2026-06-12 09:00:00' },
   { id: 10, uid: 'U-010', username: 'chengong', nickname: '陈工',   phone: '132****5566', role: '工程师',   status: '启用', orgId: 'ORG-002', email: 'cheng.gong@ai2robotics.com', remark: '设备与算法对接', createdAt: '2026-04-08 16:40:00', lastLoginAt: '2026-06-14 17:30:00' },
   { id: 11, uid: 'U-011', username: 'wulei',    nickname: '吴磊',   phone: '134****7788', role: '采集员&标注员', status: '启用', orgId: 'ORG-002', email: 'wulei@ai2robotics.com', remark: '采集与标注双角色', createdAt: '2026-04-12 09:15:00', lastLoginAt: '2026-06-18 08:20:00' },
@@ -57,6 +57,7 @@ export const roleColor = {
   平台运营: 'blue',
   采集员: 'cyan',
   标注员: 'orange',
+  '采集员&标注员': 'purple',
   游客: 'green',
   工程师: 'indigo',
   数据审核员: 'purple',
@@ -90,45 +91,47 @@ export const logActionColor = {
 }
 
 // 项目成员 mock（按项目 ID 组织）
-// roles 为项目级角色，可多个：采集员 / 标注员 / 平台运营
+// 每条记录对应单一项目角色（采集员 / 标注员 / 平台运营）；同一用户可同时存在两条独立记录
 export const projectMembers = {
   'P-1001': [
-    { id: 'PM-1001-1', name: '李明',   roles: ['平台运营'],           taskIds: [],                              joinedAt: '2026-03-10 09:00:00' },
-    { id: 'PM-1001-2', name: '刘伟',   roles: ['采集员'],             taskIds: ['T-2001', 'T-2002'],            joinedAt: '2026-03-13 10:30:00' },
-    { id: 'PM-1001-3', name: '周杰',   roles: ['采集员'],             taskIds: ['T-2003', 'T-2004'],            joinedAt: '2026-03-28 14:15:00' },
-    { id: 'PM-1001-4', name: '孙丽',   roles: ['标注员'],             taskIds: ['T-2001', 'T-2002', 'T-2003'], joinedAt: '2026-03-13 11:20:00' },
-    { id: 'PM-1001-5', name: '何敏',   roles: ['标注员'],             taskIds: ['T-2004'],                      joinedAt: '2026-03-28 16:45:00' },
+    { id: 'PM-1001-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-03-10 09:00:00' },
+    { id: 'PM-1001-2', name: '刘伟', role: '采集员', taskIds: ['T-2001', 'T-2002'], joinedAt: '2026-03-13 10:30:00' },
+    { id: 'PM-1001-3', name: '周杰', role: '采集员', taskIds: ['T-2003', 'T-2004'], joinedAt: '2026-03-28 14:15:00' },
+    { id: 'PM-1001-4', name: '孙丽', role: '标注员', taskIds: ['T-2001', 'T-2002', 'T-2003'], joinedAt: '2026-03-13 11:20:00' },
+    { id: 'PM-1001-5', name: '何敏', role: '标注员', taskIds: ['T-2004'], joinedAt: '2026-03-28 16:45:00' },
+    { id: 'PM-1001-6', name: '吴磊', role: '采集员', taskIds: ['T-2004'], joinedAt: '2026-04-10 09:00:00' },
+    { id: 'PM-1001-7', name: '吴磊', role: '标注员', taskIds: ['T-2002'], joinedAt: '2026-04-10 09:05:00' },
   ],
   'P-1002': [
-    { id: 'PM-1002-1', name: '王芳',   roles: ['平台运营'],           taskIds: [],                              joinedAt: '2026-03-20 08:30:00' },
-    { id: 'PM-1002-2', name: '刘伟',   roles: ['采集员'],             taskIds: ['T-2007'],                      joinedAt: '2026-04-05 13:00:00' },
-    { id: 'PM-1002-3', name: '何敏',   roles: ['标注员'],             taskIds: ['T-2005', 'T-2006'],            joinedAt: '2026-03-22 15:22:00' },
+    { id: 'PM-1002-1', name: '王芳', role: '平台运营', taskIds: [], joinedAt: '2026-03-20 08:30:00' },
+    { id: 'PM-1002-2', name: '刘伟', role: '采集员', taskIds: ['T-2007'], joinedAt: '2026-04-05 13:00:00' },
+    { id: 'PM-1002-3', name: '何敏', role: '标注员', taskIds: ['T-2005', 'T-2006'], joinedAt: '2026-03-22 15:22:00' },
   ],
   'P-1003': [
-    { id: 'PM-1003-1', name: '李明',   roles: ['平台运营'],           taskIds: [],                              joinedAt: '2026-04-01 09:10:00' },
-    { id: 'PM-1003-2', name: '周杰',   roles: ['采集员'],             taskIds: ['T-2008', 'T-2009'],            joinedAt: '2026-04-03 10:05:00' },
-    { id: 'PM-1003-3', name: '钱琳',   roles: ['标注员'],             taskIds: ['T-2008', 'T-2009', 'T-2010'], joinedAt: '2026-04-03 14:40:00' },
+    { id: 'PM-1003-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-04-01 09:10:00' },
+    { id: 'PM-1003-2', name: '周杰', role: '采集员', taskIds: ['T-2008', 'T-2009'], joinedAt: '2026-04-03 10:05:00' },
+    { id: 'PM-1003-3', name: '钱琳', role: '标注员', taskIds: ['T-2008', 'T-2009', 'T-2010'], joinedAt: '2026-04-03 14:40:00' },
+    { id: 'PM-1003-4', name: '郑浩', role: '采集员', taskIds: ['T-2010'], joinedAt: '2026-04-12 11:00:00' },
   ],
   'P-1004': [
-    { id: 'PM-1004-1', name: '周杰',   roles: ['采集员'],             taskIds: ['T-2011', 'T-2012'],            joinedAt: '2026-04-15 11:30:00' },
-    { id: 'PM-1004-2', name: '孙丽',   roles: ['标注员'],             taskIds: ['T-2011', 'T-2012'],            joinedAt: '2026-04-30 17:00:00' },
+    { id: 'PM-1004-1', name: '周杰', role: '采集员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-15 11:30:00' },
+    { id: 'PM-1004-2', name: '孙丽', role: '标注员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-30 17:00:00' },
   ],
   'P-1005': [
-    { id: 'PM-1005-1', name: '王芳',   roles: ['平台运营'],           taskIds: [],                              joinedAt: '2026-04-28 09:45:00' },
-    { id: 'PM-1005-2', name: '刘伟',   roles: ['采集员'],             taskIds: ['T-2013'],                      joinedAt: '2026-04-30 10:15:00' },
-    { id: 'PM-1005-3', name: '何敏',   roles: ['标注员'],             taskIds: ['T-2013'],                      joinedAt: '2026-04-30 16:50:00' },
+    { id: 'PM-1005-1', name: '王芳', role: '平台运营', taskIds: [], joinedAt: '2026-04-28 09:45:00' },
+    { id: 'PM-1005-2', name: '刘伟', role: '采集员', taskIds: ['T-2013'], joinedAt: '2026-04-30 10:15:00' },
+    { id: 'PM-1005-3', name: '何敏', role: '标注员', taskIds: ['T-2013'], joinedAt: '2026-04-30 16:50:00' },
   ],
   'P-1006': [
-    { id: 'PM-1006-1', name: '孙丽',   roles: ['标注员'],             taskIds: ['T-2014'],                      joinedAt: '2026-05-11 08:20:00' },
-    { id: 'PM-1006-2', name: '钱琳',   roles: ['标注员'],             taskIds: [],                              joinedAt: '2026-05-11 13:35:00' },
+    { id: 'PM-1006-1', name: '孙丽', role: '标注员', taskIds: ['T-2014'], joinedAt: '2026-05-11 08:20:00' },
   ],
   'P-1007': [
-    { id: 'PM-1007-1', name: '刘伟',   roles: ['采集员'],             taskIds: [],                              joinedAt: '2026-05-18 09:00:00' },
-    { id: 'PM-1007-2', name: '钱琳',   roles: ['标注员'],             taskIds: [],                              joinedAt: '2026-05-18 11:25:00' },
+    { id: 'PM-1007-1', name: '刘伟', role: '采集员', taskIds: [], joinedAt: '2026-05-18 09:00:00' },
+    { id: 'PM-1007-2', name: '钱琳', role: '标注员', taskIds: [], joinedAt: '2026-05-18 11:25:00' },
   ],
   'P-1008': [
-    { id: 'PM-1008-1', name: '李明',   roles: ['平台运营'],           taskIds: [],                              joinedAt: '2026-05-25 10:00:00' },
-    { id: 'PM-1008-2', name: '刘伟',   roles: ['采集员'],             taskIds: ['T-2015'],                      joinedAt: '2026-05-27 14:30:00' },
-    { id: 'PM-1008-3', name: '钱琳',   roles: ['标注员'],             taskIds: ['T-2015'],                      joinedAt: '2026-05-27 15:45:00' },
+    { id: 'PM-1008-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-05-25 10:00:00' },
+    { id: 'PM-1008-2', name: '刘伟', role: '采集员', taskIds: ['T-2015'], joinedAt: '2026-05-27 14:30:00' },
+    { id: 'PM-1008-3', name: '钱琳', role: '标注员', taskIds: ['T-2015'], joinedAt: '2026-05-27 15:45:00' },
   ],
 }

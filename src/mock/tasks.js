@@ -18,7 +18,7 @@ export const tasks = [
     deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-002', device: 'DEV-A02', method: 'VR遥操', scene: '家庭场景',
     projectId: 'P-1001', projectName: '家庭物品整理采集',
     collectTotal: 500, collectDone: 386, reviewDone: 210, acceptDone: 168, dataTotal: 386,
-    status: '已发布', collectors: ['刘伟', '周杰'], annotators: ['孙丽', '何敏'],
+    status: '已发布', collectors: ['刘伟'], annotators: ['孙丽', '吴磊'],
     creator: '李明', createdAt: '2026-04-08 10:15:00', updatedAt: '2026-06-08 11:22:00',
   },
   {
@@ -42,7 +42,7 @@ export const tasks = [
     deviceTypeId: 'DTY-005', deviceInstanceId: 'INS-010', device: 'DEV-E01', method: '外骨骼', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 268, reviewDone: 120, acceptDone: 86, dataTotal: 268,
-    status: '已发布', collectors: ['吴磊'], annotators: ['何敏', '孙丽'],
+    status: '已发布', collectors: [], annotators: ['何敏'],
     creator: '王芳', createdAt: '2026-03-22 09:00:00', updatedAt: '2026-06-09 14:05:00',
   },
   {
@@ -50,7 +50,7 @@ export const tasks = [
     deviceTypeId: 'DTY-005', deviceInstanceId: 'INS-010', device: 'DEV-E01', method: '外骨骼', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 400, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
-    status: '草稿', collectors: ['吴磊'], annotators: ['何敏'],
+    status: '草稿', collectors: [], annotators: ['何敏'],
     creator: '王芳', layoutId: 3, createdAt: '2026-06-01 16:20:00', updatedAt: '2026-06-01 16:20:00',
   },
   {
@@ -58,7 +58,7 @@ export const tasks = [
     deviceTypeId: 'DTY-001', deviceInstanceId: 'INS-004', device: 'DEV-D01', method: 'VR遥操', scene: '厨房操作',
     projectId: 'P-1002', projectName: '厨房烹饪操作采集',
     collectTotal: 350, collectDone: 350, reviewDone: 350, acceptDone: 350, dataTotal: 350,
-    status: '已归档', collectors: ['刘伟', '郑浩'], annotators: ['何敏'],
+    status: '已归档', collectors: ['刘伟'], annotators: ['何敏'],
     creator: '王芳', createdAt: '2026-04-05 13:10:00', updatedAt: '2026-05-28 10:00:00',
   },
   {
@@ -66,7 +66,7 @@ export const tasks = [
     deviceTypeId: 'DTY-003', deviceInstanceId: 'INS-007', device: 'DEV-B01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 452, reviewDone: 430, acceptDone: 400, dataTotal: 452,
-    status: '已发布', collectors: ['郑浩'], annotators: ['钱琳'],
+    status: '已发布', collectors: ['周杰'], annotators: ['钱琳'],
     creator: '李明', createdAt: '2026-04-03 08:45:00', updatedAt: '2026-06-10 08:30:00',
   },
   {
@@ -74,7 +74,7 @@ export const tasks = [
     deviceTypeId: 'DTY-003', deviceInstanceId: 'INS-007', device: 'DEV-B01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 600, collectDone: 0, reviewDone: 0, acceptDone: 0, dataTotal: 0,
-    status: '草稿', collectors: ['郑浩'], annotators: ['钱琳'],
+    status: '草稿', collectors: ['周杰'], annotators: ['钱琳'],
     creator: '李明', layoutId: 5, createdAt: '2026-05-12 10:30:00', updatedAt: '2026-05-12 10:30:00',
   },
   {
@@ -82,7 +82,7 @@ export const tasks = [
     deviceTypeId: 'DTY-004', deviceInstanceId: 'INS-009', device: 'DEV-C01', method: 'VR遥操', scene: '工业装配',
     projectId: 'P-1003', projectName: '工业零件装配采集',
     collectTotal: 450, collectDone: 450, reviewDone: 318, acceptDone: 300, dataTotal: 450,
-    status: '已归档', collectors: ['吴磊', '刘伟', '周杰'], annotators: ['钱琳'],
+    status: '已归档', collectors: ['郑浩'], annotators: ['钱琳'],
     creator: '李明', createdAt: '2026-04-25 09:50:00', updatedAt: '2026-05-30 18:20:00',
   },
   {
@@ -114,7 +114,7 @@ export const tasks = [
     deviceTypeId: 'DTY-004', deviceInstanceId: 'INS-009', device: 'DEV-C01', method: 'VR遥操', scene: '餐饮服务',
     projectId: 'P-1006', projectName: '餐桌清理采集',
     collectTotal: 200, collectDone: 58, reviewDone: 20, acceptDone: 12, dataTotal: 58,
-    status: '已发布', collectors: ['郑浩', '吴磊'], annotators: ['孙丽'],
+    status: '已发布', collectors: [], annotators: ['孙丽'],
     creator: '孙丽', createdAt: '2026-05-11 18:00:00', updatedAt: '2026-06-06 20:10:00',
   },
   {
@@ -130,7 +130,7 @@ export const tasks = [
     deviceTypeId: 'DTY-002', deviceInstanceId: 'INS-006', device: 'DEV-F01', method: '外骨骼', scene: '办公整理',
     projectId: 'P-1008', projectName: '精细抓取操作采集',
     collectTotal: 800, collectDone: 215, reviewDone: 96, acceptDone: 72, dataTotal: 215,
-    status: '已发布', collectors: ['吴磊'], annotators: ['钱琳', '孙丽'],
+    status: '已发布', collectors: ['刘伟'], annotators: ['钱琳'],
     creator: '李明', createdAt: '2026-05-27 10:00:00', updatedAt: '2026-06-10 15:30:00',
   },
 ]

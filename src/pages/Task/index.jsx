@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useMemo, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../../components/common/Button'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
@@ -46,7 +46,6 @@ export default function TaskList({
   tasks: externalTasks,
   onTasksChange,
   initialMemberFilter = null,
-  onMemberFilterApplied,
 }) {
   const { user } = useAuth()
   const location = useLocation()
@@ -94,20 +93,19 @@ export default function TaskList({
 
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!initialMemberFilter) return
     const { name, role } = initialMemberFilter
     if (role === '采集员') {
       setQCollector(name)
       setQReviewer('')
       setFilters({ collector: name })
-    } else {
+    } else if (role === '标注员') {
       setQReviewer(name)
       setQCollector('')
       setFilters({ reviewer: name })
     }
-    onMemberFilterApplied?.()
-  }, [initialMemberFilter, onMemberFilterApplied])
+  }, [initialMemberFilter])
 
   const scopedTasks = useMemo(
     () => filterTasksByDataScope(tasks, user.nickname, user.role),

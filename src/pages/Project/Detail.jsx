@@ -1077,6 +1077,10 @@ export default function ProjectDetail() {
   const [tasks, setTasksState] = useState(() => [...taskStore])
   const [taskMemberFilter, setTaskMemberFilter] = useState(null)
 
+  useEffect(() => {
+    if (tab !== 'task') setTaskMemberFilter(null)
+  }, [tab])
+
   const setTasks = useCallback((updater) => {
     setTasksState(syncTasks(updater))
   }, [])
@@ -1154,12 +1158,12 @@ export default function ProjectDetail() {
 
       {tab === 'task' && (
         <TaskList
+          key={taskMemberFilter ? `${taskMemberFilter.name}-${taskMemberFilter.role}` : 'all'}
           fixedProjectId={id}
           projectStatus={projectStatus}
           tasks={tasks}
           onTasksChange={setTasks}
           initialMemberFilter={taskMemberFilter}
-          onMemberFilterApplied={() => setTaskMemberFilter(null)}
         />
       )}
       {tab === 'scheme'    && <SchemeTab projectId={id} projectStatus={projectStatus} onTasksChange={setTasks} />}
