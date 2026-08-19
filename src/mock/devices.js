@@ -2,19 +2,6 @@ import { buildTypeName } from '../utils/deviceTypeName'
 
 const initialDeviceTypes = [
   {
-    id: 'DTY-007',
-    name: 'DemoBot · 演示夹爪+演示夹爪',
-    body: 'DemoBot',
-    leftEnd: '演示·测试夹爪',
-    rightEnd: '演示·测试夹爪',
-    hasUrdf: false,
-    urdfStatus: 'none',
-    description: '【走查用】未绑定任务，可测试类型编辑/删除',
-    creator: '张华',
-    createdAt: '2026-08-14 10:00:00',
-    updatedAt: '2026-08-14 10:00:00',
-  },
-  {
     id: 'DTY-001',
     name: 'AlphaBot1 · 夹爪+夹爪',
     body: 'AlphaBot1',
@@ -95,7 +82,6 @@ const initialDeviceTypes = [
 ]
 
 const initialDeviceInstances = [
-  { id: 'INS-011', typeId: 'DTY-007', code: 'DEV-DEMO', sn: 'SN20260814DEMO1', status: '在线', battery: 100, description: '【走查用】未绑定任务，可测试实例删除', createdAt: '2026-08-14 10:00:00', registeredAt: '2026-08-14 10:00:00', updatedAt: '2026-08-14 10:00:00' },
   { id: 'INS-001', typeId: 'DTY-001', code: 'DEV-A01', sn: 'SN20260310A8842', status: '在线', battery: 85, description: '客厅分拣工位主设备', createdAt: '2026-03-10 09:00:00', registeredAt: '2026-03-10 09:00:00', updatedAt: '2026-06-10 09:00:00' },
   { id: 'INS-002', typeId: 'DTY-001', code: 'DEV-A02', sn: 'SN20260310B1276', status: '在线', battery: 72, description: '客厅分拣工位备用设备', createdAt: '2026-03-10 09:05:00', registeredAt: '2026-03-10 09:05:00', updatedAt: '2026-06-09 14:30:00' },
   { id: 'INS-003', typeId: 'DTY-001', code: 'DEV-B02', sn: 'SN20260404E7613', status: '离线', battery: 45, description: '', createdAt: '2026-04-04 11:00:00', registeredAt: '2026-04-04 11:00:00', updatedAt: '2026-06-08 08:15:00' },
