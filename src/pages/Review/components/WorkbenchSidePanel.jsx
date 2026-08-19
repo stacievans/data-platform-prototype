@@ -485,7 +485,7 @@ function OverallAnnotationEditor({
 
       {form.auditConclusion === 'reject' && (
         <div>
-          <RequiredLabel optional>问题标签</RequiredLabel>
+          <RequiredLabel>问题标签</RequiredLabel>
           <div className="flex flex-wrap gap-1.5">
             {PROBLEM_TAG_OPTIONS.map((tag) => {
               const checked = form.auditTags.includes(tag)

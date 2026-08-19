@@ -487,6 +487,10 @@ export default function Workbench() {
       showToast('请选择质量标签')
       return
     }
+    if (form.auditConclusion === 'reject' && !form.auditTags.length) {
+      showToast('请选择问题标签')
+      return
+    }
 
     if (form.auditConclusion === 'pass') {
       syncFromEntry(updateEntry(entryId, {

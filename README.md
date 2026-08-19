@@ -869,7 +869,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 标题区同款 **模式 Badge**；**左缘拖拽**调整宽度（280~560px，默认 340px）
 - **四模块默认收起**，点击标题栏展开；模块内「采集方案详情」亦默认收起
 1. **基础信息**：采集项目 → 采集任务 → 所属场景 → 采集员 → 设备类型 → 采集设备 → 采集方式 → 格式·时长 → 「采集方案详情」
-2. **整体标注**：标注结论（通过/驳回）；通过时质量标签 + 描述；驳回时问题标签 + 驳回理由
+2. **整体标注**：标注结论*（通过/驳回）；通过时 **质量标签*** + 描述（选填）；驳回时 **问题标签***（多选）+ 描述（选填）
 3. **片段标注**：按方案 `fragmentAnnotTypes` 动态渲染多表（动作语义 / 区域帧 / 采集打点等）；表格列：序号、起始帧、结束帧、标注、操作
 4. **验收**：验收结论（通过/驳回）；描述（选填）
 
@@ -880,8 +880,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **Mock 数据**：已标注类条目经 `buildDefaultFragmentSegmentsMock()` 填充多行步骤描述与区域说明（`entries.js` → `fragmentSegmentsByType`）
 
 **提交逻辑**：
-- **保存**（标注 / 验收）→ 暂存当前填写内容（标注含质量标签、问题标签、描述、片段；验收含描述）；未改动时保存按钮禁用
-- **提交**（标注 / 验收）→ 校验结论与必填项后写入最终状态（标注 `已标注` / `标注不通过`；验收 `已验收` / `验收不通过`），并跳转同任务下一条；末条回任务详情
+- **保存**（标注 / 验收）→ 暂存当前填写内容（标注含质量标签、问题标签、描述、片段；验收含描述）；未改动时保存按钮禁用；**保存不校验必填项**
+- **提交**（标注）→ 校验：标注结论必选；**通过**时质量标签必选；**驳回**时问题标签至少选 1 项（Toast「请选择问题标签」）；描述仍为选填；通过后写入 `已标注` / `标注不通过`，并跳转同任务下一条
+- **提交**（验收）→ 校验验收结论必选；描述选填；通过后写入 `已验收` / `验收不通过`，并跳转同任务下一条；末条回任务详情
 - **上一条 / 下一条**（顶栏）→ 仅切换条目，不保存、不提交
 - 验收提交联动 `syncBatchesAfterEntryAccept`
 
@@ -1435,7 +1436,7 @@ scripts/
 | 系统列表 ID/名称列 | 组织/角色/用户列表 **ID 与名称列常规字重**（不加粗），名称列仍可点击跳转 |
 | 用户登录方式 | 字段 `loginMethod`（`账号密码` / `飞书SSO`）；未设置时默认「账号密码」；列表与筛选展示 |
 | 角色管理 UI | 新建 Drawer **无角色ID**、描述选填；列表操作「编辑」→ `RolePermissionModal`（标题「编辑权限」）；`MenuPermissionTree`（**父子联动默认关**、权限树对齐侧栏架构）+ `ProjectDataTransfer` |
-| 标注工作台 | 三模式共用 **四模块** 侧栏（**默认收起**）；**模式 Badge** 顶栏+侧栏标题；**布局 B** 单布局；侧栏 **左缘拖拽** 280~560px；`play` 全只读；**`play` + `source=backflow`** 隐藏右侧面板、时间轴 minimal；`review` / `accept` 底部 **保存 + 提交**；片段 **行内增删改**（无弹窗/属性网格）；顶栏 **上一条 / 下一条** 仅导航（回流播放保留 query）；验收提交联动 `syncBatchesAfterEntryAccept` |
+| 标注工作台 | 三模式共用 **四模块** 侧栏（**默认收起**）；**模式 Badge** 顶栏+侧栏标题；**布局 B** 单布局；侧栏 **左缘拖拽** 280~560px；`play` 全只读；**`play` + `source=backflow`** 隐藏右侧面板、时间轴 minimal；`review` / `accept` 底部 **保存 + 提交**；整体标注提交校验：**通过**需质量标签、**驳回**需问题标签（至少 1 项）；片段 **行内增删改**（无弹窗/属性网格）；顶栏 **上一条 / 下一条** 仅导航（回流播放保留 query）；验收提交联动 `syncBatchesAfterEntryAccept` |
 | 真机回流 runtime | `backflowDevices.js` → `updateBackflowDeviceAlias`；`backflowTriggers.js` → 触发器 CRUD + 关联设备保存；事件/看板为会话内只读 mock（刷新恢复 seed） |
 | 设备实例 SN | `InstanceList` 编辑 Drawer：**SN 可编辑**，保存时 `isDeviceSnTaken(sn, excludeId)` 唯一校验 |
 | 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
@@ -1555,7 +1556,9 @@ scripts/
 
 快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, `flowHistory`，以及标注/验收相关字段（`auditResult`, **`auditQuality`**, `auditTags`, `auditComment`, `actionSegments`, `regionFrames`, `acceptResult`, `acceptComment`, `reviewTime`, `acceptTime`, `reviewOperator`, `acceptOperator` 等）
 
-**质量标签**：工作台使用「高质量 / 中质量 / 低质量」；mock 中旧值「优秀 / 可接受 / 差」进入工作台时经 `normalizeAuditQuality` 映射
+**质量标签**：工作台使用「高质量 / 中质量 / 低质量」；标注结论为 **通过** 时提交必填；mock 中旧值「优秀 / 可接受 / 差」进入工作台时经 `normalizeAuditQuality` 映射
+
+**问题标签**：工作台 **21 项**多选（`workbenchTags.js` → `PROBLEM_TAG_OPTIONS`）；标注结论为 **驳回** 时提交必填（至少选 1 项）
 
 **驳回理由 mock**：`标注不通过` / `验收不通过` 且缺少意见时，按条目ID 哈希从预设文案池自动补齐
 
