@@ -17,6 +17,7 @@ import {
   peopleMatchQuery,
   getTaskCollectors,
   getTaskAnnotators,
+  getTaskAcceptors,
 } from '../../mock/tasks'
 import { getAllDeviceTypes } from '../../mock/devices'
 import { IconSearch, IconChevronDown } from '../../components/common/Icons'
@@ -82,6 +83,7 @@ export default function TaskList({
   const [qPlanId, setQPlanId] = useState('')
   const [qCollector, setQCollector] = useState('')
   const [qReviewer, setQReviewer] = useState('')
+  const [qAcceptor, setQAcceptor] = useState('')
   const [qPurpose, setQPurpose] = useState('全部')
   const [qBodyType, setQBodyType] = useState('全部')
   const [qScene, setQScene] = useState('全部')
@@ -95,15 +97,22 @@ export default function TaskList({
 
   useLayoutEffect(() => {
     if (!initialMemberFilter) return
-    const { name, role } = initialMemberFilter
+    const { username, role } = initialMemberFilter
     if (role === '采集员') {
-      setQCollector(name)
+      setQCollector(username)
       setQReviewer('')
-      setFilters({ collector: name })
+      setQAcceptor('')
+      setFilters({ collector: username })
     } else if (role === '标注员') {
-      setQReviewer(name)
+      setQReviewer(username)
       setQCollector('')
-      setFilters({ reviewer: name })
+      setQAcceptor('')
+      setFilters({ reviewer: username })
+    } else if (role === '验收员') {
+      setQAcceptor(username)
+      setQCollector('')
+      setQReviewer('')
+      setFilters({ acceptor: username })
     }
   }, [initialMemberFilter])
 
@@ -127,7 +136,7 @@ export default function TaskList({
 
   const filtered = useMemo(() => {
     const {
-      taskId, taskName, projectName, planId, collector, reviewer,
+      taskId, taskName, projectName, planId, collector, reviewer, acceptor,
       purpose, bodyType, scene, method, status,
     } = filters
     return poolTasks
@@ -139,6 +148,7 @@ export default function TaskList({
         if (planId && !String(t.planId ?? '').toLowerCase().includes(planId.toLowerCase())) return false
         if (collector && !peopleMatchQuery(getTaskCollectors(t), collector)) return false
         if (reviewer && !peopleMatchQuery(getTaskAnnotators(t), reviewer)) return false
+        if (acceptor && !peopleMatchQuery(getTaskAcceptors(t), acceptor)) return false
         if (purpose && purpose !== '全部' && t.purpose !== purpose) return false
         if (bodyType && bodyType !== '全部' && enriched.deviceTypeId !== bodyType) return false
         if (scene && scene !== '全部' && t.scene !== scene) return false
@@ -200,6 +210,7 @@ export default function TaskList({
     planId: qPlanId,
     collector: qCollector,
     reviewer: qReviewer,
+    acceptor: qAcceptor,
     purpose: qPurpose,
     bodyType: qBodyType,
     scene: qScene,
@@ -214,6 +225,7 @@ export default function TaskList({
     setQPlanId('')
     setQCollector('')
     setQReviewer('')
+    setQAcceptor('')
     setQPurpose('全部')
     setQBodyType('全部')
     setQScene('全部')
@@ -282,12 +294,12 @@ export default function TaskList({
             </div>
             <div className={FILTER_FIELD}>
               <label className={LBL}>采集员</label>
-              <input value={qCollector} onChange={(e) => setQCollector(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
+              <input value={qCollector} onChange={(e) => setQCollector(e.target.value)} placeholder="请输入用户名" className={INPUT_CLS} />
             </div>
             {fixedProjectId && (
               <div className={FILTER_FIELD}>
                 <label className={LBL}>标注员</label>
-                <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
+                <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入用户名" className={INPUT_CLS} />
               </div>
             )}
           </div>
@@ -297,7 +309,13 @@ export default function TaskList({
               {!fixedProjectId && (
                 <div className={FILTER_FIELD}>
                   <label className={LBL}>标注员</label>
-                  <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入姓名" className={INPUT_CLS} />
+                  <input value={qReviewer} onChange={(e) => setQReviewer(e.target.value)} placeholder="请输入用户名" className={INPUT_CLS} />
+                </div>
+              )}
+              {fixedProjectId && (
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>验收员</label>
+                  <input value={qAcceptor} onChange={(e) => setQAcceptor(e.target.value)} placeholder="请输入用户名" className={INPUT_CLS} />
                 </div>
               )}
               <div className={FILTER_FIELD}>

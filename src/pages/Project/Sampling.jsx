@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
@@ -62,6 +64,65 @@ function passRateTone(rate) {
   return 'text-red-500'
 }
 
+function PassRateColumnTitle() {
+  const triggerRef = useRef(null)
+  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const hint = '点击查看批次通过率详情'
+
+  const updatePos = useCallback(() => {
+    const el = triggerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    setPos({ top: rect.top - 6, left: rect.left + rect.width / 2 })
+  }, [])
+
+  const show = () => { updatePos(); setVisible(true) }
+  const hide = () => setVisible(false)
+
+  useEffect(() => {
+    if (!visible) return undefined
+    const onReposition = () => updatePos()
+    window.addEventListener('scroll', onReposition, true)
+    window.addEventListener('resize', onReposition)
+    return () => {
+      window.removeEventListener('scroll', onReposition, true)
+      window.removeEventListener('resize', onReposition)
+    }
+  }, [visible, updatePos])
+
+  const tooltip = visible ? createPortal(
+    <div
+      style={{ position: 'fixed', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+      className="pointer-events-none whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs font-normal text-white shadow"
+      role="tooltip"
+    >
+      {hint}
+    </div>,
+    document.body,
+  ) : null
+
+  return (
+    <>
+      <span className="inline-flex items-center justify-center gap-1">
+        <span>通过率</span>
+        <span
+          ref={triggerRef}
+          className="inline-flex cursor-help text-xs font-normal leading-none text-gray-400"
+          aria-label={hint}
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          onFocus={show}
+          onBlur={hide}
+        >
+          ⓘ
+        </span>
+      </span>
+      {tooltip}
+    </>
+  )
+}
+
 /** 创建抽检批次并写入 store，返回新批次 id */
 export function createSamplingBatchRecord({ projectId, name, configItems, filters, creator }) {
   const resolvedFilters = filters ?? defaultSamplingFilters()
@@ -101,6 +162,7 @@ export default function SamplingPanel({
   onHighlightConsumed,
   onGoToTaskTab,
 }) {
+  const navigate = useNavigate()
   const project = projects.find((p) => p.id === projectId)
   const creatorName = useCurrentNickname()
   const { ToastNode, show: showToast } = useToast()
@@ -312,7 +374,15 @@ export default function SamplingPanel({
         </span>
       ),
     },
-    { title: '批次名称', dataIndex: 'name', render: (v) => <span className="text-gray-700">{v}</span> },
+    { title: '批次名称', dataIndex: 'name', render: (v, row) => (
+      <button
+        type="button"
+        onClick={() => navigate(`/collection/project/${projectId}/sampling/${row.id}`)}
+        className="cursor-pointer text-blue-600 hover:text-blue-500"
+      >
+        {v}
+      </button>
+    ) },
     {
       title: '任务数',
       key: 'taskCount',
@@ -321,11 +391,19 @@ export default function SamplingPanel({
     { title: '总条目', dataIndex: 'totalEntries' },
     { title: '抽检条目', dataIndex: 'sampledEntries' },
     {
-      title: '通过率',
+      title: <PassRateColumnTitle />,
       key: 'passRate',
       render: (_, row) => {
         const rate = calcPassRate(row)
-        return <span className={`font-medium ${passRateTone(rate)}`}>{rate}%</span>
+        return (
+          <button
+            type="button"
+            onClick={() => setDetailTarget(row)}
+            className={`cursor-pointer font-medium ${passRateTone(rate)}`}
+          >
+            {rate}%
+          </button>
+        )
       },
     },
     {
@@ -358,7 +436,7 @@ export default function SamplingPanel({
           <button
             type="button"
             className="cursor-pointer text-blue-600 hover:text-blue-500"
-            onClick={() => setDetailTarget(row)}
+            onClick={() => navigate(`/collection/project/${projectId}/sampling/${row.id}`)}
           >
             详情
           </button>

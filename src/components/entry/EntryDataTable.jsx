@@ -9,8 +9,10 @@ import DeleteConfirmModal from '../common/DeleteConfirmModal'
 import { IconSearch, IconChevronDown } from '../common/Icons'
 import { getQcItemsByProjectId } from '../../mock/plans'
 import { resolveQcRowResult } from '../../utils/qcResults'
-import { formatReviewer } from '../../mock/tasks'
 import EntryActions from '../common/EntryActions'
+import BatchStatusDrawer from './BatchStatusDrawer'
+import BatchOpDetailModal from './BatchOpDetailModal'
+import { resolveReviewOperator, resolveAcceptOperator } from './entryTableHelpers'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import {
   deriveProcessStatuses,
@@ -25,6 +27,7 @@ import {
   matchProcessSubFilter,
   countProcessSubStatuses,
   filterEntriesByForm,
+  stripFlowLabelRound,
 } from '../../utils/entryProcess'
 import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { formatDateTime } from '../../utils/formatDateTime'
@@ -138,7 +141,7 @@ function OperatorTooltipWrap({ operator, status, children }) {
   )
 }
 
-function ProcessStatusCell({ status, operator, onClick, clickable = false }) {
+function ProcessStatusCell({ status, operator, onClick, clickable = false, clickAnyStatus = false }) {
   const label = PROCESS_STATUS_LABEL[status] ?? '—'
   const colorCls = status === 'rejected'
     ? 'text-red-600'
@@ -149,7 +152,7 @@ function ProcessStatusCell({ status, operator, onClick, clickable = false }) {
         : status === 'pending'
           ? 'text-gray-500'
           : 'text-gray-300'
-  const canClick = clickable && (status === 'passed' || status === 'rejected')
+  const canClick = clickable && (clickAnyStatus || status === 'passed' || status === 'rejected')
   const inner = (
     <span
       className={`inline-flex items-center gap-1.5 text-sm ${
@@ -438,11 +441,14 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
               {i < nodes.length - 1 && <span className="absolute left-[7px] top-3 h-[calc(100%-4px)] w-px bg-gray-200" />}
               <span className="relative z-10 mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-blue-500 bg-white" />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-gray-800">{node.label}</div>
+                <div className="text-sm font-medium text-gray-800">{stripFlowLabelRound(node.label)}</div>
                 <div className="mt-1 space-y-0.5 text-xs text-gray-500">
                   <div>轮次：第 {node.round ?? 1} 轮</div>
                   <div>操作人：{node.operator ?? '—'}</div>
                   <div className="text-gray-400">时间：{formatDateTime(node.time)}</div>
+                  {node.batchOp && node.batchDetail && (
+                    <div className="text-gray-400">详情：{node.batchDetail}</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -454,15 +460,28 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
 }
 
 
-function resolveReviewOperator(entry, task) {
-  return entry.reviewOperator ?? {
-    nickname: formatReviewer(task?.reviewer) === '—' ? '孙丽' : formatReviewer(task.reviewer),
-    id: 'U-2001',
+function resolveStatusClick(row, field, handlers) {
+  const ps = deriveProcessStatuses(row)
+  const status = ps[field]
+  if (status === 'none') return
+  const isQcBatchPending = row.batchQcPending && field === 'qc' && status === 'pending'
+  if (isQcBatchPending) return
+  if (row.lastBatchTransfer) {
+    handlers.onBatchOp?.(row)
+    return
   }
+  if (field === 'qc' && (status === 'passed' || status === 'rejected')) handlers.onQc?.(row)
+  if (field === 'review' && (status === 'passed' || status === 'rejected')) handlers.onReview?.(row)
+  if (field === 'accept' && (status === 'passed' || status === 'rejected')) handlers.onAccept?.(row)
 }
 
-function resolveAcceptOperator(entry) {
-  return entry.acceptOperator ?? { nickname: '陈静', id: 'U-2002' }
+function isStatusClickable(row, field) {
+  const ps = deriveProcessStatuses(row)
+  const status = ps[field]
+  if (status === 'none') return false
+  if (row.batchQcPending && field === 'qc' && status === 'pending') return false
+  if (row.lastBatchTransfer) return true
+  return status === 'passed' || status === 'rejected'
 }
 
 export default function EntryDataTable({
@@ -470,9 +489,15 @@ export default function EntryDataTable({
   getTask,
   getProjectId,
   onDelete,
+  onBatchTransfer,
   listTitle = '采集条目列表',
   hideProcessTabs = false,
   showScopeColumns = false,
+  hideDownload = false,
+  hideQcReviewFormFilters = false,
+  hideToolbarActions = false,
+  singleRowFormFilters = false,
+  showTaskColumn = false,
 }) {
   const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
@@ -492,6 +517,15 @@ export default function EntryDataTable({
   const [acceptTarget, setAcceptTarget] = useState(null)
   const [flowTarget, setFlowTarget] = useState(null)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [batchDrawerOpen, setBatchDrawerOpen] = useState(false)
+  const [batchOpTarget, setBatchOpTarget] = useState(null)
+
+  const statusClickHandlers = useMemo(() => ({
+    onBatchOp: setBatchOpTarget,
+    onQc: setQcTarget,
+    onReview: setReviewTarget,
+    onAccept: setAcceptTarget,
+  }), [])
 
   const resolveScope = useCallback((entry) => {
     const task = getTask?.(entry)
@@ -620,6 +654,11 @@ export default function EntryDataTable({
     ] : []),
     { title: '文件ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs text-gray-600">{v ?? row.id.replace('E-', 'F-')}</span> },
     { title: '文件名称', key: 'displayName', render: (_, row) => <span className="font-mono text-xs">{getEntryDisplayFileName(row)}</span> },
+    ...(showTaskColumn ? [{
+      title: '所属任务',
+      key: 'taskName',
+      render: (_, row) => <span className="text-gray-700">{resolveScope(row).taskName || '—'}</span>,
+    }] : []),
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
@@ -641,8 +680,9 @@ export default function EntryDataTable({
         return (
           <ProcessStatusCell
             status={ps.qc}
-            clickable={ps.qc === 'passed' || ps.qc === 'rejected'}
-            onClick={() => setQcTarget(row)}
+            clickable={isStatusClickable(row, 'qc')}
+            clickAnyStatus={!!row.lastBatchTransfer}
+            onClick={() => resolveStatusClick(row, 'qc', statusClickHandlers)}
           />
         )
       },
@@ -660,8 +700,9 @@ export default function EntryDataTable({
           <ProcessStatusCell
             status={ps.review}
             operator={operator}
-            clickable={ps.review === 'passed' || ps.review === 'rejected'}
-            onClick={() => setReviewTarget(row)}
+            clickable={isStatusClickable(row, 'review')}
+            clickAnyStatus={!!row.lastBatchTransfer}
+            onClick={() => resolveStatusClick(row, 'review', statusClickHandlers)}
           />
         )
       },
@@ -678,8 +719,9 @@ export default function EntryDataTable({
           <ProcessStatusCell
             status={ps.accept}
             operator={operator}
-            clickable={ps.accept === 'passed' || ps.accept === 'rejected'}
-            onClick={() => setAcceptTarget(row)}
+            clickable={isStatusClickable(row, 'accept')}
+            clickAnyStatus={!!row.lastBatchTransfer}
+            onClick={() => resolveStatusClick(row, 'accept', statusClickHandlers)}
           />
         )
       },
@@ -694,8 +736,10 @@ export default function EntryDataTable({
     {
       title: '操作',
       key: 'actions',
-      width: 280,
-      render: (_, row) => <EntryActions entry={row} onDelete={() => setDeleteTarget(row)} />,
+      width: hideDownload ? 180 : 280,
+      render: (_, row) => (
+        <EntryActions entry={row} hideDownload={hideDownload} compact={hideDownload} onDelete={() => setDeleteTarget(row)} />
+      ),
     },
   ]
 
@@ -721,7 +765,7 @@ export default function EntryDataTable({
 
       <ListPageFilter className={!hideProcessTabs ? 'pt-3' : ''}>
         <div className="space-y-3">
-          <div className={FILTER_GRID_ROW}>
+          <div className={singleRowFormFilters ? 'grid grid-cols-4 gap-3' : FILTER_GRID_ROW}>
             <div className={FILTER_FIELD}>
               <label className={LBL}>条目ID</label>
               <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
@@ -748,7 +792,15 @@ export default function EntryDataTable({
                 {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
-            {!showScopeColumns && (
+            {singleRowFormFilters && (
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>验收状态</label>
+                <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            )}
+            {!showScopeColumns && !hideQcReviewFormFilters && !singleRowFormFilters && (
               <>
                 <div className={FILTER_FIELD}>
                   <label className={LBL}>质检状态</label>
@@ -766,7 +818,7 @@ export default function EntryDataTable({
             )}
           </div>
 
-          {filtersExpanded && (
+          {filtersExpanded && !singleRowFormFilters && (
             <div className={FILTER_GRID_ROW}>
               {showScopeColumns ? (
                 <>
@@ -801,14 +853,16 @@ export default function EntryDataTable({
           )}
 
           <div className={FILTER_ACTIONS}>
-            <button
-              type="button"
-              onClick={() => setFiltersExpanded((v) => !v)}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
-            >
-              {filtersExpanded ? '收起筛选' : '展开筛选'}
-              <IconChevronDown className={`transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
-            </button>
+            {!singleRowFormFilters && (
+              <button
+                type="button"
+                onClick={() => setFiltersExpanded((v) => !v)}
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+              >
+                {filtersExpanded ? '收起筛选' : '展开筛选'}
+                <IconChevronDown className={`transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+              </button>
+            )}
             <Button onClick={resetFilters}>重置</Button>
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
@@ -817,11 +871,19 @@ export default function EntryDataTable({
 
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={!hasSelection}>批量下载</Button>
-          <Button disabled={!hasSelection}>重新质检</Button>
-          <Button disabled={!hasSelection}>播放转码</Button>
-        </div>
+        {!hideToolbarActions && (
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={!hasSelection}>批量下载</Button>
+            <Button disabled={!hasSelection}>播放转码</Button>
+            <Button
+              variant="primary"
+              title="批量操作条目状态，实现跨工序进行流转"
+              onClick={() => setBatchDrawerOpen(true)}
+            >
+              批量操作状态
+            </Button>
+          </div>
+        )}
       </ListPageToolbar>
 
       <Table
@@ -855,6 +917,24 @@ export default function EntryDataTable({
         entry={flowTarget}
         task={flowTarget ? getTask?.(flowTarget) : null}
         onClose={() => setFlowTarget(null)}
+      />
+
+      <BatchStatusDrawer
+        open={batchDrawerOpen}
+        entries={entries}
+        getTask={getTask}
+        onClose={() => setBatchDrawerOpen(false)}
+        onConfirm={onBatchTransfer}
+        onQcDetail={setQcTarget}
+        onReviewDetail={setReviewTarget}
+        onAcceptDetail={setAcceptTarget}
+        onFlowDetail={setFlowTarget}
+      />
+
+      <BatchOpDetailModal
+        open={!!batchOpTarget}
+        record={batchOpTarget?.lastBatchTransfer}
+        onClose={() => setBatchOpTarget(null)}
       />
 
     </div>

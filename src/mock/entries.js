@@ -95,7 +95,7 @@ function buildEntryExtras(task) {
 
 export const entries = tasks.flatMap((task, ti) => {
   const rand = seeded(ti + 7)
-  const count = 5 + Math.floor(rand() * 6)
+  const count = task.id === 'T-2001' ? 10 : 5 + Math.floor(rand() * 6)
   const extras = buildEntryExtras(task)
   return Array.from({ length: count }).map((_, i) => {
     const sizeMB = Math.round((80 + rand() * 1900) * 10) / 10
@@ -171,7 +171,49 @@ const DEMO_OVERRIDES = {
     totalFrames: 3140,
   },
   'E-200105': {
+    dataStatus: '已解析',
+    qcTime: '2026-06-14 11:00:00',
+    flowHistory: [
+      { label: '质检通过', round: 1, time: '2026-06-14 11:00:00', operator: '系统自动' },
+    ],
+  },
+  'E-200106': {
+    dataStatus: '已解析',
+    reviewClaimedBy: { nickname: '孙丽', id: 'U-006' },
+    reviewClaimedAt: '2026-06-16 09:20:00',
+    qcTime: '2026-06-15 18:30:00',
+    flowHistory: [
+      { label: '质检通过', round: 1, time: '2026-06-15 18:30:00', operator: '系统自动' },
+    ],
+  },
+  'E-200107': {
     dataStatus: '已标注',
+    qcTime: '2026-06-15 09:30:00',
+    reviewOperator: { nickname: '孙丽', id: 'U-006' },
+    reviewTime: '2026-06-15 14:50:00',
+    flowHistory: [
+      { label: '标注通过（第1轮）', round: 1, time: '2026-06-15 14:50:00', operator: '孙丽(U-006)' },
+      { label: '质检通过', round: 1, time: '2026-06-15 09:30:00', operator: '系统自动' },
+    ],
+    auditScore: 4,
+    auditResult: '通过',
+    auditQuality: '中质量',
+    auditTags: [],
+    auditComment: '标注完成，等待验收。',
+    actionSegments: DEFAULT_ACTION_SEGMENTS,
+    regionFrames: DEFAULT_REGION_FRAMES,
+  },
+  'E-200108': {
+    dataStatus: '已标注',
+    acceptClaimedBy: { nickname: '陈静', id: 'U-016' },
+    acceptClaimedAt: '2026-06-16 10:45:00',
+    qcTime: '2026-06-14 11:00:00',
+    reviewOperator: { nickname: '孙丽', id: 'U-006' },
+    reviewTime: '2026-06-15 16:20:00',
+    flowHistory: [
+      { label: '标注通过（第1轮）', round: 1, time: '2026-06-15 16:20:00', operator: '孙丽(U-006)' },
+      { label: '质检通过', round: 1, time: '2026-06-14 11:00:00', operator: '系统自动' },
+    ],
     auditScore: 4,
     auditResult: '通过',
     auditQuality: '中质量',
@@ -180,16 +222,16 @@ const DEMO_OVERRIDES = {
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
-  'E-200106': {
+  'E-200109': {
     dataStatus: '验收不通过',
     qcTime: '2026-05-10 08:30:00',
-    reviewOperator: { nickname: '何敏', id: 'U-2003' },
+    reviewOperator: { nickname: '何敏', id: 'U-007' },
     reviewTime: '2026-05-12 11:20:00',
-    acceptOperator: { nickname: '陈静', id: 'U-2002' },
+    acceptOperator: { nickname: '陈静', id: 'U-016' },
     acceptTime: '2026-05-14 16:45:00',
     flowHistory: [
-      { label: '验收驳回（第1轮）', round: 1, time: '2026-05-14 16:45:00', operator: '陈静(U-2002)' },
-      { label: '标注通过（第1轮）', round: 1, time: '2026-05-12 11:20:00', operator: '何敏(U-2003)' },
+      { label: '验收驳回（第1轮）', round: 1, time: '2026-05-14 16:45:00', operator: '陈静(U-016)' },
+      { label: '标注通过（第1轮）', round: 1, time: '2026-05-12 11:20:00', operator: '何敏(U-007)' },
       { label: '质检通过', round: 1, time: '2026-05-10 08:30:00', operator: '系统自动' },
     ],
     auditScore: 4,
@@ -202,6 +244,7 @@ const DEMO_OVERRIDES = {
     actionSegments: DEFAULT_ACTION_SEGMENTS,
     regionFrames: DEFAULT_REGION_FRAMES,
   },
+  'E-200110': { dataStatus: '已上传' },
   'E-200701': {
     dataStatus: '已验收',
     auditScore: 5,

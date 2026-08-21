@@ -370,11 +370,13 @@ export default function UserListPanel({
 
     const names = new Set(assignableRoleNames)
 
+    if (variant === 'org') names.add(ORG_ADMIN_ROLE)
+
     editForm.roles.forEach((r) => names.add(r))
 
     return [...names]
 
-  }, [assignableRoleNames, editForm.roles])
+  }, [assignableRoleNames, editForm.roles, variant])
 
 
 
@@ -606,7 +608,7 @@ export default function UserListPanel({
 
     const nextErrs = {}
 
-    if (variant !== 'org' && !editForm.roles.length) nextErrs.roles = true
+    if (!editForm.roles.length) nextErrs.roles = true
 
     if (Object.keys(nextErrs).length) {
 
@@ -624,7 +626,7 @@ export default function UserListPanel({
 
       remark: editForm.remark.trim(),
 
-      role: variant === 'org' ? ORG_ADMIN_ROLE : formatRoles(editForm.roles),
+      role: formatRoles(editForm.roles),
 
     }
 
@@ -959,7 +961,7 @@ export default function UserListPanel({
 
 
 
-        {variant === 'org' ? (
+        {variant === 'org' && isCreate ? (
 
           <ReadonlyField label="角色" value={ORG_ADMIN_ROLE} />
 

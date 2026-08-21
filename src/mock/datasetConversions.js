@@ -164,6 +164,38 @@ export function appendConvertedDataset(record) {
   return record
 }
 
+function nextLabelSubmissionId() {
+  const nums = runtimeLabelSubmissions.map((r) => parseInt(r.id.replace('LS-', ''), 10) || 0)
+  return `LS-${String(Math.max(0, ...nums, 4000) + 1).padStart(4, '0')}`
+}
+
+export function appendLabelSubmissionRecord({
+  convertedDatasetId,
+  inputDatasetName,
+  targetDatasetId,
+  packageCount,
+  remark,
+  fileIds,
+  operator,
+}) {
+  const record = {
+    id: nextLabelSubmissionId(),
+    convertedDatasetId,
+    inputDatasetName,
+    targetDatasetId,
+    targetDatasetName: targetDatasetId,
+    packageCount: packageCount?.trim() ? packageCount.trim() : null,
+    remark: remark?.trim() ?? '',
+    fileIds: [...fileIds],
+    fileCount: fileIds.length,
+    status: '进行中',
+    operator,
+    operatedAt: nowDateTime(),
+  }
+  runtimeLabelSubmissions = [record, ...runtimeLabelSubmissions]
+  return record
+}
+
 export function createConversionJob({
   datasetId,
   datasetName,

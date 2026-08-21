@@ -19,7 +19,7 @@ export function deriveProcessStatuses(entryOrStatus) {
       base = { qc: 'passed', review: 'pending', accept: 'none' }
       break
     case '标注不通过':
-      base = { qc: 'passed', review: 'rejected', accept: 'none' }
+      base = { qc: 'passed', review: 'rejected', accept: 'pending' }
       break
     case '已标注':
       base = { qc: 'passed', review: 'passed', accept: 'pending' }
@@ -46,7 +46,7 @@ export function deriveProcessStatuses(entryOrStatus) {
 
 export const PROCESS_STATUS_LABEL = {
   pending: '待处理',
-  processing: '处理中',
+  processing: '进行中',
   passed: '已通过',
   rejected: '已驳回',
   none: '—',
@@ -97,10 +97,23 @@ function buildFlowNode({ label, time, operator, round }) {
   return normalizeFlowNode(node)
 }
 
-/** 无显式 flowHistory 时，由 dataStatus 推导基础流转节点（时间倒序，最新在前） */
+export function stripFlowLabelRound(label) {
+  return String(label ?? '').replace(/（第\d+轮）/g, '')
+}
+
+export function sortFlowHistoryChronological(nodes) {
+  return [...nodes].sort((a, b) => {
+    const ta = new Date(String(a.time ?? '').replace(' ', 'T')).getTime()
+    const tb = new Date(String(b.time ?? '').replace(' ', 'T')).getTime()
+    if (Number.isNaN(ta) || Number.isNaN(tb)) return 0
+    return ta - tb
+  })
+}
+
+/** 无显式 flowHistory 时，由 dataStatus 推导基础流转节点（时间正序，最早在前） */
 export function resolveFlowHistory(entry, task) {
   if (entry.flowHistory?.length) {
-    return entry.flowHistory.map(normalizeFlowNode)
+    return sortFlowHistoryChronological(entry.flowHistory.map(normalizeFlowNode))
   }
 
   const reviewer = entry.reviewOperator ?? defaultReviewOperator(task)
@@ -108,56 +121,56 @@ export function resolveFlowHistory(entry, task) {
   const qcTime = formatDateTime(entry.qcTime ?? entry.uploadTime)
   const nodes = []
 
-  const push = (node) => nodes.unshift(buildFlowNode(node))
+  const push = (node) => nodes.push(buildFlowNode(node))
 
   switch (entry.dataStatus) {
     case '已验收':
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       push({
-        label: '验收通过（第1轮）',
-        time: entry.acceptTime ?? shiftTime(qcTime, 48),
-        operator: formatOperatorPlain(acceptor),
-        round: 1,
-      })
-      push({
-        label: '标注通过（第1轮）',
+        label: '标注通过',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
         round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
+      push({
+        label: '验收通过',
+        time: entry.acceptTime ?? shiftTime(qcTime, 48),
+        operator: formatOperatorPlain(acceptor),
+        round: 1,
+      })
       break
     case '验收不通过':
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       push({
-        label: '验收驳回（第1轮）',
+        label: '标注通过',
+        time: entry.reviewTime ?? shiftTime(qcTime, 24),
+        operator: formatOperatorPlain(reviewer),
+        round: 1,
+      })
+      push({
+        label: '验收驳回',
         time: entry.acceptTime ?? shiftTime(qcTime, 48),
         operator: formatOperatorPlain(acceptor),
         round: 1,
       })
-      push({
-        label: '标注通过（第1轮）',
-        time: entry.reviewTime ?? shiftTime(qcTime, 24),
-        operator: formatOperatorPlain(reviewer),
-        round: 1,
-      })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     case '已标注':
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       push({
-        label: '标注通过（第1轮）',
+        label: '标注通过',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
         round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     case '标注不通过':
+      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       push({
-        label: '标注驳回（第1轮）',
+        label: '标注驳回',
         time: entry.reviewTime ?? shiftTime(qcTime, 24),
         operator: formatOperatorPlain(reviewer),
         round: 1,
       })
-      push({ label: '质检通过', time: qcTime, operator: '系统自动', round: 1 })
       break
     case '已上传':
       break
@@ -198,12 +211,12 @@ export const PROCESS_TABS = [
 export const PROCESS_SUB_STATUS_OPTIONS = [
   { key: 'all', label: '全部' },
   { key: 'pending', label: '待处理' },
-  { key: 'processing', label: '处理中' },
+  { key: 'processing', label: '进行中' },
   { key: 'passed', label: '已通过' },
   { key: 'rejected', label: '已驳回' },
 ]
 
-export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '处理中', '已通过', '已驳回']
+export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '进行中', '已通过', '已驳回']
 
 export function getProcessFieldKey(tab) {
   if (tab === 'qc') return 'qc'
@@ -215,7 +228,7 @@ export function getProcessFieldKey(tab) {
 export function formLabelToStatus(label) {
   const map = {
     待处理: 'pending',
-    处理中: 'processing',
+    进行中: 'processing',
     已通过: 'passed',
     已驳回: 'rejected',
   }

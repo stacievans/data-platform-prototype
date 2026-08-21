@@ -70,7 +70,7 @@ const TABS = [
   { key: 'task',      label: '采集任务' },
   { key: 'scheme',    label: '采标方案' },
   { key: 'members',   label: '项目成员' },
-  { key: 'sampling',  label: '抽样验收' },
+  { key: 'sampling',  label: '验收管理' },
   { key: 'dashboard', label: '运营看板' },
 ]
 
@@ -1158,7 +1158,7 @@ export default function ProjectDetail() {
 
       {tab === 'task' && (
         <TaskList
-          key={taskMemberFilter ? `${taskMemberFilter.name}-${taskMemberFilter.role}` : 'all'}
+          key={taskMemberFilter ? `${taskMemberFilter.username}-${taskMemberFilter.role}` : 'all'}
           fixedProjectId={id}
           projectStatus={projectStatus}
           tasks={tasks}
@@ -1172,8 +1172,8 @@ export default function ProjectDetail() {
           projectId={id}
           projectTasks={projectTasks}
           onTasksChange={setTasks}
-          onViewMemberTasks={(name, role) => {
-            setTaskMemberFilter({ name, role })
+          onViewMemberTasks={(username, role) => {
+            setTaskMemberFilter({ username, role })
             handleTabChange('task')
           }}
         />

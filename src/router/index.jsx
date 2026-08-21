@@ -4,6 +4,7 @@ import LoginPage from '../pages/Login/LoginPage'
 import Dashboard from '../pages/Dashboard'
 import ProjectList from '../pages/Project'
 import ProjectDetail from '../pages/Project/Detail'
+import SamplingBatchDetail from '../pages/Project/SamplingBatchDetail'
 import TaskDetail from '../pages/Task/Detail'
 import SelfDataset from '../pages/Dataset/Self'
 import SelfDatasetDetail from '../pages/Dataset/SelfDetail'
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
       { path: 'backflow/triggers', element: <BackflowTriggersPage /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'collection/project', element: <ProjectList /> },
+      { path: 'collection/project/:projectId/sampling/:batchId', element: <SamplingBatchDetail /> },
       { path: 'collection/project/:id/sampling', element: <ProjectSamplingRedirect /> },
       { path: 'collection/project/:id', element: <ProjectDetail /> },
       { path: 'collection/task/:id', element: <TaskDetail /> },

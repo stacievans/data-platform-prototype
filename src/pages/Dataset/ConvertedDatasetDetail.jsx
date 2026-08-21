@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../../components/common/Button'
+import Drawer from '../../components/common/Drawer'
 import Table from '../../components/common/Table'
 import Tabs from '../../components/common/Tabs'
 import ListPageCard, { ListPageToolbar } from '../../components/common/ListPageCard'
 import Badge from '../../components/common/Badge'
+import { DescriptionField } from '../../components/common/FormField'
+import { useToast } from '../../components/common/Toast'
+import { useCurrentUsername } from '../../context/AuthContext'
 import {
   getConvertedDatasetById,
   getConvertedDatasetFiles,
   getLabelSubmissionRecordsByConvertedId,
+  appendLabelSubmissionRecord,
 } from '../../mock/datasetConversions'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol, formatDateTime } from '../../utils/formatDateTime'
@@ -24,10 +29,144 @@ const LABEL_STATUS_COLOR = {
   失败: 'red',
 }
 
-function FilesList({ convertedId }) {
+const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const LBL = 'mb-1 block text-xs text-gray-500'
+
+function OneClickLabelDrawer({ open, selectedCount, onClose, onSubmit }) {
+  const [targetDatasetId, setTargetDatasetId] = useState('')
+  const [packageCount, setPackageCount] = useState('')
+  const [remark, setRemark] = useState('')
+  const [error, setError] = useState(false)
+
+  const handleClose = () => {
+    setTargetDatasetId('')
+    setPackageCount('')
+    setRemark('')
+    setError(false)
+    onClose()
+  }
+
+  const handleSubmit = () => {
+    if (!targetDatasetId.trim()) {
+      setError(true)
+      return
+    }
+    onSubmit({
+      targetDatasetId: targetDatasetId.trim(),
+      packageCount: packageCount.trim(),
+      remark: remark.trim(),
+    })
+    handleClose()
+  }
+
+  return (
+    <Drawer
+      open={open}
+      title="一键送标"
+      onCancel={handleClose}
+      onOk={handleSubmit}
+      okText="确定"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">已选中 {selectedCount} 个文件</p>
+        <div>
+          <label className={`${LBL} flex items-center gap-0.5`}>
+            目标数据集ID
+            <span className="text-red-500">*</span>
+          </label>
+          <input
+            value={targetDatasetId}
+            onChange={(e) => {
+              setTargetDatasetId(e.target.value)
+              if (e.target.value.trim()) setError(false)
+            }}
+            placeholder="请输入标注平台的数据集ID"
+            className={`${INPUT_CLS}${error ? ' border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
+          />
+          {error && <p className="mt-1 text-xs text-red-500">请填写目标数据集ID</p>}
+        </div>
+        <div>
+          <label className={LBL}>分包数量</label>
+          <input
+            value={packageCount}
+            onChange={(e) => setPackageCount(e.target.value)}
+            placeholder="请输入分包数量"
+            className={INPUT_CLS}
+          />
+        </div>
+        <DescriptionField
+          label="备注"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+          placeholder="请输入备注"
+        />
+      </div>
+    </Drawer>
+  )
+}
+
+function FilesList({ convertedId, convertedName, onLabelSubmitted }) {
   const files = useMemo(() => getConvertedDatasetFiles(convertedId), [convertedId])
+  const operator = useCurrentUsername()
+  const { show, ToastNode } = useToast()
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const allSelected = files.length > 0 && files.every((f) => selectedIds.has(f.id))
+
+  const toggleAll = () => {
+    if (allSelected) setSelectedIds(new Set())
+    else setSelectedIds(new Set(files.map((f) => f.id)))
+  }
+
+  const toggleRow = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleSubmit = ({ targetDatasetId, packageCount, remark }) => {
+    appendLabelSubmissionRecord({
+      convertedDatasetId: convertedId,
+      inputDatasetName: convertedName,
+      targetDatasetId,
+      packageCount,
+      remark,
+      fileIds: [...selectedIds],
+      operator,
+    })
+    setSelectedIds(new Set())
+    onLabelSubmitted?.()
+    show('送标任务已提交')
+  }
 
   const columns = [
+    {
+      title: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={toggleAll}
+          disabled={!files.length}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
+          aria-label="全选"
+        />
+      ),
+      key: 'select',
+      width: 48,
+      render: (_, row) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.id)}
+          onChange={() => toggleRow(row.id)}
+          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          aria-label={`选择 ${row.id}`}
+        />
+      ),
+    },
     { title: '文件ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '文件名称', dataIndex: 'name', render: (v) => <span className="font-mono text-xs text-gray-800">{v}</span> },
     { title: '文件大小', dataIndex: 'size' },
@@ -37,9 +176,12 @@ function FilesList({ convertedId }) {
 
   return (
     <>
+      {ToastNode}
       <ListPageToolbar first>
         <h3 className="text-sm font-semibold text-gray-800">数据集文件列表</h3>
-        <span />
+        <Button variant="primary" disabled={!selectedIds.size} onClick={() => setDrawerOpen(true)}>
+          一键送标
+        </Button>
       </ListPageToolbar>
 
       <Table
@@ -49,14 +191,21 @@ function FilesList({ convertedId }) {
         rowKey="id"
         pageSize={LIST_PAGE_SIZE}
       />
+
+      <OneClickLabelDrawer
+        open={drawerOpen}
+        selectedCount={selectedIds.size}
+        onClose={() => setDrawerOpen(false)}
+        onSubmit={handleSubmit}
+      />
     </>
   )
 }
 
-function LabelSubmissionList({ convertedId }) {
+function LabelSubmissionList({ convertedId, refreshKey }) {
   const records = useMemo(
     () => getLabelSubmissionRecordsByConvertedId(convertedId),
-    [convertedId],
+    [convertedId, refreshKey],
   )
 
   const columns = [
@@ -103,6 +252,7 @@ export default function ConvertedDatasetDetail() {
   const { datasetId, convertedId } = useParams()
   const navigate = useNavigate()
   const [tab, setTab] = useState('files')
+  const [labelRecordsVersion, setLabelRecordsVersion] = useState(0)
 
   const converted = useMemo(() => getConvertedDatasetById(convertedId), [convertedId])
 
@@ -144,9 +294,15 @@ export default function ConvertedDatasetDetail() {
           <Tabs items={DETAIL_TABS} activeKey={tab} onChange={setTab} />
         </div>
 
-        {tab === 'files' && <FilesList convertedId={converted.id} />}
+        {tab === 'files' && (
+          <FilesList
+            convertedId={converted.id}
+            convertedName={converted.name}
+            onLabelSubmitted={() => setLabelRecordsVersion((v) => v + 1)}
+          />
+        )}
         {tab === 'labelSubmission' && (
-          <LabelSubmissionList convertedId={converted.id} />
+          <LabelSubmissionList convertedId={converted.id} refreshKey={labelRecordsVersion} />
         )}
       </ListPageCard>
     </div>

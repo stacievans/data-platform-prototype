@@ -14,12 +14,14 @@ export default function Drawer({
   width = MAIN_THIRD_WIDTH,
   footer,
   zIndex = 50,
+  mask = true,
+  okDisabled = false,
 }) {
   if (!open) return null
 
   return (
     <div className="fixed inset-0" style={{ zIndex }}>
-      <div className="absolute inset-0 bg-black/45" onClick={onCancel} aria-hidden />
+      {mask && <div className="absolute inset-0 bg-black/45" onClick={onCancel} aria-hidden />}
       <div
         className="absolute right-0 top-0 flex h-full flex-col bg-white shadow-xl transition-[width] duration-200"
         style={{ width, maxWidth: '100vw' }}
@@ -45,7 +47,7 @@ export default function Drawer({
             {footer || (
               <>
                 <Button onClick={onCancel}>{cancelText}</Button>
-                <Button variant="primary" onClick={onOk}>
+                <Button variant="primary" onClick={onOk} disabled={okDisabled}>
                   {okText}
                 </Button>
               </>

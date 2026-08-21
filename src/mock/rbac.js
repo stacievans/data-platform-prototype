@@ -36,6 +36,14 @@ const initialRoles = [
   },
   {
     id: 'R-005',
+    name: '验收员',
+    description: '负责采集条目验收与抽检批次处理',
+    createdAt: '2026-03-01 00:00:00',
+    type: '内置',
+    status: '启用',
+  },
+  {
+    id: 'R-006',
     name: '游客',
     description: '查看数据集、标签与设备信息',
     createdAt: '2026-03-01 00:00:00',
@@ -43,7 +51,7 @@ const initialRoles = [
     status: '启用',
   },
   {
-    id: 'R-006',
+    id: 'R-007',
     name: '工程师',
     description: '查看并下载数据集、标签与设备信息',
     createdAt: '2026-03-01 00:00:00',
@@ -51,7 +59,7 @@ const initialRoles = [
     status: '启用',
   },
   {
-    id: 'R-007',
+    id: 'R-008',
     name: '数据审核员',
     description: '负责数据集审核与导出审批，无平台配置权限',
     createdAt: '2026-05-20 10:00:00',
@@ -59,7 +67,7 @@ const initialRoles = [
     status: '启用',
   },
   {
-    id: 'R-008',
+    id: 'R-009',
     name: '区域协调员',
     description: '协调区域采集资源与任务排期',
     createdAt: '2026-05-22 14:30:00',

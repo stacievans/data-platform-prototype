@@ -3,19 +3,22 @@ import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { filterEntriesByDataScope } from '../../mock/permissions'
 import { getAllEntries, updateEntry } from '../../mock/entries'
+import { getBatchById } from '../../mock/samplingBatches'
 import { buildBatchTransferPatch } from '../../utils/entryBatchTransfer'
 import { tasks } from '../../mock/tasks'
 import EntryDataTable from '../entry/EntryDataTable'
 
-export default function EntryListPanel({ taskId, projectId }) {
+export default function SamplingBatchEntryListPanel({ batchId, projectId }) {
   const { user } = useAuth()
   const location = useLocation()
   const [entryList, setEntryList] = useState([])
 
   useEffect(() => {
-    const raw = getAllEntries().filter((e) => e.taskId === taskId)
+    const batch = getBatchById(batchId)
+    const idSet = new Set(batch?.entryIds ?? [])
+    const raw = getAllEntries().filter((e) => idSet.has(e.id))
     setEntryList(filterEntriesByDataScope(raw, user.nickname, user.role))
-  }, [taskId, user.nickname, user.role, location.key])
+  }, [batchId, user.nickname, user.role, location.key])
 
   const getTask = (entry) => tasks.find((t) => t.id === entry.taskId)
   const getProjectId = () => projectId
@@ -51,6 +54,13 @@ export default function EntryListPanel({ taskId, projectId }) {
       getProjectId={getProjectId}
       onDelete={(id) => setEntryList((list) => list.filter((e) => e.id !== id))}
       onBatchTransfer={handleBatchTransfer}
+      listTitle="抽检条目列表"
+      hideProcessTabs
+      hideDownload
+      hideQcReviewFormFilters
+      singleRowFormFilters
+      hideToolbarActions
+      showTaskColumn
     />
   )
 }

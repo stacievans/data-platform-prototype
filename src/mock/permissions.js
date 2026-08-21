@@ -146,6 +146,7 @@ export function buildRolePermissionPreset(roleName) {
       })
     case '采集员':
     case '标注员':
+    case '验收员':
       return [...COLLECTOR_ANNOTATOR_KEYS]
     case '工程师':
       return [

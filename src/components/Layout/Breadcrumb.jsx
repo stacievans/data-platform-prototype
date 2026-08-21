@@ -52,6 +52,15 @@ export default function Breadcrumb() {
     }
   }
 
+  const batchMatch = pathname.match(/^\/collection\/project\/([^/]+)\/sampling\/([^/]+)/)
+  if (batchMatch) {
+    crumbs = [
+      ['采集项目', '/collection/project'],
+      ['项目详情', `/collection/project/${batchMatch[1]}?tab=sampling`],
+      ['抽检批次详情'],
+    ]
+  }
+
   const convertedMatch = pathname.match(/^\/dataset\/self\/([^/]+)\/converted\/.+/)
   if (convertedMatch) {
     const datasetId = convertedMatch[1]

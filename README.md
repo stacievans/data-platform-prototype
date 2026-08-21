@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **抽样验收** · **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员双页签**、按角色独立分配；添加成员从系统角色筛选；**查看任务**跳转采集任务 Tab 并筛选）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **勾选 + 一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；添加成员从系统角色筛选；**查看任务**跳转采集任务 Tab 并筛选）· 任务详情采集条目 **批量操作状态**（双级 Drawer 跨工序流转 + 操作记录弹窗）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -103,7 +103,7 @@ npm run preview
 |---|---|
 | 顶栏 `Header` | 深色顶栏（`bg-slate-900`）：Logo + 折叠按钮 + **模块 Tab**（**数采中心** → `/dashboard`、**真机回流** → `/backflow`）；右侧 **外部连接** 下拉（帮助文档 / 标注平台 / 数据看板，新标签打开）+ **用户下拉**（切换组织、退出登录） |
 | 侧边栏 `Sidebar` | 深色导航，支持折叠（`w-52` / `w-16`）；**按顶栏模块 Tab 切换菜单**：**数采中心** 展示采集/数据集/设备/标签/系统管理；**真机回流** 展示回流看板 / 回流设备 / 事件中心 / 触发器（`/backflow` 使用 `end: true` 精确匹配激活态）；**原型阶段展示全部菜单项**；底部 **`VersionInfo`** 展示当前版本号与日期，点击展开本版说明 |
-| 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」；真机回流为「真机回流 / 回流看板|回流设备|事件中心|触发器配置」 |
+| 面包屑 `Breadcrumb` | 格式 **`当前位置：xx / xx`**（末级蓝色，中间级可点链接；无「首页」）；采集相关路径已扁平为「采集项目 / …」；**抽检批次详情** 为「采集项目 / 项目详情 / 抽检批次详情」；真机回流为「真机回流 / 回流看板|回流设备|事件中心|触发器配置」 |
 | 内容区 | 各业务页面；背景 `#f0f2f5`；**原型阶段不因 RBAC 拦截** |
 
 **侧边栏菜单（数采中心，自上而下）**：数采介绍 · 运营看板 · **采集项目** · 数据集管理（真机数据集）· **设备管理** · 标签管理（采集/设备/审核模板）· 系统管理（用户/角色/组织）
@@ -153,9 +153,9 @@ npm run preview
 |---|---|---|
 | 绑定对象 | 用户账号（`users.role`，多角色以 `&` 连接） | 项目成员 Tab **按角色独立记录**（`projectMembers[].role`） |
 | 配置位置 | 用户管理 / 角色管理 | 项目详情 → 项目成员（**不在此赋予平台角色**） |
-| 可选值 | **超级管理员**（不在角色列表）、**组织管理员**、平台运营、采集员、标注员、**采集员&标注员**、**游客**、**工程师** | 采集员、标注员（平台运营由创建人合成，列表不展示） |
+| 可选值 | **超级管理员**（不在角色列表）、**组织管理员**、平台运营、采集员、标注员、**验收员**、**采集员&标注员**、**游客**、**工程师** | 采集员、标注员、**验收员**（平台运营由创建人合成，列表不展示） |
 | 作用 | 侧边栏、路由、按钮 **功能权限**；添加成员时的 **用户候选筛选** | 该项目下 **按角色独立** 的任务分配；同一用户可同时在两页签各有一条记录 |
-| 多选 | **是**（用户管理新建/编辑支持多角色，存储为 `角色A&角色B`，列表 Badge 拆分展示；组织详情新建固定「组织管理员」） | 添加成员时可 **多选角色**，但列表按页签拆行；每行仅一个 `role` |
+| 多选 | **是**（用户管理新建/编辑支持多角色，存储为 `角色A&角色B`，列表 Badge 拆分展示；组织详情 **新建**固定「组织管理员」，**编辑可改角色**） | 添加成员时可 **多选角色**，但列表按页签拆行；每行仅一个 `role` |
 
 > **游客** / **工程师** 在 RBAC catalog 中为只读型预设（游客无 `collection.*`、工程师保留数据集 download）；**原型阶段**因全量开放，实际浏览不受上述限制。
 
@@ -180,7 +180,7 @@ Sidebar          展示全部菜单（原型不过滤）
 PermissionGuard  原型直接放行
 ProjectMutateGate 项目关闭/归档时置灰新建类入口 + Tooltip
 PermissionAction PermButton / PermAction / PermMenuItem（原型均可用；组件仍保留权限 key 参数）
-UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建/编辑弹窗；global 新建走 CreateInviteUserModal
+UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建/编辑弹窗；global 新建走 CreateInviteUserModal；org 编辑支持 RoleMultiSelect
 页面组件         数据范围 filter 原型不过滤；操作按钮权限 key 仍传入组件
 ```
 
@@ -229,7 +229,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ### 内置角色 preset
 
-`rbac.js` 预置 **6 个内置角色**（`type: '内置'`），权限由 `permissions.js` → `buildRolePermissionPreset` 生成。**超级管理员**不在此列表，由 AuthContext 单独处理：
+`rbac.js` 预置 **7 个内置角色**（`type: '内置'`），权限由 `permissions.js` → `buildRolePermissionPreset` 生成。**超级管理员**不在此列表，由 AuthContext 单独处理：
 
 | ID | 角色 | 描述（摘要） |
 |---|---|---|
@@ -237,8 +237,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | R-002 | 平台运营 | 管理采集项目/任务，查看数据集与报表 |
 | R-003 | 采集员 | 执行采集任务，上传数据 |
 | R-004 | 标注员 | 标注采集数据，进行质检标注 |
-| R-005 | **游客** | 查看数据集、标签与设备（无采集模块、无下载） |
-| R-006 | **工程师** | 查看并下载数据集、标签与设备（无采集模块） |
+| R-005 | **验收员** | 验收采集数据 |
+| R-006 | **游客** | 查看数据集、标签与设备（无采集模块、无下载） |
+| R-007 | **工程师** | 查看并下载数据集、标签与设备（无采集模块） |
 
 | 角色 | 权限范围（摘要） |
 |---|---|
@@ -247,6 +248,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | **平台运营** | 除 `system.*` 外全部；`tag.*` / `device.*` 仅 **view**（可浏览不可新建/编辑/删除） |
 | **采集员** | 与标注员相同：`dashboard.view`；`collection.project/task/upload` 的 view + upload download；`dataset.self` 的 view + download；`tag.view`；`device.view` |
 | **标注员** | 同采集员（功能权限一致；数据范围见下表） |
+| **验收员** | 同采集员（功能权限一致；数据范围见下表） |
 | **游客** | `dashboard.view`；`dataset.self` 的 **view**；`tag.view`；`device.view`（无 `collection.*`、无下载） |
 | **工程师** | `dashboard.view`；`dataset.self` 的 view + download；`tag.view`；`device.view`（无 `collection.*`） |
 
@@ -268,9 +270,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 页面 | 受控操作 |
 |---|---|
 | 采集项目 | **+ 新建**（Drawer）；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态；**列表无验收入口**） |
-| 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**抽样验收** Tab、运营看板；采集方案列表含 **片段标注配置** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
+| 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**验收管理** Tab、运营看板；采集方案列表含 **片段标注配置** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、标注、验收、**导出 ▾**（标签/质检报告）、归档、删除（**已发布无删除**；**已归档**保留复制/导出，标注/验收 **置灰禁用**） |
-| 采集条目 | 下载、删除 |
+| 采集条目 | 下载、删除；**批量操作状态**（跨工序流转） |
 | 真机数据集 | 新建（Drawer）、删除、下载说明；详情数据条目 Tab：**转图片/转视频**（范围弹窗 + 配置 Drawer）、**CLI 批量下载**、删除（`DeleteConfirmModal`）；卡片菜单删除 |
 | 标签管理 | 各 Tab 新建；行内编辑、删除 |
 | 设备管理 | 新建类型/实例；行内编辑、删除 |
@@ -484,7 +486,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | **关闭** | 查看详情 · 编辑 · 开启 · 归档 | 同上 |
 | **归档** | 查看详情 · 删除 | 查看详情 · 删除 |
 
-- **验收**：项目列表**不再提供「验收」入口**。统一在项目详情内进行——采集任务 Tab 勾选任务发起「抽样验收」，批次管理在「抽样验收」Tab
+- **验收**：项目列表**不再提供「验收」入口**。统一在项目详情内进行——采集任务 Tab 勾选任务发起「抽样验收」，批次管理在 **「验收管理」** Tab
 - **关闭 / 开启**：Toast 提示；关闭后项目详情内新建任务、新建方案等入口由 `ProjectMutateGate` 置灰
 - **归档**：`DeleteConfirmModal`（样式同删除确认；正文保留项目名）；操作栏「归档」为 **橙色**（`text-amber-600`）；归档后不可新建，仍可查看与下载
 - **删除**：仅归档项目；`DeleteConfirmModal`
@@ -505,7 +507,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 采集任务 | 复用 `Task/index.jsx`（`fixedProjectId` 锁定当前项目，传入 `projectStatus`；隐藏「所属项目名称」筛选与列表列，含筛选区 + `TaskTable` + 「抽样验收」+ 「+ 新建任务」）；支持 URL `?tab=task` |
 | 采标方案 | 内含 **3 个二级 Tab**（胶囊样式，见下文） |
 | **项目成员** | 成员列表 + **右侧 Drawer** 添加成员/配置任务 + 分配校验（见下文） |
-| **抽样验收** | 复用 `Sampling.jsx` → `SamplingPanel`（筛选 + 批次列表 + 批量处理；**无「+ 新建」**）；支持 `?tab=sampling`、`&highlight={batchId}` 高亮新建行 |
+| **验收管理** | 复用 `Sampling.jsx` → `SamplingPanel`（筛选 + 批次列表 + 批量处理；**无「+ 新建」**）；支持 `?tab=sampling`、`&highlight={batchId}` 高亮新建行；**批次名称 / 操作「详情」** → 抽检批次详情页 |
 | 运营看板 | 复用 `RealDataTab`（`fixedProjectId` 锁定当前项目，隐藏全局项目筛选） |
 
 **项目关闭/归档限制**：详情页内「+ 新建任务」、采集方案「+ 新建」、质检导入、播放布局「+ 新建」等写入类入口外包 `ProjectMutateGate`；关闭/归档时置灰并 Tooltip（如「项目已关闭，无法新建」）。
@@ -633,59 +635,74 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### 项目成员 Tab（`MembersTab.jsx`）
 
-**列表结构**（10 条/页）：
-- 表格上方 **采集员 / 标注员** 两个页签（默认选中 **采集员**）；各页签为 **独立成员表**
-- 同一用户若在两角色下均有任务分配，则 **两页签各一行**，`taskIds` **互不关联**
-- 列：**姓名**、**负责任务数**、加入时间、操作（**查看任务** / **配置任务**）；**无「角色」列**（角色即当前页签）
+**布局**（10 条/页）：
+- 页签行与 **分配校验** 按钮 **同一行**（校验靠右）；下方按页签切换列表
+- 表格上方 **采集员 / 标注员 / 验收员** 三个页签（默认 **采集员**）；各页签为 **独立成员表**
+- 同一用户若在多角色下均有任务分配，则 **各页签各一行**，`taskIds` **互不关联**
+- 列表标题随页签：**采集员列表** / **标注员列表** / **验收员列表**
+- 列：**用户ID**、**用户名**、**负责任务数**、加入时间、操作（**查看任务** / **配置任务**）；**无「角色」列**（角色即当前页签）
 - 列表 **不展示** `role === '平台运营'` 的合成行（如项目创建人）
+- 列表上方筛选：**用户ID**、**用户名**（`ListPageFilter` + 查询/重置，与采集方案列表风格一致）
 
-**添加成员**（**右侧 Drawer**；底部 **取消 / 确定**）：
-1. **角色**（必选，**多选** pill）：采集员 / 标注员
-2. **选择用户**（必选，**单选** `PersonDropdownSelect`）：须先选角色；候选 = 系统中 **具备所勾选全部平台角色** 的用户（勾采集员→须为采集员或采集员&标注员；同时勾两角色→须为双角色用户），再排除 **已在对应角色页签** 中的成员；排除项目创建人
-3. **配置任务**（必选）：候选均为 **本项目全部任务**（任务本身不分采集/标注维度）；若勾选两角色，分别展示 **「配置任务（采集员）」** 与 **「配置任务（标注员）」** 两个 `TaskCheckboxList`，可配不同任务
+**添加成员**（各页签右上角 **添加成员**；**右侧 Drawer**；底部 **取消 / 确定**）：
+1. **角色**（只读，= 当前页签）：采集员 / 标注员 / 验收员
+2. **选择用户**（必选，**单选** `PersonDropdownSelect`）：候选 = 系统中 **具备当前页签对应平台角色** 的用户，再排除 **已在当前页签** 中的成员；排除项目创建人
+3. **配置任务**（必选）：`TaskCheckboxList`，候选为本项目全部任务
 
 **配置任务**（行内；**右侧 Drawer**，标题「配置任务」；宽 `min(960px, …)`）：
-- **成员**、**角色**（只读；角色 = 当前页签） 
+- **用户ID**、**用户名**、**角色**（只读；角色 = 当前页签）
 - **配置任务**（`TreeTransfer` 项目-任务树；候选为本项目全部任务；支持增/移）
-- 仅更新 **当前页签角色** 的分配；保存时同步写回 `tasks.js` 上对应任务的 `collectors` / `annotators`
-- 字段下方灰色提示：**「无任务时，自动将该成员从项目成员列表中移除」**（`pruneEmptyMembers` **按页签独立**判断，不影响另一角色行）
+- 仅更新 **当前页签角色** 的分配；保存时同步写回 `tasks.js` 上对应任务的 `collectors` / `annotators` / **`acceptors`**
+- 字段下方灰色提示：**「无任务时，自动将该成员从项目成员列表中移除」**（`pruneEmptyMembers` **按页签独立**判断，不影响其他角色行）
 
 **查看任务**：
-- 跳转 **采集任务 Tab**，并按 **当前页签角色** 预填筛选：采集员页签 → 筛选「采集员」= 该姓名；标注员页签 → 筛选「标注员」= 该姓名
+- 跳转 **采集任务 Tab**，并按 **当前页签角色** 预填筛选：采集员 → **采集员**；标注员 → **标注员**；验收员 → **验收员**（筛选值为 **username**）
 - 由 `Detail.jsx` → `taskMemberFilter` → `Task/index.jsx` `initialMemberFilter` + `useLayoutEffect` 应用；离开任务 Tab 时清空筛选
 
 **分配校验**：
 - 若仍有未分配任务 → 打开 **任务分配矩阵** Modal
 - 若全部已分配 → 顶部居中 **成功 Toast**「任务已全部完成分配！」
-- 矩阵内：待分配任务表（任务名称、采集员、标注员、操作「分配」）；右上角「批量分配」
-- **单任务分配** Modal：任务名称 / 采集员 / 标注员 **均为必填**；已分配角色只读展示
-- **批量分配** Modal：角色多选；选择用户单选；分配任务多选
+- 矩阵内：待分配任务表（任务名称、采集员、标注员、**验收员**、操作「分配」）；右上角「批量分配」
+- **单任务分配** Modal：任务名称 / 采集员 / 标注员 / **验收员** **均为必填**；已分配角色只读展示
+- **批量分配** Modal：**角色单选**（采集员 / 标注员 / 验收员）；选择用户单选；分配任务多选
 
-**Mock 双角色演示**（P-1001）：**吴磊** 在采集员页签负责 T-2004、在标注员页签负责 T-2002；用户管理中 **钱琳 / 吴磊 / 郑浩** 为 `采集员&标注员`，可用于添加成员时「同时勾选两角色」的候选筛选演示。
+**Mock 双角色演示**（P-1001）：**吴磊** 在采集员页签负责 T-2004、在标注员页签负责 T-2002；用户管理中 **钱琳 / 吴磊 / 郑浩** 为 `采集员&标注员`。
 
-**Mock 与任务列表对齐**：`tasks.js` 各任务的 `collectors` / `annotators`（及兼容字段 `collector` / `reviewer`）与 `misc.js` → `projectMembers` 按 `taskIds` + `role` **保持一致**，保证「查看任务」筛选结果与成员「负责任务数」一致。
+**Mock 与任务列表对齐**：`misc.js` → `projectMembers` 使用 **`uid` + `username` + `role` + `taskIds`**；`tasks.js` 各任务的 `collectors` / `annotators` / **`acceptors`**（及兼容字段 `collector` / `reviewer`）与成员分配 **保持一致**，保证「查看任务」筛选与「负责任务数」一致。
 
 ---
 
-### 抽样验收（项目详情 Tab · `SamplingPanel`）
+### 验收管理（项目详情 Tab · `SamplingPanel`）
 
-入口：项目详情「抽样验收」Tab、或采集任务 Tab 勾选后点「抽样验收」创建批次。旧路由 `/collection/project/:id/sampling` **重定向**至 `/collection/project/:id?tab=sampling`。项目列表**不再提供「验收」按钮**。
+入口：项目详情 **「验收管理」** Tab、或采集任务 Tab 勾选后点「抽样验收」创建批次。旧路由 `/collection/project/:id/sampling` **重定向**至 `/collection/project/:id?tab=sampling`。项目列表**不再提供「验收」按钮**。
 
 #### Tab 批次列表（无「+ 新建」）
 
 - **筛选区**：批次ID、批次名称、**创建人**（**下拉单选**，默认「请选择」；选项来自当前项目批次创建人去重）；三列均匀铺满，「重置」「查询」右对齐
   - 输入框/下拉即时编辑；点 **查询** 才写入 applied filters 并过滤列表
   - **重置** 同时清空输入框与 applied filters
-- **抽检批次列表**（10 条/页）：勾选、批次ID、批次名称、**任务数**、总条目、抽检条目、通过率、验收进度、创建人、创建时间、操作（**已去掉「抽样依据」列**）；任务数取自 `configItems.length`
+- **抽检批次列表**（10 条/页）：勾选、批次ID、**批次名称**（蓝色可点 → **抽检批次详情页**）、**任务数**、总条目、抽检条目、**通过率**（可点 → 通过率明细弹窗；列名 **ⓘ** hover 提示「点击查看批次通过率详情」，`createPortal` 避免表格 overflow 裁切）、验收进度、创建人、创建时间、操作（**已去掉「抽样依据」列**）；任务数取自 `configItems.length`
 - **标题栏**：左侧「抽检批次列表」；右侧浅色引导「新建抽检批次请前往**采集任务 Tab**勾选任务后发起」（链接切换至本项目采集任务 Tab）+「批量处理」
-- **操作**（字号与表格其他列一致 `text-sm`）：
-  - **详情** / **处理** / **删除**
+- **操作**（字号与表格其他列一致 `text-sm`；蓝色链接 **无 hover 下划线**）：
+  - **详情** → 跳转 **抽检批次详情页** `/collection/project/:projectId/sampling/:batchId`（与批次名称同目标）
+  - **处理** / **删除**
   - **验收**：仅 `status !== 'completed'` 时显示；打开最新待验收条目的工作台 `mode=accept`；无待验收条目则 Toast「该批次暂无待验收条目」
 - **删除**：`DeleteConfirmModal`
 - **批量处理**（`BulkAcceptProcessModal`）：勾选批次批量，或项目整体验收；备注 **最多 500 字**，输入框外右下角 **`n/500`**
 - **批次处理**（`BatchAcceptProcessModal`，列表「处理」）：按批次创建时任务选项整体验收；备注 **最多 500 字**，输入框外 **`n/500`**
 - **高亮**：URL `?highlight={batchId}` 时将对应行置于列表前部并短时高亮（带「新建」badge）
-- **详情弹窗**（`SamplingBatchDetailModal`）：顶部元信息为批次ID、**批次名称**、创建人 + 抽检明细表；**无底部「关闭」**（右上角 × 关闭）；**高度随内容自适应**（非 `fitViewport` 满屏）
+- **通过率明细弹窗**（`SamplingBatchDetailModal`；原操作列「详情」弹窗改为 **点击通过率** 打开）：顶部元信息为批次ID、**批次名称**、创建人 + 抽检明细表；**无底部「关闭」**（右上角 × 关闭）；**高度随内容自适应**（非 `fitViewport` 满屏）
+
+#### 抽检批次详情 `/collection/project/:projectId/sampling/:batchId`（`SamplingBatchDetail.jsx`）
+
+- **面包屑**：`当前位置：采集项目 / 项目详情 / 抽检批次详情`（项目详情链接带 `?tab=sampling`）
+- **页头卡片**：批次名称 + 状态 Badge（已完成/进行中）、抽检条目、通过率、验收进度、创建人、创建时间（**无**批次ID·项目名称副标题行）
+- **抽检条目列表**（`SamplingBatchEntryListPanel` → `EntryDataTable` 精简模式）：
+  - 标题「**抽检条目列表**」；数据范围为该批次 `entryIds`
+  - **无**工序 Tab / 子状态筛选；**无**列表工具栏（批量下载 / 播放转码 / 批量操作状态）
+  - **筛选区单行 4 列**：条目ID、文件名称、数据格式、验收状态（无「展开筛选」；无质检/标注状态）
+  - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）
+  - 工序状态点击、流转记录、标注/验收详情弹窗等行为与任务详情一致
 
 #### 新建抽检批次（`CreateSamplingBatchModal`）
 
@@ -717,11 +734,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 候选 ≥ 1 → `round(候选 × 比例 / 100)`；结果不足 1（**含比例为 0**）时按 **1** 条
 - 合计行按各任务实际抽检数求和
 
-确认后 `createSamplingBatchRecord` → `pickSampleEntryIdsByTasks` 写入 runtime，并跳转「抽样验收」Tab 高亮新批次；批次记录含 `filters`（标注结果 / 采集员 / 标注员）、按任务的 `configItems` / `detailItems` / `entryIds`；兼容字段仍写入 `basis: '任务名称'`（列表不展示）。
+确认后 `createSamplingBatchRecord` → `pickSampleEntryIdsByTasks` 写入 runtime，并跳转 **「验收管理」** Tab 高亮新批次；批次记录含 `filters`（标注结果 / 采集员 / 标注员）、按任务的 `configItems` / `detailItems` / `entryIds`；兼容字段仍写入 `basis: '任务名称'`（列表不展示）。
 
 **验收工作台联动**：条目在验收模式通过/驳回后，若其 id 落在某批次 `entryIds` 内，则 `syncBatchesAfterEntryAccept` → `recalcBatchAfterProcess` 重算该批次 `acceptProgress` / `passedCount` / `rejectedCount` / `status`；不属于任何批次则只更新条目自身。
 
-**运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、`appendSamplingBatch`、`deleteSamplingBatch`、`isSamplingBatchNameTaken(projectId, name)`、`updateSamplingBatch`、`getBatchesContainingEntry`、`syncBatchesAfterEntryAccept`、`getProjectProcessStats`；创建逻辑见 `Sampling.jsx` → `createSamplingBatchRecord`（`utils/samplingHelpers.js`）
+**运行时 API**（`samplingBatches.js`）：`getSamplingBatchesByProjectId`、**`getBatchById`**、`appendSamplingBatch`、`deleteSamplingBatch`、`isSamplingBatchNameTaken(projectId, name)`、`updateSamplingBatch`、`getBatchesContainingEntry`、`syncBatchesAfterEntryAccept`、`getProjectProcessStats`；创建逻辑见 `Sampling.jsx` → `createSamplingBatchRecord`（`utils/samplingHelpers.js`）
 
 ---
 
@@ -765,11 +782,11 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **数据范围**：原型全量展示（`filterTasksByDataScope` 不过滤）
 - **筛选区**（5 列响应式网格，点击「查询」生效；**展开筛选** 显示第二行）：
   - **首行（始终可见）**：任务ID、任务名称、所属项目名称（全局列表；项目详情 Tab 内隐藏）、采集方案ID、采集员
-  - **展开行**：标注员（全局列表；项目详情 Tab 内 **标注员在首行**）、任务用途、设备类型、所属场景、采集方式、任务状态
+  - **展开行**：标注员（全局列表；项目详情 Tab 内 **标注员在首行**）、**验收员**、任务用途、设备类型、所属场景、采集方式、任务状态
   - **已移除**展开行「采集设备」筛选项
-- **从项目成员「查看任务」进入**：自动切换至本 Tab，并预填 **采集员** 或 **标注员** 筛选项（与成员页签角色一致），列表即时过滤（无需再点「查询」）
+- **从项目成员「查看任务」进入**：自动切换至本 Tab，并预填 **采集员** / **标注员** / **验收员** 筛选项（与成员页签角色一致），列表即时过滤（无需再点「查询」）
 - **任务状态**：**草稿**（灰）/ **已发布**（蓝）/ **已归档**（灰）
-- **列表字段**：任务ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、采集方案ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度（**进度列单行**：进度条 + `已完成/总量 条`，**无 `%`**）、**采集员** / **标注员**（人员数组，`PeopleCell` 展示）、创建人、创建/更新时间（**已移除「采集设备」列**）
+- **列表字段**：任务ID（黑色不可点）、**任务名称**（蓝色可点击跳转详情）、所属项目名称（全局列表）、任务用途、设备类型、采集方案ID、所属场景、采集方式、状态、总数据量、采集/标注/验收进度（**进度列单行**：进度条 + `已完成/总量 条`，**无 `%`**）、**采集员** / **标注员** / **验收员**（人员数组，`PeopleCell` 展示）、创建人、创建/更新时间（**已移除「采集设备」列**）
 - **分页**：**10 条/页**（`Table` + `pageResetKey`）；筛选变更重置第 1 页
 - **操作栏按状态**（`TaskTable.jsx`；含复制图标「创建副本」；**已发布无删除**；**导出 ▾** 下拉为 `ExportMenu`，已发布与已归档均可用；**已归档**标注/验收为 `DisabledLinkAction` 置灰禁用）：
 
@@ -792,15 +809,29 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ### 采集条目列表（`EntryDataTable`，任务详情 / 采集条目页共用）
 
-**默认列表标题**：`listTitle="条目列表"`（任务详情内由 `EntryListPanel` 传入时可覆盖）
+**默认列表标题**：`listTitle="采集条目列表"`（任务详情内由 `EntryListPanel` 传入）
 
 **使用场景**：
 - **任务详情**：`EntryListPanel` 按 `taskId` 过滤 + 数据范围；显示工序 Tab、批量操作
-- **`EntryDataTable`** 仍支持 `showScopeColumns` / `hideProcessTabs` 模式（所属项目/任务名称列与筛选）；原独立「采集条目页」组件已移除，路由 `/collection/upload` 重定向至项目列表
+- **抽检批次详情**：`SamplingBatchEntryListPanel` 按批次 `entryIds` 过滤；`hideProcessTabs` + `hideToolbarActions` + `singleRowFormFilters` + `showTaskColumn` + `hideDownload`
+- **`EntryDataTable`** 仍支持 `showScopeColumns` / `hideProcessTabs` 等 prop 组合；原独立「采集条目页」组件已移除，路由 `/collection/upload` 重定向至项目列表
+
+**可选 props 摘要**（除默认任务详情外）：
+
+| Prop | 说明 |
+|---|---|
+| `listTitle` | 列表标题（抽检批次详情为「抽检条目列表」） |
+| `hideProcessTabs` | 隐藏工序 Tab + 子状态行 |
+| `hideQcReviewFormFilters` | 筛选首行去掉质检/标注状态 |
+| `singleRowFormFilters` | 条目ID + 文件名称 + 数据格式 + 验收状态 **单行 4 列**；隐藏「展开筛选」 |
+| `hideToolbarActions` | 隐藏批量下载 / 播放转码 / 批量操作状态 |
+| `hideDownload` / `compact` | 操作列去掉下载并收窄（`EntryActions` 3 列） |
+| `showTaskColumn` | 文件名称右侧增加 **所属任务** 列 |
+| `showScopeColumns` | 增加所属项目/任务名称列（原采集条目页模式） |
 
 #### 工序 Tab 栏（任务详情 / 项目任务 Tab 内；采集条目页隐藏）
 - **工序**：全部 / 质检 / 标注 / 验收（胶囊 Tab）
-- **状态**：待处理 / 已通过 / 已驳回 / 全部；各选项旁显示当前计数
+- **状态**：待处理 / **进行中** / 已通过 / 已驳回 / 全部；各选项旁显示当前计数
 - 工序为 **全部** 时，状态行仅显示「全部」；选中质检/标注/验收后才展示完整子状态筛选
 
 #### 筛选区（固定 **5 列**网格 + 展开行，点击「查询」生效）
@@ -813,49 +844,70 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、**条目ID**（黑色不可点）、所属项目名称/任务名称（`showScopeColumns` 时）、文件ID、文件名称、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照，不随类型库变更）、**采集设备**（显示实例**设备名称**，hover Tooltip 完整 SN，`CollectDeviceCell`）、**质检状态**（已通过/已驳回可点击查看 `QcDetailModal` 七项结果 + 详情列）、**标注状态** / **验收状态**（已通过/已驳回 **可点击查看详情**；处理中/待处理悬停或展示操作人；待处理不可点）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+勾选、**条目ID**（黑色不可点）、所属项目名称/任务名称（`showScopeColumns` 时）、文件ID、文件名称、**所属任务**（`showTaskColumn` 时，文件名称右侧）、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照）、**采集设备**（`CollectDeviceCell`）、**质检状态** / **标注状态** / **验收状态**（见下表交互）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
 
 **工序状态详情弹窗**（`EntryDataTable.jsx`）：
 
 | 弹窗 | 触发 | 展示内容 |
 |---|---|---|
-| 质检详情 | 质检已通过/已驳回 | 七项质检结果表格（含掉帧检查详情列） |
-| **标注详情** | 标注已通过/已驳回 | 标注结论（通过/驳回；`auditAbnormal` 时展示「异常数据」）、**标注分类**表（列：标注分类 / 详情；仅展示已填的质量标签、问题标签，空则不渲染表）、备注（原标注意见）、标注时间、标注员（`nickname(id)`） |
-| **验收详情** | 验收已通过/已驳回 | 验收结论（通过/驳回）、备注（`acceptComment`；通过/驳回均展示，空为「—」）、验收时间、验收员 |
+| 质检详情 | 正常流转 · 质检已通过/已驳回 | 七项质检结果表格（含掉帧检查详情列） |
+| **标注详情** | 正常流转 · 标注已通过/已驳回 | 标注结论、标注分类表、备注、标注时间/员 |
+| **验收详情** | 正常流转 · 验收已通过/已驳回 | 验收结论、备注、验收时间/员 |
+| **操作记录** | **人工批量操作后** · 点击任一带状态的工序列（**质检-待处理除外**） | 操作状态、轮次、操作人、时间、详情（对象工序状态 ` -> ` 目标工序状态） |
 
-> 标注/验收 **待处理**、**处理中** 状态文字不可点击；已通过/已驳回 hover 仍显示操作人 Tooltip（`formatOperatorTooltip`）。
+> 标注/验收 **待处理**、**进行中** 正常流转时不可点；已通过/已驳回 hover 显示操作人 Tooltip。批量操作后条目带 `lastBatchTransfer` 标记，点击状态列统一打开 **操作记录**；目标为 **质检-待处理** 时质检列保持待处理且 **点击无反应**，操作列「标注」置灰并提示「解析中，暂不可标注」。
 
-工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）：已上传 → 质检待处理；已解析/质检不通过等 → 各工序对应子状态。
+工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）；子状态文案 **进行中**（内部键 `processing`）。
 
-**数据状态**（**7 值**，`entries.js` → `DATA_STATUSES`，驱动 `EntryActions` 中间按钮）：
+**流转记录弹窗**（`FlowTimelineModal`）：
+- 时间线 **从上到下按时间从早到晚**；标题 **不含** `（第N轮）`，轮次仅在下方「轮次：第 x 轮」展示
+- **人工批量操作**节点追加在 **最下方**；时间下增加 **详情**：`批量操作对象工序状态 -> 批量操作目标工序状态`（`batchDetail`）
+- 历史记录仅 **追加一条**，不覆盖既有流转节点（无显式 `flowHistory` 时先快照推导历史再追加）
 
-| 状态 | badge 颜色 | 说明 |
-|---|---|---|
-| 已上传 | gray | 刚上传，解析中 |
-| 已解析 | blue | 质检通过，可进入标注 |
-| **质检不通过** | red | 质检驳回（如掉帧检查未达标）；mock 示例 E-200104、E-200806；操作列无中间按钮 |
-| 标注不通过 | red | 标注驳回；操作列显示 **验收**（不显示标注） |
-| 已标注 | purple | 标注通过，可进入验收 |
-| 验收不通过 | orange | 验收驳回，打回二次标注；操作列显示 **标注**（不显示验收） |
-| 已验收 | cyan | 流程结束 |
+#### 批量操作状态（`BatchStatusDrawer.jsx` + `entryBatchTransfer.js`）
 
-**批量操作**（需勾选）：批量下载、重新质检、播放转码（Toast 占位）
+入口：列表右上角 **「批量操作状态」**（「播放转码」右侧；hover 提示「批量操作条目状态，实现跨工序进行流转」）。
 
-**分页**：**10 条/页**；工序 Tab / 子状态 / 筛选变更时 `pageResetKey` 重置第 1 页
+**一级 Drawer · 批量操作对象**（宽 ~920px）：
+- **数据范围**：工序单选（质检/标注/验收）+ 状态单选（待处理/进行中/已通过/已驳回）；**默认均无选中**，选齐后才展示符合条件条目
+- 列表列：勾选、条目ID、文件ID、文件名称、三工序状态、流转记录（状态列保留原有 hover / 点击查看）
+- 表头全选；右上 **批量操作**（未勾选置灰）
 
-**操作栏**（`EntryActions.jsx`）：固定 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`
+**二级 Drawer · 批量操作目标**（宽 ~520px，叠在一级右侧；一级 **保持可见**）：
+- 已选中摘要（来源工序/状态 + 条数）
+- **操作目标**：工序 + 目标状态（仅 **待处理 / 已驳回**）；与来源相同的工序-状态组合 **置灰不可选**；各字段 **默认无选中**
+- 目标为质检：只读说明保留上一轮质检结果
+- 目标为标注/验收：**是否保留历史标签**（是/否）
+- **取消** 回到一级；**确定** 执行批量流转并关闭
 
-| 数据状态 | 播放 | 中间按钮 | 下载 | 删除 |
-|---|---|---|---|---|
-| 已上传 | 打开工作台 `mode=play` | 标注（置灰，解析中） | 占位 | `DeleteConfirmModal` |
-| 已解析 | 播放 | **标注** → `mode=review` | 占位 | `DeleteConfirmModal` |
-| 质检不通过 | 播放 | 占位（无标注/验收） | 占位 | `DeleteConfirmModal` |
-| 标注不通过 | 播放 | **验收** → `mode=accept`（不显示标注） | 占位 | `DeleteConfirmModal` |
-| 已标注 | 播放 | **验收** → `mode=accept` | 占位 | `DeleteConfirmModal` |
-| 验收不通过 | 播放 | **标注** → `mode=review`（打回二次标注，不显示验收） | 占位 | `DeleteConfirmModal` |
-| 已验收 | 播放 | 占位 | 占位 | `DeleteConfirmModal` |
+**六种流转组合**（确定后更新 `dataStatus` 与三工序 UI 状态；`——` 为破折号占位）：
 
-播放/标注/验收均在新标签页打开 `/review/:entryId?mode=play|review|accept`；删除为 **`DeleteConfirmModal`**。
+| 目标工序 | 目标状态 | 质检 | 标注 | 验收 | 操作列 |
+|---|---|---|---|---|---|
+| 质检 | 待处理 | 待处理 | —— | —— | 标注置灰 |
+| 质检 | 已驳回 | 已驳回 | —— | —— | （无） |
+| 标注 | 待处理 | 已通过 | 待处理 | —— | 标注 |
+| 标注 | 已驳回 | 已通过 | 已驳回 | 待处理 | 验收 |
+| 验收 | 待处理 | 已通过 | 已通过 | 待处理 | 验收 |
+| 验收 | 已驳回 | 已通过 | 已通过 | 已驳回 | 标注 |
+
+**数据状态**（**7 值**，驱动 `EntryActions` 中间按钮）：
+
+| 状态 | 说明 |
+|---|---|
+| 已上传 | 质检待处理 |
+| 已解析 | 质检通过，可标注 |
+| 质检不通过 | 质检驳回 |
+| 标注不通过 | 标注驳回；验收列显示待处理 |
+| 已标注 | 可验收 |
+| 验收不通过 | 打回二次标注 |
+| 已验收 | 流程结束 |
+
+**列表工具栏**（需勾选）：批量下载、播放转码（Toast 占位）；**批量操作状态** 无需先勾选列表行
+
+**分页**：**10 条/页**；工序 Tab / 子状态 / 筛选变更时重置第 1 页
+
+**操作栏**（`EntryActions.jsx`）：默认 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`；`hideDownload` 时为 3 列并配合 `compact` 收窄；`已上传` 或 `batchQcPending` 时「标注」置灰并提示「解析中，暂不可标注」
 
 > **TODO**：中间按钮角色校验（标注=标注员、验收=平台运营）尚未接入。
 
@@ -962,9 +1014,10 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 - **面包屑**：数据集管理 / 真机数据集 / 数据集详情 / 转换数据集详情
 - **页头**：转换数据集名称 + 元信息（转换数据集ID、类型、文件数量、创建人、创建时间）
-- **Tab 一 · 文件列表**：标题「**数据集文件列表**」；列：文件ID、文件名称、文件大小、文件类型（图片/视频 Badge）、创建时间；10 条/页
+- **Tab 一 · 文件列表**：标题「**数据集文件列表**」；列：**勾选框**（表头全选）、文件ID、文件名称、文件大小、文件类型（图片/视频 Badge）、创建时间；10 条/页；右上 **一键送标**（未勾选置灰）
+  - **一键送标 Drawer**（标题「一键送标」）：**目标数据集ID***（placeholder「请输入标注平台的数据集ID」）、**分包数量**（选填）、**备注**（选填）；确定后写入送标记录（状态「进行中」）并 Toast 提示
 - **Tab 二 · 送标记录**：标题「**送标任务列表**」；列：输入数据集、目标数据集、送标状态（Badge）、操作人、操作时间；与转图片/转视频 **转换任务**（`conversionJobs`）独立 mock
-- **运行时 API**：`getConvertedDatasetById`、`getConvertedDatasetFiles`、`getLabelSubmissionRecordsByConvertedId`（`datasetConversions.js`）
+- **运行时 API**：`getConvertedDatasetById`、`getConvertedDatasetFiles`、`getLabelSubmissionRecordsByConvertedId`、**`appendLabelSubmissionRecord`**（`datasetConversions.js`）
 
 **转换配置 Drawer**（`ConvertDatasetDrawer.jsx`，转图片/转视频共用）：
 - **转图片**：抽帧间隔（纯数字输入框 + 「帧」后缀，**无 ± 步进按钮**，默认 `0`）
@@ -1142,6 +1195,10 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **用户名**（必填，原「账号」）、密码（`PasswordInput` 图标切换）、所属组织（只读）、角色（固定「组织管理员」只读）、手机号/邮箱（选填）、**描述**（`DescriptionField`）
 - **已移除**用户昵称、状态字段；新建默认 **启用**，昵称后台与用户名相同
 
+**组织详情编辑**（与用户管理 global 编辑共用 Drawer）：
+- **角色**：`RoleMultiSelect` **可编辑**（含「组织管理员」及当前用户已有角色；至少选一项）
+- 其余字段与 global 编辑一致（用户名/所属组织只读、修改密码、手机号/邮箱/描述）
+
 **操作**：编辑、删除（不可删当前登录用户；`DeleteConfirmModal`）
 
 **面包屑**：系统管理 / 用户管理
@@ -1178,7 +1235,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **新建 / 编辑 Drawer**（与用户管理 global 编辑共用 `UserListPanel`，差异如下）：
 - **所属组织**：只读，显示当前组织名称
-- **角色**：固定「组织管理员」，只读
+- **角色**：**新建**固定「组织管理员」只读；**编辑**为 `RoleMultiSelect` 可改（至少选一项）
 - **新建字段**：用户名、密码、手机号/邮箱、描述（**无昵称、无状态**；默认启用）
 
 #### 角色管理 `/system/role`
@@ -1216,9 +1273,13 @@ src/
 │   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注类型/属性/选项编辑器（左侧 中文名(类型值)；embedded / 折叠）
 │   │   └── fragmentAnnotPreconfig.js     # 预置三大类 + mergeStoredPresetsWithCatalog、选项 isDefault
 │   ├── entry/
-│   │   └── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作、质检/标注/验收/流转弹窗）
+│   │   ├── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、批量操作；支持抽检批次精简 props）
+│   │   ├── BatchStatusDrawer.jsx  # 批量操作状态双级 Drawer（对象筛选 + 目标流转）
+│   │   ├── BatchOpDetailModal.jsx # 人工批量操作后的「操作记录」弹窗
+│   │   └── entryTableHelpers.js   # 标注/验收操作人解析共用
 │   ├── task/
-│   │   └── EntryListPanel.jsx     # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
+│   │   ├── EntryListPanel.jsx              # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
+│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（按 batch entryIds）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
 │   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
@@ -1271,13 +1332,14 @@ src/
 │   │       └── OpenDataTab.jsx
 │   ├── Project/
 │   │   ├── index.jsx              # 采集项目列表（ListPageCard；Drawer 新建；+ 新建）
-│   │   ├── Detail.jsx             # 项目详情（5 Tab：任务/方案/成员/抽样验收/看板 + 采标方案 3 二级 Tab）
-│   │   ├── Sampling.jsx           # 抽样验收 Tab 面板（SamplingPanel + createSamplingBatchRecord）
+│   │   ├── Detail.jsx             # 项目详情（5 Tab：任务/方案/成员/验收管理/看板 + 采标方案 3 二级 Tab）
+│   │   ├── Sampling.jsx           # 验收管理 Tab 面板（SamplingPanel + createSamplingBatchRecord）
+│   │   ├── SamplingBatchDetail.jsx       # 抽检批次详情（页头 + 抽检条目列表）
 │   │   ├── CreateSamplingBatchModal.jsx  # 新建抽检批次（任务多选 + 筛选查询/重置 + 按任务比例）
-│   │   ├── SamplingBatchDetailModal.jsx
+│   │   ├── SamplingBatchDetailModal.jsx  # 通过率明细弹窗（抽检明细表）
 │   │   ├── BatchAcceptProcessModal.jsx
 │   │   ├── BulkAcceptProcessModal.jsx
-│   │   └── MembersTab.jsx             # 项目成员（采集员/标注员双页签；按角色独立分配；查看任务→采集任务 Tab 筛选）
+│   │   └── MembersTab.jsx             # 项目成员（采集员/标注员/验收员三页签；uid/username；查看任务→采集任务 Tab 筛选）
 │   ├── Task/
 │   │   ├── index.jsx              # 任务列表（支持 fixedProjectId prop，5 列筛选网格）
 │   │   ├── Detail.jsx             # 任务详情（摘要卡 + EntryListPanel）
@@ -1304,7 +1366,7 @@ src/
 │   ├── Dataset/
 │   │   ├── Self.jsx               # 真机数据集列表
 │   │   ├── SelfDetail.jsx         # 真机数据集详情（4 Tab：概览/条目/转换记录/转换数据集）
-│   │   ├── ConvertedDatasetDetail.jsx  # 转换数据集详情（文件列表 + 送标记录 Tab）
+│   │   ├── ConvertedDatasetDetail.jsx  # 转换数据集详情（文件列表勾选 + 一键送标 + 送标记录 Tab）
 │   │   ├── SelfDownload.jsx       # 数据集下载说明
 │   │   ├── CreateDatasetModal.jsx # 新建数据集（右侧 Drawer）
 │   │   ├── ConversionRangeModal.jsx  # 转图片/转视频：选择已选/全部条目范围
@@ -1345,7 +1407,8 @@ src/
 ├── utils/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
 │   ├── formatDateTime.js          # 全平台时间格式：formatDateTime / dtCol / formatRelativeTime
-│   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录
+│   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录（时间正序、stripFlowLabelRound）
+│   ├── entryBatchTransfer.js      # 批量操作状态：六种流转组合、flowHistory 追加、lastBatchTransfer
 │   ├── projectStatus.js           # 采集项目三态、canProjectMutate、canAcceptProject
 │   ├── qcResults.js               # 条目质检结果（掉帧检查帧率/标准差）
 │   ├── deviceDisplay.jsx          # CollectDeviceCell、formatDeviceSelectLabel（设备名称+SN）
@@ -1394,7 +1457,7 @@ scripts/
 | 产品名称 | 浏览器标签与顶栏均为 **ABC-Data**（`index.html` / `Header.jsx` / 登录页） |
 | 版本与发版 | **`src/release.js`** 供 `VersionInfo` 渲染左下角 `vX.Y.Z (日期)`；点击展开 `summary`；完整历史见根目录 **`CHANGELOG.md`**；推荐发版时同步更新二者并打 Git tag |
 | 图表自适应 | 手写 SVG 组件使用 `ResizeObserver` 动态读取容器宽度 |
-| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 回流看板；`/backflow/devices|events|triggers` 回流子页；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由（支持 `?mode=play&source=backflow`）；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
+| 路由 | `createBrowserRouter`；`/` → `/login`；`/intro` 数采介绍；`/backflow` 回流看板；`/backflow/devices|events|triggers` 回流子页；`/collection/task`、`/collection/upload` → 重定向 `/collection/project`；**`/collection/project/:projectId/sampling/:batchId`** 抽检批次详情；`/dataset/self/:datasetId/converted/:convertedId` 转换数据集详情；未知路径 `*` → `/dashboard`；`/review/:entryId` 为 AppLayout 外独立路由（支持 `?mode=play&source=backflow`）；`/device/:typeId`、`/dataset/open*`、`/system/log` → 重定向 |
 | ListPageCard | 检索 `ListPageFilter`（底部分割线）+ 工具栏 `ListPageToolbar`（底部分割线）+ `Table embedded` / `ListPageBody` 同一白容器；已用于项目/任务/用户/角色/组织/设备/标签/条目等列表页 |
 | 新建项目 Drawer | `Drawer.jsx` 默认宽度 `calc((100vw - var(--layout-sidebar-width)) / 3)`；Layout 在 `<main>` 设置 `--layout-sidebar-width`（`13rem` / `4rem`） |
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
@@ -1402,8 +1465,8 @@ scripts/
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员** |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`projectIds[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
-| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`auditQuality`、片段标注；工作台 **保存暂存 / 提交写入** 后更新会话内状态 |
-| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；`appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
+| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`flowHistory`、`lastBatchTransfer`、`batchQcPending`、片段标注；批量流转经 `entryBatchTransfer.js` → `buildBatchTransferPatch` |
+| 抽样验收 runtime | `samplingBatches.js` → `batchStore`；**`getBatchById`** / `appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
@@ -1419,10 +1482,11 @@ scripts/
 | 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
 | 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer（默认 1/3 宽）；`modalView` 切换任务/方案配置（返回箭头）；**plan 视图仅选已有方案**（字段「采集方案」、无 Tab）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
 | 片段标注配置 Drawer | `FragmentAnnotConfigDrawer`：标题「片段标注配置」；宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；**采集打点 mandatory 置顶不可删**；左侧类型名 `中文(value)`；预置 **动作语义 / 区域帧 / 采集打点**；采集方案 Drawer 仍为默认 1/3 宽 |
-| 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `tasks.annotators`；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
-| 项目成员 mock 对齐 | `misc.js` → `projectMembers` 每条一个 `role` + `taskIds`；`tasks.js` 人员字段与成员分配一致，供采集任务列表筛选与「负责任务数」对齐 |
+| 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `annotators` / `acceptors`；列表 **用户ID/用户名** 筛选；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
+| 批量操作状态 | `BatchStatusDrawer` 双 Drawer 叠层；`entryBatchTransfer.js` 六种目标组合；`flowHistory` 时间正序追加；批量后点击状态 → `BatchOpDetailModal`（质检-待处理除外） |
+| 条目流转记录 | `FlowTimelineModal` 早→晚；标题 `stripFlowLabelRound` 去轮次括号；批量节点含 `batchDetail`（` -> ` 分隔） |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
-| 抽样验收 | 仅项目详情 Tab；任务维度抽检；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
+| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（`showTaskColumn`、无工序 Tab/批量工具栏）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
 | 条目操作列 | `EntryActions`：标注不通过→验收；验收不通过→标注；质检不通过→无中间按钮 |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |
@@ -1436,7 +1500,7 @@ scripts/
 | 开源数据集 runtime | `getAllOpenDatasets`、`prependOpenDatasets` 等 |
 | 标签 runtime | `tags.js`：`getAuditTemplates` / `upsertAuditTemplate` / `saveAuditTemplateTagTree`；平铺标签 getter/setter；`getSceneTypeTree`；`APPLICATION_SCOPE_OPTIONS`（全局/通过/驳回）；工作台整体标签仍读 `workbenchTags.js` |
 | 采集方案标注 | `CollectPlanForm` → `AnnotationManagementBlock`：模块三 **整体标签模板**（必填）+ **annotGenConfig / annotPreLabel** 两复选框（第 2 项依赖第 1 项显示）+ 跳转提示；详情编辑见 `FragmentAnnotConfigDrawer` + `FragmentAnnotPreconfigPanel`（类型/属性/单选·多选选项 + **设为默认值** `isDefault`） |
-| 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob` / `getConvertedDatasetById` / `getConvertedDatasetFiles` / `getLabelSubmissionRecordsByConvertedId`；`ConversionRangeModal` + `ConvertDatasetDrawer` 提交转换；转图片默认抽帧间隔 0、三条相机路径；详情页 mock 约 2.5s 自动完成；**转换数据集详情** 含文件列表 + 送标记录两 Tab |
+| 数据集转换 runtime | `datasetConversions.js` → `createConversionJob` / `completeConversionJob` / `getConvertedDatasetById` / `getConvertedDatasetFiles` / `getLabelSubmissionRecordsByConvertedId` / **`appendLabelSubmissionRecord`**；`ConversionRangeModal` + `ConvertDatasetDrawer` 提交转换；转图片默认抽帧间隔 0、三条相机路径；详情页 mock 约 2.5s 自动完成；**转换数据集详情** 文件列表支持 **勾选 + 一键送标 Drawer** |
 | 共享表单组件 | `FormField.jsx` → `DescriptionField`（全平台标准「描述」字段：placeholder「请输入描述」、选填、输入框外 **`n/500`**）；`PasswordInput`（闭眼 `IconEyeOff` / 睁眼 `IconEyeOpen`）；`CreateInviteUserModal` 导出 `RoleMultiSelect`；用户/组织/角色/设备/标签/数据集等已统一接入 |
 | 用户密码编辑 | 用户管理 **编辑 Drawer**：默认 **「修改密码」** 主按钮 → 点击后 `PasswordInput`；有输入才 `updateRuntimeUser` 覆盖 `password` |
 | 平台用户多角色 | `users.role` 存 `&` 连接字符串；新建/编辑用 `RoleMultiSelect`；列表 `renderRoleTags` 拆 Badge |
@@ -1445,7 +1509,7 @@ scripts/
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
 | URDF 上传 | 设备类型 **新建与编辑** 弹窗均支持拖拽上传 `.urdf`/`.xacro`（≤20MB，选填）；纯前端 mock，写入 `hasUrdf` |
-| 任务采集员/标注员 | 每任务 `collectors` / `annotators` **人员数组**（兼容 `collector` / `reviewer` 字符串）；`getTaskCollectors` / `getTaskAnnotators` 统一读取；mock 初始值与 `projectMembers` 对齐 |
+| 任务采集员/标注员/验收员 | 每任务 `collectors` / `annotators` / `acceptors` **人员数组**（username）；`getTaskCollectors` / `getTaskAnnotators` / `getTaskAcceptors` 统一读取 |
 | 用户状态 UI | 用户列表状态列 Toggle；global 编辑 Drawer 不含状态（列表 Toggle 切换）；组织详情新建 **不含状态**（默认启用）；`updateRuntimeUser` 即时生效 |
 | 用户新建/邀请 | `CreateInviteUserModal`：global 新建/邀请双 Tab Drawer；`RoleMultiSelect` 多选角色；邀请 tab 用户名仅显示 username，选后所属组织/手机号/邮箱只读反显 |
 | 系统列表 ID/名称列 | 组织/角色/用户列表 **ID 与名称列常规字重**（不加粗），名称列仍可点击跳转 |
@@ -1481,15 +1545,15 @@ scripts/
 | `attributes[]` | 属性列表：`name`, `value`, `inputType`（text/single/multi）, `options[]`（含 `isDefault`） |
 | 质检项 | 每项目固定 **7 条**（8 项目 × 7 = 56 条；含**掉帧检查**；mock 初始 **全部 enabled: true**；`plans.js` → `getQcItemsByProjectId`） |
 | 播放布局 | 10 条自建（`playLayouts`，覆盖 P-1001~P-1008）；列表首行另含 UI 固定「默认布局」；新建需上传 JSON 布局文件（mock） |
-| 采集任务 | 15 条（分布于 8 个项目；P-1007 仅 T-2016 草稿且人员为空；状态 **草稿/已发布/已归档**；**collectors / annotators 为人员数组**，与 `projectMembers` 同步） |
+| 采集任务 | 15 条（分布于 8 个项目；P-1007 仅 T-2016 草稿且人员为空；状态 **草稿/已发布/已归档**；**collectors / annotators / acceptors 为人员数组**（username），与 `projectMembers` 同步） |
 
-**采集任务单条字段（`tasks.js` 摘要）**：`id`, `planId`, `name`, `purpose`, `deviceTypeId`, `deviceInstanceId`, `device`, `method`, `scene`, `projectId`, `collectTotal/Done`, `reviewDone`, `acceptDone`, `status`, **`collectors[]`**, **`annotators[]`**（兼容 **`collector` / `reviewer`**）, `creator`, `createdAt`, `updatedAt`
+**采集任务单条字段（`tasks.js` 摘要）**：`id`, `planId`, `name`, `purpose`, `deviceTypeId`, `deviceInstanceId`, `device`, `method`, `scene`, `projectId`, `collectTotal/Done`, `reviewDone`, `acceptDone`, `status`, **`collectors[]`**, **`annotators[]`**, **`acceptors[]`**（兼容 **`collector` / `reviewer`**）, `creator`, `createdAt`, `updatedAt`
 
-| 采集条目 | 每任务 5~10 条（伪随机生成）；**7 值** `dataStatus`（含**质检不通过**）；含 `deviceTypeId`/`deviceTypeName`、`collectDevice`/`collectDeviceSn` 快照；含 `qcResults.frameDrop`、掉帧 demo 条目 E-200104 / E-200806；**已标注/验收相关**条目经 `enrichAnnotationData` 补齐 `fragmentSegmentsByType`（多行 mock 片段）及整体标注字段 |
+| 采集条目 | 每任务 5~10 条；**T-2001 固定 10 条**（E-200101~110）覆盖三工序各子状态；**7 值** `dataStatus`；含 `flowHistory`、`lastBatchTransfer`；`batchQcPending` 时标注置灰 |
 | 采集条目页数据 | 由 `entries` 派生（`uploads.js`），字段与 `EntryDataTable` 对齐 |
 | 抽样验收批次 | 6 条初始（P-1001 × 3、P-1002 × 3）；含 `configItems`、`detailItems`、`entryIds`、`passedCount`、`acceptProgress`；历史字段 `basis` 仍保留于 seed；新建写入 `filters`（标注结果/采集员/标注员）+ `rejectedCount: 0` + 兼容 `basis: '任务名称'`；会话内可新建/删除 |
 | 真机数据集 | 5 条；支持跨项目 `projectIds`、多 `taskIds`、验收通过条目、`autoSync` |
-| 转换记录 / 转换数据集 | 初始各 2 条（`CJ-2001`/`CJ-2002`、`CDS-3001`/`CDS-3002`）；转换完成后写入 runtime；详情页 **文件列表 + 送标记录** 两 Tab；`getConvertedDatasetFiles` / `getLabelSubmissionRecordsByConvertedId` |
+| 转换记录 / 转换数据集 | 初始各 2 条（`CJ-2001`/`CJ-2002`、`CDS-3001`/`CDS-3002`）；转换完成后写入 runtime；详情页 **文件列表**（勾选 + 一键送标）+ **送标记录** 两 Tab；`appendLabelSubmissionRecord` 写入 `LS-xxxx` 记录（含 `targetDatasetId`、`fileIds`、`fileCount`、分包/备注） |
 | 开源数据集 | 10 条（ODS-001~010）；侧栏已下线，看板 Tab 仍引用；组件支持 Excel 导入追加 |
 | 审核标签 | 审核模板 Tab：3 个初始模板（ATM-001~003），每模板含独立 `tagTree`（应用范围：全局/通过/驳回）；**工作台问题标签**另有 21 项常量（`workbenchTags.js`） |
 | 场景标签 | 三层树（**4** 个一级场景；**演示场景** 未绑定，供走查） |
@@ -1504,9 +1568,9 @@ scripts/
 | 设备类型数据源 | 任务/条目/方案创建时快照 `deviceTypeName`（及条目 `deviceTypeId`）；运行时 `enrichTask` 仅用于 seed 生成，历史展示读快照 |
 | 审核模板 | 3 条（`tags.js` → `auditTemplateSeed`，UI 在「审核模板」Tab） |
 | 组织 | 4 条（`organizations.js`）；含 `remark`、启停状态、动态 `memberCount` |
-| 用户 | 14 人 seed + U-014/U-015 跨组织演示（共 16 人）；含 `orgId`、`loginMethod`、`email`、`remark`；默认演示 U-000 |
-| 内置角色 | 6 个：`组织管理员` / `平台运营` / `采集员` / `标注员` / `游客` / `工程师`（`rbac.js` R-001~R-006，`type: '内置'`，默认启用） |
-| 自定义角色 | 2 个：**数据审核员** R-007（成员 0，可演示删除）、**区域协调员** R-008（成员 1：林芳 U-013） |
+| 用户 | 18 人 seed（含 U-016/U-017 **验收员**）；含 `uid`、`username`、`orgId`、`loginMethod`；默认演示 U-000 |
+| 内置角色 | **7 个**：`组织管理员` / `平台运营` / `采集员` / `标注员` / **验收员** / `游客` / `工程师`（`rbac.js` R-001~R-007；`type: '内置'`，默认启用） |
+| 自定义角色 | 2 个：**数据审核员** R-008、**区域协调员** R-009 |
 | 项目成员 | 按项目ID 组织；每成员 **单 role** 独立记录；`joinedAt` 精确到秒；与 `tasks.collectors/annotators` 对齐 |
 | 系统日志 mock | 15 条（`misc.js` → `systemLogs`，**UI 已移除**） |
 | 运营看板（真机） | `realDashboard.all` 汇总 8 项目；各 `P-1001`~`P-1008` 独立 metrics + 精简 ranking；全局 ranking 采集员/标注员各 12 名 |
@@ -1557,8 +1621,10 @@ scripts/
 | U-013 | linfang | 林芳 | 区域协调员 | 智平方 | 账号密码 | **停用** | linfang@ai2robotics.com |
 | U-014 | chenwei | 陈伟 | 平台运营 | 机器人公司 | 账号密码 | 启用 | chenwei@robotics.com |
 | U-015 | xuyan | 徐燕 | 采集员 | 华东采集中心 | 账号密码 | 启用 | xuyan@east-collect.com |
+| U-016 | chenjing | 陈静 | **验收员** | 智平方 | 账号密码 | 启用 | chenjing@ai2robotics.com |
+| U-017 | linfeng | 林峰 | **验收员** | 智平方 | 账号密码 | 启用 | linfeng@ai2robotics.com |
 
-> 共 **16** 人（U-000 ~ U-015）。停用用户（何敏、林芳）不会出现在项目成员添加候选列表；**停用角色**不会出现在用户管理新建角色下拉。**U-008 / U-011 / U-012** 为双角色平台用户（`role: 采集员&标注员`），可用于项目成员添加时「同时勾选采集员+标注员」的候选筛选；其中 U-011 **吴磊** 在 P-1001 项目成员两页签均有独立记录。U-013 绑定自定义角色「区域协调员」。U-001~U-003 演示飞书SSO 登录方式。**邀请用户** mock 候选：U-014（chenwei，机器人公司）、U-015（xuyan，华东采集中心）。用户单条字段还含 `phone`、`remark`（列表展示为「描述」）、`createdAt`、`lastLoginAt`；未显式设置 `loginMethod` 时 UI 默认「账号密码」。
+> 共 **18** 人（U-000 ~ U-017）。**U-016 / U-017** 为验收员平台角色；P-1001 项目成员验收员页签示例为 **chenjing**。
 
 ### 组织单条字段（`organizations.js`）
 `id`, `name`, `remark`（UI 列名与表单标签均为 **描述**）, `status`（启用/停用）, `createdAt`（列表附加 `memberCount`）
@@ -1569,7 +1635,7 @@ scripts/
 
 核心：`id`, `fileId`, `taskId`, `fileName`, `size`, `duration`, `uploadTime`, `uploader`, `dataStatus`, `format`
 
-快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, `flowHistory`，以及标注/验收相关字段（`auditResult`, **`auditQuality`**, `auditTags`, `auditComment`, `actionSegments`, `regionFrames`, `acceptResult`, `acceptComment`, `reviewTime`, `acceptTime`, `reviewOperator`, `acceptOperator` 等）
+快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, **`flowHistory`**（含 `batchOp` / `batchDetail`）, **`lastBatchTransfer`**, **`batchQcPending`**，以及标注/验收相关字段
 
 **质量标签**：工作台使用「高质量 / 中质量 / 低质量」；标注结论为 **通过** 时提交必填；mock 中旧值「优秀 / 可接受 / 差」进入工作台时经 `normalizeAuditQuality` 映射
 
@@ -1615,30 +1681,28 @@ scripts/
 
 ### 项目成员（`misc.js` → `projectMembers`）
 
-**单条字段**：`id`, `name`, **`role`**（`'采集员' | '标注员' | '平台运营'`）, `taskIds[]`, `joinedAt`
+**单条字段**：`id`, **`uid`**, **`username`**, **`role`**（`'采集员' | '标注员' | '验收员' | '平台运营'`）, `taskIds[]`, `joinedAt`
 
 **存储规则**：
-- **一人一行一角色**：同一用户在不同角色下的分配为 **独立记录**（如 P-1001 吴磊：`PM-1001-6` 采集员 + `PM-1001-7` 标注员）
-- `taskIds.length === 0` 的记录在列表初始化/保存时经 `pruneEmptyMembers` 移除（P-1007 等空分配不入列表）
-- 成员保存/配置任务时同步更新 `tasks.js` 对应任务的 `collectors` / `annotators`
+- **一人一行一角色**：同一用户在不同角色下的分配为 **独立记录**
+- `taskIds.length === 0` 的记录经 `pruneEmptyMembers` 按页签移除
+- 成员保存/配置任务时同步更新 `tasks.js` 的 `collectors` / `annotators` / **`acceptors`**
 
 **P-1001 示例**（家庭物品整理采集）：
 
-| 姓名 | 页签 | taskIds | 负责任务数 |
+| username | 页签 | taskIds | 负责任务数 |
 |---|---|---|---|
-| 刘伟 | 采集员 | T-2001, T-2002 | 2 |
-| 周杰 | 采集员 | T-2003, T-2004 | 2 |
-| 吴磊 | 采集员 | T-2004 | 1 |
-| 孙丽 | 标注员 | T-2001, T-2002, T-2003 | 3 |
-| 何敏 | 标注员 | T-2004 | 1 |
-| 吴磊 | 标注员 | T-2002 | 1 |
-
-对应任务人员（`tasks.js` 摘要）：T-2001 刘伟/孙丽 · T-2002 刘伟/孙丽+吴磊 · T-2003 周杰/孙丽 · T-2004 周杰+吴磊/何敏
+| liuwei | 采集员 | T-2001, T-2002 | 2 |
+| zhoujie | 采集员 | T-2003, T-2004 | 2 |
+| wulei | 采集员 | T-2004 | 1 |
+| sunli | 标注员 | T-2001, T-2002, T-2003 | 3 |
+| hemin | 标注员 | T-2004 | 1 |
+| wulei | 标注员 | T-2002 | 1 |
+| chenjing | 验收员 | T-2001~T-2004 | 4 |
 
 **成员列表维护规则**（`MembersTab.jsx`）：
-- 某用户在某 **角色页签** 下任务数为 0 时，仅移除该页签行，不影响另一角色行
-- **添加成员** 时每个勾选角色须至少选 1 个任务；**配置任务** 允许清空以移出当前页签
-- **查看任务** → 采集任务 Tab + 按当前页签角色筛选成员姓名
+- 某用户在某 **角色页签** 下任务数为 0 时，仅移除该页签行
+- **查看任务** → 采集任务 Tab + 按当前页签角色筛选 **username**
 
 ---
 
@@ -1655,7 +1719,8 @@ scripts/
 | `/backflow/triggers` | 触发器配置 | — |
 | `/dashboard` | 运营看板 | `dashboard.view` |
 | `/collection/project` | 采集项目列表 | `collection.project.view` |
-| `/collection/project/:id` | 项目详情 | 同上 |
+| `/collection/project/:id` | 项目详情（含验收管理 Tab） | 同上 |
+| `/collection/project/:projectId/sampling/:batchId` | 抽检批次详情（抽检条目列表） | 同上 |
 | `/collection/project/:id/sampling` | 重定向至项目详情 `?tab=sampling` | — |
 | `/collection/task` | 重定向 → `/collection/project` | — |
 | `/collection/task/:id` | 任务详情 | `collection.task.view` |
@@ -1664,7 +1729,7 @@ scripts/
 | `/dataset/self` | 真机数据集列表 | `dataset.self.view` |
 | `/dataset/self/download` | 数据集下载说明 | 同上 |
 | `/dataset/self/:id` | 真机数据集详情（4 Tab） | 同上 |
-| `/dataset/self/:datasetId/converted/:convertedId` | 转换数据集详情（文件列表 + 送标记录 Tab） | 同上 |
+| `/dataset/self/:datasetId/converted/:convertedId` | 转换数据集详情（文件列表勾选 + 一键送标 + 送标记录 Tab） | 同上 |
 | `/dataset/open` | 重定向 → `/dataset/self` | — |
 | `/dataset/open/download` | 重定向 → `/dataset/self` | — |
 | `/dataset/open/:id/usage` | 重定向 → `/dataset/self` | — |

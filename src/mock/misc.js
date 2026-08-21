@@ -48,6 +48,8 @@ export const users = [
   { id: 13, uid: 'U-013', username: 'linfang',  nickname: '林芳',   phone: '137****8899', role: '区域协调员',     status: '停用', orgId: 'ORG-002', email: 'linfang@ai2robotics.com', remark: '区域协调，账号已停用', createdAt: '2026-05-25 09:00:00', lastLoginAt: '2026-06-17 10:12:00' },
   { id: 14, uid: 'U-014', username: 'chenwei',  nickname: '陈伟',   phone: '131****4455', role: '平台运营',       status: '启用', orgId: 'ORG-001', email: 'chenwei@robotics.com', remark: '机器人公司运营', createdAt: '2026-04-05 10:00:00', lastLoginAt: '2026-06-16 09:30:00' },
   { id: 15, uid: 'U-015', username: 'xuyan',    nickname: '徐燕',   phone: '130****6677', role: '采集员',         status: '启用', orgId: 'ORG-003', email: 'xuyan@east-collect.com', remark: '华东采集中心采集员', createdAt: '2026-04-18 11:20:00', lastLoginAt: '2026-06-15 08:45:00' },
+  { id: 16, uid: 'U-016', username: 'chenjing', nickname: '陈静',   phone: '136****8821', role: '验收员',         status: '启用', orgId: 'ORG-002', email: 'chenjing@ai2robotics.com', remark: '数据验收专员', createdAt: '2026-04-22 09:30:00', lastLoginAt: '2026-06-18 11:40:00' },
+  { id: 17, uid: 'U-017', username: 'linfeng',  nickname: '林峰',   phone: '137****9933', role: '验收员',         status: '启用', orgId: 'ORG-002', email: 'linfeng@ai2robotics.com', remark: '数据验收专员', createdAt: '2026-05-08 14:15:00', lastLoginAt: '2026-06-17 15:20:00' },
 ]
 
 export const roleColor = {
@@ -57,6 +59,7 @@ export const roleColor = {
   平台运营: 'blue',
   采集员: 'cyan',
   标注员: 'orange',
+  验收员: 'green',
   '采集员&标注员': 'purple',
   游客: 'green',
   工程师: 'indigo',
@@ -91,47 +94,54 @@ export const logActionColor = {
 }
 
 // 项目成员 mock（按项目 ID 组织）
-// 每条记录对应单一项目角色（采集员 / 标注员 / 平台运营）；同一用户可同时存在两条独立记录
+// 每条记录对应单一项目角色（采集员 / 标注员 / 验收员 / 平台运营）；同一用户可同时存在多条独立记录
 export const projectMembers = {
   'P-1001': [
-    { id: 'PM-1001-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-03-10 09:00:00' },
-    { id: 'PM-1001-2', name: '刘伟', role: '采集员', taskIds: ['T-2001', 'T-2002'], joinedAt: '2026-03-13 10:30:00' },
-    { id: 'PM-1001-3', name: '周杰', role: '采集员', taskIds: ['T-2003', 'T-2004'], joinedAt: '2026-03-28 14:15:00' },
-    { id: 'PM-1001-4', name: '孙丽', role: '标注员', taskIds: ['T-2001', 'T-2002', 'T-2003'], joinedAt: '2026-03-13 11:20:00' },
-    { id: 'PM-1001-5', name: '何敏', role: '标注员', taskIds: ['T-2004'], joinedAt: '2026-03-28 16:45:00' },
-    { id: 'PM-1001-6', name: '吴磊', role: '采集员', taskIds: ['T-2004'], joinedAt: '2026-04-10 09:00:00' },
-    { id: 'PM-1001-7', name: '吴磊', role: '标注员', taskIds: ['T-2002'], joinedAt: '2026-04-10 09:05:00' },
+    { id: 'PM-1001-1', uid: 'U-002', username: 'liming', role: '平台运营', taskIds: [], joinedAt: '2026-03-10 09:00:00' },
+    { id: 'PM-1001-2', uid: 'U-004', username: 'liuwei', role: '采集员', taskIds: ['T-2001', 'T-2002'], joinedAt: '2026-03-13 10:30:00' },
+    { id: 'PM-1001-3', uid: 'U-005', username: 'zhoujie', role: '采集员', taskIds: ['T-2003', 'T-2004'], joinedAt: '2026-03-28 14:15:00' },
+    { id: 'PM-1001-4', uid: 'U-006', username: 'sunli', role: '标注员', taskIds: ['T-2001', 'T-2002', 'T-2003'], joinedAt: '2026-03-13 11:20:00' },
+    { id: 'PM-1001-5', uid: 'U-007', username: 'hemin', role: '标注员', taskIds: ['T-2004'], joinedAt: '2026-03-28 16:45:00' },
+    { id: 'PM-1001-6', uid: 'U-011', username: 'wulei', role: '采集员', taskIds: ['T-2004'], joinedAt: '2026-04-10 09:00:00' },
+    { id: 'PM-1001-7', uid: 'U-011', username: 'wulei', role: '标注员', taskIds: ['T-2002'], joinedAt: '2026-04-10 09:05:00' },
+    { id: 'PM-1001-8', uid: 'U-016', username: 'chenjing', role: '验收员', taskIds: ['T-2001', 'T-2002', 'T-2003', 'T-2004'], joinedAt: '2026-04-22 10:00:00' },
   ],
   'P-1002': [
-    { id: 'PM-1002-1', name: '王芳', role: '平台运营', taskIds: [], joinedAt: '2026-03-20 08:30:00' },
-    { id: 'PM-1002-2', name: '刘伟', role: '采集员', taskIds: ['T-2007'], joinedAt: '2026-04-05 13:00:00' },
-    { id: 'PM-1002-3', name: '何敏', role: '标注员', taskIds: ['T-2005', 'T-2006'], joinedAt: '2026-03-22 15:22:00' },
+    { id: 'PM-1002-1', uid: 'U-003', username: 'wangfang', role: '平台运营', taskIds: [], joinedAt: '2026-03-20 08:30:00' },
+    { id: 'PM-1002-2', uid: 'U-004', username: 'liuwei', role: '采集员', taskIds: ['T-2007'], joinedAt: '2026-04-05 13:00:00' },
+    { id: 'PM-1002-3', uid: 'U-007', username: 'hemin', role: '标注员', taskIds: ['T-2005', 'T-2006'], joinedAt: '2026-03-22 15:22:00' },
+    { id: 'PM-1002-4', uid: 'U-017', username: 'linfeng', role: '验收员', taskIds: ['T-2005', 'T-2006', 'T-2007'], joinedAt: '2026-05-08 15:00:00' },
   ],
   'P-1003': [
-    { id: 'PM-1003-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-04-01 09:10:00' },
-    { id: 'PM-1003-2', name: '周杰', role: '采集员', taskIds: ['T-2008', 'T-2009'], joinedAt: '2026-04-03 10:05:00' },
-    { id: 'PM-1003-3', name: '钱琳', role: '标注员', taskIds: ['T-2008', 'T-2009', 'T-2010'], joinedAt: '2026-04-03 14:40:00' },
-    { id: 'PM-1003-4', name: '郑浩', role: '采集员', taskIds: ['T-2010'], joinedAt: '2026-04-12 11:00:00' },
+    { id: 'PM-1003-1', uid: 'U-002', username: 'liming', role: '平台运营', taskIds: [], joinedAt: '2026-04-01 09:10:00' },
+    { id: 'PM-1003-2', uid: 'U-005', username: 'zhoujie', role: '采集员', taskIds: ['T-2008', 'T-2009'], joinedAt: '2026-04-03 10:05:00' },
+    { id: 'PM-1003-3', uid: 'U-008', username: 'qianlin', role: '标注员', taskIds: ['T-2008', 'T-2009', 'T-2010'], joinedAt: '2026-04-03 14:40:00' },
+    { id: 'PM-1003-4', uid: 'U-012', username: 'zhenghao', role: '采集员', taskIds: ['T-2010'], joinedAt: '2026-04-12 11:00:00' },
+    { id: 'PM-1003-5', uid: 'U-016', username: 'chenjing', role: '验收员', taskIds: ['T-2008', 'T-2009', 'T-2010'], joinedAt: '2026-04-25 09:30:00' },
   ],
   'P-1004': [
-    { id: 'PM-1004-1', name: '周杰', role: '采集员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-15 11:30:00' },
-    { id: 'PM-1004-2', name: '孙丽', role: '标注员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-30 17:00:00' },
+    { id: 'PM-1004-1', uid: 'U-005', username: 'zhoujie', role: '采集员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-15 11:30:00' },
+    { id: 'PM-1004-2', uid: 'U-006', username: 'sunli', role: '标注员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-04-30 17:00:00' },
+    { id: 'PM-1004-3', uid: 'U-017', username: 'linfeng', role: '验收员', taskIds: ['T-2011', 'T-2012'], joinedAt: '2026-05-10 11:20:00' },
   ],
   'P-1005': [
-    { id: 'PM-1005-1', name: '王芳', role: '平台运营', taskIds: [], joinedAt: '2026-04-28 09:45:00' },
-    { id: 'PM-1005-2', name: '刘伟', role: '采集员', taskIds: ['T-2013'], joinedAt: '2026-04-30 10:15:00' },
-    { id: 'PM-1005-3', name: '何敏', role: '标注员', taskIds: ['T-2013'], joinedAt: '2026-04-30 16:50:00' },
+    { id: 'PM-1005-1', uid: 'U-003', username: 'wangfang', role: '平台运营', taskIds: [], joinedAt: '2026-04-28 09:45:00' },
+    { id: 'PM-1005-2', uid: 'U-004', username: 'liuwei', role: '采集员', taskIds: ['T-2013'], joinedAt: '2026-04-30 10:15:00' },
+    { id: 'PM-1005-3', uid: 'U-007', username: 'hemin', role: '标注员', taskIds: ['T-2013'], joinedAt: '2026-04-30 16:50:00' },
+    { id: 'PM-1005-4', uid: 'U-017', username: 'linfeng', role: '验收员', taskIds: ['T-2013'], joinedAt: '2026-05-12 14:00:00' },
   ],
   'P-1006': [
-    { id: 'PM-1006-1', name: '孙丽', role: '标注员', taskIds: ['T-2014'], joinedAt: '2026-05-11 08:20:00' },
+    { id: 'PM-1006-1', uid: 'U-006', username: 'sunli', role: '标注员', taskIds: ['T-2014'], joinedAt: '2026-05-11 08:20:00' },
+    { id: 'PM-1006-2', uid: 'U-017', username: 'linfeng', role: '验收员', taskIds: ['T-2014'], joinedAt: '2026-05-15 16:30:00' },
   ],
   'P-1007': [
-    { id: 'PM-1007-1', name: '刘伟', role: '采集员', taskIds: [], joinedAt: '2026-05-18 09:00:00' },
-    { id: 'PM-1007-2', name: '钱琳', role: '标注员', taskIds: [], joinedAt: '2026-05-18 11:25:00' },
+    { id: 'PM-1007-1', uid: 'U-004', username: 'liuwei', role: '采集员', taskIds: [], joinedAt: '2026-05-18 09:00:00' },
+    { id: 'PM-1007-2', uid: 'U-008', username: 'qianlin', role: '标注员', taskIds: [], joinedAt: '2026-05-18 11:25:00' },
   ],
   'P-1008': [
-    { id: 'PM-1008-1', name: '李明', role: '平台运营', taskIds: [], joinedAt: '2026-05-25 10:00:00' },
-    { id: 'PM-1008-2', name: '刘伟', role: '采集员', taskIds: ['T-2015'], joinedAt: '2026-05-27 14:30:00' },
-    { id: 'PM-1008-3', name: '钱琳', role: '标注员', taskIds: ['T-2015'], joinedAt: '2026-05-27 15:45:00' },
+    { id: 'PM-1008-1', uid: 'U-002', username: 'liming', role: '平台运营', taskIds: [], joinedAt: '2026-05-25 10:00:00' },
+    { id: 'PM-1008-2', uid: 'U-004', username: 'liuwei', role: '采集员', taskIds: ['T-2015'], joinedAt: '2026-05-27 14:30:00' },
+    { id: 'PM-1008-3', uid: 'U-008', username: 'qianlin', role: '标注员', taskIds: ['T-2015'], joinedAt: '2026-05-27 15:45:00' },
+    { id: 'PM-1008-4', uid: 'U-016', username: 'chenjing', role: '验收员', taskIds: ['T-2015'], joinedAt: '2026-05-28 10:00:00' },
   ],
 }

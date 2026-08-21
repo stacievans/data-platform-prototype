@@ -19,7 +19,7 @@ function MiddleSlot({ entry, onOpen }) {
     )
   }
 
-  if (dataStatus === '已上传') {
+  if (dataStatus === '已上传' || entry.batchQcPending) {
     return (
       <button type="button" disabled className={LINK_DISABLED} title="解析中，暂不可标注">
         标注
@@ -61,6 +61,8 @@ export default function EntryActions({
   onAccept,
   onDownload,
   onDelete,
+  hideDownload = false,
+  compact = false,
 }) {
   const goWorkbench = (mode) => {
     openWorkbench(entry.id, mode)
@@ -75,21 +77,23 @@ export default function EntryActions({
   }
 
   return (
-    <div className="grid w-full min-w-[248px] grid-cols-4 items-center gap-1">
+    <div className={`grid items-center ${compact ? 'w-fit grid-cols-3 gap-0' : hideDownload ? 'min-w-[186px] grid-cols-3 gap-1' : 'min-w-[248px] grid-cols-4 gap-1'}`}>
       <Button variant="link" size="sm" onClick={() => goWorkbench('play')} className="justify-center">
         播放
       </Button>
       <MiddleSlot entry={entry} onOpen={goWorkbench} />
-      <PermButton
-        permission="collection.upload.download"
-        mode="disable"
-        variant="link"
-        size="sm"
-        onClick={handleDownload}
-        className="justify-center"
-      >
-        下载
-      </PermButton>
+      {!hideDownload && (
+        <PermButton
+          permission="collection.upload.download"
+          mode="disable"
+          variant="link"
+          size="sm"
+          onClick={handleDownload}
+          className="justify-center"
+        >
+          下载
+        </PermButton>
+      )}
       <PermButton
         permission="collection.upload.delete"
         mode="disable"
