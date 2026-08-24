@@ -239,6 +239,36 @@ export function buildBatchTransferPatch(entry, {
   return patch
 }
 
+/**
+ * 验收重置：仅将验收工序改为待处理，保留原质检/标注状态与详情数据；不写入 lastBatchTransfer
+ */
+export function buildAcceptResetPatch(entry, { sourceStatus, operator, task }) {
+  const ps = deriveProcessStatuses(entry)
+  const time = nowDateTime()
+  const existingHistory = getExistingFlowHistory(entry, task)
+  const sourceLabel = statusKeyLabel(sourceStatus)
+
+  const patch = {
+    dataStatus: dataStatusFromProcessStates(ps.qc, ps.review, 'pending'),
+    acceptClaimedBy: null,
+    acceptClaimedAt: null,
+    lastBatchTransfer: null,
+    flowHistory: [
+      ...existingHistory,
+      {
+        label: '验收重置',
+        time,
+        operator: formatOperatorPlain(operator),
+        round: nextRound(entry, 'accept'),
+        batchDetail: `验收${sourceLabel} -> 验收待处理`,
+      },
+    ],
+  }
+
+  clearAcceptData(patch, false)
+  return patch
+}
+
 export function filterEntriesByBatchScope(entries, processKey, statusKey) {
   const field = getProcessFieldKey(processKey)
   if (!field || !statusKey) return []

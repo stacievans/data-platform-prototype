@@ -61,6 +61,7 @@ export default function SamplingBatchEntryListPanel({ batchId, projectId }) {
       singleRowFormFilters
       hideToolbarActions
       showTaskColumn
+      middleActionMode="acceptOnly"
     />
   )
 }

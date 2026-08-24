@@ -15,7 +15,6 @@ import {
   filterEntriesForAcceptReset,
 } from '../../utils/entryBatchTransfer'
 import { resolveReviewOperator, resolveAcceptOperator } from './entryTableHelpers'
-import { useToast } from '../common/Toast'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS =
@@ -95,7 +94,6 @@ export default function AcceptResetDrawer({
   onClose,
   onConfirm,
 }) {
-  const { ToastNode, show: showToast } = useToast()
   const [sourceStatus, setSourceStatus] = useState(null)
   const [qEntryId, setQEntryId] = useState('')
   const [qFileId, setQFileId] = useState('')
@@ -155,7 +153,6 @@ export default function AcceptResetDrawer({
 
   const handleConfirm = () => {
     if (!canConfirm) return
-    const count = selectedIds.size
     onConfirm?.({
       entryIds: [...selectedIds],
       sourceProcess: 'accept',
@@ -165,7 +162,6 @@ export default function AcceptResetDrawer({
       keepAcceptTags: false,
       flowLabelPrefix: '验收重置',
     })
-    showToast(`已将 ${count} 个条目的验收状态重置为待处理`)
     onClose()
   }
 
@@ -240,9 +236,7 @@ export default function AcceptResetDrawer({
   const drawerWidth = 'min(920px, calc(100vw - var(--layout-sidebar-width, 13rem)))'
 
   return (
-    <>
-      {ToastNode}
-      <Drawer
+    <Drawer
       open={open}
       title="验收重置"
       width={drawerWidth}
@@ -334,6 +328,5 @@ export default function AcceptResetDrawer({
         />
       </div>
     </Drawer>
-    </>
   )
 }

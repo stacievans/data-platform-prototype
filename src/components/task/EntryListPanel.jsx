@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { filterEntriesByDataScope } from '../../mock/permissions'
 import { getAllEntries, updateEntry } from '../../mock/entries'
-import { buildBatchTransferPatch } from '../../utils/entryBatchTransfer'
+import { buildBatchTransferPatch, buildAcceptResetPatch } from '../../utils/entryBatchTransfer'
 import { buildReQcPatch } from '../../utils/entryReQc'
 import { tasks } from '../../mock/tasks'
 import EntryDataTable from '../entry/EntryDataTable'
@@ -29,17 +29,23 @@ export default function EntryListPanel({ taskId, projectId }) {
 
     setEntryList((list) => list.map((entry) => {
       if (!payload.entryIds.includes(entry.id)) return entry
-      const patch = buildBatchTransferPatch(entry, {
-        targetProcess: payload.targetProcess,
-        targetStatus: payload.targetStatus,
-        sourceProcess: payload.sourceProcess,
-        sourceStatus: payload.sourceStatus,
-        operator,
-        keepReviewTags: payload.keepReviewTags,
-        keepAcceptTags: payload.keepAcceptTags,
-        task: getTask(entry),
-        flowLabelPrefix: payload.flowLabelPrefix,
-      })
+      const patch = payload.flowLabelPrefix === '验收重置'
+        ? buildAcceptResetPatch(entry, {
+          sourceStatus: payload.sourceStatus,
+          operator,
+          task: getTask(entry),
+        })
+        : buildBatchTransferPatch(entry, {
+          targetProcess: payload.targetProcess,
+          targetStatus: payload.targetStatus,
+          sourceProcess: payload.sourceProcess,
+          sourceStatus: payload.sourceStatus,
+          operator,
+          keepReviewTags: payload.keepReviewTags,
+          keepAcceptTags: payload.keepAcceptTags,
+          task: getTask(entry),
+          flowLabelPrefix: payload.flowLabelPrefix,
+        })
       if (!patch) return entry
       updateEntry(entry.id, patch)
       return { ...entry, ...patch }

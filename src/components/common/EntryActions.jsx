@@ -1,5 +1,6 @@
 import Button from './Button'
 import { PermButton } from './PermissionAction'
+import { deriveProcessStatuses } from '../../utils/entryProcess'
 
 const LINK_DISABLED =
   'inline-flex items-center justify-center text-sm text-gray-400 cursor-not-allowed opacity-60 px-1'
@@ -8,7 +9,23 @@ function openWorkbench(entryId, mode) {
   window.open(`/review/${entryId}?mode=${mode}`, '_blank', 'noopener,noreferrer')
 }
 
-function MiddleSlot({ entry, onOpen }) {
+function MiddleSlot({ entry, onOpen, mode = 'default' }) {
+  if (mode === 'acceptOnly') {
+    const acceptStatus = deriveProcessStatuses(entry).accept
+    if (acceptStatus === 'pending') {
+      return (
+        <Button variant="link" size="sm" onClick={() => onOpen('accept')} className="justify-center">
+          验收
+        </Button>
+      )
+    }
+    return (
+      <div className="flex items-center justify-center">
+        <span className="invisible select-none text-xs" aria-hidden="true">占位</span>
+      </div>
+    )
+  }
+
   const { dataStatus } = entry
 
   if (dataStatus === '已验收') {
@@ -55,6 +72,7 @@ export default function EntryActions({
   onDelete,
   hideDownload = false,
   compact = false,
+  middleActionMode = 'default',
 }) {
   const goWorkbench = (mode) => {
     openWorkbench(entry.id, mode)
@@ -73,7 +91,7 @@ export default function EntryActions({
       <Button variant="link" size="sm" onClick={() => goWorkbench('play')} className="justify-center">
         播放
       </Button>
-      <MiddleSlot entry={entry} onOpen={goWorkbench} />
+      <MiddleSlot entry={entry} onOpen={goWorkbench} mode={middleActionMode} />
       {!hideDownload && (
         <PermButton
           permission="collection.upload.download"

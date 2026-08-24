@@ -502,6 +502,7 @@ export default function EntryDataTable({
   hideToolbarActions = false,
   singleRowFormFilters = false,
   showTaskColumn = false,
+  middleActionMode = 'default',
 }) {
   const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
@@ -617,8 +618,13 @@ export default function EntryDataTable({
     onReQc?.({ entryIds, keepReviewTags })
     setSelectedIds(new Set())
     setReQcTagsOpen(false)
-    showToast(`已对 ${entryIds.length} 条条目发起重新质检`)
+    showToast(`已对 ${entryIds.length} 条条目发起重新质检`, { placement: 'top' })
   }
+
+  const handleAcceptResetConfirm = useCallback((payload) => {
+    onBatchTransfer?.(payload)
+    showToast(`已将 ${payload.entryIds.length} 个条目的验收状态重置为待处理`, { placement: 'top' })
+  }, [onBatchTransfer, showToast])
 
   const handleReQcClick = () => {
     if (!hasSelection || !onReQc) return
@@ -762,7 +768,13 @@ export default function EntryDataTable({
       key: 'actions',
       width: hideDownload ? 180 : 280,
       render: (_, row) => (
-        <EntryActions entry={row} hideDownload={hideDownload} compact={hideDownload} onDelete={() => setDeleteTarget(row)} />
+        <EntryActions
+          entry={row}
+          hideDownload={hideDownload}
+          compact={hideDownload}
+          middleActionMode={middleActionMode}
+          onDelete={() => setDeleteTarget(row)}
+        />
       ),
     },
   ]
@@ -954,7 +966,7 @@ export default function EntryDataTable({
         entries={entries}
         getTask={getTask}
         onClose={() => setBatchDrawerOpen(false)}
-        onConfirm={onBatchTransfer}
+        onConfirm={handleAcceptResetConfirm}
       />
 
       <BatchOpDetailModal

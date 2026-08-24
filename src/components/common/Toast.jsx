@@ -14,19 +14,20 @@ function SuccessIcon() {
  * useToast — 轻量 Toast 提示 hook
  *
  * const { ToastNode, show } = useToast()
- * show('消息内容')   // 触发提示，duration ms 后自动消失
- * show('消息内容', { placement: 'top', variant: 'success' })
+ * show('消息内容')   // 默认顶部居中
+ * show('消息内容', { variant: 'success' })  // 顶部白底绿勾
+ * show('消息内容', { placement: 'bottom' })  // 可选底部
  * 在 JSX 里渲染 {ToastNode}
  */
 export function useToast(duration = 2500) {
   const [msg, setMsg] = useState('')
   const [visible, setVisible] = useState(false)
-  const [placement, setPlacement] = useState('bottom')
+  const [placement, setPlacement] = useState('top')
   const [variant, setVariant] = useState('default')
 
   const show = useCallback((message, options = {}) => {
     setMsg(message)
-    setPlacement(options.placement ?? 'bottom')
+    setPlacement(options.placement ?? 'top')
     setVariant(options.variant ?? 'default')
     setVisible(true)
   }, [])

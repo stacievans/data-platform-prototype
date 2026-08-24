@@ -59,7 +59,7 @@ npm run preview
 
 | 状态 | 说明 |
 |---|---|
-| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.0 (2026-08-14)`**；侧边栏折叠时仅显示 **`v0.1.0`** |
+| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.4 (2026-08-24)`**；侧边栏折叠时仅显示 **`v0.1.4`** |
 | 点击 | 上方弹出小卡片，展示 **当前版本** 的简要更新说明（`summary`）；再点或点外部关闭 |
 | 数据 | 读取 **`src/release.js`**，不在组件内硬编码 |
 
@@ -67,9 +67,9 @@ npm run preview
 
 ```js
 {
-  version: '0.1.0',
-  date: '2026-08-14',
-  summary: '绑定校验交互调整为点击后查询提示；新增版本信息展示',
+  version: '0.1.4',
+  date: '2026-08-24',
+  summary: '完善需求修改：验收重置、重新质检等',
 }
 ```
 
@@ -117,8 +117,8 @@ npm run preview
 - 检索栏与列表标题之间、标题与表格之间为 **`border-gray-100` 分割线**（非独立卡片间距）
 
 **顶栏用户下拉**：
-- **默认身份**：超级管理员 · **系统**（`system@ai2robotics.com`，U-000）
-- 展示角色标签（超级管理员/组织管理员显示为「管理员」）、头像首字
+- **默认身份**：超级管理员 · **管理员**（`system@ai2robotics.com`，U-000；昵称与流转记录操作人一致）
+- 展示角色标签（超级管理员/组织管理员显示为「管理员」）；头像取昵称首字 **「管」**
 - **切换组织**：Toast 提示（mock，不持久化）
 - **退出登录**：跳转 `/login`
 
@@ -186,7 +186,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ### ~~演示身份切换~~（已移除）
 
-顶栏 **不再提供**「演示身份切换」。默认固定为 **超级管理员 · 系统**（U-000）。`rbac.js` → `DEMO_PERSONAS` 数据仍可用于后续扩展。
+顶栏 **不再提供**「演示身份切换」。默认固定为 **超级管理员 · 管理员**（U-000，昵称「管理员」）。`rbac.js` → `DEMO_PERSONAS` 数据仍可用于后续扩展。
 
 <details>
 <summary>历史演示账号列表（仅供参考）</summary>
@@ -243,7 +243,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 角色 | 权限范围（摘要） |
 |---|---|
-| **超级管理员** | 全部 permission key（含 `system.org.view`）；默认演示身份 U-000 |
+| **超级管理员** | 全部 permission key（含 `system.org.view`）；默认演示身份 U-000（昵称 **管理员**） |
 | **组织管理员** | 除 `system.org.*` 外全部 key（等同原「管理员」preset） |
 | **平台运营** | 除 `system.*` 外全部；`tag.*` / `device.*` 仅 **view**（可浏览不可新建/编辑/删除） |
 | **采集员** | 与标注员相同：`dashboard.view`；`collection.project/task/upload` 的 view + upload download；`dataset.self` 的 view + download；`tag.view`；`device.view` |
@@ -311,7 +311,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 ### 创建人自动填充
 
-新建类弹窗通过 `FormField.jsx` → `CreatorReadonlyField` 展示只读「创建人」，取值 `AuthContext.useCurrentNickname()`（默认「系统」）；提交保存时各页面在 handler 内再次读取当前昵称写入 `creator` 字段。
+新建类弹窗通过 `FormField.jsx` → `CreatorReadonlyField` 展示只读「创建人」，取值 `AuthContext.useCurrentNickname()`（默认「管理员」）；提交保存时各页面在 handler 内再次读取当前昵称写入 `creator` 字段。
 
 | 页面 / 弹窗 | 说明 |
 |---|---|
@@ -700,7 +700,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
   - 标题「**抽检条目列表**」；数据范围为该批次 `entryIds`
   - **无**工序 Tab / 子状态筛选；**无**列表工具栏（批量下载 / 播放转码 / 验收重置 / 重新质检）
   - **筛选区单行 4 列**：条目ID、文件名称、数据格式、验收状态（无「展开筛选」；无质检/标注状态）
-  - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）
+  - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）；中间按钮 **`middleActionMode="acceptOnly"`** — 仅 **验收待处理** 时显示「验收」，**无「标注」**
   - 工序状态点击、流转记录、标注/验收详情弹窗等行为与任务详情一致
 
 #### 新建抽检批次（`CreateSamplingBatchModal`）
@@ -853,12 +853,12 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 | 区块 | 说明 |
 |---|---|
-| **操作对象** | **数据范围***：按钮单选 **验收工序/已通过**、**验收工序/已驳回**；条目ID / 文件ID / 文件名称 模糊查询（与重置/查询 **同一行**，查询靠右）；选齐数据范围后展示符合条件条目 |
-| **操作目标** | **目标状态***：固定 **验收工序/待处理**（默认选中、置灰不可改） |
+| **操作对象** | **数据范围***：`ProcessStatusCascader` 级联选择 **验收工序/已通过** 或 **验收工序/已驳回**；条目ID / 文件ID / 文件名称 模糊查询（与重置/查询 **同一行**，查询靠右）；选齐数据范围后展示符合条件条目 |
+| **操作目标** | **目标状态***：`ProcessStatusCascader` 固定 **验收工序/待处理**（默认选中、置灰不可改） |
 | **列表** | 勾选、条目ID、文件ID、文件名称、质检状态、标注状态、验收状态（**无流转记录列**） |
-| **批量操作** | 勾选条目后点击；**直接执行**（将选中条目验收状态重置为待处理）；Toast「已将 x 个条目的验收状态重置为待处理」 |
+| **批量操作** | 勾选条目后点击；**直接执行**（仅将选中条目 **验收状态** 重置为待处理，**质检/标注状态与详情数据不变**）；顶部 Toast「已将 x 个条目的验收状态重置为待处理」 |
 
-**流转记录**：写入 `flowHistory`，节点标签前缀 **验收重置-**（`flowLabelPrefix`）；仍可通过 `lastBatchTransfer` 点击状态列查看 **操作记录**（`BatchOpDetailModal`）。
+**流转记录**：写入 `flowHistory`，节点标签前缀 **验收重置-**（`flowLabelPrefix`）；操作人取当前用户昵称（默认 **管理员(U-000)**）。**不写入** `lastBatchTransfer`，重置后仍可点击 **质检/标注** 列查看详情弹窗。
 
 #### 重新质检（`EntryDataTable` + `entryReQc.js`）
 
@@ -876,7 +876,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | **验收详情** | 正常流转 · 验收已通过/已驳回 | 验收结论、备注、验收时间/员 |
 | **操作记录** | **人工批量操作后** · 点击任一带状态的工序列（**质检-待处理除外**） | 操作状态、轮次、操作人、时间、详情（对象工序状态 ` -> ` 目标工序状态） |
 
-> 标注/验收 **待处理**、**进行中** 正常流转时不可点；已通过/已驳回 hover 显示操作人 Tooltip。批量操作（验收重置等）后条目带 `lastBatchTransfer` 标记，点击状态列统一打开 **操作记录**；目标为 **质检-待处理** 时质检列保持待处理且 **点击无反应**，操作列「标注」置灰并提示「解析中，暂不可标注」。
+> 标注/验收 **待处理**、**进行中** 正常流转时不可点；已通过/已驳回 hover 显示操作人 Tooltip。含 **`lastBatchTransfer`** 的条目（历史其他批量流转）点击状态列打开 **操作记录**（`BatchOpDetailModal`）；**验收重置不写入该标记**，重置后质检/标注列仍可点详情。目标为 **质检-待处理** 时质检列保持待处理且 **点击无反应**，操作列「标注」置灰并提示「解析中，暂不可标注」。
 
 工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）；子状态文案 **进行中**（内部键 `processing`）。
 
@@ -887,7 +887,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 #### 批量操作状态（已移除）
 
-原 **批量操作状态** 双级 Drawer（跨工序流转）已替换为 **验收重置** 单 Drawer。`BatchStatusDrawer.jsx` 已移除；流转 patch 仍由 `entryBatchTransfer.js` → `buildBatchTransferPatch` 提供（含 `accept:passed` / `flowLabelPrefix`）。
+原 **批量操作状态** 双级 Drawer（跨工序流转）已替换为 **验收重置** 单 Drawer。`BatchStatusDrawer.jsx` 已移除；验收重置专用 `entryBatchTransfer.js` → **`buildAcceptResetPatch`**（仅改验收为待处理）；其他批量流转仍用 `buildBatchTransferPatch`（含 `lastBatchTransfer` / `flowLabelPrefix`）。
 
 #### 列表工具栏与分页
 
@@ -907,7 +907,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **分页**：**10 条/页**；工序 Tab / 子状态 / 筛选变更时重置第 1 页
 
-**操作栏**（`EntryActions.jsx`）：默认 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`；`hideDownload` 时为 3 列并配合 `compact` 收窄；`已上传` 或 `batchQcPending` 时「标注」置灰并提示「解析中，暂不可标注」
+**操作栏**（`EntryActions.jsx`）：默认 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`；**任务详情**中间按钮 **仅「标注」**（已解析 / 验收不通过可点；已标注等无验收按钮）；**抽检批次详情** 传入 `middleActionMode="acceptOnly"`，仅验收待处理时显示「验收」。`hideDownload` 时为 3 列并配合 `compact` 收窄；`已上传` 或 `batchQcPending` 时「标注」置灰并提示「解析中，暂不可标注」
 
 > **TODO**：中间按钮角色校验（标注=标注员、验收=平台运营）尚未接入。
 
@@ -1274,7 +1274,7 @@ src/
 │   │   └── fragmentAnnotPreconfig.js     # 预置三大类 + mergeStoredPresetsWithCatalog、选项 isDefault
 │   ├── entry/
 │   │   ├── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、验收重置、重新质检；支持抽检批次精简 props）
-│   │   ├── AcceptResetDrawer.jsx  # 验收重置 Drawer（操作对象/操作目标 + 批量重置验收为待处理）
+│   │   ├── AcceptResetDrawer.jsx  # 验收重置 Drawer（ProcessStatusCascader 操作对象/目标 + 批量重置验收为待处理）
 │   │   ├── ReQcKeepTagsModal.jsx  # 重新质检：是否保留历史标注标签
 │   │   ├── BatchOpDetailModal.jsx # 人工批量操作后的「操作记录」弹窗
 │   │   └── entryTableHelpers.js   # 标注/验收操作人解析共用
@@ -1308,7 +1308,8 @@ src/
 │       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
 │       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconBackflowBoard/Device/Events/Trigger、IconCode/Send/Pause/Play 等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
-│       ├── Toast.jsx          # useToast hook — 轻量 Toast（支持 placement: top、variant: success）
+│       ├── ProcessStatusCascader.jsx  # 工序/状态二级级联（验收重置 Drawer）
+│       ├── Toast.jsx          # useToast hook — 轻量 Toast（**默认顶部居中**；`variant: success` 白底绿勾；可选 `placement: bottom`）
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
 │       ├── BarChart.jsx       # 柱状图（ResizeObserver 自适应宽度）
 │       ├── LineChart.jsx      # 单折线图
@@ -1409,7 +1410,7 @@ src/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
 │   ├── formatDateTime.js          # 全平台时间格式：formatDateTime / dtCol / formatRelativeTime
 │   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录（时间正序、stripFlowLabelRound）
-│   ├── entryBatchTransfer.js      # 验收重置 / 批量流转 patch：filterEntriesForAcceptReset、buildBatchTransferPatch（flowLabelPrefix）
+│   ├── entryBatchTransfer.js      # 验收重置 / 批量流转 patch：filterEntriesForAcceptReset、buildAcceptResetPatch、buildBatchTransferPatch（flowLabelPrefix / lastBatchTransfer）
 │   ├── entryReQc.js               # 重新质检：buildReQcPatch、entryHasReviewTagHistory
 │   ├── projectStatus.js           # 采集项目三态、canProjectMutate、canAcceptProject
 │   ├── qcResults.js               # 条目质检结果（掉帧检查帧率/标准差）
@@ -1464,17 +1465,17 @@ scripts/
 | 新建项目 Drawer | `Drawer.jsx` 默认宽度 `calc((100vw - var(--layout-sidebar-width)) / 3)`；Layout 在 `<main>` 设置 `--layout-sidebar-width`（`13rem` / `4rem`） |
 | 时间格式 | 列表/详情统一 **`YYYY-MM-DD HH:mm:ss`**（`utils/formatDateTime.js` → `formatDateTime`、`dtCol`）；用户「最后登录」用 `formatRelativeTime`；mock seed 经 `scripts/normalize-mock-datetimes.mjs` 批量规范化 |
 | 依赖 | React 19、Vite 8、Tailwind CSS 4、react-router-dom 7、recharts |
-| 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员** |
+| 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员**（昵称 **管理员**） |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`projectIds[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
-| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`flowHistory`、`lastBatchTransfer`、`batchQcPending`、片段标注；批量流转经 `entryBatchTransfer.js` → `buildBatchTransferPatch` |
+| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`flowHistory`、`lastBatchTransfer`（验收重置 **不写入**）、`batchQcPending`、片段标注；验收重置经 `buildAcceptResetPatch`，其他批量流转经 `buildBatchTransferPatch` |
 | 抽样验收 runtime | `samplingBatches.js` → `batchStore`；**`getBatchById`** / `appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
 | 删除确认 | 列表/卡片级删除均复用 **`DeleteConfirmModal`**：橙 icon、标题「提示」、正文「确定要删除吗？」、取消/蓝色「确定」。表单内局部删除（采集步骤、子标签、相机行、工作台标注段等）**无二次确认** |
 | 归档确认 | 采集项目 / 采集任务 / 采集方案归档均复用 **`DeleteConfirmModal` 同款样式**（橙 icon +「提示」+ 取消/蓝色「确定」），**正文保留各场景原文案**；项目/任务/方案列表操作栏「归档」均为 **橙色**（`text-amber-600`） |
-| Toast | `useToast` hook，2.5 秒自动消失；默认底部居中深底白字；`show(msg, { placement: 'top', variant: 'success' })` 为顶部居中白底绿勾（如项目成员「分配校验」全部完成） |
+| Toast | `useToast` hook，2.5 秒自动消失；**默认顶部居中**深底白字；`show(msg, { variant: 'success' })` 为顶部白底绿勾（如项目成员「分配校验」全部完成）；可选 `placement: 'bottom'` 回到底部 |
 | ID 列展示惯例 | 列表/详情表格中 **ID 类列标题** 写「中文ID」（**中文与 ID 之间无空格**，如「任务ID」「真机数据集ID」）；**ID 值** 黑色/灰色不可点击；**名称类列** 蓝色可跳转详情 |
 | 表格对齐 | `Table` 表头与单元格默认水平居中；`embedded` 时去掉外层 Card 边框（由 `ListPageCard` 承载）；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外）；`scrollVisibleRows` 可固定表内可见行数并 sticky 表头 |
 | 分页惯例 | 默认 **10 条/页**（`LIST_PAGE_SIZE`）；`ListPaginator` 右对齐单行：**第 X-Y 条/总共 Z 条** → `<` `>` 页码（>7 页省略号）→ **条/页** 下拉（10/20/50/100）；`Table` / `usePagination` 均支持 `pageSize` 变更并重置第 1 页 |
@@ -1485,12 +1486,12 @@ scripts/
 | 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer（默认 1/3 宽）；`modalView` 切换任务/方案配置（返回箭头）；**plan 视图仅选已有方案**（字段「采集方案」、无 Tab）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
 | 片段标注配置 Drawer | `FragmentAnnotConfigDrawer`：标题「片段标注配置」；宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；**采集打点 mandatory 置顶不可删**；左侧类型名 `中文(value)`；预置 **动作语义 / 区域帧 / 采集打点**；采集方案 Drawer 仍为默认 1/3 宽 |
 | 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `annotators` / `acceptors`；列表 **用户ID/用户名** 筛选；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
-| 批量操作 / 验收重置 | `AcceptResetDrawer` 单 Drawer；`entryBatchTransfer.js` → `filterEntriesForAcceptReset`、`buildBatchTransferPatch`（目标固定 `accept:pending`）；`flowHistory` 标签 **验收重置-**；批量后点击状态 → `BatchOpDetailModal` |
+| 批量操作 / 验收重置 | `AcceptResetDrawer` + `ProcessStatusCascader`；`buildAcceptResetPatch` 仅改验收为待处理、**不写** `lastBatchTransfer`；`flowHistory` 标签 **验收重置-**；重置后质检/标注详情仍可点 |
 | 重新质检 | `entryReQc.js` → `buildReQcPatch`；有标注历史时 `ReQcKeepTagsModal`；流转记录操作人取当前用户 |
 | 条目流转记录 | `FlowTimelineModal` 早→晚；标题 `stripFlowLabelRound` 去轮次括号；批量节点含 `batchDetail`（` -> ` 分隔） |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
 | 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（`showTaskColumn`、无工序 Tab/批量工具栏）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
-| 条目操作列 | `EntryActions`：标注不通过→验收；验收不通过→标注；质检不通过→无中间按钮 |
+| 条目操作列 | `EntryActions`：**任务详情**中间按钮仅「标注」；**抽检批次** `acceptOnly` 仅验收待处理显示「验收」；标注不通过→验收不通过打回标注（工作台入口） |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |
 | 任务/方案发布 | 草稿「发布」**无二次确认**，直接变更状态 + Toast「状态更新成功」（`TaskTable` / `CollectConfigTab`） |
@@ -1571,7 +1572,7 @@ scripts/
 | 设备类型数据源 | 任务/条目/方案创建时快照 `deviceTypeName`（及条目 `deviceTypeId`）；运行时 `enrichTask` 仅用于 seed 生成，历史展示读快照 |
 | 审核模板 | 3 条（`tags.js` → `auditTemplateSeed`，UI 在「审核模板」Tab） |
 | 组织 | 4 条（`organizations.js`）；含 `remark`、启停状态、动态 `memberCount` |
-| 用户 | 18 人 seed（含 U-016/U-017 **验收员**）；含 `uid`、`username`、`orgId`、`loginMethod`；默认演示 U-000 |
+| 用户 | 18 人 seed（含 U-016/U-017 **验收员**）；含 `uid`、`username`、`nickname`、`orgId`、`loginMethod`；默认演示 U-000（**管理员**） |
 | 内置角色 | **7 个**：`组织管理员` / `平台运营` / `采集员` / `标注员` / **验收员** / `游客` / `工程师`（`rbac.js` R-001~R-007；`type: '内置'`，默认启用） |
 | 自定义角色 | 2 个：**数据审核员** R-008、**区域协调员** R-009 |
 | 项目成员 | 按项目ID 组织；每成员 **单 role** 独立记录；`joinedAt` 精确到秒；与 `tasks.collectors/annotators` 对齐 |
@@ -1608,7 +1609,7 @@ scripts/
 
 | UID | username | 昵称 | 角色 | 所属组织 | 登录方式 | 状态 | 邮箱 |
 |---|---|---|---|---|---|---|---|
-| U-000 | superadmin | 系统 | **超级管理员** | — | 账号密码 | 启用 | system@ai2robotics.com |
+| U-000 | superadmin | 管理员 | **超级管理员** | — | 账号密码 | 启用 | system@ai2robotics.com |
 | U-001 | zhanghua | 张华 | 组织管理员 | 智平方 | 飞书SSO | 启用 | zhanghua@ai2robotics.com |
 | U-002 | liming | 李明 | 平台运营 | 智平方 | 飞书SSO | 启用 | ming.li@ai2robotics.com |
 | U-003 | wangfang | 王芳 | 平台运营 | 智平方 | 飞书SSO | 启用 | wangfang@ai2robotics.com |

@@ -32,7 +32,7 @@ export { devices } from './devices'
 
 // 系统管理 - 用户（orgId 见 organizations.js；U-000 超级管理员无组织，其余归入默认组织 ORG-002）
 export const users = [
-  { id: 0, uid: 'U-000', username: 'superadmin', nickname: '系统', phone: '138****0000', role: '超级管理员', status: '启用', orgId: null, loginMethod: '账号密码', email: 'system@ai2robotics.com', remark: '平台超级管理员账号', createdAt: '2026-03-01 00:00:00', lastLoginAt: '2026-06-18 09:00:00' },
+  { id: 0, uid: 'U-000', username: 'superadmin', nickname: '管理员', phone: '138****0000', role: '超级管理员', status: '启用', orgId: null, loginMethod: '账号密码', email: 'system@ai2robotics.com', remark: '平台超级管理员账号', createdAt: '2026-03-01 00:00:00', lastLoginAt: '2026-06-18 09:00:00' },
   { id: 1, uid: 'U-001', username: 'zhanghua',  nickname: '张华', phone: '138****2201', role: '组织管理员', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'zhanghua@ai2robotics.com', remark: '智平方 组织管理员', createdAt: '2026-03-01 09:00:00', lastLoginAt: '2026-06-18 09:15:00' },
   { id: 2, uid: 'U-002', username: 'liming',   nickname: '李明',   phone: '139****8512', role: '平台运营', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'ming.li@ai2robotics.com', remark: '负责采集项目运营', createdAt: '2026-03-05 10:30:00', lastLoginAt: '2026-06-18 07:40:00' },
   { id: 3, uid: 'U-003', username: 'wangfang', nickname: '王芳',   phone: '136****3308', role: '平台运营', status: '启用', orgId: 'ORG-002', loginMethod: '飞书SSO', email: 'wangfang@ai2robotics.com', remark: '负责标签与方案管理', createdAt: '2026-03-08 14:20:00', lastLoginAt: '2026-06-17 16:22:00' },

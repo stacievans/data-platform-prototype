@@ -166,7 +166,7 @@ export const DEMO_PERSONAS = [
 export { SUPER_ADMIN_ROLE }
 
 export const USER_EMAILS = {
-  系统: 'system@ai2robotics.com',
+  管理员: 'system@ai2robotics.com',
   张华: 'zhanghua@ai2robotics.com',
   李明: 'ming.li@ai2robotics.com',
   王芳: 'wangfang@ai2robotics.com',
