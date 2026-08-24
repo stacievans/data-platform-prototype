@@ -5,6 +5,7 @@ import {
   getProcessFieldKey,
   resolveFlowHistory,
   sortFlowHistoryChronological,
+  getEntryDisplayFileName,
 } from './entryProcess'
 export const BATCH_PROCESS_TABS = [
   { key: 'qc', label: '质检' },
@@ -21,8 +22,24 @@ export const BATCH_SOURCE_STATUS_OPTIONS = [
 
 export const BATCH_TARGET_STATUS_OPTIONS = [
   { key: 'pending', label: '待处理' },
+  { key: 'passed', label: '已通过' },
   { key: 'rejected', label: '已驳回' },
 ]
+
+export const ACCEPT_RESET_SOURCE_OPTIONS = [
+  { key: 'passed', label: '已通过' },
+  { key: 'rejected', label: '已驳回' },
+]
+
+export const ACCEPT_RESET_TARGET_OPTIONS = [
+  { key: 'pending', label: '待处理' },
+  { key: 'passed', label: '已通过' },
+  { key: 'rejected', label: '已驳回' },
+]
+
+export function acceptProcessStatusLabel(statusKey) {
+  return `验收工序/${statusKeyLabel(statusKey)}`
+}
 
 export function processTabLabel(key) {
   return BATCH_PROCESS_TABS.find((t) => t.key === key)?.label ?? key
@@ -77,6 +94,8 @@ function targetProcessStates(targetProcess, targetStatus) {
       return { qc: 'passed', review: 'rejected', accept: 'pending' }
     case 'accept:pending':
       return { qc: 'passed', review: 'passed', accept: 'pending' }
+    case 'accept:passed':
+      return { qc: 'passed', review: 'passed', accept: 'passed' }
     case 'accept:rejected':
       return { qc: 'passed', review: 'passed', accept: 'rejected' }
     default:
@@ -129,11 +148,16 @@ export function buildBatchTransferPatch(entry, {
   keepReviewTags = true,
   keepAcceptTags = true,
   task,
+  flowLabelPrefix = '批量流转',
 }) {
   const states = targetProcessStates(targetProcess, targetStatus)
   if (!states) return null
 
-  const afterLabel = targetStatus === 'pending' ? '待处理' : '已驳回'
+  const afterLabel = targetStatus === 'pending'
+    ? '待处理'
+    : targetStatus === 'passed'
+      ? '已通过'
+      : '已驳回'
   const sourceLabel = sourceProcess && sourceStatus
     ? `${processTabLabel(sourceProcess)}${statusKeyLabel(sourceStatus)}`
     : `${processTabLabel(targetProcess)}${statusKeyLabel(deriveProcessStatuses(entry)[targetProcess])}`
@@ -144,7 +168,7 @@ export function buildBatchTransferPatch(entry, {
   const round = nextRound(entry, targetProcess)
   const existingHistory = getExistingFlowHistory(entry, task)
   const flowNode = {
-    label: `批量流转-${targetLabel}`,
+    label: `${flowLabelPrefix}-${targetLabel}`,
     time,
     operator: formatOperatorPlain(operator),
     round,
@@ -200,6 +224,11 @@ export function buildBatchTransferPatch(entry, {
     if (targetStatus === 'pending') {
       clearAcceptData(patch, keepAcceptTags)
     }
+    if (targetStatus === 'passed') {
+      patch.acceptOperator = operator
+      patch.acceptTime = time
+      patch.acceptResult = '通过'
+    }
     if (targetStatus === 'rejected') {
       patch.acceptOperator = operator
       patch.acceptTime = time
@@ -214,6 +243,26 @@ export function filterEntriesByBatchScope(entries, processKey, statusKey) {
   const field = getProcessFieldKey(processKey)
   if (!field || !statusKey) return []
   return entries.filter((entry) => deriveProcessStatuses(entry)[field] === statusKey)
+}
+
+export function filterEntriesForAcceptReset(entries, sourceStatus, filters = {}) {
+  if (!sourceStatus) return []
+  const entryIdQ = String(filters.entryId ?? '').trim().toLowerCase()
+  const fileIdQ = String(filters.fileId ?? '').trim().toLowerCase()
+  const fileNameQ = String(filters.fileName ?? '').trim().toLowerCase()
+
+  return entries.filter((entry) => {
+    const ps = deriveProcessStatuses(entry)
+    if (ps.accept !== sourceStatus) return false
+    if (entryIdQ && !String(entry.id).toLowerCase().includes(entryIdQ)) return false
+    const fid = entry.fileId ?? entry.id.replace('E-', 'F-')
+    if (fileIdQ && !String(fid).toLowerCase().includes(fileIdQ)) return false
+    if (fileNameQ) {
+      const name = getEntryDisplayFileName(entry)
+      if (!String(name).toLowerCase().includes(fileNameQ)) return false
+    }
+    return true
+  })
 }
 
 export function isBatchTargetDisabled(sourceProcess, sourceStatus, targetProcess, targetStatus) {

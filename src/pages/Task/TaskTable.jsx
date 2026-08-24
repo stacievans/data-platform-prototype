@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import { taskStatusColor, pct, toPeopleArray } from '../../mock/tasks'
-import { findLatestPendingEntry } from '../../mock/entries'
 import { useToast } from '../../components/common/Toast'
 import { useAuth } from '../../context/AuthContext'
 import { PermButton, PermAction } from '../../components/common/PermissionAction'
@@ -91,19 +90,6 @@ function LinkAction({ permission, onClick, children, danger = false, warn = fals
   )
 }
 
-function DisabledLinkAction({ children, title = '任务已归档，不可操作' }) {
-  return (
-    <button
-      type="button"
-      disabled
-      title={title}
-      className="shrink-0 cursor-not-allowed px-1 text-sm text-gray-300"
-    >
-      {children}
-    </button>
-  )
-}
-
 /* ── 导出 ▾（仅导出子项下拉，操作本身平铺）── */
 function ExportMenu({ onExport }) {
   const [open, setOpen] = useState(false)
@@ -151,10 +137,6 @@ function ActionBar({ children }) {
   return <div className={ACTION_BAR_CLS}>{children}</div>
 }
 
-function openWorkbench(entryId, mode) {
-  window.open(`/review/${entryId}?mode=${mode}`, '_blank', 'noopener,noreferrer')
-}
-
 /* ══════════════════════════════════════════
    TaskTable
 ══════════════════════════════════════════ */
@@ -195,15 +177,6 @@ export default function TaskTable({
   const allSelected = selectable && data.length > 0 && data.every((row) => selectedSet.has(row.id))
   const someSelected = selectable && data.some((row) => selectedSet.has(row.id))
 
-  const goAudit = (taskId, mode) => {
-    const entry = findLatestPendingEntry(taskId, mode)
-    if (!entry) {
-      showToast(mode === 'review' ? '暂无待标注条目' : '暂无待验收条目')
-      return
-    }
-    openWorkbench(entry.id, mode)
-  }
-
   const progressCell = (done, total, color) => {
     const percent = pct(done, total)
     const barColor = percent >= 100 ? 'bg-emerald-500' : color
@@ -241,8 +214,6 @@ export default function TaskTable({
         <ActionBar>
           <DuplicateBtn onClick={() => onCopy?.(row)} />
           <ViewBtn onClick={goView} />
-          <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'review')}>标注</LinkAction>
-          <LinkAction permission="collection.task.view" onClick={() => goAudit(row.id, 'accept')}>验收</LinkAction>
           <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
           <LinkAction permission="collection.task.edit" warn onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
         </ActionBar>
@@ -254,8 +225,6 @@ export default function TaskTable({
       <ActionBar>
         <DuplicateBtn onClick={() => onCopy?.(row)} />
         <ViewBtn onClick={goView} />
-        <DisabledLinkAction>标注</DisabledLinkAction>
-        <DisabledLinkAction>验收</DisabledLinkAction>
         <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
         {onDeleteClick && (
           <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>

@@ -29,10 +29,10 @@ const LABEL_STATUS_COLOR = {
   失败: 'red',
 }
 
-const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-const LBL = 'mb-1 block text-xs text-gray-500'
+const INPUT_CLS = 'h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const FIELD_LABEL = 'mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700'
 
-function OneClickLabelDrawer({ open, selectedCount, onClose, onSubmit }) {
+function OneClickLabelDrawer({ open, onClose, onSubmit }) {
   const [targetDatasetId, setTargetDatasetId] = useState('')
   const [packageCount, setPackageCount] = useState('')
   const [remark, setRemark] = useState('')
@@ -68,9 +68,8 @@ function OneClickLabelDrawer({ open, selectedCount, onClose, onSubmit }) {
       okText="确定"
     >
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">已选中 {selectedCount} 个文件</p>
         <div>
-          <label className={`${LBL} flex items-center gap-0.5`}>
+          <label className={FIELD_LABEL}>
             目标数据集ID
             <span className="text-red-500">*</span>
           </label>
@@ -86,7 +85,7 @@ function OneClickLabelDrawer({ open, selectedCount, onClose, onSubmit }) {
           {error && <p className="mt-1 text-xs text-red-500">请填写目标数据集ID</p>}
         </div>
         <div>
-          <label className={LBL}>分包数量</label>
+          <label className={FIELD_LABEL}>分包数量</label>
           <input
             value={packageCount}
             onChange={(e) => setPackageCount(e.target.value)}
@@ -109,24 +108,7 @@ function FilesList({ convertedId, convertedName, onLabelSubmitted }) {
   const files = useMemo(() => getConvertedDatasetFiles(convertedId), [convertedId])
   const operator = useCurrentUsername()
   const { show, ToastNode } = useToast()
-  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [drawerOpen, setDrawerOpen] = useState(false)
-
-  const allSelected = files.length > 0 && files.every((f) => selectedIds.has(f.id))
-
-  const toggleAll = () => {
-    if (allSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(files.map((f) => f.id)))
-  }
-
-  const toggleRow = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const handleSubmit = ({ targetDatasetId, packageCount, remark }) => {
     appendLabelSubmissionRecord({
@@ -135,38 +117,14 @@ function FilesList({ convertedId, convertedName, onLabelSubmitted }) {
       targetDatasetId,
       packageCount,
       remark,
-      fileIds: [...selectedIds],
+      fileIds: files.map((f) => f.id),
       operator,
     })
-    setSelectedIds(new Set())
     onLabelSubmitted?.()
     show('送标任务已提交')
   }
 
   const columns = [
-    {
-      title: (
-        <input
-          type="checkbox"
-          checked={allSelected}
-          onChange={toggleAll}
-          disabled={!files.length}
-          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed"
-          aria-label="全选"
-        />
-      ),
-      key: 'select',
-      width: 48,
-      render: (_, row) => (
-        <input
-          type="checkbox"
-          checked={selectedIds.has(row.id)}
-          onChange={() => toggleRow(row.id)}
-          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          aria-label={`选择 ${row.id}`}
-        />
-      ),
-    },
     { title: '文件ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '文件名称', dataIndex: 'name', render: (v) => <span className="font-mono text-xs text-gray-800">{v}</span> },
     { title: '文件大小', dataIndex: 'size' },
@@ -179,7 +137,7 @@ function FilesList({ convertedId, convertedName, onLabelSubmitted }) {
       {ToastNode}
       <ListPageToolbar first>
         <h3 className="text-sm font-semibold text-gray-800">数据集文件列表</h3>
-        <Button variant="primary" disabled={!selectedIds.size} onClick={() => setDrawerOpen(true)}>
+        <Button variant="primary" disabled={!files.length} onClick={() => setDrawerOpen(true)}>
           一键送标
         </Button>
       </ListPageToolbar>
@@ -194,7 +152,6 @@ function FilesList({ convertedId, convertedName, onLabelSubmitted }) {
 
       <OneClickLabelDrawer
         open={drawerOpen}
-        selectedCount={selectedIds.size}
         onClose={() => setDrawerOpen(false)}
         onSubmit={handleSubmit}
       />

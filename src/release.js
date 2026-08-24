@@ -1,7 +1,7 @@
 const release = {
-  version: '0.1.3',
-  date: '2026-08-21',
-  summary: '需求修改：项目成员、条目批量操作状态、验收管理、一键送标',
+  version: '0.1.4',
+  date: '2026-08-24',
+  summary: '完善需求修改：验收重置、重新质检等',
 }
 
 export default release

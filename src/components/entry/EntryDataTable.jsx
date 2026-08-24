@@ -10,9 +10,12 @@ import { IconSearch, IconChevronDown } from '../common/Icons'
 import { getQcItemsByProjectId } from '../../mock/plans'
 import { resolveQcRowResult } from '../../utils/qcResults'
 import EntryActions from '../common/EntryActions'
-import BatchStatusDrawer from './BatchStatusDrawer'
+import AcceptResetDrawer from './AcceptResetDrawer'
 import BatchOpDetailModal from './BatchOpDetailModal'
+import ReQcKeepTagsModal from './ReQcKeepTagsModal'
+import { anyEntryHasReviewTagHistory } from '../../utils/entryReQc'
 import { resolveReviewOperator, resolveAcceptOperator } from './entryTableHelpers'
+import { useToast } from '../common/Toast'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import {
   deriveProcessStatuses,
@@ -490,6 +493,7 @@ export default function EntryDataTable({
   getProjectId,
   onDelete,
   onBatchTransfer,
+  onReQc,
   listTitle = '采集条目列表',
   hideProcessTabs = false,
   showScopeColumns = false,
@@ -519,6 +523,8 @@ export default function EntryDataTable({
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const [batchDrawerOpen, setBatchDrawerOpen] = useState(false)
   const [batchOpTarget, setBatchOpTarget] = useState(null)
+  const [reQcTagsOpen, setReQcTagsOpen] = useState(false)
+  const { ToastNode, show: showToast } = useToast()
 
   const statusClickHandlers = useMemo(() => ({
     onBatchOp: setBatchOpTarget,
@@ -605,6 +611,24 @@ export default function EntryDataTable({
   }
 
   const hasSelection = selectedIds.size > 0
+
+  const applyReQc = (keepReviewTags) => {
+    const entryIds = [...selectedIds]
+    onReQc?.({ entryIds, keepReviewTags })
+    setSelectedIds(new Set())
+    setReQcTagsOpen(false)
+    showToast(`已对 ${entryIds.length} 条条目发起重新质检`)
+  }
+
+  const handleReQcClick = () => {
+    if (!hasSelection || !onReQc) return
+    const entryIds = [...selectedIds]
+    if (anyEntryHasReviewTagHistory(entries, entryIds)) {
+      setReQcTagsOpen(true)
+      return
+    }
+    applyReQc(false)
+  }
 
   const confirmDelete = () => {
     onDelete?.(deleteTarget.id)
@@ -747,6 +771,7 @@ export default function EntryDataTable({
 
   return (
     <div className="space-y-3">
+      {ToastNode}
       <ListPageCard>
       {!hideProcessTabs && (
         <ListPageFilter>
@@ -875,12 +900,17 @@ export default function EntryDataTable({
           <div className="flex flex-wrap gap-2">
             <Button disabled={!hasSelection}>批量下载</Button>
             <Button disabled={!hasSelection}>播放转码</Button>
+            {onReQc && (
+              <Button disabled={!hasSelection} onClick={handleReQcClick}>
+                重新质检
+              </Button>
+            )}
             <Button
               variant="primary"
-              title="批量操作条目状态，实现跨工序进行流转"
+              title='批量修改条目验收状态为"待处理"'
               onClick={() => setBatchDrawerOpen(true)}
             >
-              批量操作状态
+              验收重置
             </Button>
           </div>
         )}
@@ -919,22 +949,25 @@ export default function EntryDataTable({
         onClose={() => setFlowTarget(null)}
       />
 
-      <BatchStatusDrawer
+      <AcceptResetDrawer
         open={batchDrawerOpen}
         entries={entries}
         getTask={getTask}
         onClose={() => setBatchDrawerOpen(false)}
         onConfirm={onBatchTransfer}
-        onQcDetail={setQcTarget}
-        onReviewDetail={setReviewTarget}
-        onAcceptDetail={setAcceptTarget}
-        onFlowDetail={setFlowTarget}
       />
 
       <BatchOpDetailModal
         open={!!batchOpTarget}
         record={batchOpTarget?.lastBatchTransfer}
         onClose={() => setBatchOpTarget(null)}
+      />
+
+      <ReQcKeepTagsModal
+        open={reQcTagsOpen}
+        onCancel={() => setReQcTagsOpen(false)}
+        onKeep={() => applyReQc(true)}
+        onClear={() => applyReQc(false)}
       />
 
     </div>

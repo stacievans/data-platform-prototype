@@ -26,9 +26,7 @@ import {
   applyProjectAcceptProcess,
   buildTaskDetailItems,
   defaultSamplingFilters,
-  findLatestPendingEntryInBatch,
   getPendingAcceptEntries,
-  openAcceptWorkbench,
   pickSampleEntryIdsByTasks,
   summarizeConfigItems,
 } from '../../utils/samplingHelpers'
@@ -120,6 +118,18 @@ function PassRateColumnTitle() {
       </span>
       {tooltip}
     </>
+  )
+}
+
+function ViewDetailBtn({ onClick, children = '详情' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
+    >
+      {children}
+    </button>
   )
 }
 
@@ -276,15 +286,6 @@ export default function SamplingPanel({
     showToast('抽检批次已创建')
   }
 
-  const handleAcceptBatch = (batch) => {
-    const entry = findLatestPendingEntryInBatch(batch)
-    if (!entry) {
-      showToast('该批次暂无待验收条目')
-      return
-    }
-    openAcceptWorkbench(entry.id)
-  }
-
   const handleDeleteBatch = () => {
     if (!deleteTarget) return
     const { id, name } = deleteTarget
@@ -424,28 +425,13 @@ export default function SamplingPanel({
       width: 220,
       render: (_, row) => (
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
-          {row.status !== 'completed' && (
-            <button
-              type="button"
-              className="cursor-pointer text-blue-600 hover:text-blue-500"
-              onClick={() => handleAcceptBatch(row)}
-            >
-              验收
-            </button>
-          )}
-          <button
-            type="button"
-            className="cursor-pointer text-blue-600 hover:text-blue-500"
-            onClick={() => navigate(`/collection/project/${projectId}/sampling/${row.id}`)}
-          >
-            详情
-          </button>
+          <ViewDetailBtn onClick={() => navigate(`/collection/project/${projectId}/sampling/${row.id}`)} />
           <button
             type="button"
             className="cursor-pointer text-blue-600 hover:text-blue-500"
             onClick={() => setProcessTarget(row)}
           >
-            处理
+            批量处理
           </button>
           <button
             type="button"
@@ -491,7 +477,7 @@ export default function SamplingPanel({
               onChange={(e) => setQCreator(e.target.value)}
               className={SELECT_CLS}
             >
-              <option value="">请选择</option>
+              <option value="" disabled hidden>请选择创建人</option>
               {creatorOptions.map((name) => (
                 <option key={name} value={name}>{name}</option>
               ))}

@@ -76,7 +76,9 @@ function parseRoundFromLabel(label) {
 }
 
 function isQcFlowLabel(label) {
-  return String(label ?? '').includes('质检')
+  const s = String(label ?? '')
+  if (s === '重新质检') return false
+  return s.includes('质检')
 }
 
 function normalizeFlowNode(node) {
