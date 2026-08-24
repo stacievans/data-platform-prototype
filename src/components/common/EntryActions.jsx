@@ -35,14 +35,6 @@ function MiddleSlot({ entry, onOpen }) {
     )
   }
 
-  if (dataStatus === '已标注' || dataStatus === '标注不通过') {
-    return (
-      <Button variant="link" size="sm" onClick={() => onOpen('accept')} className="justify-center">
-        验收
-      </Button>
-    )
-  }
-
   return (
     <div className="flex items-center justify-center">
       <span className="invisible select-none text-xs" aria-hidden="true">占位</span>
@@ -52,7 +44,7 @@ function MiddleSlot({ entry, onOpen }) {
 
 /**
  * 采集条目统一操作栏：固定 4 列 [ 播放 | 中间按钮 | 下载 | 删除 ]
- * TODO: 中间按钮角色校验（标注=标注员、验收=平台运营）
+ * TODO: 中间按钮角色校验（标注=标注员）
  */
 export default function EntryActions({
   entry,

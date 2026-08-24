@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import Drawer from '../common/Drawer'
 import Button from '../common/Button'
 import Table from '../common/Table'
+import ProcessStatusCascader from '../common/ProcessStatusCascader'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import {
   deriveProcessStatuses,
@@ -11,7 +12,6 @@ import {
 } from '../../utils/entryProcess'
 import {
   ACCEPT_RESET_SOURCE_OPTIONS,
-  acceptProcessStatusLabel,
   filterEntriesForAcceptReset,
 } from '../../utils/entryBatchTransfer'
 import { resolveReviewOperator, resolveAcceptOperator } from './entryTableHelpers'
@@ -86,47 +86,7 @@ function ProcessStatusCell({ status, operator }) {
   return inner
 }
 
-function ProcessStatusButtonGroup({
-  label,
-  required = false,
-  options,
-  value,
-  onChange,
-  disabledKeys = [],
-  disabled = false,
-}) {
-  return (
-    <div>
-      <label className={`${LBL}${required ? ' flex items-center gap-0.5' : ''}`}>
-        {label}
-        {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt) => {
-          const isDisabled = disabled || disabledKeys.includes(opt.key)
-          const active = value === opt.key
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              disabled={isDisabled}
-              onClick={() => !isDisabled && onChange(opt.key)}
-              className={`rounded-full border px-3 py-1 text-sm font-medium transition-all ${
-                isDisabled
-                  ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
-                  : active
-                    ? 'cursor-pointer border-blue-600 bg-blue-600 text-white'
-                    : 'cursor-pointer border-gray-300 bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600'
-              }`}
-            >
-              {acceptProcessStatusLabel(opt.key)}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
+const TARGET_STATUS_OPTIONS = [{ key: 'pending', label: '待处理' }]
 
 export default function AcceptResetDrawer({
   open,
@@ -294,13 +254,18 @@ export default function AcceptResetDrawer({
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
           <p className="mb-3 text-sm font-medium text-gray-800">操作对象</p>
           <div className="space-y-4">
-            <ProcessStatusButtonGroup
-              label="数据范围"
-              required
-              options={ACCEPT_RESET_SOURCE_OPTIONS}
-              value={sourceStatus}
-              onChange={setSourceStatus}
-            />
+            <div>
+              <label className={`${LBL} flex items-center gap-0.5`}>
+                数据范围
+                <span className="text-red-500">*</span>
+              </label>
+              <ProcessStatusCascader
+                statusOptions={ACCEPT_RESET_SOURCE_OPTIONS}
+                value={sourceStatus}
+                onChange={setSourceStatus}
+                placeholder="请选择"
+              />
+            </div>
             <div className="flex flex-wrap items-end gap-3">
               <div className="min-w-0 flex-1 basis-0">
                 <label className={LBL}>条目ID</label>
@@ -346,13 +311,10 @@ export default function AcceptResetDrawer({
               目标状态
               <span className="text-red-500">*</span>
             </label>
-            <button
-              type="button"
-              disabled
-              className="cursor-not-allowed rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-medium text-gray-400"
-            >
-              {acceptProcessStatusLabel(targetStatus)}
-            </button>
+            <ProcessStatusCascader
+              statusOptions={TARGET_STATUS_OPTIONS}
+              value={targetStatus}
+            />
           </div>
         </div>
 
