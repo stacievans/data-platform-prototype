@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMemo, useState } from 'react'
-import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import { calcPassRate, getBatchById } from '../../mock/samplingBatches'
 import { projects } from '../../mock/projects'
@@ -48,12 +47,7 @@ export default function SamplingBatchDetail() {
       <div className="rounded-lg border border-gray-100 bg-white px-5 py-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-gray-800">{batch.name}</h2>
-              <Badge color={batch.status === 'completed' ? 'green' : 'blue'} dot>
-                {batch.status === 'completed' ? '已完成' : '进行中'}
-              </Badge>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-800">{batch.name}</h2>
           </div>
           <div className="flex flex-wrap items-center gap-8 text-sm">
             <div>

@@ -972,7 +972,11 @@ export default function EntryDataTable({
               </Button>
             )}
             {onBatchAcceptReset && (
-              <Button disabled={!hasSelection} onClick={handleBatchAcceptResetClick}>
+              <Button
+                disabled={!hasSelection}
+                onClick={handleBatchAcceptResetClick}
+                title='将验收状态为"已通过"/"已驳回"的条目验收状态改为"待处理"'
+              >
                 验收重置
               </Button>
             )}

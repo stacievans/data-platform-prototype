@@ -44,12 +44,12 @@ function nextRound(entry, processKey) {
   return max + 1
 }
 
-/** 验收重置轮次：仅统计历史「验收重置」节点，与验收通过轮次独立 */
-function nextAcceptResetRound(entry) {
+/** 验收重置轮次 = 流转历史中验收相关节点（验收通过/驳回/重置）最大轮次 + 1 */
+function nextAcceptResetRound(history) {
   let max = 0
-  ;(entry.flowHistory ?? []).forEach((node) => {
+  history.forEach((node) => {
     const label = String(node.label ?? '')
-    if (!label.includes('验收重置')) return
+    if (!label.includes('验收')) return
     if (node.round != null) {
       max = Math.max(max, node.round)
       return
@@ -293,7 +293,7 @@ export function buildAcceptResetPatch(entry, { operator, task }) {
         label: '验收重置',
         time,
         operator: formatOperatorPlain(operator),
-        round: nextAcceptResetRound(entry),
+        round: nextAcceptResetRound(existingHistory),
         batchDetail: `验收${sourceLabel} -> 验收待处理`,
       },
     ],
