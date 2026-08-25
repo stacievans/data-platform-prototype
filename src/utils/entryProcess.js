@@ -276,13 +276,15 @@ export function countProcessSubStatuses(entries, tab) {
 }
 
 export function filterEntriesByForm(entry, filters, resolveScope) {
-  const { entryId, fileName, projectName, taskName, qcStatus, reviewStatus, acceptStatus, format } = filters
+  const { entryId, fileId, fileName, projectName, taskName, qcStatus, reviewStatus, acceptStatus, format } = filters
   const displayName = getEntryDisplayFileName(entry)
   const scope = resolveScope?.(entry) ?? {}
   const entryProjectName = entry.projectName ?? scope.projectName ?? ''
   const entryTaskName = entry.taskName ?? scope.taskName ?? ''
+  const entryFileId = entry.fileId ?? entry.id.replace('E-', 'F-')
 
   if (entryId && !entry.id.toLowerCase().includes(entryId.toLowerCase())) return false
+  if (fileId && !String(entryFileId).toLowerCase().includes(fileId.toLowerCase())) return false
   if (fileName && !displayName.toLowerCase().includes(fileName.toLowerCase())
     && !entry.fileName.toLowerCase().includes(fileName.toLowerCase())) return false
   if (projectName && !entryProjectName.toLowerCase().includes(projectName.toLowerCase())) return false

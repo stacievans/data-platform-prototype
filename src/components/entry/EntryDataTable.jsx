@@ -10,7 +10,6 @@ import { IconSearch, IconChevronDown } from '../common/Icons'
 import { getQcItemsByProjectId } from '../../mock/plans'
 import { resolveQcRowResult } from '../../utils/qcResults'
 import EntryActions from '../common/EntryActions'
-import AcceptResetDrawer from './AcceptResetDrawer'
 import BatchOpDetailModal from './BatchOpDetailModal'
 import ReQcKeepTagsModal from './ReQcKeepTagsModal'
 import { anyEntryHasReviewTagHistory } from '../../utils/entryReQc'
@@ -449,7 +448,7 @@ function FlowTimelineModal({ open, entry, task, onClose }) {
                   <div>轮次：第 {node.round ?? 1} 轮</div>
                   <div>操作人：{node.operator ?? '—'}</div>
                   <div className="text-gray-400">时间：{formatDateTime(node.time)}</div>
-                  {node.batchOp && node.batchDetail && (
+                  {node.batchDetail && (
                     <div className="text-gray-400">详情：{node.batchDetail}</div>
                   )}
                 </div>
@@ -492,7 +491,6 @@ export default function EntryDataTable({
   getTask,
   getProjectId,
   onDelete,
-  onBatchTransfer,
   onReQc,
   listTitle = '采集条目列表',
   hideProcessTabs = false,
@@ -503,10 +501,13 @@ export default function EntryDataTable({
   singleRowFormFilters = false,
   showTaskColumn = false,
   middleActionMode = 'default',
+  onBatchAcceptPass,
+  onBatchAcceptReset,
 }) {
   const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
   const [qEntryId, setQEntryId] = useState('')
+  const [qFileId, setQFileId] = useState('')
   const [qProjectName, setQProjectName] = useState('')
   const [qTaskName, setQTaskName] = useState('')
   const [qFileName, setQFileName] = useState('')
@@ -522,7 +523,6 @@ export default function EntryDataTable({
   const [acceptTarget, setAcceptTarget] = useState(null)
   const [flowTarget, setFlowTarget] = useState(null)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
-  const [batchDrawerOpen, setBatchDrawerOpen] = useState(false)
   const [batchOpTarget, setBatchOpTarget] = useState(null)
   const [reQcTagsOpen, setReQcTagsOpen] = useState(false)
   const { ToastNode, show: showToast } = useToast()
@@ -572,6 +572,7 @@ export default function EntryDataTable({
 
   const applyFilters = () => setFilters({
     entryId: qEntryId,
+    fileId: qFileId,
     projectName: showScopeColumns ? qProjectName : '',
     taskName: showScopeColumns ? qTaskName : '',
     fileName: qFileName,
@@ -583,6 +584,7 @@ export default function EntryDataTable({
 
   const resetFilters = () => {
     setQEntryId('')
+    setQFileId('')
     setQProjectName('')
     setQTaskName('')
     setQFileName('')
@@ -621,11 +623,6 @@ export default function EntryDataTable({
     showToast(`已对 ${entryIds.length} 条条目发起重新质检`, { placement: 'top' })
   }
 
-  const handleAcceptResetConfirm = useCallback((payload) => {
-    onBatchTransfer?.(payload)
-    showToast(`已将 ${payload.entryIds.length} 个条目的验收状态重置为待处理`, { placement: 'top' })
-  }, [onBatchTransfer, showToast])
-
   const handleReQcClick = () => {
     if (!hasSelection || !onReQc) return
     const entryIds = [...selectedIds]
@@ -634,6 +631,27 @@ export default function EntryDataTable({
       return
     }
     applyReQc(false)
+  }
+
+  const handleBatchAcceptPassClick = () => {
+    if (!hasSelection || !onBatchAcceptPass) return
+    const entryIds = [...selectedIds]
+    onBatchAcceptPass(entryIds)
+    setSelectedIds(new Set())
+    showToast(`已将 ${entryIds.length} 个条目的验收状态改为已通过`, { placement: 'top' })
+  }
+
+  const handleBatchAcceptResetClick = () => {
+    if (!hasSelection || !onBatchAcceptReset) return
+    const entryIds = [...selectedIds]
+    const processed = onBatchAcceptReset(entryIds)
+    setSelectedIds(new Set())
+    const count = typeof processed === 'number' ? processed : entryIds.length
+    if (count > 0) {
+      showToast(`已将 ${count} 个条目的验收状态重置为待处理`, { placement: 'top' })
+    } else {
+      showToast('所选条目验收状态均为待处理，已跳过', { placement: 'top' })
+    }
   }
 
   const confirmDelete = () => {
@@ -802,7 +820,41 @@ export default function EntryDataTable({
 
       <ListPageFilter className={!hideProcessTabs ? 'pt-3' : ''}>
         <div className="space-y-3">
-          <div className={singleRowFormFilters ? 'grid grid-cols-4 gap-3' : FILTER_GRID_ROW}>
+          {singleRowFormFilters ? (
+            <div className="grid grid-cols-6 gap-3">
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>条目ID</label>
+                <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>文件ID</label>
+                <input value={qFileId} onChange={(e) => setQFileId(e.target.value)} placeholder="请输入文件ID" className={INPUT_CLS} />
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>文件名称</label>
+                <input value={qFileName} onChange={(e) => setQFileName(e.target.value)} placeholder="请输入文件名称" className={INPUT_CLS} />
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>数据格式</label>
+                <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>标注状态</label>
+                <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>验收状态</label>
+                <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            </div>
+          ) : (
+          <div className={FILTER_GRID_ROW}>
             <div className={FILTER_FIELD}>
               <label className={LBL}>条目ID</label>
               <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
@@ -829,15 +881,7 @@ export default function EntryDataTable({
                 {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
-            {singleRowFormFilters && (
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>验收状态</label>
-                <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                  {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-            )}
-            {!showScopeColumns && !hideQcReviewFormFilters && !singleRowFormFilters && (
+            {!showScopeColumns && !hideQcReviewFormFilters && (
               <>
                 <div className={FILTER_FIELD}>
                   <label className={LBL}>质检状态</label>
@@ -854,6 +898,7 @@ export default function EntryDataTable({
               </>
             )}
           </div>
+          )}
 
           {filtersExpanded && !singleRowFormFilters && (
             <div className={FILTER_GRID_ROW}>
@@ -908,22 +953,29 @@ export default function EntryDataTable({
 
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
-        {!hideToolbarActions && (
+        {(!hideToolbarActions || onBatchAcceptPass || onBatchAcceptReset) && (
           <div className="flex flex-wrap gap-2">
-            <Button disabled={!hasSelection}>批量下载</Button>
-            <Button disabled={!hasSelection}>播放转码</Button>
-            {onReQc && (
-              <Button disabled={!hasSelection} onClick={handleReQcClick}>
-                重新质检
+            {!hideToolbarActions && (
+              <>
+                <Button disabled={!hasSelection}>批量下载</Button>
+                <Button disabled={!hasSelection}>播放转码</Button>
+                {onReQc && (
+                  <Button disabled={!hasSelection} onClick={handleReQcClick}>
+                    重新质检
+                  </Button>
+                )}
+              </>
+            )}
+            {onBatchAcceptPass && (
+              <Button variant="primary" disabled={!hasSelection} onClick={handleBatchAcceptPassClick}>
+                验收通过
               </Button>
             )}
-            <Button
-              variant="primary"
-              title='批量修改条目验收状态为"待处理"'
-              onClick={() => setBatchDrawerOpen(true)}
-            >
-              验收重置
-            </Button>
+            {onBatchAcceptReset && (
+              <Button disabled={!hasSelection} onClick={handleBatchAcceptResetClick}>
+                验收重置
+              </Button>
+            )}
           </div>
         )}
       </ListPageToolbar>
@@ -959,14 +1011,6 @@ export default function EntryDataTable({
         entry={flowTarget}
         task={flowTarget ? getTask?.(flowTarget) : null}
         onClose={() => setFlowTarget(null)}
-      />
-
-      <AcceptResetDrawer
-        open={batchDrawerOpen}
-        entries={entries}
-        getTask={getTask}
-        onClose={() => setBatchDrawerOpen(false)}
-        onConfirm={handleAcceptResetConfirm}
       />
 
       <BatchOpDetailModal

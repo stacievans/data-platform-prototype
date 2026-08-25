@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；操作列 **详情 / 批量处理 / 删除**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；添加成员从系统角色筛选；**查看任务**跳转采集任务 Tab 并筛选）· 任务详情采集条目 **验收重置**（单 Drawer 批量将验收状态改回待处理 + Toast）· **重新质检**（勾选条目；有标注历史时确认是否保留标签）· **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；条目列表 **验收重置**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；添加成员从系统角色筛选；**查看任务**跳转采集任务 Tab 并筛选）· 任务详情采集条目 **重新质检** · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -69,7 +69,7 @@ npm run preview
 {
   version: '0.1.4',
   date: '2026-08-24',
-  summary: '完善需求修改：验收重置、重新质检等',
+  summary: '完善需求修改：抽检批次验收重置（跳过待处理）、重新质检等',
 }
 ```
 
@@ -272,7 +272,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 采集项目 | **+ 新建**（Drawer）；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态；**列表无验收入口**） |
 | 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**验收管理** Tab、运营看板；采集方案列表含 **片段标注配置** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、**导出 ▾**（标签/质检报告）、归档、删除（**已发布无删除**；**已归档**保留复制/导出） |
-| 采集条目 | 下载、删除；**验收重置**（批量将验收状态改回待处理） |
+| 采集条目 | 下载、删除；任务详情 **重新质检**；抽检批次详情 **验收重置**（跳过验收待处理） |
 | 真机数据集 | 新建（Drawer）、删除、下载说明；详情数据条目 Tab：**转图片/转视频**（范围弹窗 + 配置 Drawer）、**CLI 批量下载**、删除（`DeleteConfirmModal`）；卡片菜单删除 |
 | 标签管理 | 各 Tab 新建；行内编辑、删除 |
 | 设备管理 | 新建类型/实例；行内编辑、删除 |
@@ -697,9 +697,10 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **面包屑**：`当前位置：采集项目 / 项目详情 / 抽检批次详情`（项目详情链接带 `?tab=sampling`）
 - **页头卡片**：批次名称 + 状态 Badge（已完成/进行中）、抽检条目、通过率、验收进度、创建人、创建时间（**无**批次ID·项目名称副标题行）
 - **抽检条目列表**（`SamplingBatchEntryListPanel` → `EntryDataTable` 精简模式）：
-  - 标题「**抽检条目列表**」；数据范围为该批次 `entryIds`
-  - **无**工序 Tab / 子状态筛选；**无**列表工具栏（批量下载 / 播放转码 / 验收重置 / 重新质检）
-  - **筛选区单行 4 列**：条目ID、文件名称、数据格式、验收状态（无「展开筛选」；无质检/标注状态）
+  - 标题「**抽检条目列表**」；数据范围为该批次 `entryIds`；操作后 **刷新列表** 并同步页头批次统计（通过率 / 验收进度）
+  - **无**工序 Tab / 子状态筛选；隐藏任务详情工具栏（批量下载 / 播放转码 / 重新质检）
+  - **筛选区单行 6 列**（无「展开筛选」）：条目ID、**文件ID**、文件名称、数据格式、**标注状态**、验收状态
+  - 列表右上角 **「验收重置」**（需勾选；未勾选置灰）：将选中条目中 **验收已通过/已驳回** 的条目批量改回 **待处理**（`canAcceptReset` + `buildAcceptResetPatch`）；**验收待处理** 的条目即使勾选也 **跳过**（不写流转、不产生「待处理→待处理」）；Toast 显示实际处理数；**无「验收通过」按钮**
   - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）；中间按钮 **`middleActionMode="acceptOnly"`** — 仅 **验收待处理** 时显示「验收」，**无「标注」**
   - 工序状态点击、流转记录、标注/验收详情弹窗等行为与任务详情一致
 
@@ -822,8 +823,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | `listTitle` | 列表标题（抽检批次详情为「抽检条目列表」） |
 | `hideProcessTabs` | 隐藏工序 Tab + 子状态行 |
 | `hideQcReviewFormFilters` | 筛选首行去掉质检/标注状态 |
-| `singleRowFormFilters` | 条目ID + 文件名称 + 数据格式 + 验收状态 **单行 4 列**；隐藏「展开筛选」 |
-| `hideToolbarActions` | 隐藏批量下载 / 播放转码 / 重新质检 / 验收重置 |
+| `singleRowFormFilters` | 抽检批次详情：**条目ID + 文件ID + 文件名称 + 数据格式 + 标注状态 + 验收状态** 单行 6 列；隐藏「展开筛选」 |
+| `hideToolbarActions` | 隐藏任务详情默认工具栏（批量下载 / 播放转码 / 重新质检）；可与 `onBatchAcceptReset` 等回调组合 |
+| `onBatchAcceptReset` | 抽检批次详情：**验收重置**（勾选；仅处理验收 **已通过/已驳回**，跳过 **待处理**） |
 | `hideDownload` / `compact` | 操作列去掉下载并收窄（`EntryActions` 3 列） |
 | `showTaskColumn` | 文件名称右侧增加 **所属任务** 列 |
 | `showScopeColumns` | 增加所属项目/任务名称列（原采集条目页模式） |
@@ -845,20 +847,16 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### 列表字段
 勾选、**条目ID**（黑色不可点）、所属项目名称/任务名称（`showScopeColumns` 时）、文件ID、文件名称、**所属任务**（`showTaskColumn` 时，文件名称右侧）、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照）、**采集设备**（`CollectDeviceCell`）、**质检状态** / **标注状态** / **验收状态**（见下表交互）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
 
-#### 验收重置（`AcceptResetDrawer.jsx` + `entryBatchTransfer.js`）
+#### 验收重置（抽检批次详情 · `canAcceptReset` + `buildAcceptResetPatch`）
 
-入口：列表右上角 **「验收重置」**（「播放转码」右侧；hover 提示「批量修改条目验收状态为"待处理"」）。**无需**先勾选主列表行。
+入口：抽检批次详情列表右上角 **「验收重置」**。**需勾选**条目；未勾选置灰。
 
-**Drawer · 验收重置**（宽 ~920px；**单 Drawer**，无二级抽屉）：
+- **仅处理**选中且 **验收状态为「已通过」或「已驳回」** 的条目（`canAcceptReset`）；**验收待处理**（及进行中）即使勾选也 **跳过**，不写流转记录
+- 符合条件条目：**验收状态** 改回 **待处理**；**质检/标注状态与详情数据不变**；**不写入** `lastBatchTransfer`
+- Toast：实际处理数 `已将 x 个条目的验收状态重置为待处理`；若所选均为待处理 → `所选条目验收状态均为待处理，已跳过`；刷新列表并同步批次 `acceptProgress` / 通过率（`syncBatchesAfterEntryAccept`）
+- 流转记录追加 **验收重置** 节点；**轮次独立计数**（`nextAcceptResetRound`：首次重置为 **第 1 轮**，与「验收通过」轮次无关）；**详情：验收已通过/已驳回 → 验收待处理**（不会出现「待处理→待处理」）
 
-| 区块 | 说明 |
-|---|---|
-| **操作对象** | **数据范围***：`ProcessStatusCascader` 级联选择 **验收工序/已通过** 或 **验收工序/已驳回**；条目ID / 文件ID / 文件名称 模糊查询（与重置/查询 **同一行**，查询靠右）；选齐数据范围后展示符合条件条目 |
-| **操作目标** | **目标状态***：`ProcessStatusCascader` 固定 **验收工序/待处理**（默认选中、置灰不可改） |
-| **列表** | 勾选、条目ID、文件ID、文件名称、质检状态、标注状态、验收状态（**无流转记录列**） |
-| **批量操作** | 勾选条目后点击；**直接执行**（仅将选中条目 **验收状态** 重置为待处理，**质检/标注状态与详情数据不变**）；顶部 Toast「已将 x 个条目的验收状态重置为待处理」 |
-
-**流转记录**：写入 `flowHistory`，节点标签前缀 **验收重置-**（`flowLabelPrefix`）；操作人取当前用户昵称（默认 **管理员(U-000)**）。**不写入** `lastBatchTransfer`，重置后仍可点击 **质检/标注** 列查看详情弹窗。
+> **任务详情已无「验收重置」**；原 `AcceptResetDrawer` / `BatchStatusDrawer` 双级 Drawer 方案已下线。
 
 #### 重新质检（`EntryDataTable` + `entryReQc.js`）
 
@@ -876,22 +874,24 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | **验收详情** | 正常流转 · 验收已通过/已驳回 | 验收结论、备注、验收时间/员 |
 | **操作记录** | **人工批量操作后** · 点击任一带状态的工序列（**质检-待处理除外**） | 操作状态、轮次、操作人、时间、详情（对象工序状态 ` -> ` 目标工序状态） |
 
-> 标注/验收 **待处理**、**进行中** 正常流转时不可点；已通过/已驳回 hover 显示操作人 Tooltip。含 **`lastBatchTransfer`** 的条目（历史其他批量流转）点击状态列打开 **操作记录**（`BatchOpDetailModal`）；**验收重置不写入该标记**，重置后质检/标注列仍可点详情。目标为 **质检-待处理** 时质检列保持待处理且 **点击无反应**，操作列「标注」置灰并提示「解析中，暂不可标注」。
+> 标注/验收 **待处理**、**进行中** 正常流转时不可点；已通过/已驳回 hover 显示操作人 Tooltip。含 **`lastBatchTransfer`** 的条目（历史其他批量流转）点击状态列打开 **操作记录**（`BatchOpDetailModal`）。抽检批次 **验收重置** 不写入该标记，重置后质检/标注列仍可点详情。目标为 **质检-待处理** 时质检列保持待处理且 **点击无反应**，操作列「标注」置灰并提示「解析中，暂不可标注」。
 
 工序状态由 `dataStatus` 推导（`entryProcess.js` → `deriveProcessStatuses`）；子状态文案 **进行中**（内部键 `processing`）。
 
 **流转记录弹窗**（`FlowTimelineModal`）：
 - 时间线 **从上到下按时间从早到晚**；标题 **不含** `（第N轮）`，轮次仅在下方「轮次：第 x 轮」展示
-- **人工批量操作**节点追加在 **最下方**；时间下增加 **详情**：`批量操作对象工序状态 -> 批量操作目标工序状态`（`batchDetail`）；验收重置节点标签为 **验收重置-…**
+- 节点含 **`batchDetail`** 时展示 **详情：…**（如验收重置 `验收已通过 -> 验收待处理`）
 - 历史记录仅 **追加一条**，不覆盖既有流转节点（无显式 `flowHistory` 时先快照推导历史再追加）
 
 #### 批量操作状态（已移除）
 
-原 **批量操作状态** 双级 Drawer（跨工序流转）已替换为 **验收重置** 单 Drawer。`BatchStatusDrawer.jsx` 已移除；验收重置专用 `entryBatchTransfer.js` → **`buildAcceptResetPatch`**（仅改验收为待处理）；其他批量流转仍用 `buildBatchTransferPatch`（含 `lastBatchTransfer` / `flowLabelPrefix`）。
+原 **批量操作状态** 双级 Drawer 已下线（`BatchStatusDrawer.jsx` / `AcceptResetDrawer.jsx` 不再接入）。批量 patch 仍由 `entryBatchTransfer.js` 提供：`canAcceptReset` / `buildAcceptResetPatch`（抽检批次验收重置）、`buildBatchTransferPatch`（含 `lastBatchTransfer` 的历史批量流转）。
 
 #### 列表工具栏与分页
 
-**列表工具栏**（任务详情）：批量下载、播放转码（Toast 占位）；**重新质检**（需勾选）；**验收重置**（打开 Drawer，无需先勾选主列表）
+**列表工具栏**（**任务详情**）：批量下载、播放转码（Toast 占位）；**重新质检**（需勾选）。**无验收重置、无标注通过**。
+
+**列表工具栏**（**抽检批次详情**）：仅 **验收重置**（需勾选）。
 
 **数据状态**（**7 值**，驱动 `EntryActions` 中间按钮）：
 
@@ -1273,14 +1273,13 @@ src/
 │   │   ├── FragmentAnnotPreconfigPanel.jsx  # 片段标注类型/属性/选项编辑器（左侧 中文名(类型值)；embedded / 折叠）
 │   │   └── fragmentAnnotPreconfig.js     # 预置三大类 + mergeStoredPresetsWithCatalog、选项 isDefault
 │   ├── entry/
-│   │   ├── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、验收重置、重新质检；支持抽检批次精简 props）
-│   │   ├── AcceptResetDrawer.jsx  # 验收重置 Drawer（ProcessStatusCascader 操作对象/目标 + 批量重置验收为待处理）
+│   │   ├── EntryDataTable.jsx     # 采集条目统一列表（工序 Tab、筛选、重新质检/验收重置；支持抽检批次精简 props）
 │   │   ├── ReQcKeepTagsModal.jsx  # 重新质检：是否保留历史标注标签
 │   │   ├── BatchOpDetailModal.jsx # 人工批量操作后的「操作记录」弹窗
 │   │   └── entryTableHelpers.js   # 标注/验收操作人解析共用
 │   ├── task/
-│   │   ├── EntryListPanel.jsx              # 任务详情条目面板（按 taskId + 数据范围包装 EntryDataTable）
-│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（按 batch entryIds）
+│   │   ├── EntryListPanel.jsx              # 任务详情条目面板（重新质检）
+│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（验收重置 + 6 列筛选）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
 │   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
@@ -1308,7 +1307,6 @@ src/
 │       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
 │       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconBackflowBoard/Device/Events/Trigger、IconCode/Send/Pause/Play 等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
-│       ├── ProcessStatusCascader.jsx  # 工序/状态二级级联（验收重置 Drawer）
 │       ├── Toast.jsx          # useToast hook — 轻量 Toast（**默认顶部居中**；`variant: success` 白底绿勾；可选 `placement: bottom`）
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
 │       ├── BarChart.jsx       # 柱状图（ResizeObserver 自适应宽度）
@@ -1410,7 +1408,7 @@ src/
 │   ├── datasetMetrics.js          # 真机数据集：条目筛选、指标计算、变更 diff
 │   ├── formatDateTime.js          # 全平台时间格式：formatDateTime / dtCol / formatRelativeTime
 │   ├── entryProcess.js            # 条目工序状态推导、Tab 筛选、流转记录（时间正序、stripFlowLabelRound）
-│   ├── entryBatchTransfer.js      # 验收重置 / 批量流转 patch：filterEntriesForAcceptReset、buildAcceptResetPatch、buildBatchTransferPatch（flowLabelPrefix / lastBatchTransfer）
+│   ├── entryBatchTransfer.js      # 批量 patch：`canAcceptReset`、`buildAcceptResetPatch`（`nextAcceptResetRound`）、`buildBatchTransferPatch`
 │   ├── entryReQc.js               # 重新质检：buildReQcPatch、entryHasReviewTagHistory
 │   ├── projectStatus.js           # 采集项目三态、canProjectMutate、canAcceptProject
 │   ├── qcResults.js               # 条目质检结果（掉帧检查帧率/标准差）
@@ -1468,7 +1466,7 @@ scripts/
 | 登录态 | 无持久化；登录页任意账号进入 `/dashboard`；**默认身份 U-000 超级管理员**（昵称 **管理员**） |
 | RBAC | `permissions.js` catalog + preset；`rbac.js` 运行时 `permissions[]`、`projectIds[]`、`status`（角色启停）；超级管理员单独 preset；刷新后恢复 seed |
 | 组织 / 用户 runtime | `organizations.js` → `runtimeOrgs` / `runtimeUsers`；组织启停联动用户；删组织删用户；用户 CRUD 与用户管理/组织详情共用 |
-| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`flowHistory`、`lastBatchTransfer`（验收重置 **不写入**）、`batchQcPending`、片段标注；验收重置经 `buildAcceptResetPatch`，其他批量流转经 `buildBatchTransferPatch` |
+| 条目状态 runtime | `entries.js` → `updateEntry` / `runtimePatches`；含 `qcResults`、`flowHistory`（`batchDetail` 详情行）、`lastBatchTransfer`、`batchQcPending`、片段标注；抽检批次 **验收重置** → `canAcceptReset` + `buildAcceptResetPatch`（跳过验收待处理） |
 | 抽样验收 runtime | `samplingBatches.js` → `batchStore`；**`getBatchById`** / `appendSamplingBatch` / `deleteSamplingBatch` / `updateSamplingBatch` / `isSamplingBatchNameTaken(projectId, name)`（**同项目**内名称唯一）/ `getBatchesContainingEntry` / `syncBatchesAfterEntryAccept`；新建经 `createSamplingBatchRecord`（按任务 + `filters` 抽样，兼容写入 `basis`）；验收工作台通过/驳回后按 `entryIds` 重算 `acceptProgress`/`passedCount`/`rejectedCount`/`status`；条目批量处理联动 `entries.js` |
 | 运营看板 mock | `dashboard.js` → `realDashboard` 按 `all` + 各项目ID；`allRanking` 采集员/标注员各 12 条（含完成时长/驳回 mock）；`enrichRankingList` 补全项目级排行榜字段 |
 | 状态管理 | 全部 `useState` + `useMemo` 本地状态，无 Redux/Zustand |
@@ -1486,11 +1484,11 @@ scripts/
 | 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer（默认 1/3 宽）；`modalView` 切换任务/方案配置（返回箭头）；**plan 视图仅选已有方案**（字段「采集方案」、无 Tab）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
 | 片段标注配置 Drawer | `FragmentAnnotConfigDrawer`：标题「片段标注配置」；宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；**采集打点 mandatory 置顶不可删**；左侧类型名 `中文(value)`；预置 **动作语义 / 区域帧 / 采集打点**；采集方案 Drawer 仍为默认 1/3 宽 |
 | 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `annotators` / `acceptors`；列表 **用户ID/用户名** 筛选；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
-| 批量操作 / 验收重置 | `AcceptResetDrawer` + `ProcessStatusCascader`；`buildAcceptResetPatch` 仅改验收为待处理、**不写** `lastBatchTransfer`；`flowHistory` 标签 **验收重置-**；重置后质检/标注详情仍可点 |
+| 验收重置 | 抽检批次 **验收重置**（`onBatchAcceptReset` + `canAcceptReset` + `buildAcceptResetPatch`；仅 `accept===passed|rejected`；轮次 `nextAcceptResetRound`） |
 | 重新质检 | `entryReQc.js` → `buildReQcPatch`；有标注历史时 `ReQcKeepTagsModal`；流转记录操作人取当前用户 |
-| 条目流转记录 | `FlowTimelineModal` 早→晚；标题 `stripFlowLabelRound` 去轮次括号；批量节点含 `batchDetail`（` -> ` 分隔） |
+| 条目流转记录 | `FlowTimelineModal` 早→晚；含 `batchDetail` 时展示「详情：…」；验收重置轮次与验收通过轮次 **独立计数** |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
-| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（`showTaskColumn`、无工序 Tab/批量工具栏）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
+| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（6 列筛选、`showTaskColumn`、仅 **验收重置** 工具栏且 **跳过验收待处理**、无工序 Tab）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
 | 条目操作列 | `EntryActions`：**任务详情**中间按钮仅「标注」；**抽检批次** `acceptOnly` 仅验收待处理显示「验收」；标注不通过→验收不通过打回标注（工作台入口） |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |

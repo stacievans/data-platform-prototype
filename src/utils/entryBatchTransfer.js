@@ -5,7 +5,6 @@ import {
   getProcessFieldKey,
   resolveFlowHistory,
   sortFlowHistoryChronological,
-  getEntryDisplayFileName,
 } from './entryProcess'
 export const BATCH_PROCESS_TABS = [
   { key: 'qc', label: '质检' },
@@ -26,21 +25,6 @@ export const BATCH_TARGET_STATUS_OPTIONS = [
   { key: 'rejected', label: '已驳回' },
 ]
 
-export const ACCEPT_RESET_SOURCE_OPTIONS = [
-  { key: 'passed', label: '已通过' },
-  { key: 'rejected', label: '已驳回' },
-]
-
-export const ACCEPT_RESET_TARGET_OPTIONS = [
-  { key: 'pending', label: '待处理' },
-  { key: 'passed', label: '已通过' },
-  { key: 'rejected', label: '已驳回' },
-]
-
-export function acceptProcessStatusLabel(statusKey) {
-  return `验收工序/${statusKeyLabel(statusKey)}`
-}
-
 export function processTabLabel(key) {
   return BATCH_PROCESS_TABS.find((t) => t.key === key)?.label ?? key
 }
@@ -55,6 +39,22 @@ function nextRound(entry, processKey) {
   ;(entry.flowHistory ?? []).forEach((node) => {
     if (!String(node.label ?? '').includes(keyword)) return
     const m = String(node.label).match(/第(\d+)轮/)
+    if (m) max = Math.max(max, parseInt(m[1], 10))
+  })
+  return max + 1
+}
+
+/** 验收重置轮次：仅统计历史「验收重置」节点，与验收通过轮次独立 */
+function nextAcceptResetRound(entry) {
+  let max = 0
+  ;(entry.flowHistory ?? []).forEach((node) => {
+    const label = String(node.label ?? '')
+    if (!label.includes('验收重置')) return
+    if (node.round != null) {
+      max = Math.max(max, node.round)
+      return
+    }
+    const m = label.match(/第(\d+)轮/)
     if (m) max = Math.max(max, parseInt(m[1], 10))
   })
   return max + 1
@@ -240,26 +240,60 @@ export function buildBatchTransferPatch(entry, {
 }
 
 /**
- * 验收重置：仅将验收工序改为待处理，保留原质检/标注状态与详情数据；不写入 lastBatchTransfer
+ * 抽检批次详情：批量验收通过
  */
-export function buildAcceptResetPatch(entry, { sourceStatus, operator, task }) {
+export function buildBatchAcceptPassPatch(entry, { operator, task }) {
+  const time = nowDateTime()
+  const existingHistory = getExistingFlowHistory(entry, task)
+
+  return {
+    dataStatus: '已验收',
+    acceptResult: '通过',
+    acceptComment: entry.acceptComment ?? '',
+    acceptOperator: operator,
+    acceptTime: time,
+    acceptClaimedBy: null,
+    acceptClaimedAt: null,
+    flowHistory: [
+      ...existingHistory,
+      {
+        label: '验收通过',
+        time,
+        operator: formatOperatorPlain(operator),
+        round: nextRound(entry, 'accept'),
+      },
+    ],
+  }
+}
+
+/** 验收重置：仅适用于验收已通过或已驳回的条目 */
+export function canAcceptReset(entry) {
+  const accept = deriveProcessStatuses(entry).accept
+  return accept === 'passed' || accept === 'rejected'
+}
+
+/**
+ * 抽检批次详情：验收重置 — 仅将验收工序改为待处理，保留质检/标注状态与详情
+ */
+export function buildAcceptResetPatch(entry, { operator, task }) {
+  if (!canAcceptReset(entry)) return null
+
   const ps = deriveProcessStatuses(entry)
   const time = nowDateTime()
   const existingHistory = getExistingFlowHistory(entry, task)
-  const sourceLabel = statusKeyLabel(sourceStatus)
+  const sourceLabel = statusKeyLabel(ps.accept === 'passed' ? 'passed' : 'rejected')
 
   const patch = {
     dataStatus: dataStatusFromProcessStates(ps.qc, ps.review, 'pending'),
     acceptClaimedBy: null,
     acceptClaimedAt: null,
-    lastBatchTransfer: null,
     flowHistory: [
       ...existingHistory,
       {
         label: '验收重置',
         time,
         operator: formatOperatorPlain(operator),
-        round: nextRound(entry, 'accept'),
+        round: nextAcceptResetRound(entry),
         batchDetail: `验收${sourceLabel} -> 验收待处理`,
       },
     ],
@@ -273,26 +307,6 @@ export function filterEntriesByBatchScope(entries, processKey, statusKey) {
   const field = getProcessFieldKey(processKey)
   if (!field || !statusKey) return []
   return entries.filter((entry) => deriveProcessStatuses(entry)[field] === statusKey)
-}
-
-export function filterEntriesForAcceptReset(entries, sourceStatus, filters = {}) {
-  if (!sourceStatus) return []
-  const entryIdQ = String(filters.entryId ?? '').trim().toLowerCase()
-  const fileIdQ = String(filters.fileId ?? '').trim().toLowerCase()
-  const fileNameQ = String(filters.fileName ?? '').trim().toLowerCase()
-
-  return entries.filter((entry) => {
-    const ps = deriveProcessStatuses(entry)
-    if (ps.accept !== sourceStatus) return false
-    if (entryIdQ && !String(entry.id).toLowerCase().includes(entryIdQ)) return false
-    const fid = entry.fileId ?? entry.id.replace('E-', 'F-')
-    if (fileIdQ && !String(fid).toLowerCase().includes(fileIdQ)) return false
-    if (fileNameQ) {
-      const name = getEntryDisplayFileName(entry)
-      if (!String(name).toLowerCase().includes(fileNameQ)) return false
-    }
-    return true
-  })
 }
 
 export function isBatchTargetDisabled(sourceProcess, sourceStatus, targetProcess, targetStatus) {

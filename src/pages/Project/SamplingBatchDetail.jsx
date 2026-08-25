@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import { calcPassRate, getBatchById } from '../../mock/samplingBatches'
@@ -18,9 +19,10 @@ export default function SamplingBatchDetail() {
   const { projectId, batchId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [batchRefreshKey, setBatchRefreshKey] = useState(0)
 
   const project = projects.find((p) => p.id === projectId)
-  const batch = getBatchById(batchId)
+  const batch = useMemo(() => getBatchById(batchId), [batchId, batchRefreshKey])
 
   if (!project || !batch || batch.projectId !== projectId) {
     return (
@@ -78,7 +80,11 @@ export default function SamplingBatchDetail() {
         </div>
       </div>
 
-      <SamplingBatchEntryListPanel batchId={batchId} projectId={projectId} />
+      <SamplingBatchEntryListPanel
+        batchId={batchId}
+        projectId={projectId}
+        onBatchUpdated={() => setBatchRefreshKey((k) => k + 1)}
+      />
     </div>
   )
 }
