@@ -319,7 +319,6 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     { title: '条目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     { title: '所属项目', dataIndex: 'projectName' },
     { title: '所属任务', dataIndex: 'taskName' },
-    { title: '文件ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs">{v ?? row.id.replace('E-', 'F-')}</span> },
     { title: '文件名称', dataIndex: 'displayName', render: (v) => <span className="font-mono text-xs">{v}</span> },
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },

@@ -1,7 +1,7 @@
 const release = {
-  version: '0.1.5',
-  date: '2026-08-25',
-  summary: '抽检批次详情-验收重置',
+  version: '0.1.6',
+  date: '2026-08-26',
+  summary: '去掉文件ID、项目成员-分配校验',
 }
 
 export default release

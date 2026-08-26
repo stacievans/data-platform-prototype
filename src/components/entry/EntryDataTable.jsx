@@ -507,7 +507,6 @@ export default function EntryDataTable({
   const [processTab, setProcessTab] = useState('qc')
   const [subStatus, setSubStatus] = useState('all')
   const [qEntryId, setQEntryId] = useState('')
-  const [qFileId, setQFileId] = useState('')
   const [qProjectName, setQProjectName] = useState('')
   const [qTaskName, setQTaskName] = useState('')
   const [qFileName, setQFileName] = useState('')
@@ -572,7 +571,6 @@ export default function EntryDataTable({
 
   const applyFilters = () => setFilters({
     entryId: qEntryId,
-    fileId: qFileId,
     projectName: showScopeColumns ? qProjectName : '',
     taskName: showScopeColumns ? qTaskName : '',
     fileName: qFileName,
@@ -584,7 +582,6 @@ export default function EntryDataTable({
 
   const resetFilters = () => {
     setQEntryId('')
-    setQFileId('')
     setQProjectName('')
     setQTaskName('')
     setQFileName('')
@@ -700,7 +697,6 @@ export default function EntryDataTable({
         render: (_, row) => <span className="text-gray-700">{resolveScope(row).taskName || '—'}</span>,
       },
     ] : []),
-    { title: '文件ID', dataIndex: 'fileId', render: (v, row) => <span className="font-mono text-xs text-gray-600">{v ?? row.id.replace('E-', 'F-')}</span> },
     { title: '文件名称', key: 'displayName', render: (_, row) => <span className="font-mono text-xs">{getEntryDisplayFileName(row)}</span> },
     ...(showTaskColumn ? [{
       title: '所属任务',
@@ -821,14 +817,10 @@ export default function EntryDataTable({
       <ListPageFilter className={!hideProcessTabs ? 'pt-3' : ''}>
         <div className="space-y-3">
           {singleRowFormFilters ? (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-5 gap-3">
               <div className={FILTER_FIELD}>
                 <label className={LBL}>条目ID</label>
                 <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
-              </div>
-              <div className={FILTER_FIELD}>
-                <label className={LBL}>文件ID</label>
-                <input value={qFileId} onChange={(e) => setQFileId(e.target.value)} placeholder="请输入文件ID" className={INPUT_CLS} />
               </div>
               <div className={FILTER_FIELD}>
                 <label className={LBL}>文件名称</label>

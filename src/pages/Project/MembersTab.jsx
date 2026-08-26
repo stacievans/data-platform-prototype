@@ -1210,16 +1210,13 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     <div className="space-y-3">
       {ToastNode}
 
-      <div className="flex items-end justify-between gap-4 border-b border-gray-200">
+      <div className="border-b border-gray-200">
         <Tabs
           items={MEMBER_TABS}
           activeKey={memberTab}
           onChange={setMemberTab}
-          className="min-w-0 flex-1 border-b-0"
+          className="min-w-0 border-b-0"
         />
-        <div className="shrink-0 pb-2">
-          <ButtonLike onClick={runAssignmentCheck}>分配校验</ButtonLike>
-        </div>
       </div>
 
       <ListPageCard>
