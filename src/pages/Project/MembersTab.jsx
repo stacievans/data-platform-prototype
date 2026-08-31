@@ -516,7 +516,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const [replaceConfirm, setReplaceConfirm] = useState(null)
 
   const [form, setForm] = useState({ uid: '', username: '', role: '', taskIds: [] })
-  const [addForm, setAddForm] = useState({ role: '', uid: '', username: '', taskIds: [] })
+  const [addForm, setAddForm] = useState({ role: '', usernames: [], taskIds: [] })
   const [configTaskForm, setConfigTaskForm] = useState({ taskIds: [] })
   const [assignForm, setAssignForm] = useState({ collectors: [], reviewers: [], acceptors: [] })
   const [assignSnapshot, setAssignSnapshot] = useState({ collectors: [], reviewers: [], acceptors: [] })
@@ -618,7 +618,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   }
 
   const resetAddForm = (role = '') => {
-    setAddForm({ role, uid: '', username: '', taskIds: [] })
+    setAddForm({ role, usernames: [], taskIds: [] })
     setAddErrors({})
   }
 
@@ -719,19 +719,21 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       let membersDraft = processedMembers ? [...processedMembers] : [...members]
       let tasksDraft = processedTasks ? [...processedTasks] : [...projectTasks]
 
-      const result = applySingleMemberAdd(membersDraft, tasksDraft, pendingAdd, {
-        pendingAdd,
-        membersDraft,
-        tasksDraft,
+      membersDraft = stripAnnotatorForTask(membersDraft, taskId, reviewerName)
+      tasksDraft = tasksDraft.map((t) => {
+        if (t.id !== taskId) return t
+        const reviewers = [reviewerName]
+        return { ...t, annotators: reviewers, reviewer: reviewers }
       })
+
+      const startIndex = pendingAdd.resumeIndex ?? 0
+      const result = applyMemberAdds(membersDraft, tasksDraft, pendingAdd, startIndex)
       if (!result) return
-      membersDraft = result.nextMembers
-      tasksDraft = result.nextTasks
 
       onTasksChange((prev) =>
-        prev.map((t) => tasksDraft.find((n) => n.id === t.id) ?? t),
+        prev.map((t) => result.nextTasks.find((n) => n.id === t.id) ?? t),
       )
-      commitMembers(membersDraft)
+      commitMembers(result.nextMembers)
       setAddOpen(false)
       setBatchOpen(false)
       setMatrixOpen(false)
@@ -851,22 +853,49 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     return { nextTasks, nextMembers }
   }
 
+  const applyMemberAdds = (membersDraft, tasksDraft, pendingAdd, startIndex = 0) => {
+    const { role, taskIds } = pendingAdd
+    const usernames = pendingAdd.usernames ?? [pendingAdd.username]
+
+    let nextMembers = membersDraft
+    let nextTasks = tasksDraft
+
+    for (let i = startIndex; i < usernames.length; i += 1) {
+      const username = usernames[i]
+      const user = findUserByUsername(username)
+      const result = applySingleMemberAdd(nextMembers, nextTasks, {
+        uid: user?.uid ?? pendingAdd.uid ?? '',
+        username,
+        role,
+        taskIds,
+      }, {
+        pendingAdd: { ...pendingAdd, uid: user?.uid ?? '', username, usernames, resumeIndex: i },
+        membersDraft: nextMembers,
+        tasksDraft: nextTasks,
+      })
+      if (!result) return null
+      nextMembers = result.nextMembers
+      nextTasks = result.nextTasks
+    }
+
+    return { nextMembers, nextTasks }
+  }
+
   const handleAddMemberSave = () => {
     const errs = {}
     if (!addForm.role) errs.role = true
-    if (!addForm.username) errs.username = true
+    if (!addForm.usernames.length) errs.username = true
     if (!addForm.taskIds.length) errs.taskIds = true
     if (Object.keys(errs).length) {
       setAddErrors(errs)
       return
     }
 
-    const result = applySingleMemberAdd(members, projectTasks, {
-      uid: addForm.uid,
-      username: addForm.username,
+    const result = applyMemberAdds(members, projectTasks, {
       role: addForm.role,
       taskIds: addForm.taskIds,
-    }, { pendingAdd: addForm, membersDraft: members, tasksDraft: projectTasks })
+      usernames: addForm.usernames,
+    })
     if (!result) return
 
     onTasksChange((prev) =>
@@ -1023,11 +1052,10 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
           选择用户
           <span className="text-red-500">*</span>
         </label>
-        <PersonDropdownSelect
-          value={addForm.username}
-          onChange={(username) => {
-            const user = findUserByUsername(username)
-            setAddForm((f) => ({ ...f, username, uid: user?.uid ?? '' }))
+        <PersonMultiDropdownSelect
+          value={addForm.usernames}
+          onChange={(usernames) => {
+            setAddForm((f) => ({ ...f, usernames }))
             setAddErrors((er) => ({ ...er, username: false }))
           }}
           options={addFormUsers.map((u) => u.username)}

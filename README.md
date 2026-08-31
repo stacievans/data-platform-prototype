@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；条目列表 **验收重置**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；添加成员从系统角色筛选；**查看任务**跳转采集任务 Tab 并筛选）· 任务详情采集条目 **重新质检** · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；条目列表 **验收重置**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；**添加成员** 用户 **下拉多选**；**查看任务**跳转采集任务 Tab 并筛选）· 采集条目列表 **无文件ID列** · 任务详情采集条目 **重新质检** · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -59,7 +59,7 @@ npm run preview
 
 | 状态 | 说明 |
 |---|---|
-| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.4 (2026-08-24)`**；侧边栏折叠时仅显示 **`v0.1.4`** |
+| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.7 (2026-08-31)`**；侧边栏折叠时仅显示 **`v0.1.7`** |
 | 点击 | 上方弹出小卡片，展示 **当前版本** 的简要更新说明（`summary`）；再点或点外部关闭 |
 | 数据 | 读取 **`src/release.js`**，不在组件内硬编码 |
 
@@ -67,9 +67,9 @@ npm run preview
 
 ```js
 {
-  version: '0.1.4',
-  date: '2026-08-24',
-  summary: '完善需求修改：抽检批次验收重置（跳过待处理）、重新质检等',
+  version: '0.1.7',
+  date: '2026-08-31',
+  summary: '项目成员-添加成员改成多选',
 }
 ```
 
@@ -506,7 +506,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 |---|---|
 | 采集任务 | 复用 `Task/index.jsx`（`fixedProjectId` 锁定当前项目，传入 `projectStatus`；隐藏「所属项目名称」筛选与列表列，含筛选区 + `TaskTable` + 「抽样验收」+ 「+ 新建任务」）；支持 URL `?tab=task` |
 | 采标方案 | 内含 **3 个二级 Tab**（胶囊样式，见下文） |
-| **项目成员** | 成员列表 + **右侧 Drawer** 添加成员/配置任务 + 分配校验（见下文） |
+| **项目成员** | 成员列表 + **右侧 Drawer** 添加成员（用户多选）/ 配置任务（见下文） |
 | **验收管理** | 复用 `Sampling.jsx` → `SamplingPanel`（筛选 + 批次列表 + 批量处理；**无「+ 新建」**）；支持 `?tab=sampling`、`&highlight={batchId}` 高亮新建行；**批次名称 / 操作「详情」** → 抽检批次详情页 |
 | 运营看板 | 复用 `RealDataTab`（`fixedProjectId` 锁定当前项目，隐藏全局项目筛选） |
 
@@ -636,7 +636,6 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### 项目成员 Tab（`MembersTab.jsx`）
 
 **布局**（10 条/页）：
-- 页签行与 **分配校验** 按钮 **同一行**（校验靠右）；下方按页签切换列表
 - 表格上方 **采集员 / 标注员 / 验收员** 三个页签（默认 **采集员**）；各页签为 **独立成员表**
 - 同一用户若在多角色下均有任务分配，则 **各页签各一行**，`taskIds` **互不关联**
 - 列表标题随页签：**采集员列表** / **标注员列表** / **验收员列表**
@@ -646,7 +645,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **添加成员**（各页签右上角 **添加成员**；**右侧 Drawer**；底部 **取消 / 确定**）：
 1. **角色**（只读，= 当前页签）：采集员 / 标注员 / 验收员
-2. **选择用户**（必选，**单选** `PersonDropdownSelect`）：候选 = 系统中 **具备当前页签对应平台角色** 的用户，再排除 **已在当前页签** 中的成员；排除项目创建人
+2. **选择用户**（必选，**多选** `PersonMultiDropdownSelect`）：候选 = 系统中 **具备当前页签对应平台角色** 的用户，再排除 **已在当前页签** 中的成员；排除项目创建人；支持搜索、标签展示与逐个移除；**一次可为多名用户分配同一组任务**
 3. **配置任务**（必选）：`TaskCheckboxList`，候选为本项目全部任务
 
 **配置任务**（行内；**右侧 Drawer**，标题「配置任务」；宽 `min(960px, …)`）：
@@ -659,12 +658,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 跳转 **采集任务 Tab**，并按 **当前页签角色** 预填筛选：采集员 → **采集员**；标注员 → **标注员**；验收员 → **验收员**（筛选值为 **username**）
 - 由 `Detail.jsx` → `taskMemberFilter` → `Task/index.jsx` `initialMemberFilter` + `useLayoutEffect` 应用；离开任务 Tab 时清空筛选
 
-**分配校验**：
-- 若仍有未分配任务 → 打开 **任务分配矩阵** Modal
-- 若全部已分配 → 顶部居中 **成功 Toast**「任务已全部完成分配！」
-- 矩阵内：待分配任务表（任务名称、采集员、标注员、**验收员**、操作「分配」）；右上角「批量分配」
-- **单任务分配** Modal：任务名称 / 采集员 / 标注员 / **验收员** **均为必填**；已分配角色只读展示
-- **批量分配** Modal：**角色单选**（采集员 / 标注员 / 验收员）；选择用户单选；分配任务多选
+> **已移除**页签行 **「分配校验」** 按钮（任务分配矩阵 / 批量分配 Modal 代码仍保留于 `MembersTab.jsx`，当前无 UI 入口）。
 
 **Mock 双角色演示**（P-1001）：**吴磊** 在采集员页签负责 T-2004、在标注员页签负责 T-2002；用户管理中 **钱琳 / 吴磊 / 郑浩** 为 `采集员&标注员`。
 
@@ -695,12 +689,12 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 #### 抽检批次详情 `/collection/project/:projectId/sampling/:batchId`（`SamplingBatchDetail.jsx`）
 
 - **面包屑**：`当前位置：采集项目 / 项目详情 / 抽检批次详情`（项目详情链接带 `?tab=sampling`）
-- **页头卡片**：批次名称 + 状态 Badge（已完成/进行中）、抽检条目、通过率、验收进度、创建人、创建时间（**无**批次ID·项目名称副标题行）
+- **页头卡片**：批次名称、抽检条目、通过率、验收进度、创建人、创建时间（**无**状态 Badge、**无**批次ID·项目名称副标题行）
 - **抽检条目列表**（`SamplingBatchEntryListPanel` → `EntryDataTable` 精简模式）：
   - 标题「**抽检条目列表**」；数据范围为该批次 `entryIds`；操作后 **刷新列表** 并同步页头批次统计（通过率 / 验收进度）
   - **无**工序 Tab / 子状态筛选；隐藏任务详情工具栏（批量下载 / 播放转码 / 重新质检）
-  - **筛选区单行 6 列**（无「展开筛选」）：条目ID、**文件ID**、文件名称、数据格式、**标注状态**、验收状态
-  - 列表右上角 **「验收重置」**（需勾选；未勾选置灰）：将选中条目中 **验收已通过/已驳回** 的条目批量改回 **待处理**（`canAcceptReset` + `buildAcceptResetPatch`）；**验收待处理** 的条目即使勾选也 **跳过**（不写流转、不产生「待处理→待处理」）；Toast 显示实际处理数；**无「验收通过」按钮**
+  - **筛选区单行 5 列**（无「展开筛选」）：条目ID、文件名称、数据格式、**标注状态**、验收状态
+  - 列表右上角 **「验收重置」**（需勾选；未勾选置灰；hover：**将验收状态为「已通过」/「已驳回」的条目验收状态改为「待处理」**）：将选中条目中 **验收已通过/已驳回** 的条目批量改回 **待处理**（`canAcceptReset` + `buildAcceptResetPatch`）；**验收待处理** 的条目即使勾选也 **跳过**（不写流转、不产生「待处理→待处理」）；Toast 显示实际处理数；**无「验收通过」按钮**
   - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）；中间按钮 **`middleActionMode="acceptOnly"`** — 仅 **验收待处理** 时显示「验收」，**无「标注」**
   - 工序状态点击、流转记录、标注/验收详情弹窗等行为与任务详情一致
 
@@ -823,7 +817,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | `listTitle` | 列表标题（抽检批次详情为「抽检条目列表」） |
 | `hideProcessTabs` | 隐藏工序 Tab + 子状态行 |
 | `hideQcReviewFormFilters` | 筛选首行去掉质检/标注状态 |
-| `singleRowFormFilters` | 抽检批次详情：**条目ID + 文件ID + 文件名称 + 数据格式 + 标注状态 + 验收状态** 单行 6 列；隐藏「展开筛选」 |
+| `singleRowFormFilters` | 抽检批次详情：**条目ID + 文件名称 + 数据格式 + 标注状态 + 验收状态** 单行 5 列；隐藏「展开筛选」 |
 | `hideToolbarActions` | 隐藏任务详情默认工具栏（批量下载 / 播放转码 / 重新质检）；可与 `onBatchAcceptReset` 等回调组合 |
 | `onBatchAcceptReset` | 抽检批次详情：**验收重置**（勾选；仅处理验收 **已通过/已驳回**，跳过 **待处理**） |
 | `hideDownload` / `compact` | 操作列去掉下载并收窄（`EntryActions` 3 列） |
@@ -845,7 +839,9 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - 「展开筛选 / 收起筛选」「重置」「查询」末行右对齐
 
 #### 列表字段
-勾选、**条目ID**（黑色不可点）、所属项目名称/任务名称（`showScopeColumns` 时）、文件ID、文件名称、**所属任务**（`showTaskColumn` 时，文件名称右侧）、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照）、**采集设备**（`CollectDeviceCell`）、**质检状态** / **标注状态** / **验收状态**（见下表交互）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+勾选、**条目ID**（黑色不可点）、所属项目名称/任务名称（`showScopeColumns` 时）、文件名称、**所属任务**（`showTaskColumn` 时，文件名称右侧）、文件大小、时长、数据格式、**设备类型**（`deviceTypeName` 快照）、**采集设备**（`CollectDeviceCell`）、**质检状态** / **标注状态** / **验收状态**（见下表交互）、**流转记录**（时钟按钮 → `FlowTimelineModal`）、**采集员**（字段 `uploader`）、采集时间、操作（`EntryActions`）
+
+> **已移除**采集条目列表 **「文件ID」** 列及筛选（mock 数据层仍保留 `fileId` 字段，列表/筛选 UI 不展示）。
 
 #### 验收重置（抽检批次详情 · `canAcceptReset` + `buildAcceptResetPatch`）
 
@@ -854,7 +850,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **仅处理**选中且 **验收状态为「已通过」或「已驳回」** 的条目（`canAcceptReset`）；**验收待处理**（及进行中）即使勾选也 **跳过**，不写流转记录
 - 符合条件条目：**验收状态** 改回 **待处理**；**质检/标注状态与详情数据不变**；**不写入** `lastBatchTransfer`
 - Toast：实际处理数 `已将 x 个条目的验收状态重置为待处理`；若所选均为待处理 → `所选条目验收状态均为待处理，已跳过`；刷新列表并同步批次 `acceptProgress` / 通过率（`syncBatchesAfterEntryAccept`）
-- 流转记录追加 **验收重置** 节点；**轮次独立计数**（`nextAcceptResetRound`：首次重置为 **第 1 轮**，与「验收通过」轮次无关）；**详情：验收已通过/已驳回 → 验收待处理**（不会出现「待处理→待处理」）
+- 流转记录追加 **验收重置** 节点；**轮次 = 历史验收相关节点（验收通过/驳回/重置）最大轮次 + 1**（`nextAcceptResetRound`：如验收通过第 1 轮后重置为 **第 2 轮**）；**详情：验收已通过/已驳回 → 验收待处理**（不会出现「待处理→待处理」）
 
 > **任务详情已无「验收重置」**；原 `AcceptResetDrawer` / `BatchStatusDrawer` 双级 Drawer 方案已下线。
 
@@ -1279,7 +1275,7 @@ src/
 │   │   └── entryTableHelpers.js   # 标注/验收操作人解析共用
 │   ├── task/
 │   │   ├── EntryListPanel.jsx              # 任务详情条目面板（重新质检）
-│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（验收重置 + 6 列筛选）
+│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（验收重置 + 5 列筛选）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
 │   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
@@ -1473,7 +1469,7 @@ scripts/
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
 | 删除确认 | 列表/卡片级删除均复用 **`DeleteConfirmModal`**：橙 icon、标题「提示」、正文「确定要删除吗？」、取消/蓝色「确定」。表单内局部删除（采集步骤、子标签、相机行、工作台标注段等）**无二次确认** |
 | 归档确认 | 采集项目 / 采集任务 / 采集方案归档均复用 **`DeleteConfirmModal` 同款样式**（橙 icon +「提示」+ 取消/蓝色「确定」），**正文保留各场景原文案**；项目/任务/方案列表操作栏「归档」均为 **橙色**（`text-amber-600`） |
-| Toast | `useToast` hook，2.5 秒自动消失；**默认顶部居中**深底白字；`show(msg, { variant: 'success' })` 为顶部白底绿勾（如项目成员「分配校验」全部完成）；可选 `placement: 'bottom'` 回到底部 |
+| Toast | `useToast` hook，2.5 秒自动消失；**默认顶部居中**深底白字；`show(msg, { variant: 'success' })` 为顶部白底绿勾；可选 `placement: 'bottom'` 回到底部 |
 | ID 列展示惯例 | 列表/详情表格中 **ID 类列标题** 写「中文ID」（**中文与 ID 之间无空格**，如「任务ID」「真机数据集ID」）；**ID 值** 黑色/灰色不可点击；**名称类列** 蓝色可跳转详情 |
 | 表格对齐 | `Table` 表头与单元格默认水平居中；`embedded` 时去掉外层 Card 边框（由 `ListPageCard` 承载）；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外）；`scrollVisibleRows` 可固定表内可见行数并 sticky 表头 |
 | 分页惯例 | 默认 **10 条/页**（`LIST_PAGE_SIZE`）；`ListPaginator` 右对齐单行：**第 X-Y 条/总共 Z 条** → `<` `>` 页码（>7 页省略号）→ **条/页** 下拉（10/20/50/100）；`Table` / `usePagination` 均支持 `pageSize` 变更并重置第 1 页 |
@@ -1483,12 +1479,12 @@ scripts/
 | 弹窗限高 | `Modal` 的 `fitViewport` + 可选 `panelHeight`（如 `min(85vh, 560px)`）：固定面板宽高，内容区滚动、底部按钮固定；`align="nested"` + `offsetX/Y` 用于二级弹窗相对父弹窗偏移 |
 | 新建任务 Drawer | `CreateTaskModal`：单栏 Drawer（默认 1/3 宽）；`modalView` 切换任务/方案配置（返回箭头）；**plan 视图仅选已有方案**（字段「采集方案」、无 Tab）；`initialPlan` 时隐藏方案「配置」；编辑标题「编辑采集任务」 |
 | 片段标注配置 Drawer | `FragmentAnnotConfigDrawer`：标题「片段标注配置」；宽 `min(960px, calc(100vw - var(--layout-sidebar-width)))`；**采集打点 mandatory 置顶不可删**；左侧类型名 `中文(value)`；预置 **动作语义 / 区域帧 / 采集打点**；采集方案 Drawer 仍为默认 1/3 宽 |
-| 项目成员配置任务 | `MembersTab` → 配置任务 Drawer：仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `annotators` / `acceptors`；列表 **用户ID/用户名** 筛选；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
-| 验收重置 | 抽检批次 **验收重置**（`onBatchAcceptReset` + `canAcceptReset` + `buildAcceptResetPatch`；仅 `accept===passed|rejected`；轮次 `nextAcceptResetRound`） |
+| 项目成员配置任务 | `MembersTab` → **添加成员** 用户 **多选**（`PersonMultiDropdownSelect`）；配置任务 Drawer 仅改当前页签角色；`taskIds` 为空时 `pruneEmptyMembers` **按角色行**自动移除；同步 `tasks.collectors` / `annotators` / `acceptors`；列表 **用户ID/用户名** 筛选；「查看任务」经 `Detail.taskMemberFilter` → `TaskList.initialMemberFilter` |
+| 验收重置 | 抽检批次 **验收重置**（`onBatchAcceptReset` + `canAcceptReset` + `buildAcceptResetPatch`；仅 `accept===passed|rejected`；hover 提示文案；轮次 `nextAcceptResetRound` = 验收相关历史最大轮次 + 1） |
 | 重新质检 | `entryReQc.js` → `buildReQcPatch`；有标注历史时 `ReQcKeepTagsModal`；流转记录操作人取当前用户 |
-| 条目流转记录 | `FlowTimelineModal` 早→晚；含 `batchDetail` 时展示「详情：…」；验收重置轮次与验收通过轮次 **独立计数** |
-| 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
-| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（6 列筛选、`showTaskColumn`、仅 **验收重置** 工具栏且 **跳过验收待处理**、无工序 Tab）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
+| 条目流转记录 | `FlowTimelineModal` 早→晚；含 `batchDetail` 时展示「详情：…」；验收重置轮次取验收相关历史 **最大轮次 + 1** |
+| 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、**项目成员添加用户**、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
+| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（5 列筛选、无文件ID、`showTaskColumn`、仅 **验收重置** 工具栏且 **跳过验收待处理**、页头无状态 Badge、无工序 Tab）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
 | 条目操作列 | `EntryActions`：**任务详情**中间按钮仅「标注」；**抽检批次** `acceptOnly` 仅验收待处理显示「验收」；标注不通过→验收不通过打回标注（工作台入口） |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |
@@ -1635,7 +1631,7 @@ scripts/
 
 ### 采集条目单条字段（`entries.js`）
 
-核心：`id`, `fileId`, `taskId`, `fileName`, `size`, `duration`, `uploadTime`, `uploader`, `dataStatus`, `format`
+核心：`id`, `taskId`, `fileName`, `size`, `duration`, `uploadTime`, `uploader`, `dataStatus`, `format`（数据层含 `fileId`，**列表/筛选 UI 不展示**）
 
 快照与扩展：`deviceTypeId`, `deviceTypeName`, `collectDevice`, `collectDeviceSn`, `collectMethod`, `qcResults`, **`flowHistory`**（含 `batchOp` / `batchDetail`）, **`lastBatchTransfer`**, **`batchQcPending`**，以及标注/验收相关字段
 

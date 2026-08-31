@@ -1,7 +1,7 @@
 const release = {
-  version: '0.1.6',
-  date: '2026-08-26',
-  summary: '去掉文件ID、项目成员-分配校验',
+  version: '0.1.7',
+  date: '2026-08-31',
+  summary: '项目成员-添加成员改成多选',
 }
 
 export default release
