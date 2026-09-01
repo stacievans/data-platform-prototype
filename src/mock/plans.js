@@ -398,6 +398,12 @@ export function getPlanById(id) {
   return plan ? withLiveDeviceTypeName(plan) : null
 }
 
+/** 审核模板是否被采集方案引用（整体标签模板 annotTemplateId） */
+export function isAuditTemplateBoundToCollectPlan(templateId) {
+  if (!templateId) return false
+  return runtimePlans.some((p) => p.annotTemplateId === templateId)
+}
+
 export function appendPlan(plan) {
   const enriched = enrichPlan(plan)
   runtimePlans = [{ ...enriched }, ...runtimePlans]

@@ -3,7 +3,7 @@
 基于 **Vite 8 + React 19 + Tailwind CSS 4 + react-router-dom 7** 的数据采集平台前端原型。  
 所有数据为前端 mock，无需后端，开箱即用。
 
-**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；条目列表 **验收重置**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；**添加成员** 用户 **下拉多选**；**查看任务**跳转采集任务 Tab 并筛选）· 采集条目列表 **无文件ID列** · 任务详情采集条目 **重新质检** · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
+**核心能力**：**数采介绍**（全链路流程原图）· 顶栏 **数采中心 / 真机回流** 模块 Tab · **ListPageCard** 检索栏与列表统一白容器（内部分割线）· 运营看板 · **真机回流**（回流看板 / 回流设备 / 事件中心 / 触发器；事件播放 `?source=backflow` 精简工作台）· **采集项目**一级导航（三态 open/closed/archived；列表 **采集进度** 列 + **项目状态**；归档项灰点「归档」不可切换开关；**右侧 Drawer 新建**，仅名称/描述，ID 与创建人后台自动生成）/任务/条目 · **验收管理**（批次列表 **通过率 ⓘ 弹窗明细** + **抽检批次详情页**；条目列表 **验收重置**、**无删除**）· **标注工作台**（**模式 Badge** 灰/蓝/橙；**单布局 B**；右侧面板 **默认收起**、**左缘拖拽调宽**；片段标注 **行内增删改**；底部 **保存 + 提交**；顶栏 **上一条 / 下一条** 仅导航）· 七项质检与掉帧检查 · 真机数据集（**条目转图片/转视频**、**转换数据集详情**（文件列表 **一键送标** + 送标记录 Tab）、**CLI 批量下载**）· **标签管理**（Tab 与列表分卡布局；**任务绑定标签点击 Toast 校验**；**审核模板删除**含采集方案绑定校验；**模板详情标签**仅创建人编辑/删除）· 采集方案 **三模块 Drawer** + **独立片段标注配置 Drawer**（**采集打点** 置顶 mandatory、默认禁止重叠；预置 **动作语义 / 区域帧**；**已归档且绑定任务不可删**）· **新建任务仅选已有方案** · 设备管理（实例/类型编辑抽屉必填 `*` 标识；**编辑实例 SN 可改**）· **项目成员**（**采集员/标注员/验收员三页签**、按角色独立分配；列表 **用户ID/用户名** 筛选；**添加成员** 用户 **下拉多选**；**查看任务**跳转采集任务 Tab 并筛选）· 采集条目列表 **无文件ID列** · 任务详情采集条目 **重新质检** · **统一分页**（`第 X-Y 条/总共 Z 条` + 页码 + **10/20/50/100 条/页**）· RBAC **全量开放** · **组织 / 用户 / 角色管理**（新建/邀请用户 Drawer；编辑用户 **用户名/密码必填 *** + **「修改密码」按钮**；**组织详情编辑可改角色**；角色 **MenuPermissionTree** 对齐侧栏架构、**父子联动默认关闭**）· **`DeleteConfirmModal` 统一删除/归档二次确认** · 列表 **ID 列灰显不可点、名称列蓝显可跳转** · 任务 **采集员/标注员** 人员数组 · **Toast** 浅色 **顶部水平居中** · **左下角版本信息**（`release.js` + `CHANGELOG.md`）。
 
 **产品名称**：浏览器标签页标题与顶栏均为 **ABC-Data**（`index.html` → `<title>ABC-Data - 数据采集平台</title>`）。
 
@@ -59,7 +59,7 @@ npm run preview
 
 | 状态 | 说明 |
 |---|---|
-| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.7 (2026-08-31)`**；侧边栏折叠时仅显示 **`v0.1.7`** |
+| 默认 | 一行小字、低对比度灰色，格式 **`v0.1.8 (2026-09-01)`**；侧边栏折叠时仅显示 **`v0.1.8`** |
 | 点击 | 上方弹出小卡片，展示 **当前版本** 的简要更新说明（`summary`）；再点或点外部关闭 |
 | 数据 | 读取 **`src/release.js`**，不在组件内硬编码 |
 
@@ -67,9 +67,9 @@ npm run preview
 
 ```js
 {
-  version: '0.1.7',
-  date: '2026-08-31',
-  summary: '项目成员-添加成员改成多选',
+  version: '0.1.8',
+  date: '2026-09-01',
+  summary: 'fix: 更新采集方案、审核模板删除校验',
 }
 ```
 
@@ -272,7 +272,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | 采集项目 | **+ 新建**（Drawer）；卡片/列表：**查看详情**、编辑、关闭/开启、归档、删除（按项目状态；**列表无验收入口**） |
 | 项目详情 | 采标方案（采集/质检/布局）、采集任务（含「抽样验收」创建批次）、**项目成员**、**验收管理** Tab、运营看板；采集方案列表含 **片段标注配置** 操作；**关闭/归档项目**时 `ProjectMutateGate` 禁用新建类入口 |
 | 采集任务 | 新建任务；行内：复制、编辑、发布、**导出 ▾**（标签/质检报告）、归档、删除（**已发布无删除**；**已归档**保留复制/导出） |
-| 采集条目 | 下载、删除；任务详情 **重新质检**；抽检批次详情 **验收重置**（跳过验收待处理） |
+| 采集条目 | 下载、删除；任务详情 **重新质检**；抽检批次详情 **验收重置**（跳过验收待处理）、**无删除** |
 | 真机数据集 | 新建（Drawer）、删除、下载说明；详情数据条目 Tab：**转图片/转视频**（范围弹窗 + 配置 Drawer）、**CLI 批量下载**、删除（`DeleteConfirmModal`）；卡片菜单删除 |
 | 标签管理 | 各 Tab 新建；行内编辑、删除 |
 | 设备管理 | 新建类型/实例；行内编辑、删除 |
@@ -541,7 +541,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **复制**：图标按钮，生成草稿副本，其余字段同原方案
 - **编辑**：仅草稿可编辑；已发布需先复制为草稿
 - **发布**：**直接发布** + Toast「状态更新成功」（**无二次确认**）
-- **删除**：`DeleteConfirmModal`
+- **删除**：`DeleteConfirmModal`；**草稿** 或 **已归档且 `taskCount===0`** 可删；**已归档且已绑定任务**（`taskCount>0`）点击删除 Toast「采集方案已绑定任务，无法删除」
 - **归档**：`DeleteConfirmModal`（样式同删除确认；正文含方案名与后果说明）；操作栏「归档」为 **橙色**
 - **查看**（已发布/已归档）：只读采集方案 **Drawer**（`CollectPlanFormFields` readonly）
 - **片段标注配置**：打开 **`FragmentAnnotConfigDrawer`**（标题「片段标注配置」；宽 `min(960px, …)`）；左侧类型列表展示 **`中文名(类型值)`**（如 `动作语义(action_semantics)`）；**采集打点** 始终置顶、**不可删除**（`mandatory`）；右侧类型/属性/选项编辑器（`FragmentAnnotPreconfigPanel` embedded）；**全字段可编辑**（含预置大类，采集打点除外删除）；**不受方案状态限制**；属性选项含 **「设为默认值」** 列（单选限 1 个、多选可多个，默认均不勾选）；预置类型见下表
@@ -695,7 +695,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
   - **无**工序 Tab / 子状态筛选；隐藏任务详情工具栏（批量下载 / 播放转码 / 重新质检）
   - **筛选区单行 5 列**（无「展开筛选」）：条目ID、文件名称、数据格式、**标注状态**、验收状态
   - 列表右上角 **「验收重置」**（需勾选；未勾选置灰；hover：**将验收状态为「已通过」/「已驳回」的条目验收状态改为「待处理」**）：将选中条目中 **验收已通过/已驳回** 的条目批量改回 **待处理**（`canAcceptReset` + `buildAcceptResetPatch`）；**验收待处理** 的条目即使勾选也 **跳过**（不写流转、不产生「待处理→待处理」）；Toast 显示实际处理数；**无「验收通过」按钮**
-  - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」**（`hideDownload` + `compact` 收窄列宽）；中间按钮 **`middleActionMode="acceptOnly"`** — 仅 **验收待处理** 时显示「验收」，**无「标注」**
+  - 列表字段与任务详情采集条目 **大体相同**，额外在 **文件名称右侧** 增加 **所属任务** 列；操作列 **去掉「下载」「删除」**（`hideDownload` + `hideDelete` + `compact`，列宽约 **120px**）；中间按钮 **`middleActionMode="acceptOnly"`** — 仅 **验收待处理** 时显示「验收」，**无「标注」**
   - 工序状态点击、流转记录、标注/验收详情弹窗等行为与任务详情一致
 
 #### 新建抽检批次（`CreateSamplingBatchModal`）
@@ -820,7 +820,8 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 | `singleRowFormFilters` | 抽检批次详情：**条目ID + 文件名称 + 数据格式 + 标注状态 + 验收状态** 单行 5 列；隐藏「展开筛选」 |
 | `hideToolbarActions` | 隐藏任务详情默认工具栏（批量下载 / 播放转码 / 重新质检）；可与 `onBatchAcceptReset` 等回调组合 |
 | `onBatchAcceptReset` | 抽检批次详情：**验收重置**（勾选；仅处理验收 **已通过/已驳回**，跳过 **待处理**） |
-| `hideDownload` / `compact` | 操作列去掉下载并收窄（`EntryActions` 3 列） |
+| `hideDownload` / `compact` | 操作列去掉下载并收窄（`EntryActions` 动态列数） |
+| `hideDelete` | 操作列去掉删除（抽检批次详情已接入） |
 | `showTaskColumn` | 文件名称右侧增加 **所属任务** 列 |
 | `showScopeColumns` | 增加所属项目/任务名称列（原采集条目页模式） |
 
@@ -903,7 +904,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 **分页**：**10 条/页**；工序 Tab / 子状态 / 筛选变更时重置第 1 页
 
-**操作栏**（`EntryActions.jsx`）：默认 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`；**任务详情**中间按钮 **仅「标注」**（已解析 / 验收不通过可点；已标注等无验收按钮）；**抽检批次详情** 传入 `middleActionMode="acceptOnly"`，仅验收待处理时显示「验收」。`hideDownload` 时为 3 列并配合 `compact` 收窄；`已上传` 或 `batchQcPending` 时「标注」置灰并提示「解析中，暂不可标注」
+**操作栏**（`EntryActions.jsx`）：默认 4 列 `[ 播放 | 中间按钮 | 下载 | 删除 ]`，支持 `hideDownload` / `hideDelete` 动态收窄（抽检批次详情为 **播放 + 验收**，约 2 列）；**任务详情**中间按钮 **仅「标注」**（已解析 / 验收不通过可点；已标注等无验收按钮）；**抽检批次详情** 传入 `middleActionMode="acceptOnly"`，仅验收待处理时显示「验收」。`hideDownload` 时为 3 列并配合 `compact` 收窄；`已上传` 或 `batchQcPending` 时「标注」置灰并提示「解析中，暂不可标注」
 
 > **TODO**：中间按钮角色校验（标注=标注员、验收=平台运营）尚未接入。
 
@@ -1056,13 +1057,13 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 
 - **列表**：模板ID（黑色）、模板名称（加粗）、关联任务数、描述、**创建人**、创建时间、**更新时间**；筛选：**模板名称**（点「查询」生效；**无创建人筛选项**）
 - **操作**：**创建副本**（操作列最左侧复制图标，名称 `{原名}_副本{新ID}`，需 `tag.create`）、**详情**、编辑、删除
-- **权限**：**仅创建人**可编辑/删除；非创建人操作置灰，Tooltip「仅创建人可编辑或删除」；`taskCount > 0` 时编辑/删除 Toast「{模板名}已绑定任务，无法编辑/删除」
+- **权限**：**仅创建人**可编辑/删除；非创建人操作置灰，Tooltip「仅创建人可编辑或删除」；`taskCount > 0` 时编辑/删除 Toast「{模板名}已绑定任务，无法编辑/删除」；**删除** 额外校验：若模板 `annotTemplateId` 已被某采集方案引用 → Toast「标注标签模板已绑定采集方案，无法删除」（`plans.js` → `isAuditTemplateBoundToCollectPlan`）
 - **新建/编辑模板**：`AuditTemplateModal`（名称、描述；**无创建人字段**；后台新建仍写入 `creator`）
 - **模板详情** `/tag/audit-template/:templateId`（`AuditTemplateDetail` + `AuditReviewTagPanel`）：
   - 顶部卡片：模板名称、描述、关联任务数、创建人（**无「返回模板列表」按钮**）；标签面板 **无额外外层包裹 Card**
   - 标签树列表：一级分组 + 二级叶子；列含 **标签名称**（加粗）、**标签值**、**描述**、**应用范围**（全局/通过/驳回）、**创建人**、创建/更新时间；筛选：标签名称、标签值、应用范围（下拉默认「全局」，**无「全部」选项**；点「查询」生效）
   - 新建/编辑标签组：`AuditReviewTagModal`（**Drawer**）— 标签名称*、标签值*、应用范围*、描述（0/500）、**子标签**（扁平名称/值行，最多 2 级，默认空 children）；编辑模式 Drawer 底部左侧提示「该操作会影响相关采集条目的标注标签」
-  - **删除**：**仅创建人**可删（非创建人点击 Toast「仅创建人可删除」）；模板已绑定任务时 Toast「{模板名}已绑定任务，无法编辑/删除」（绑定校验优先于创建人校验）
+  - **编辑/删除**（标签组，一级行）：**仅创建人**可编辑/删除（非创建人置灰 + Tooltip「仅创建人可编辑或删除」）；**不再校验**模板是否绑定任务（与列表页模板级校验区分）
   - **分页** 10 条/页
 
 **Mock 初始模板**（`auditTemplateSeed`）：标准标注模板 ATM-001、试采集专用 ATM-002、工业场景 ATM-003
@@ -1275,7 +1276,7 @@ src/
 │   │   └── entryTableHelpers.js   # 标注/验收操作人解析共用
 │   ├── task/
 │   │   ├── EntryListPanel.jsx              # 任务详情条目面板（重新质检）
-│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（验收重置 + 5 列筛选）
+│   │   └── SamplingBatchEntryListPanel.jsx # 抽检批次详情条目面板（验收重置 + hideDelete + 5 列筛选）
 │   ├── Layout/
 │   │   ├── index.jsx          # 整体布局（Header + Sidebar + 内容区；--layout-sidebar-width）
 │   │   ├── Header.jsx         # 顶栏（模块 Tab、外部连接、用户下拉）
@@ -1300,10 +1301,10 @@ src/
 │       ├── CheckboxList.jsx   # 统一多选列表：IndeterminateCheckbox、CheckboxListSelectAllRow（首行全选+已选计数）、CheckboxListShell、CheckboxListSearchInput
 │       ├── PermissionAction.jsx # IfPerm / PermButton / PermAction / PermMenuItem
 │       ├── ProjectMutateGate.jsx # 项目关闭/归档时禁用新建类操作 + Tooltip
-│       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除）
+│       ├── EntryActions.jsx   # 采集条目统一操作栏（播放/标注/验收/下载/删除；支持 hideDownload/hideDelete 动态列宽）
 │       ├── Icons.jsx          # 内联 SVG 图标（IconProject、IconBackflowBoard/Device/Events/Trigger、IconCode/Send/Pause/Play 等）
 │       ├── SelectControl.jsx  # 原生 select 下拉箭头包装
-│       ├── Toast.jsx          # useToast hook — 轻量 Toast（**默认顶部居中**；`variant: success` 白底绿勾；可选 `placement: bottom`）
+│       ├── Toast.jsx          # useToast hook — 浅色 Toast（**顶部水平居中**；默认 info 图标；`variant: success` 浅绿成功样式）
 │       ├── TreeTransfer.jsx   # 项目-任务树形穿梭框（新建数据集等）
 │       ├── BarChart.jsx       # 柱状图（ResizeObserver 自适应宽度）
 │       ├── LineChart.jsx      # 单折线图
@@ -1469,7 +1470,7 @@ scripts/
 | 表单校验 | 点击提交时触发，必填字段边框变红 |
 | 删除确认 | 列表/卡片级删除均复用 **`DeleteConfirmModal`**：橙 icon、标题「提示」、正文「确定要删除吗？」、取消/蓝色「确定」。表单内局部删除（采集步骤、子标签、相机行、工作台标注段等）**无二次确认** |
 | 归档确认 | 采集项目 / 采集任务 / 采集方案归档均复用 **`DeleteConfirmModal` 同款样式**（橙 icon +「提示」+ 取消/蓝色「确定」），**正文保留各场景原文案**；项目/任务/方案列表操作栏「归档」均为 **橙色**（`text-amber-600`） |
-| Toast | `useToast` hook，2.5 秒自动消失；**默认顶部居中**深底白字；`show(msg, { variant: 'success' })` 为顶部白底绿勾；可选 `placement: 'bottom'` 回到底部 |
+| Toast | `useToast` hook，2.5 秒自动消失；**顶部水平居中**（`fixed top-6` + 全宽 flex 居中）；**浅色**白底/浅绿底 + 柔和阴影与边框；默认蓝色 info 圆标，`show(msg, { variant: 'success' })` 为浅绿成功样式；长文案最大宽约 28rem 可换行 |
 | ID 列展示惯例 | 列表/详情表格中 **ID 类列标题** 写「中文ID」（**中文与 ID 之间无空格**，如「任务ID」「真机数据集ID」）；**ID 值** 黑色/灰色不可点击；**名称类列** 蓝色可跳转详情 |
 | 表格对齐 | `Table` 表头与单元格默认水平居中；`embedded` 时去掉外层 Card 边框（由 `ListPageCard` 承载）；`pageSize` 启用 `ListPaginator`（分页在 `overflow-x-auto` 外）；`scrollVisibleRows` 可固定表内可见行数并 sticky 表头 |
 | 分页惯例 | 默认 **10 条/页**（`LIST_PAGE_SIZE`）；`ListPaginator` 右对齐单行：**第 X-Y 条/总共 Z 条** → `<` `>` 页码（>7 页省略号）→ **条/页** 下拉（10/20/50/100）；`Table` / `usePagination` 均支持 `pageSize` 变更并重置第 1 页 |
@@ -1484,8 +1485,8 @@ scripts/
 | 重新质检 | `entryReQc.js` → `buildReQcPatch`；有标注历史时 `ReQcKeepTagsModal`；流转记录操作人取当前用户 |
 | 条目流转记录 | `FlowTimelineModal` 早→晚；含 `batchDetail` 时展示「详情：…」；验收重置轮次取验收相关历史 **最大轮次 + 1** |
 | 多选列表 UI | `CheckboxList.jsx`：成员分配任务、`TreeTransfer`、**项目成员添加用户**、新建抽检批次「选择任务」列表与采集员/标注员下拉全选行等共用 `CheckboxListSelectAllRow`（浅灰底 + 「已选 x / 共 y」+ indeterminate） |
-| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（5 列筛选、无文件ID、`showTaskColumn`、仅 **验收重置** 工具栏且 **跳过验收待处理**、页头无状态 Badge、无工序 Tab）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
-| 条目操作列 | `EntryActions`：**任务详情**中间按钮仅「标注」；**抽检批次** `acceptOnly` 仅验收待处理显示「验收」；标注不通过→验收不通过打回标注（工作台入口） |
+| 抽样验收 / 验收管理 | 项目详情 Tab 名 **验收管理**；批次列表 **通过率** 开明细弹窗、**批次名称/详情** 进抽检批次详情页；详情页 **抽检条目列表**（5 列筛选、无文件ID、`showTaskColumn`、**无删除**、仅 **验收重置** 工具栏且 **跳过验收待处理**、页头无状态 Badge、无工序 Tab）；创建弹窗筛选 **点查询才刷新**候选/抽检数；人员默认 UI 全选、提交规范为空=不筛选；`calcSampledCount` 候选≥1 时至少抽 1 条（含 0%）；列表无「抽样依据」列；验收工作台同步所属批次统计 |
+| 条目操作列 | `EntryActions`：**任务详情**中间按钮仅「标注」；**抽检批次** `acceptOnly` 仅验收待处理显示「验收」，且 **`hideDelete`** 去掉删除；标注不通过→验收不通过打回标注（工作台入口） |
 | 条目详情弹窗 | 标注详情：结论 + 分类表（质量标签/问题标签）+ 备注 + 标注时间/员；验收详情：结论 + 备注 + 验收时间/员 |
 | 采集项目 runtime | 列表页 `useState` 本地维护 status（open/closed/archived）；详情页只读传入 `projectStatus` |
 | 任务/方案发布 | 草稿「发布」**无二次确认**，直接变更状态 + Toast「状态更新成功」（`TaskTable` / `CollectConfigTab`） |
@@ -1502,7 +1503,7 @@ scripts/
 | 共享表单组件 | `FormField.jsx` → `DescriptionField`（全平台标准「描述」字段：placeholder「请输入描述」、选填、输入框外 **`n/500`**）；`PasswordInput`（闭眼 `IconEyeOff` / 睁眼 `IconEyeOpen`）；`CreateInviteUserModal` 导出 `RoleMultiSelect`；用户/组织/角色/设备/标签/数据集等已统一接入 |
 | 用户密码编辑 | 用户管理 **编辑 Drawer**：默认 **「修改密码」** 主按钮 → 点击后 `PasswordInput`；有输入才 `updateRuntimeUser` 覆盖 `password` |
 | 平台用户多角色 | `users.role` 存 `&` 连接字符串；新建/编辑用 `RoleMultiSelect`；列表 `renderRoleTags` 拆 Badge |
-| 标签任务绑定 | `taskBindingTips.js` → `boundEditTip` / `boundDeleteTip`；`tasks.js` → `isTaskPurposeTagBoundToTask`、`isCollectionMethodTagBoundToTask`、`isAtomicSkillTagBoundToTask`、`isBodyTypeTagBoundToTask`、`isEndTypeTagBoundToTask`、`isSceneTypeBoundToTask`、`isDeviceInstanceBoundToTask`、`isDeviceTypeBoundToTask`；`TagTableActions.jsx` + 各列表页点击时 Toast |
+| 标签任务绑定 | `taskBindingTips.js` → `boundEditTip` / `boundDeleteTip`；`tasks.js` → `isTaskPurposeTagBoundToTask`、`isCollectionMethodTagBoundToTask`、`isAtomicSkillTagBoundToTask`、`isBodyTypeTagBoundToTask`、`isEndTypeTagBoundToTask`、`isSceneTypeBoundToTask`、`isDeviceInstanceBoundToTask`、`isDeviceTypeBoundToTask`；`plans.js` → **`isAuditTemplateBoundToCollectPlan`**；`TagTableActions.jsx` + 各列表页点击时 Toast；**审核模板详情内标签** 不受任务/方案绑定限制，仅校验创建人 |
 | 设备管理 runtime | `getAllDeviceTypes`、`setDeviceTypes`、`getAllDeviceInstances`、`setDeviceInstances`、`getNextInstanceCode`、`isDeviceSnTaken`、`countInstancesByTypeId` 等 |
 | 设备类型快照 | 任务/条目/方案：`deviceTypeId` + `deviceTypeName` 创建时写入；`getEntryById` 不回写类型库变更 |
 | URDF 预览 | 设备类型列表 `hasUrdf` 为 true 时「预览」链接 → `UrdfPreviewModal`（复用 `urdf-robot.png` 占位图） |
@@ -1516,7 +1517,7 @@ scripts/
 | 标注工作台 | 三模式共用 **四模块** 侧栏（**默认收起**）；**模式 Badge** 顶栏+侧栏标题；**布局 B** 单布局；侧栏 **左缘拖拽** 280~560px；`play` 全只读；**`play` + `source=backflow`** 隐藏右侧面板、时间轴 minimal；`review` / `accept` 底部 **保存 + 提交**；整体标注提交校验：**通过**需质量标签、**驳回**需问题标签（至少 1 项）；片段 **行内增删改**（无弹窗/属性网格）；顶栏 **上一条 / 下一条** 仅导航（回流播放保留 query）；验收提交联动 `syncBatchesAfterEntryAccept` |
 | 真机回流 runtime | `backflowDevices.js` → `updateBackflowDeviceAlias`；`backflowTriggers.js` → 触发器 CRUD + 关联设备保存；事件/看板为会话内只读 mock（刷新恢复 seed） |
 | 设备实例 SN | `InstanceList` 编辑 Drawer：**SN 可编辑**，保存时 `isDeviceSnTaken(sn, excludeId)` 唯一校验 |
-| 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
+| 采集方案 runtime | `appendPlan`、`updatePlanInStore`、`copyPlanInStore`、`publishPlanInStore`、`deletePlanFromStore`、**`isAuditTemplateBoundToCollectPlan`**（审核模板是否被方案 `annotTemplateId` 引用）、`getQcItemsByProjectId`、`updateQcItemInStore`、`buildDefaultPlayLayoutRow` |
 | Logo | `src/assets/logo.png` |
 
 ---

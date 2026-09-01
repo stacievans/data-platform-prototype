@@ -54,10 +54,10 @@ export default function SamplingBatchEntryListPanel({ batchId, projectId, onBatc
       entries={entryList}
       getTask={getTask}
       getProjectId={getProjectId}
-      onDelete={(id) => setEntryList((list) => list.filter((e) => e.id !== id))}
       listTitle="抽检条目列表"
       hideProcessTabs
       hideDownload
+      hideDelete
       hideQcReviewFormFilters
       singleRowFormFilters
       hideToolbarActions

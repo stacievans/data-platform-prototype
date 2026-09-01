@@ -1,7 +1,7 @@
 const release = {
-  version: '0.1.7',
-  date: '2026-08-31',
-  summary: '项目成员-添加成员改成多选',
+  version: '0.1.8',
+  date: '2026-09-01',
+  summary: 'fix: 更新采集方案、审核模板删除校验',
 }
 
 export default release

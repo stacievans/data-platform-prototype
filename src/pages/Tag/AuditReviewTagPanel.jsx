@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
-import { PermButton } from '../../components/common/PermissionAction'
+import { PermAction, PermButton } from '../../components/common/PermissionAction'
 import { IconPlus } from '../../components/common/Icons'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { useCurrentNickname } from '../../context/AuthContext'
@@ -15,11 +15,9 @@ import {
 } from '../../mock/tags'
 import { nativeSelectChevronCls } from '../../components/common/SelectControl'
 import AuditReviewTagModal from './AuditReviewTagModal'
-import { useToast } from '../../components/common/Toast'
-import TagTableActions from './TagTableActions'
-import { boundDeleteTip, boundEditTip } from '../../utils/taskBindingTips'
 
-const DELETE_NOT_CREATOR_TIP = '仅创建人可删除'
+const NOT_CREATOR_TIP = '仅创建人可编辑或删除'
+const disabledCls = 'cursor-not-allowed text-sm text-gray-300 select-none'
 
 const saveMoment = () => nowDateTime()
 const isNewId = (id) => String(id).startsWith('child-')
@@ -183,7 +181,6 @@ function ExpandToggle({ expanded, hasChildren, onClick }) {
 
 export default function AuditReviewTagPanel({ templateId }) {
   const creatorName = useCurrentNickname()
-  const { ToastNode, show: showToast } = useToast()
   const template = getAuditTemplateById(templateId)
   const [tree, setTree] = useState(() => deepCloneTree(template?.tagTree ?? []))
   const [expanded, setExpanded] = useState(() => new Set())
@@ -246,26 +243,15 @@ export default function AuditReviewTagPanel({ templateId }) {
     setDeleteTarget(null)
   }
 
-  const canDeleteGroup = (group) => group?.creator === creatorName
-  const templateBound = (template?.taskCount ?? 0) > 0
+  const canManageGroup = (group) => group?.creator === creatorName
 
   const requestEdit = (group) => {
-    if (templateBound) {
-      showToast(boundEditTip(template.name))
-      return
-    }
+    if (!canManageGroup(group)) return
     openEdit(group)
   }
 
   const requestDelete = (group) => {
-    if (templateBound) {
-      showToast(boundDeleteTip(template.name))
-      return
-    }
-    if (!canDeleteGroup(group)) {
-      showToast(DELETE_NOT_CREATOR_TIP)
-      return
-    }
+    if (!canManageGroup(group)) return
     setDeleteTarget(group)
   }
 
@@ -316,11 +302,32 @@ export default function AuditReviewTagPanel({ templateId }) {
       key: 'actions',
       render: (_, row) => {
         if (row.level !== 1) return null
+        const canManage = canManageGroup(row.groupRef)
         return (
-          <TagTableActions
-            onEdit={() => requestEdit(row.groupRef)}
-            onDelete={() => requestDelete(row.groupRef)}
-          />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {canManage ? (
+              <PermAction
+                permission="tag.edit"
+                className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
+                onClick={() => requestEdit(row.groupRef)}
+              >
+                编辑
+              </PermAction>
+            ) : (
+              <span className={disabledCls} title={NOT_CREATOR_TIP}>编辑</span>
+            )}
+            {canManage ? (
+              <PermAction
+                permission="tag.delete"
+                className="cursor-pointer text-sm text-red-500 hover:text-red-400"
+                onClick={() => requestDelete(row.groupRef)}
+              >
+                删除
+              </PermAction>
+            ) : (
+              <span className={disabledCls} title={NOT_CREATOR_TIP}>删除</span>
+            )}
+          </div>
         )
       },
     },
@@ -405,7 +412,6 @@ export default function AuditReviewTagPanel({ templateId }) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />
-      {ToastNode}
     </ListPageCard>
   )
 }

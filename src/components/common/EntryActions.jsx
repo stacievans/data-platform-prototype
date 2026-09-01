@@ -60,7 +60,7 @@ function MiddleSlot({ entry, onOpen, mode = 'default' }) {
 }
 
 /**
- * 采集条目统一操作栏：固定 4 列 [ 播放 | 中间按钮 | 下载 | 删除 ]
+ * 采集条目统一操作栏：[ 播放 | 中间按钮 | 下载? | 删除? ]
  * TODO: 中间按钮角色校验（标注=标注员）
  */
 export default function EntryActions({
@@ -71,6 +71,7 @@ export default function EntryActions({
   onDownload,
   onDelete,
   hideDownload = false,
+  hideDelete = false,
   compact = false,
   middleActionMode = 'default',
 }) {
@@ -86,8 +87,17 @@ export default function EntryActions({
     onDownload?.(entry)
   }
 
+  const colCount = 2 + (hideDownload ? 0 : 1) + (hideDelete ? 0 : 1)
+  const gridCols = colCount === 2 ? 'grid-cols-2' : colCount === 3 ? 'grid-cols-3' : 'grid-cols-4'
+  const widthCls = colCount === 4
+    ? 'min-w-[248px]'
+    : colCount === 3 && !compact
+      ? 'min-w-[186px]'
+      : 'w-fit'
+  const gapCls = compact || colCount === 2 ? 'gap-0' : 'gap-1'
+
   return (
-    <div className={`grid items-center ${compact ? 'w-fit grid-cols-3 gap-0' : hideDownload ? 'min-w-[186px] grid-cols-3 gap-1' : 'min-w-[248px] grid-cols-4 gap-1'}`}>
+    <div className={`grid items-center ${widthCls} ${gridCols} ${gapCls}`}>
       <Button variant="link" size="sm" onClick={() => goWorkbench('play')} className="justify-center">
         播放
       </Button>
@@ -104,16 +114,18 @@ export default function EntryActions({
           下载
         </PermButton>
       )}
-      <PermButton
-        permission="collection.upload.delete"
-        mode="disable"
-        variant="linkDanger"
-        size="sm"
-        onClick={() => onDelete?.(entry)}
-        className="justify-center"
-      >
-        删除
-      </PermButton>
+      {!hideDelete && (
+        <PermButton
+          permission="collection.upload.delete"
+          mode="disable"
+          variant="linkDanger"
+          size="sm"
+          onClick={() => onDelete?.(entry)}
+          className="justify-center"
+        >
+          删除
+        </PermButton>
+      )}
     </div>
   )
 }

@@ -497,6 +497,7 @@ export default function EntryDataTable({
   showScopeColumns = false,
   hideDownload = false,
   hideQcReviewFormFilters = false,
+  hideDelete = false,
   hideToolbarActions = false,
   singleRowFormFilters = false,
   showTaskColumn = false,
@@ -780,14 +781,15 @@ export default function EntryDataTable({
     {
       title: '操作',
       key: 'actions',
-      width: hideDownload ? 180 : 280,
+      width: hideDownload && hideDelete ? 120 : hideDownload ? 180 : hideDelete ? 220 : 280,
       render: (_, row) => (
         <EntryActions
           entry={row}
           hideDownload={hideDownload}
+          hideDelete={hideDelete}
           compact={hideDownload}
           middleActionMode={middleActionMode}
-          onDelete={() => setDeleteTarget(row)}
+          onDelete={hideDelete ? undefined : () => setDeleteTarget(row)}
         />
       ),
     },
@@ -986,7 +988,7 @@ export default function EntryDataTable({
       </ListPageCard>
 
       <DeleteConfirmModal
-        open={!!deleteTarget}
+        open={!hideDelete && !!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />

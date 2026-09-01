@@ -17,6 +17,7 @@ import {
   softDeleteAuditTemplate,
   upsertAuditTemplate,
 } from '../../mock/tags'
+import { isAuditTemplateBoundToCollectPlan } from '../../mock/plans'
 import { boundDeleteTip, boundEditTip } from '../../utils/taskBindingTips'
 import AuditTemplateModal from './AuditTemplateModal'
 
@@ -143,6 +144,10 @@ export default function AuditTemplateListPanel() {
     if (row.creator !== creatorName) return
     if (row.taskCount > 0) {
       showToast(boundDeleteTip(row.name))
+      return
+    }
+    if (isAuditTemplateBoundToCollectPlan(row.id)) {
+      showToast('标注标签模板已绑定采集方案，无法删除')
       return
     }
     setDeleteTarget(row)
