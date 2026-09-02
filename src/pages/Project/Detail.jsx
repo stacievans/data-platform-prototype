@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Tabs from '../../components/common/Tabs'
 import Table from '../../components/common/Table'
@@ -79,6 +80,74 @@ const QC_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-whi
 const QC_FILTER_SELECT_CLS = `${QC_FILTER_INPUT_CLS} cursor-pointer ${nativeSelectChevronCls}`
 
 const PLAN_ACTION_BAR_CLS = 'flex flex-nowrap items-center gap-1.5'
+const PLAN_BOUND_DELETE_TIP = '采集方案已绑定任务，无法删除'
+const PLAN_DELETE_DISABLED_CLS = 'cursor-not-allowed text-sm text-gray-300 select-none'
+
+function isPlanDeleteBlocked(row) {
+  return row.status === '已归档' && (row.taskCount ?? 0) > 0
+}
+
+function PlanPortalTooltip({ label, children }) {
+  const triggerRef = useRef(null)
+  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  const updatePos = useCallback(() => {
+    const el = triggerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    setPos({ top: rect.top - 8, left: rect.left + rect.width / 2 })
+  }, [])
+
+  const show = () => { updatePos(); setVisible(true) }
+  const hide = () => setVisible(false)
+
+  useEffect(() => {
+    if (!visible) return undefined
+    const onReposition = () => updatePos()
+    window.addEventListener('scroll', onReposition, true)
+    window.addEventListener('resize', onReposition)
+    return () => {
+      window.removeEventListener('scroll', onReposition, true)
+      window.removeEventListener('resize', onReposition)
+    }
+  }, [visible, updatePos])
+
+  const tooltip = visible ? createPortal(
+    <div
+      style={{ position: 'fixed', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+      className="pointer-events-none max-w-[240px] rounded bg-gray-800 px-2.5 py-1.5 text-center text-xs leading-snug text-white shadow"
+      role="tooltip"
+    >
+      {label}
+    </div>,
+    document.body,
+  ) : null
+
+  return (
+    <>
+      <span
+        ref={triggerRef}
+        className="inline-flex shrink-0"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+      >
+        {children}
+      </span>
+      {tooltip}
+    </>
+  )
+}
+
+function PlanDisabledDelete({ tip = PLAN_BOUND_DELETE_TIP }) {
+  return (
+    <PlanPortalTooltip label={tip}>
+      <span className={PLAN_DELETE_DISABLED_CLS}>删除</span>
+    </PlanPortalTooltip>
+  )
+}
 
 function PlanTooltipWrap({ label, children }) {
   return (
@@ -246,10 +315,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   }
 
   const requestDeletePlan = (row) => {
-    if (row.status === '已归档' && (row.taskCount ?? 0) > 0) {
-      showToast('采集方案已绑定任务，无法删除')
-      return
-    }
+    if (isPlanDeleteBlocked(row)) return
     setDeleteTarget(row)
   }
 
@@ -296,7 +362,11 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         <PlanCopyBtn onClick={() => handleCopy(row)} />
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
         {fragmentAnnotBtn}
-        <PlanLinkAction permission="collection.project.delete" danger onClick={() => requestDeletePlan(row)}>删除</PlanLinkAction>
+        {isPlanDeleteBlocked(row) ? (
+          <PlanDisabledDelete />
+        ) : (
+          <PlanLinkAction permission="collection.project.delete" danger onClick={() => requestDeletePlan(row)}>删除</PlanLinkAction>
+        )}
       </div>
     )
   }

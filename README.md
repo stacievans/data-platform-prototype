@@ -541,7 +541,7 @@ UserListPanel    用户管理 / 组织详情共用用户列表、筛选、新建
 - **复制**：图标按钮，生成草稿副本，其余字段同原方案
 - **编辑**：仅草稿可编辑；已发布需先复制为草稿
 - **发布**：**直接发布** + Toast「状态更新成功」（**无二次确认**）
-- **删除**：`DeleteConfirmModal`；**草稿** 或 **已归档且 `taskCount===0`** 可删；**已归档且已绑定任务**（`taskCount>0`）点击删除 Toast「采集方案已绑定任务，无法删除」
+- **删除**：`DeleteConfirmModal`；**草稿** 或 **已归档且 `taskCount===0`** 可删；**已归档且已绑定任务**（`taskCount>0`）删除按钮 **置灰**，hover 提示「采集方案已绑定任务，无法删除」（portal Tooltip，不被表格裁切）
 - **归档**：`DeleteConfirmModal`（样式同删除确认；正文含方案名与后果说明）；操作栏「归档」为 **橙色**
 - **查看**（已发布/已归档）：只读采集方案 **Drawer**（`CollectPlanFormFields` readonly）
 - **片段标注配置**：打开 **`FragmentAnnotConfigDrawer`**（标题「片段标注配置」；宽 `min(960px, …)`）；左侧类型列表展示 **`中文名(类型值)`**（如 `动作语义(action_semantics)`）；**采集打点** 始终置顶、**不可删除**（`mandatory`）；右侧类型/属性/选项编辑器（`FragmentAnnotPreconfigPanel` embedded）；**全字段可编辑**（含预置大类，采集打点除外删除）；**不受方案状态限制**；属性选项含 **「设为默认值」** 列（单选限 1 个、多选可多个，默认均不勾选）；预置类型见下表
