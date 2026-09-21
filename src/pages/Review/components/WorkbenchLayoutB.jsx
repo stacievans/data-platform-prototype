@@ -12,7 +12,7 @@ const SIGNAL_PANELS = [
 ]
 
 /** 布局 B：左 5 张信号图 · 中图像互换 · 右 URDF */
-export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames }) {
+export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames, entry = null }) {
   return (
     <div className="flex min-h-0 flex-1 gap-2">
       <div className="flex h-full w-[184px] shrink-0 flex-col gap-1">
@@ -35,7 +35,7 @@ export default function WorkbenchLayoutB({ playPct, signalSeries, totalFrames })
         ))}
       </div>
 
-      <CameraSwapPanel playPct={playPct} variant="stack" />
+      <CameraSwapPanel playPct={playPct} variant="stack" entry={entry} />
 
       <PlayheadOverlay
         playPct={playPct}

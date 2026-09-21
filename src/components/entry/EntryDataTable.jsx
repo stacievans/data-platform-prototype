@@ -34,6 +34,13 @@ import {
 import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { formatDateTime } from '../../utils/formatDateTime'
 import { normalizeAuditQuality } from '../../pages/Review/constants/workbenchTags'
+import {
+  COLOR_ENCODING_FILTER_OPTIONS,
+  formatEntryColorEncoding,
+} from '../../utils/colorEncoding'
+import CliBatchDownloadModal from '../../pages/Dataset/CliBatchDownloadModal'
+import { FilterMultiSelect } from '../../pages/Project/AddBatchTaskDataModal'
+import { filterBatchTaskEntries } from '../../utils/batchTaskEntryOps'
 
 const LBL = 'mb-1 block text-xs text-gray-500'
 const INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -143,7 +150,25 @@ function OperatorTooltipWrap({ operator, status, children }) {
   )
 }
 
-function ProcessStatusCell({ status, operator, onClick, clickable = false, clickAnyStatus = false }) {
+function PreAnnotationImportFailMark() {
+  return (
+    <span className="group/importfail relative inline-flex shrink-0">
+      <span className="cursor-help text-amber-500" aria-label="预标注导入失败">⚠</span>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow group-hover/importfail:block">
+        预标注导入失败
+      </span>
+    </span>
+  )
+}
+
+function ProcessStatusCell({
+  status,
+  operator,
+  onClick,
+  clickable = false,
+  clickAnyStatus = false,
+  preAnnotationImportFailed = false,
+}) {
   const label = PROCESS_STATUS_LABEL[status] ?? '—'
   const colorCls = status === 'rejected'
     ? 'text-red-600'
@@ -155,7 +180,8 @@ function ProcessStatusCell({ status, operator, onClick, clickable = false, click
           ? 'text-gray-500'
           : 'text-gray-300'
   const canClick = clickable && (clickAnyStatus || status === 'passed' || status === 'rejected')
-  const inner = (
+  const showImportFail = preAnnotationImportFailed && (status === 'pending' || status === 'processing')
+  const statusMain = (
     <span
       className={`inline-flex items-center gap-1.5 text-sm ${
         canClick ? 'cursor-pointer hover:text-blue-600' : ''
@@ -169,10 +195,20 @@ function ProcessStatusCell({ status, operator, onClick, clickable = false, click
       <span>{label}</span>
     </span>
   )
-  if (operator && (status === 'passed' || status === 'rejected' || status === 'processing')) {
-    return <OperatorTooltipWrap operator={operator} status={status}>{inner}</OperatorTooltipWrap>
-  }
-  return inner
+  const statusWithOperator = operator && (status === 'passed' || status === 'rejected' || status === 'processing')
+    ? (
+      <OperatorTooltipWrap operator={operator} status={status}>
+        {statusMain}
+      </OperatorTooltipWrap>
+    )
+    : statusMain
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {statusWithOperator}
+      {showImportFail && <PreAnnotationImportFailMark />}
+    </span>
+  )
 }
 
 function FlowRecordButton({ onClick }) {
@@ -504,9 +540,24 @@ export default function EntryDataTable({
   middleActionMode = 'default',
   onBatchAcceptPass,
   onBatchAcceptReset,
+  showColorEncoding = true,
+  filterPreset = null,
+  hideSelectColumn = false,
+  hideDeviceColumns = false,
+  hideFormFilters = false,
+  onBatchEntryDelete,
+  onClaimAndOpen,
+  showBatchFlowTransfer = false,
+  onOpenBatchFlowTransfer,
+  processTab: processTabProp,
+  onProcessTabChange,
 }) {
-  const [processTab, setProcessTab] = useState('qc')
+  const [processTabInternal, setProcessTabInternal] = useState('qc')
+  const processTab = processTabProp ?? processTabInternal
   const [subStatus, setSubStatus] = useState('all')
+  const [qCollectors, setQCollectors] = useState([])
+  const [qReviewOperators, setQReviewOperators] = useState([])
+  const [qAcceptOperators, setQAcceptOperators] = useState([])
   const [qEntryId, setQEntryId] = useState('')
   const [qProjectName, setQProjectName] = useState('')
   const [qTaskName, setQTaskName] = useState('')
@@ -515,6 +566,7 @@ export default function EntryDataTable({
   const [qReviewStatus, setQReviewStatus] = useState('全部')
   const [qAcceptStatus, setQAcceptStatus] = useState('全部')
   const [qFormat, setQFormat] = useState('全部')
+  const [qColorEncoding, setQColorEncoding] = useState('全部')
   const [filters, setFilters] = useState({})
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -525,6 +577,7 @@ export default function EntryDataTable({
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const [batchOpTarget, setBatchOpTarget] = useState(null)
   const [reQcTagsOpen, setReQcTagsOpen] = useState(false)
+  const [cliBatchDownloadOpen, setCliBatchDownloadOpen] = useState(false)
   const { ToastNode, show: showToast } = useToast()
 
   const statusClickHandlers = useMemo(() => ({
@@ -542,10 +595,56 @@ export default function EntryDataTable({
     }
   }, [getTask])
 
-  const formFiltered = useMemo(
-    () => entries.filter((e) => filterEntriesByForm(e, filters, resolveScope)),
-    [entries, filters, resolveScope],
-  )
+  const collectorOptions = useMemo(() => {
+    const set = new Set()
+    entries.forEach((e) => { if (e.uploader) set.add(e.uploader) })
+    return [...set].sort()
+  }, [entries])
+
+  const reviewOperatorOptions = useMemo(() => {
+    const set = new Set()
+    entries.forEach((e) => {
+      const task = getTask?.(e)
+      const op = e.reviewClaimedBy ?? resolveReviewOperator(e, task)
+      const name = typeof op === 'string' ? op : op?.nickname
+      if (name) set.add(name)
+    })
+    return [...set].sort()
+  }, [entries, getTask])
+
+  const acceptOperatorOptions = useMemo(() => {
+    const set = new Set()
+    entries.forEach((e) => {
+      const op = e.acceptClaimedBy ?? resolveAcceptOperator(e)
+      const name = typeof op === 'string' ? op : op?.nickname
+      if (name) set.add(name)
+    })
+    return [...set].sort()
+  }, [entries])
+
+  const formFiltered = useMemo(() => {
+    if (filterPreset === 'batchTask') {
+      return filterBatchTaskEntries(
+        entries,
+        {
+          entryId: filters.entryId,
+          fileName: filters.fileName,
+          format: filters.format,
+          colorEncoding: filters.colorEncoding,
+          collectors: filters.collectors,
+          reviewOperators: filters.reviewOperators,
+          acceptOperators: filters.acceptOperators,
+          qcStatus: filters.qcStatus,
+          reviewStatus: filters.reviewStatus,
+          acceptStatus: filters.acceptStatus,
+          processTab,
+          subStatus: 'all',
+        },
+        getTask,
+      )
+    }
+    return entries.filter((e) => filterEntriesByForm(e, filters, resolveScope))
+  }, [entries, filters, resolveScope, filterPreset, processTab, getTask])
 
   const subCounts = useMemo(
     () => (hideProcessTabs
@@ -555,9 +654,10 @@ export default function EntryDataTable({
   )
 
   const visibleEntries = useMemo(
-    () => (hideProcessTabs
-      ? formFiltered
-      : formFiltered.filter((e) => matchProcessSubFilter(e, processTab, subStatus))),
+    () => {
+      if (hideProcessTabs) return formFiltered
+      return formFiltered.filter((e) => matchProcessSubFilter(e, processTab, subStatus))
+    },
     [formFiltered, processTab, subStatus, hideProcessTabs],
   )
 
@@ -566,22 +666,44 @@ export default function EntryDataTable({
   }, [processTab, subStatus, filters, entries])
 
   const handleProcessTabChange = (tab) => {
-    setProcessTab(tab)
+    onProcessTabChange?.(tab)
+    if (processTabProp === undefined) setProcessTabInternal(tab)
     setSubStatus('all')
   }
 
-  const applyFilters = () => setFilters({
-    entryId: qEntryId,
-    projectName: showScopeColumns ? qProjectName : '',
-    taskName: showScopeColumns ? qTaskName : '',
-    fileName: qFileName,
-    qcStatus: qQcStatus,
-    reviewStatus: qReviewStatus,
-    acceptStatus: qAcceptStatus,
-    format: qFormat,
-  })
+  const applyFilters = () => {
+    if (filterPreset === 'batchTask') {
+      setFilters({
+        entryId: qEntryId,
+        fileName: qFileName,
+        format: qFormat,
+        colorEncoding: qColorEncoding,
+        collectors: qCollectors,
+        reviewOperators: qReviewOperators,
+        acceptOperators: qAcceptOperators,
+        qcStatus: qQcStatus,
+        reviewStatus: qReviewStatus,
+        acceptStatus: qAcceptStatus,
+      })
+      return
+    }
+    setFilters({
+      entryId: qEntryId,
+      projectName: showScopeColumns ? qProjectName : '',
+      taskName: showScopeColumns ? qTaskName : '',
+      fileName: qFileName,
+      qcStatus: qQcStatus,
+      reviewStatus: qReviewStatus,
+      acceptStatus: qAcceptStatus,
+      format: qFormat,
+      colorEncoding: showColorEncoding ? qColorEncoding : '全部',
+    })
+  }
 
   const resetFilters = () => {
+    setQCollectors([])
+    setQReviewOperators([])
+    setQAcceptOperators([])
     setQEntryId('')
     setQProjectName('')
     setQTaskName('')
@@ -590,6 +712,7 @@ export default function EntryDataTable({
     setQReviewStatus('全部')
     setQAcceptStatus('全部')
     setQFormat('全部')
+    setQColorEncoding('全部')
     setFilters({})
   }
 
@@ -612,6 +735,11 @@ export default function EntryDataTable({
   }
 
   const hasSelection = selectedIds.size > 0
+
+  const selectedEntriesForDownload = useMemo(
+    () => entries.filter((e) => selectedIds.has(e.id)),
+    [entries, selectedIds],
+  )
 
   const applyReQc = (keepReviewTags) => {
     const entryIds = [...selectedIds]
@@ -653,7 +781,8 @@ export default function EntryDataTable({
   }
 
   const confirmDelete = () => {
-    onDelete?.(deleteTarget.id)
+    if (onBatchEntryDelete) onBatchEntryDelete(deleteTarget)
+    else onDelete?.(deleteTarget.id)
     setDeleteTarget(null)
   }
 
@@ -662,8 +791,10 @@ export default function EntryDataTable({
     [processTab, subStatus, filters, entries.length],
   )
 
+  const showSelectCol = !hideSelectColumn
+
   const columns = [
-    {
+    ...(showSelectCol ? [{
       title: (
         <input
           type="checkbox"
@@ -684,8 +815,8 @@ export default function EntryDataTable({
           aria-label={`选择 ${row.id}`}
         />
       ),
-    },
-    { title: '条目ID', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
+    }] : []),
+    { title: '条目ID', key: 'id', dataIndex: 'id', render: (v) => <span className="font-medium text-gray-700">{v}</span> },
     ...(showScopeColumns ? [
       {
         title: '所属项目名称',
@@ -698,7 +829,7 @@ export default function EntryDataTable({
         render: (_, row) => <span className="text-gray-700">{resolveScope(row).taskName || '—'}</span>,
       },
     ] : []),
-    { title: '文件名称', key: 'displayName', render: (_, row) => <span className="font-mono text-xs">{getEntryDisplayFileName(row)}</span> },
+    { title: '文件名称', key: 'fileName', dataIndex: 'displayName', render: (_, row) => <span className="font-mono text-xs">{getEntryDisplayFileName(row)}</span> },
     ...(showTaskColumn ? [{
       title: '所属任务',
       key: 'taskName',
@@ -707,16 +838,25 @@ export default function EntryDataTable({
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
-    {
-      title: '设备类型',
-      dataIndex: 'deviceTypeName',
-      render: (v) => <span className="text-gray-700">{v || '—'}</span>,
-    },
-    {
-      title: '采集设备',
-      dataIndex: 'collectDevice',
-      render: (v, row) => <CollectDeviceCell code={v} sn={row.collectDeviceSn} />,
-    },
+    ...(showColorEncoding ? [{
+      title: '色彩编码',
+      key: 'colorEncoding',
+      render: (_, row) => (
+        <span className="font-mono text-xs text-gray-700">{formatEntryColorEncoding(row)}</span>
+      ),
+    }] : []),
+    ...(!hideDeviceColumns ? [
+      {
+        title: '设备类型',
+        dataIndex: 'deviceTypeName',
+        render: (v) => <span className="text-gray-700">{v || '—'}</span>,
+      },
+      {
+        title: '采集设备',
+        dataIndex: 'collectDevice',
+        render: (v, row) => <CollectDeviceCell code={v} sn={row.collectDeviceSn} />,
+      },
+    ] : []),
     {
       title: <ColumnTitleHint label="质检状态" hint="点击查看质检详情" />,
       key: 'qcStatus',
@@ -747,6 +887,7 @@ export default function EntryDataTable({
             operator={operator}
             clickable={isStatusClickable(row, 'review')}
             clickAnyStatus={!!row.lastBatchTransfer}
+            preAnnotationImportFailed={Boolean(row.preAnnotationImportFailed)}
             onClick={() => resolveStatusClick(row, 'review', statusClickHandlers)}
           />
         )
@@ -788,7 +929,8 @@ export default function EntryDataTable({
           hideDownload={hideDownload}
           hideDelete={hideDelete}
           compact={hideDownload}
-          middleActionMode={middleActionMode}
+          middleActionMode={filterPreset === 'batchTask' ? 'batchTask' : middleActionMode}
+          onBeforeWorkbench={onClaimAndOpen}
           onDelete={hideDelete ? undefined : () => setDeleteTarget(row)}
         />
       ),
@@ -816,9 +958,97 @@ export default function EntryDataTable({
         </ListPageFilter>
       )}
 
+      {!hideFormFilters && (
       <ListPageFilter className={!hideProcessTabs ? 'pt-3' : ''}>
         <div className="space-y-3">
-          {singleRowFormFilters ? (
+          {filterPreset === 'batchTask' ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>条目ID</label>
+                  <input
+                    value={qEntryId}
+                    onChange={(e) => setQEntryId(e.target.value)}
+                    placeholder="请输入条目ID"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>文件名称</label>
+                  <input
+                    value={qFileName}
+                    onChange={(e) => setQFileName(e.target.value)}
+                    placeholder="请输入文件名称"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>数据格式</label>
+                  <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>色彩编码</label>
+                  <select value={qColorEncoding} onChange={(e) => setQColorEncoding(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {COLOR_ENCODING_FILTER_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <FilterMultiSelect
+                    label="采集员"
+                    options={collectorOptions}
+                    value={qCollectors}
+                    onChange={setQCollectors}
+                    placeholder="请选择"
+                    searchable
+                  />
+                </div>
+                <div className={FILTER_FIELD}>
+                  <FilterMultiSelect
+                    label="标注操作人"
+                    options={reviewOperatorOptions}
+                    value={qReviewOperators}
+                    onChange={setQReviewOperators}
+                    placeholder="请选择"
+                    searchable
+                  />
+                </div>
+                <div className={FILTER_FIELD}>
+                  <FilterMultiSelect
+                    label="验收操作人"
+                    options={acceptOperatorOptions}
+                    value={qAcceptOperators}
+                    onChange={setQAcceptOperators}
+                    placeholder="请选择"
+                    searchable
+                  />
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>质检状态</label>
+                  <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>标注状态</label>
+                  <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>验收状态</label>
+                  <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className={FILTER_ACTIONS}>
+                <Button onClick={resetFilters}>重置</Button>
+                <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
+              </div>
+            </>
+          ) : singleRowFormFilters ? (
             <div className="grid grid-cols-5 gap-3">
               <div className={FILTER_FIELD}>
                 <label className={LBL}>条目ID</label>
@@ -848,7 +1078,7 @@ export default function EntryDataTable({
               </div>
             </div>
           ) : (
-          <div className={FILTER_GRID_ROW}>
+          <div className={showColorEncoding ? 'grid grid-cols-6 gap-3' : FILTER_GRID_ROW}>
             <div className={FILTER_FIELD}>
               <label className={LBL}>条目ID</label>
               <input value={qEntryId} onChange={(e) => setQEntryId(e.target.value)} placeholder="请输入条目ID" className={INPUT_CLS} />
@@ -875,6 +1105,18 @@ export default function EntryDataTable({
                 {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
+            {showColorEncoding && (
+              <div className={FILTER_FIELD}>
+                <label className={LBL}>色彩编码</label>
+                <select
+                  value={qColorEncoding}
+                  onChange={(e) => setQColorEncoding(e.target.value)}
+                  className={`${INPUT_CLS} cursor-pointer`}
+                >
+                  {COLOR_ENCODING_FILTER_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            )}
             {!showScopeColumns && !hideQcReviewFormFilters && (
               <>
                 <div className={FILTER_FIELD}>
@@ -928,6 +1170,7 @@ export default function EntryDataTable({
             </div>
           )}
 
+          {filterPreset !== 'batchTask' && (
           <div className={FILTER_ACTIONS}>
             {!singleRowFormFilters && (
               <button
@@ -942,16 +1185,23 @@ export default function EntryDataTable({
             <Button onClick={resetFilters}>重置</Button>
             <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
           </div>
+          )}
         </div>
       </ListPageFilter>
+      )}
 
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
-        {(!hideToolbarActions || onBatchAcceptPass || onBatchAcceptReset) && (
+        {(showBatchFlowTransfer || !hideToolbarActions || onBatchAcceptPass || onBatchAcceptReset) && (
           <div className="flex flex-wrap gap-2">
+            {showBatchFlowTransfer && (
+              <Button variant="primary" onClick={() => onOpenBatchFlowTransfer?.(processTab)}>
+                批量流转
+              </Button>
+            )}
             {!hideToolbarActions && (
               <>
-                <Button disabled={!hasSelection}>批量下载</Button>
+                <Button disabled={!hasSelection} onClick={() => setCliBatchDownloadOpen(true)}>批量下载</Button>
                 <Button disabled={!hasSelection}>播放转码</Button>
                 {onReQc && (
                   <Button disabled={!hasSelection} onClick={handleReQcClick}>
@@ -1022,6 +1272,12 @@ export default function EntryDataTable({
         onCancel={() => setReQcTagsOpen(false)}
         onKeep={() => applyReQc(true)}
         onClear={() => applyReQc(false)}
+      />
+
+      <CliBatchDownloadModal
+        open={cliBatchDownloadOpen}
+        selectedEntries={selectedEntriesForDownload}
+        onClose={() => setCliBatchDownloadOpen(false)}
       />
 
     </div>

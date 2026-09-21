@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Badge from '../common/Badge'
 import Button from '../common/Button'
-import { IconTrash, IconChevronDown } from '../common/Icons'
+import { IconTrash, IconChevronDown, IconPlus } from '../common/Icons'
 import { SelectChevronWrap, nativeSelectChevronCls } from '../common/SelectControl'
 import SceneCascader from '../common/SceneCascader'
 import { getSceneTypeTree, getCollectionMethodTags, getAtomicSkillTags, getAuditTemplates, getAuditTemplateById } from '../../mock/tags'
@@ -652,6 +652,7 @@ export function CollectPlanFormFields({
   onChange,
   updateStep,
   addStep,
+  insertStep,
   removeStep,
   planNameLabel = '方案名称',
   readonly = false,
@@ -795,16 +796,26 @@ export function CollectPlanFormFields({
                 <div key={i} className="rounded-md border border-gray-200 bg-white p-3">
                   <div className="mb-3 flex items-start justify-between gap-2">
                     <span className="text-xs font-semibold text-blue-600">步骤 {i + 1}</span>
-                    {form.steps.length >= 2 && (
+                    <div className="flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
-                        title="删除步骤"
-                        onClick={() => removeStep(i)}
-                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                        title="在下方插入步骤"
+                        onClick={() => insertStep(i)}
+                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-blue-600 transition-colors hover:bg-blue-50"
                       >
-                        <IconTrash />
+                        <IconPlus className="h-4 w-4" />
                       </button>
-                    )}
+                      {form.steps.length >= 2 && (
+                        <button
+                          type="button"
+                          title="删除步骤"
+                          onClick={() => removeStep(i)}
+                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                        >
+                          <IconTrash />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <StepField label="步骤描述">

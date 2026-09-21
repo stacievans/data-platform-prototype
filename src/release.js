@@ -1,7 +1,7 @@
 const release = {
-  version: '0.1.8',
-  date: '2026-09-01',
-  summary: 'fix: 更新采集方案、审核模板删除校验',
+  version: '2.3.0',
+  date: '2026-09-21',
+  summary: '2.3.0版本内容修改',
 }
 
 export default release

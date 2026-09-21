@@ -6,6 +6,13 @@ import Button from '../../components/common/Button'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { PermAction, PermButton } from '../../components/common/PermissionAction'
 import { IconCopy, IconPlus } from '../../components/common/Icons'
+import TagListIoActions from './TagListIoActions'
+import {
+  auditTemplateExportFilename,
+  buildSingleAuditTemplateExport,
+  importAuditTagLibrary,
+} from '../../utils/tagLibraryImportExport'
+import { downloadJsonFile } from '../../utils/jsonImportExport'
 import { useToast } from '../../components/common/Toast'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
@@ -161,6 +168,13 @@ export default function AuditTemplateListPanel() {
     setDeleteTarget(null)
   }
 
+  const handleExportRow = (row) => {
+    downloadJsonFile(
+      auditTemplateExportFilename(row),
+      buildSingleAuditTemplateExport(row),
+    )
+  }
+
   const columns = [
     {
       title: '模板ID',
@@ -197,6 +211,13 @@ export default function AuditTemplateListPanel() {
             onClick={() => navigate(`/tag/audit-template/${row.id}`)}
           >
             详情
+          </PermAction>
+          <PermAction
+            permission="tag.view"
+            className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
+            onClick={() => handleExportRow(row)}
+          >
+            导出
           </PermAction>
           {canManage ? (
             <PermAction
@@ -254,9 +275,17 @@ export default function AuditTemplateListPanel() {
             查询
           </Button>
         </div>
-        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>
-          新建
-        </PermButton>
+        <div className="flex shrink-0 items-center gap-2">
+          <TagListIoActions
+            hideExport
+            showToast={showToast}
+            runImport={(payload, name) => importAuditTagLibrary(payload, name)}
+            onImported={refresh}
+          />
+          <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>
+            新建
+          </PermButton>
+        </div>
       </div>
       </ListPageFilter>
 

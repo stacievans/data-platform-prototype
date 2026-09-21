@@ -5,6 +5,12 @@ import Table from '../../components/common/Table'
 import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCard'
 import Button from '../../components/common/Button'
 import { IconPlus } from '../../components/common/Icons'
+import {
+  buildFlatTagExport,
+  FLAT_TAG_KIND_META,
+  importFlatTagExport,
+} from '../../utils/tagLibraryImportExport'
+import TagListIoActions from './TagListIoActions'
 import { PermButton } from '../../components/common/PermissionAction'
 import Drawer from '../../components/common/Drawer'
 import { DescriptionField } from '../../components/common/FormField'
@@ -66,7 +72,7 @@ const inputCls = (err) =>
       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'
   }`
 
-function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset, onSearch, onNew }) {
+function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset, onSearch, listActions, onNew }) {
   return (
     <div className="flex items-end gap-3">
       <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
@@ -91,7 +97,10 @@ function FilterBar({ nameQuery, valueQuery, onNameChange, onValueChange, onReset
         <Button onClick={onReset}>重置</Button>
         <Button variant="primary" onClick={onSearch}>查询</Button>
       </div>
-      <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={onNew}>新建</PermButton>
+      <div className="flex shrink-0 items-center gap-2">
+        {listActions}
+        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={onNew}>新建</PermButton>
+      </div>
     </div>
   )
 }
@@ -228,6 +237,23 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
   })
 
   const cols = [...baseColumns, actionColumn]
+  const ioMeta = FLAT_TAG_KIND_META[panelKey]
+
+  const listIoActions = ioMeta ? (
+    <TagListIoActions
+      showToast={showToast}
+      exportFilename={ioMeta.exportFilename}
+      buildExport={() => buildFlatTagExport(panelKey, data)}
+      runImport={(payload, creatorName) => importFlatTagExport(
+        panelKey,
+        payload,
+        creatorName,
+        getData,
+        setData,
+      )}
+      onImported={() => setLocalData([...getData()])}
+    />
+  ) : null
 
   return (
     <ListPageCard>
@@ -239,6 +265,7 @@ function FlatTagPanel({ panelKey, getData, setData, idPrefix }) {
           onValueChange={setValueQuery}
           onReset={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}
           onSearch={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}
+          listActions={listIoActions}
           onNew={() => { setEditingRow(null); setModalOpen(true) }}
         />
       </ListPageFilter>
@@ -346,7 +373,7 @@ function DeviceTagPanel({ subTab }) {
 }
 
 function SectionContent({ section, subTab }) {
-  if (section === 'audit') return <AuditTemplateListPanel key="audit-template" />
+  if (section === 'audit') return <AuditTemplateListPanel />
   if (section === 'collect') return <CollectTagPanel subTab={subTab} />
   return <DeviceTagPanel subTab={subTab} />
 }

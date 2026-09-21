@@ -181,6 +181,7 @@ const DEMO_OVERRIDES = {
     dataStatus: '已解析',
     reviewClaimedBy: { nickname: '孙丽', id: 'U-006' },
     reviewClaimedAt: '2026-06-16 09:20:00',
+    preAnnotationImportFailed: true,
     qcTime: '2026-06-15 18:30:00',
     flowHistory: [
       { label: '质检通过', round: 1, time: '2026-06-15 18:30:00', operator: '系统自动' },
@@ -537,6 +538,35 @@ for (const entry of entries) {
   })
 }
 
+function buildRgbMock(order) {
+  if (!order) return undefined
+  return { attrs: { decoded_color_order: order } }
+}
+
+/** 会话 mock：条目 rgb.attrs.decoded_color_order（列表列）；cameraRgb 供播放器分路展示 */
+const COLOR_ENCODING_OVERRIDES = {
+  'E-200101': {
+    rgb: buildRgbMock('RGB'),
+    cameraRgb: {
+      head: buildRgbMock('RGB'),
+      chest: buildRgbMock('BGR'),
+      leftWrist: buildRgbMock('RGB'),
+      rightWrist: buildRgbMock('RGB'),
+    },
+  },
+  'E-200102': { rgb: buildRgbMock('BGR') },
+  'E-200103': {},
+  'E-200104': { rgb: buildRgbMock('BGR') },
+  'E-200105': { rgb: buildRgbMock('RGB') },
+  'E-200106': { rgb: buildRgbMock('RGB') },
+  'E-200107': { rgb: buildRgbMock('BGR') },
+  'E-200108': { rgb: buildRgbMock('RGB') },
+  'E-200109': { rgb: buildRgbMock('BGR') },
+  'E-200110': {},
+  'E-200201': { rgb: buildRgbMock('RGB') },
+  'E-200202': { rgb: buildRgbMock('BGR') },
+}
+
 const REVIEW_REJECT_REASONS = [
   '抓取阶段轨迹抖动明显，需重采。',
   '关键步骤缺失，未完成放置动作。',
@@ -565,6 +595,21 @@ function entryHash(id) {
   let h = 0
   for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) | 0
   return Math.abs(h)
+}
+
+for (const entry of entries) {
+  const override = COLOR_ENCODING_OVERRIDES[entry.id]
+  if (override) {
+    if (override.rgb) entry.rgb = override.rgb
+    if (override.cameraRgb) entry.cameraRgb = override.cameraRgb
+    continue
+  }
+  const bucket = entryHash(entry.id) % 10
+  if (bucket < 4) {
+    entry.rgb = buildRgbMock('RGB')
+  } else if (bucket < 7) {
+    entry.rgb = buildRgbMock('BGR')
+  }
 }
 
 function pickProblemTags(id, count = 2) {

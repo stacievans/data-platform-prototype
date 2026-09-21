@@ -16,6 +16,8 @@ export default function Drawer({
   zIndex = 50,
   mask = true,
   okDisabled = false,
+  /** 面板距视口右缘偏移（用于与更靠右的二级抽屉并排） */
+  panelOffsetRight = 0,
 }) {
   if (!open) return null
 
@@ -23,8 +25,8 @@ export default function Drawer({
     <div className="fixed inset-0" style={{ zIndex }}>
       {mask && <div className="absolute inset-0 bg-black/45" onClick={onCancel} aria-hidden />}
       <div
-        className="absolute right-0 top-0 flex h-full flex-col bg-white shadow-xl transition-[width] duration-200"
-        style={{ width, maxWidth: '100vw' }}
+        className="absolute top-0 flex h-full flex-col bg-white shadow-xl transition-[width,right] duration-200"
+        style={{ width, maxWidth: '100vw', right: panelOffsetRight }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -43,7 +45,7 @@ export default function Drawer({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer !== null && (
-          <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-3.5">
+          <div className="flex w-full items-center justify-end gap-2 border-t border-gray-100 px-6 py-3.5">
             {footer || (
               <>
                 <Button onClick={onCancel}>{cancelText}</Button>

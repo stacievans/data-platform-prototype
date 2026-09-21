@@ -26,7 +26,7 @@ export default function Button({
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 ${
         isLink ? 'text-sm h-auto' : sizes[size]
       } ${variants[variant]} ${className}`}
       {...rest}

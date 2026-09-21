@@ -56,24 +56,39 @@ import { tasks as taskStore, syncTasks, nowDatetime } from '../../mock/tasks'
 import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { canAccessProject } from '../../mock/permissions'
 import NoPermission from '../System/NoPermission'
-import RealDataTab from '../Dashboard/tabs/RealDataTab'
+import PerformanceStatsTab from './PerformanceStatsTab'
 import { dtCol, formatDateTime, nowDateTime } from '../../utils/formatDateTime'
 import { getProjectStatusMeta, normalizeProjectStatus, canProjectMutate } from '../../utils/projectStatus'
 import ProjectMutateGate from '../../components/common/ProjectMutateGate'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
-import SamplingPanel from './Sampling'
+import BatchTasksTab from './BatchTasksTab'
+import ActivityLogTab from './ActivityLogTab'
+import { downloadJsonFile, openJsonFilePicker, readJsonImportFile } from '../../utils/jsonImportExport'
+import {
+  buildCollectPlanExportPayload,
+  collectPlanExportFilename,
+  importCollectPlanFromPayload,
+} from '../../utils/collectPlanImportExport'
 
 const PLAN_STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 const PLAN_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
 const PLAN_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 const TABS = [
-  { key: 'task',      label: '采集任务' },
-  { key: 'scheme',    label: '采标方案' },
-  { key: 'members',   label: '项目成员' },
-  { key: 'sampling',  label: '验收管理' },
-  { key: 'dashboard', label: '运营看板' },
+  { key: 'task',       label: '采集数据' },
+  { key: 'scheme',     label: '采标方案' },
+  { key: 'batchTasks', label: '任务管理' },
+  { key: 'members',    label: '项目成员' },
+  { key: 'dashboard',  label: '绩效统计' },
+  { key: 'activity',   label: '活动记录' },
 ]
+
+const TAB_KEY_ALIASES = { sampling: 'batchTasks' }
+
+function resolveTabKey(key) {
+  if (!key) return null
+  return TAB_KEY_ALIASES[key] ?? key
+}
 
 const QC_FILTER_LBL = 'mb-1 block text-xs text-gray-500'
 const QC_FILTER_INPUT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -296,6 +311,27 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
     refreshPlans()
   }
 
+  const handleExportPlan = (row) => {
+    downloadJsonFile(collectPlanExportFilename(row), buildCollectPlanExportPayload(row))
+  }
+
+  const handleImportPlan = () => {
+    openJsonFilePicker(async (file) => {
+      const parsed = await readJsonImportFile(file)
+      if (!parsed.ok) {
+        showToast(parsed.message)
+        return
+      }
+      const result = importCollectPlanFromPayload(projectId, parsed.data, creatorName)
+      if (!result.ok) {
+        showToast(result.message)
+        return
+      }
+      refreshPlans()
+      showToast('导入成功')
+    })
+  }
+
   const handlePublish = (row) => {
     publishPlanInStore(row.id)
     refreshPlans()
@@ -328,6 +364,11 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
   }
 
   const renderPlanActions = (row) => {
+    const exportBtn = (
+      <PlanLinkAction permission="collection.project.view" onClick={() => handleExportPlan(row)}>
+        导出
+      </PlanLinkAction>
+    )
     const fragmentAnnotBtn = (
       <PlanLinkAction permission="collection.project.edit" onClick={() => setFragmentAnnotTarget(row)}>
         片段标注配置
@@ -341,6 +382,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
           <PlanLinkAction permission="collection.project.edit" onClick={() => openEdit(row)}>编辑</PlanLinkAction>
           <PlanLinkAction permission="collection.project.edit" onClick={() => handlePublish(row)}>发布</PlanLinkAction>
           <PlanLinkAction permission="collection.project.delete" danger onClick={() => requestDeletePlan(row)}>删除</PlanLinkAction>
+          {exportBtn}
         </div>
       )
     }
@@ -349,6 +391,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
         <div className={PLAN_ACTION_BAR_CLS}>
           <PlanCopyBtn onClick={() => handleCopy(row)} />
           <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
+          {exportBtn}
           <PlanLinkAction permission="collection.project.edit" warn onClick={() => setArchiveTarget(row)}>归档</PlanLinkAction>
           {fragmentAnnotBtn}
           {canProjectMutate(projectStatus) && (
@@ -361,6 +404,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
       <div className={PLAN_ACTION_BAR_CLS}>
         <PlanCopyBtn onClick={() => handleCopy(row)} />
         <PlanLinkAction permission="collection.project.view" onClick={() => openView(row)}>查看</PlanLinkAction>
+        {exportBtn}
         {fragmentAnnotBtn}
         {isPlanDeleteBlocked(row) ? (
           <PlanDisabledDelete />
@@ -389,6 +433,11 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
     }))
 
   const addStep = () => setForm((f) => ({ ...f, steps: [...f.steps, { ...EMPTY_STEP }] }))
+  const insertStep = (i) => setForm((f) => {
+    const steps = [...f.steps]
+    steps.splice(i + 1, 0, { ...EMPTY_STEP })
+    return { ...f, steps }
+  })
   const removeStep = (i) => setForm((f) => ({ ...f, steps: f.steps.filter((_, idx) => idx !== i) }))
 
   const handleSave = () => {
@@ -486,7 +535,16 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">采集方案列表</h2>
         <ProjectMutateGate projectStatus={projectStatus}>
-          <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
+          <div className="flex items-center gap-2">
+            <PermButton
+              permission="collection.project.create"
+              icon={<IconUpload />}
+              onClick={handleImportPlan}
+            >
+              导入
+            </PermButton>
+            <PermButton permission="collection.project.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
+          </div>
         </ProjectMutateGate>
       </ListPageToolbar>
       <Table
@@ -517,6 +575,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
               onChange={() => {}}
               updateStep={() => {}}
               addStep={() => {}}
+              insertStep={() => {}}
               removeStep={() => {}}
             />
           </div>
@@ -549,6 +608,7 @@ function CollectConfigTab({ projectId, projectStatus, onTasksChange }) {
             onChange={setPlan}
             updateStep={updateStep}
             addStep={addStep}
+            insertStep={insertStep}
             removeStep={removeStep}
             planNameLabel="方案名称"
           />
@@ -1127,13 +1187,12 @@ export default function ProjectDetail() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
-  const tabFromUrl = searchParams.get('tab')
+  const tabFromUrl = resolveTabKey(searchParams.get('tab'))
   const initialTab = TABS.some((t) => t.key === tabFromUrl) ? tabFromUrl : 'task'
   const [tab, setTab] = useState(initialTab)
-  const highlightBatchId = searchParams.get('highlight')
 
   useEffect(() => {
-    const next = searchParams.get('tab')
+    const next = resolveTabKey(searchParams.get('tab'))
     if (next && TABS.some((t) => t.key === next)) setTab(next)
   }, [searchParams])
 
@@ -1141,22 +1200,20 @@ export default function ProjectDetail() {
     setTab(key)
     const params = new URLSearchParams(searchParams)
     params.set('tab', key)
-    if (key !== 'sampling') params.delete('highlight')
+    if (key !== 'batchTasks') params.delete('highlight')
     navigate(`/collection/project/${id}?${params.toString()}`, { replace: true })
   }
 
-  const clearHighlightParam = useCallback(() => {
-    const params = new URLSearchParams(searchParams)
-    if (!params.has('highlight')) return
-    params.delete('highlight')
-    navigate(`/collection/project/${id}?${params.toString()}`, { replace: true })
-  }, [id, navigate, searchParams])
-
   const [tasks, setTasksState] = useState(() => [...taskStore])
   const [taskMemberFilter, setTaskMemberFilter] = useState(null)
+  const [batchMemberFilter, setBatchMemberFilter] = useState(null)
 
   useEffect(() => {
     if (tab !== 'task') setTaskMemberFilter(null)
+  }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'batchTasks') setBatchMemberFilter(null)
   }, [tab])
 
   const setTasks = useCallback((updater) => {
@@ -1251,20 +1308,28 @@ export default function ProjectDetail() {
           projectTasks={projectTasks}
           onTasksChange={setTasks}
           onViewMemberTasks={(username, role) => {
-            setTaskMemberFilter({ username, role })
-            handleTabChange('task')
+            if (role === '采集员') {
+              setTaskMemberFilter({ username, role })
+              handleTabChange('task')
+              return
+            }
+            if (role === '标注员' || role === '验收员') {
+              setBatchMemberFilter({ username, role })
+              handleTabChange('batchTasks')
+            }
           }}
         />
       )}
-      {tab === 'sampling' && (
-        <SamplingPanel
+      {tab === 'batchTasks' && (
+        <BatchTasksTab
+          key={batchMemberFilter ? `${batchMemberFilter.username}-${batchMemberFilter.role}` : 'all'}
           projectId={id}
-          highlightBatchId={highlightBatchId}
-          onHighlightConsumed={clearHighlightParam}
-          onGoToTaskTab={() => handleTabChange('task')}
+          projectStatus={projectStatus}
+          initialMemberFilter={batchMemberFilter}
         />
       )}
-      {tab === 'dashboard' && <RealDataTab fixedProjectId={id} />}
+      {tab === 'dashboard' && <PerformanceStatsTab projectId={id} />}
+      {tab === 'activity' && <ActivityLogTab projectId={id} />}
     </div>
   )
 }

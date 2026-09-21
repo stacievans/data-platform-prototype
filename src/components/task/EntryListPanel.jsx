@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { filterEntriesByDataScope } from '../../mock/permissions'
 import { getAllEntries, updateEntry } from '../../mock/entries'
 import { buildReQcPatch } from '../../utils/entryReQc'
+import { ENTRIES_CHANGED_EVENT } from '../../utils/preAnnotationImport'
 import { tasks } from '../../mock/tasks'
 import EntryDataTable from '../entry/EntryDataTable'
 
@@ -12,10 +13,16 @@ export default function EntryListPanel({ taskId, projectId }) {
   const location = useLocation()
   const [entryList, setEntryList] = useState([])
 
-  useEffect(() => {
+  const reloadEntries = useCallback(() => {
     const raw = getAllEntries().filter((e) => e.taskId === taskId)
     setEntryList(filterEntriesByDataScope(raw, user.nickname, user.role))
-  }, [taskId, user.nickname, user.role, location.key])
+  }, [taskId, user.nickname, user.role])
+
+  useEffect(() => {
+    reloadEntries()
+    window.addEventListener(ENTRIES_CHANGED_EVENT, reloadEntries)
+    return () => window.removeEventListener(ENTRIES_CHANGED_EVENT, reloadEntries)
+  }, [reloadEntries, location.key])
 
   const getTask = (entry) => tasks.find((t) => t.id === entry.taskId)
   const getProjectId = () => projectId

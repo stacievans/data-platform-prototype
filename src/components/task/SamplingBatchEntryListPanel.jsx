@@ -64,6 +64,7 @@ export default function SamplingBatchEntryListPanel({ batchId, projectId, onBatc
       showTaskColumn
       middleActionMode="acceptOnly"
       onBatchAcceptReset={handleBatchAcceptReset}
+      showColorEncoding={false}
     />
   )
 }

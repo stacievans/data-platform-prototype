@@ -15,7 +15,7 @@ const routes = [
   { match: /^\/collection\/project/, crumbs: [['采集项目']] },
   {
     match: /^\/collection\/task\/.+/,
-    crumbs: [['采集项目', '/collection/project'], ['项目详情'], ['任务详情']],
+    crumbs: [['采集项目', '/collection/project'], ['项目详情'], ['采集数据']],
   },
   { match: /^\/dataset\/self\/download$/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['下载数据集']] },
   { match: /^\/dataset\/self\/[^/]+\/converted\/.+/, crumbs: [['数据集管理'], ['真机数据集', '/dataset/self'], ['数据集详情'], ['转换数据集详情']] },
@@ -46,8 +46,8 @@ export default function Breadcrumb() {
     if (task?.projectId) {
       crumbs = [
         ['采集项目', '/collection/project'],
-        ['项目详情', `/collection/project/${task.projectId}`],
-        ['任务详情'],
+        ['项目详情', `/collection/project/${task.projectId}?tab=task`],
+        ['采集数据'],
       ]
     }
   }
@@ -56,8 +56,18 @@ export default function Breadcrumb() {
   if (batchMatch) {
     crumbs = [
       ['采集项目', '/collection/project'],
-      ['项目详情', `/collection/project/${batchMatch[1]}?tab=sampling`],
+      ['项目详情', `/collection/project/${batchMatch[1]}?tab=batchTasks`],
       ['抽检批次详情'],
+    ]
+  }
+
+  const batchTaskMatch = pathname.match(/^\/collection\/project\/([^/]+)\/batch-task\/([^/]+)/)
+  if (batchTaskMatch) {
+    const [, pid] = batchTaskMatch
+    crumbs = [
+      ['采集项目', '/collection/project'],
+      ['项目详情', `/collection/project/${pid}?tab=batchTasks`],
+      ['批次任务'],
     ]
   }
 

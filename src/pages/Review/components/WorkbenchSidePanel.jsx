@@ -301,6 +301,13 @@ function FragmentTable({
     onChange([...rows, createBlankSegment()])
   }
 
+  const handleInsertAfter = (index) => {
+    setEditingIndex(null)
+    const next = [...rows]
+    next.splice(index + 1, 0, createBlankSegment())
+    onChange(next)
+  }
+
   const toggleEdit = (index) => {
     setEditingIndex((prev) => (prev === index ? null : index))
   }
@@ -316,7 +323,7 @@ function FragmentTable({
               <th className="w-14 px-1 py-1.5 text-center font-medium">起始帧</th>
               <th className="w-14 px-1 py-1.5 text-center font-medium">结束帧</th>
               <th className="px-2 py-1.5 text-left font-medium">标注</th>
-              {editable && <th className="w-[68px] px-1 py-1.5 text-center font-medium">操作</th>}
+              {editable && <th className="w-[92px] px-1 py-1.5 text-center font-medium">操作</th>}
               {!editable && onSeek && <th className="w-9 px-1 py-1.5 text-center font-medium">预览</th>}
             </tr>
           </thead>
@@ -390,6 +397,11 @@ function FragmentTable({
                           </IconActionBtn>
                           <IconActionBtn title="预览" onClick={() => onSeek?.(row.startFrame)}>
                             <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" /></svg>
+                          </IconActionBtn>
+                          <IconActionBtn title="在下方插入" onClick={() => handleInsertAfter(i)}>
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+                            </svg>
                           </IconActionBtn>
                           <IconActionBtn
                             title="删除"

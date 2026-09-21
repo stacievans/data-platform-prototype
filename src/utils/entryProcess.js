@@ -1,4 +1,5 @@
 import { formatDateTime, formatDateFromDate } from './formatDateTime'
+import { matchColorEncodingFilter } from './colorEncoding'
 
 /** 三工序状态：pending | processing | passed | rejected | none */
 export function deriveProcessStatuses(entryOrStatus) {
@@ -276,7 +277,17 @@ export function countProcessSubStatuses(entries, tab) {
 }
 
 export function filterEntriesByForm(entry, filters, resolveScope) {
-  const { entryId, fileName, projectName, taskName, qcStatus, reviewStatus, acceptStatus, format } = filters
+  const {
+    entryId,
+    fileName,
+    projectName,
+    taskName,
+    qcStatus,
+    reviewStatus,
+    acceptStatus,
+    format,
+    colorEncoding,
+  } = filters
   const displayName = getEntryDisplayFileName(entry)
   const scope = resolveScope?.(entry) ?? {}
   const entryProjectName = entry.projectName ?? scope.projectName ?? ''
@@ -288,6 +299,7 @@ export function filterEntriesByForm(entry, filters, resolveScope) {
   if (projectName && !entryProjectName.toLowerCase().includes(projectName.toLowerCase())) return false
   if (taskName && !entryTaskName.toLowerCase().includes(taskName.toLowerCase())) return false
   if (format && format !== '全部' && entry.format !== format) return false
+  if (colorEncoding && colorEncoding !== '全部' && !matchColorEncodingFilter(entry, colorEncoding)) return false
   if (!matchFormProcessFilters(entry, { qcStatus, reviewStatus, acceptStatus })) return false
   return true
 }

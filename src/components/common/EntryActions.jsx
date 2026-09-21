@@ -1,15 +1,41 @@
 import Button from './Button'
 import { PermButton } from './PermissionAction'
 import { deriveProcessStatuses } from '../../utils/entryProcess'
+import { useAuth } from '../../context/AuthContext'
+import { resolveWorkbenchNavigation } from '../../utils/batchTaskClaim'
+import { useToast } from './Toast'
 
 const LINK_DISABLED =
   'inline-flex items-center justify-center text-sm text-gray-400 cursor-not-allowed opacity-60 px-1'
 
-function openWorkbench(entryId, mode) {
-  window.open(`/review/${entryId}?mode=${mode}`, '_blank', 'noopener,noreferrer')
+function openWorkbench(entryId, mode, user, showToast) {
+  const resolved = resolveWorkbenchNavigation(entryId, mode, user)
+  if (resolved.toast) showToast?.(resolved.toast)
+  window.open(`/review/${resolved.entryId}?mode=${mode}`, '_blank', 'noopener,noreferrer')
 }
 
 function MiddleSlot({ entry, onOpen, mode = 'default' }) {
+  if (mode === 'batchTask') {
+    const ps = deriveProcessStatuses(entry)
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        {(ps.review === 'pending' || ps.review === 'processing') && (
+          <Button variant="link" size="sm" onClick={() => onOpen('review')} className="justify-center">
+            标注
+          </Button>
+        )}
+        {(ps.accept === 'pending' || ps.accept === 'processing') && (
+          <Button variant="link" size="sm" onClick={() => onOpen('accept')} className="justify-center">
+            验收
+          </Button>
+        )}
+        {!(ps.review === 'pending' || ps.review === 'processing' || ps.accept === 'pending' || ps.accept === 'processing') && (
+          <span className="invisible select-none text-xs" aria-hidden="true">—</span>
+        )}
+      </div>
+    )
+  }
+
   if (mode === 'acceptOnly') {
     const acceptStatus = deriveProcessStatuses(entry).accept
     if (acceptStatus === 'pending') {
@@ -74,9 +100,13 @@ export default function EntryActions({
   hideDelete = false,
   compact = false,
   middleActionMode = 'default',
+  onBeforeWorkbench,
 }) {
+  const { user } = useAuth()
+  const { show: showToast } = useToast()
   const goWorkbench = (mode) => {
-    openWorkbench(entry.id, mode)
+    if (onBeforeWorkbench?.(entry, mode) === false) return
+    openWorkbench(entry.id, mode, user, showToast)
     if (mode === 'play') onPlay?.(entry)
     if (mode === 'review') onReview?.(entry)
     if (mode === 'accept') onAccept?.(entry)

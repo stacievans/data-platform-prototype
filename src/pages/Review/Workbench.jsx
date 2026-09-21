@@ -24,6 +24,13 @@ import {
   deriveLegacySegments,
   loadFragmentSegmentsFromEntry,
 } from './utils/fragmentSegments'
+import { mergePreAnnotationDraftIntoReviewState } from '../../utils/preAnnotationImport'
+import {
+  CLAIM_LIMIT_TOAST,
+  resolveWorkbenchNavigation,
+  shouldBlockSiblingNavigation,
+  shouldSkipAutoClaim,
+} from '../../utils/batchTaskClaim'
 
 const SPEEDS = [0.5, 1, 1.5, 2]
 
@@ -323,17 +330,31 @@ export default function Workbench() {
     }
     const task = tasks.find((t) => t.id === e.taskId)
     const plan = plans.find((p) => p.id === task?.planId)
-    const nextFragments = loadFragmentSegmentsFromEntry(
+    let nextFragments = loadFragmentSegmentsFromEntry(
       e,
       resolveFragmentTypesFromPlan(plan ?? {}),
     )
-    setForm(nextForm)
+    const merged = mergePreAnnotationDraftIntoReviewState(e, nextForm, nextFragments)
+    setForm(merged.form)
     setAcceptForm(nextAcceptForm)
-    setFragmentSegmentsByType(nextFragments)
-    setSavedSnapshot(buildPanelSnapshot(nextForm, nextFragments))
+    setFragmentSegmentsByType(merged.fragmentSegmentsByType)
+    setSavedSnapshot(buildPanelSnapshot(merged.form, merged.fragmentSegmentsByType))
     setCurrentFrame(Math.min(388, (e.totalFrames ?? 3140) - 1))
     setPlaying(false)
   }, [])
+
+  useEffect(() => {
+    if (isLayoutPreview || mode === 'play') return undefined
+    const nav = resolveWorkbenchNavigation(entryId, mode, user)
+    if (nav.action === 'redirect' && nav.entryId && nav.entryId !== entryId) {
+      if (nav.toast) showToast(nav.toast)
+      const qs = new URLSearchParams(searchParams)
+      if (!qs.get('mode')) qs.set('mode', mode)
+      navigate(`/review/${nav.entryId}?${qs.toString()}`, { replace: true })
+      return undefined
+    }
+    return undefined
+  }, [entryId, mode, user, isLayoutPreview, navigate, searchParams, showToast])
 
   useEffect(() => {
     let e = getEntryById(entryId)
@@ -343,16 +364,20 @@ export default function Workbench() {
     }
     if (!isLayoutPreview) {
       if (mode === 'review' && ['已解析', '标注不通过'].includes(e.dataStatus) && !e.reviewClaimedBy) {
-        e = updateEntry(entryId, {
-          reviewClaimedBy: { nickname: user.nickname, id: user.uid },
-          reviewClaimedAt: nowDateTime(),
-        })
+        if (!shouldSkipAutoClaim(entryId, 'review', user)) {
+          e = updateEntry(entryId, {
+            reviewClaimedBy: { nickname: user.nickname, id: user.uid },
+            reviewClaimedAt: nowDateTime(),
+          })
+        }
       }
       if (mode === 'accept' && ['已标注', '验收不通过'].includes(e.dataStatus) && !e.acceptClaimedBy) {
-        e = updateEntry(entryId, {
-          acceptClaimedBy: { nickname: user.nickname, id: user.uid },
-          acceptClaimedAt: nowDateTime(),
-        })
+        if (!shouldSkipAutoClaim(entryId, 'accept', user)) {
+          e = updateEntry(entryId, {
+            acceptClaimedBy: { nickname: user.nickname, id: user.uid },
+            acceptClaimedAt: nowDateTime(),
+          })
+        }
       }
     }
     syncFromEntry(e)
@@ -427,6 +452,12 @@ export default function Workbench() {
   const goSibling = (delta) => {
     const next = taskEntries[currentIndex + delta]
     if (!next) return
+    if (mode === 'review' || mode === 'accept') {
+      if (shouldBlockSiblingNavigation(next.id, mode, user)) {
+        showToast(CLAIM_LIMIT_TOAST)
+        return
+      }
+    }
     const qs = new URLSearchParams(searchParams)
     if (!qs.get('mode')) qs.set('mode', mode)
     navigate(`/review/${next.id}?${qs.toString()}`)
@@ -655,6 +686,7 @@ export default function Workbench() {
             playPct={playPct}
             signalSeries={signalSeries}
             totalFrames={totalFrames}
+            entry={entry}
           />
 
           <TimelinePanel

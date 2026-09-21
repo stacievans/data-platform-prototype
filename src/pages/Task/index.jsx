@@ -5,6 +5,8 @@ import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
 import { IconPlus } from '../../components/common/Icons'
 import TaskTable from './TaskTable'
 import CreateTaskModal from './CreateTaskModal'
+import BulkCreateTasksModal from './BulkCreateTasksModal'
+import { canBulkCreateTasks } from '../../utils/bulkCreateTasks'
 import CreateSamplingBatchModal from '../Project/CreateSamplingBatchModal'
 import { createSamplingBatchRecord } from '../Project/Sampling'
 import ProjectMutateGate from '../../components/common/ProjectMutateGate'
@@ -26,6 +28,7 @@ import { useAuth, useCurrentNickname } from '../../context/AuthContext'
 import { PermButton } from '../../components/common/PermissionAction'
 import { useToast } from '../../components/common/Toast'
 import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
+import { projects as projectStore } from '../../mock/projects'
 
 const STATUS_OPTIONS = ['全部', '草稿', '已发布', '已归档']
 
@@ -53,6 +56,10 @@ export default function TaskList({
   const navigate = useNavigate()
   const creatorName = useCurrentNickname()
   const { ToastNode, show: showToast } = useToast()
+  const project = useMemo(
+    () => (fixedProjectId ? projectStore.find((p) => p.id === fixedProjectId) ?? null : null),
+    [fixedProjectId],
+  )
   const [internalTasks, setInternalTasks] = useState(() => [...taskStore])
   const tasks = externalTasks ?? internalTasks
 
@@ -71,6 +78,7 @@ export default function TaskList({
   }, [location.pathname, onTasksChange])
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [bulkCreateOpen, setBulkCreateOpen] = useState(false)
   const [samplingOpen, setSamplingOpen] = useState(false)
   const [samplingTaskIds, setSamplingTaskIds] = useState([])
   const [selectedTaskIds, setSelectedTaskIds] = useState(() => new Set())
@@ -200,7 +208,7 @@ export default function TaskList({
     setSamplingOpen(false)
     setSelectedTaskIds(new Set())
     showToast('抽检批次已创建')
-    navigate(`/collection/project/${fixedProjectId}?tab=sampling&highlight=${batchId}`)
+    navigate(`/collection/project/${fixedProjectId}?tab=batchTasks`)
   }
 
   const applyFilters = () => setFilters({
@@ -248,6 +256,14 @@ export default function TaskList({
     setTasks((prev) => prev.map((t) =>
       t.id === taskId ? { ...t, ...changes, updatedAt: nowDatetime() } : t,
     ))
+
+  const canBulkCreate = canBulkCreateTasks(user, project)
+
+  const refreshTasksFromStore = useCallback(() => {
+    const next = [...taskStore]
+    if (onTasksChange) onTasksChange(next)
+    else setInternalTasks(next)
+  }, [onTasksChange])
 
   const handleCopy = (task) => {
     const newId = nextTaskId(tasks)
@@ -371,7 +387,7 @@ export default function TaskList({
 
       {/* 标题栏 */}
       <ListPageToolbar first={false}>
-        <h2 className="text-base font-semibold text-gray-800">采集任务列表</h2>
+        <h2 className="text-base font-semibold text-gray-800">{fixedProjectId ? '采集数据列表' : '采集任务列表'}</h2>
         {fixedProjectId && (
           <div className="flex items-center gap-2">
             <Button
@@ -382,6 +398,18 @@ export default function TaskList({
               抽样验收
             </Button>
             <ProjectMutateGate projectStatus={projectStatus}>
+              <span
+                className="group/bulk relative inline-flex"
+                title={canBulkCreate ? '批量创建任务' : '仅组织管理员或创建该项目的平台运营可批量创建'}
+              >
+                <Button
+                  disabled={!canBulkCreate}
+                  className={!canBulkCreate ? 'cursor-not-allowed opacity-40' : ''}
+                  onClick={() => canBulkCreate && setBulkCreateOpen(true)}
+                >
+                  批量创建
+                </Button>
+              </span>
               <PermButton permission="collection.task.create" variant="primary" icon={<IconPlus />} onClick={() => setCreateOpen(true)}>
                 新建
               </PermButton>
@@ -394,6 +422,7 @@ export default function TaskList({
         embedded
         data={filtered}
         showProjectColumn={!fixedProjectId}
+        project={project}
         pageResetKey={taskPageResetKey}
         selectable={Boolean(fixedProjectId)}
         selectedIds={selectedTaskIds}
@@ -414,6 +443,17 @@ export default function TaskList({
             setCreateOpen(false)
             if (task) setTasks((prev) => [task, ...prev])
           }}
+        />
+      )}
+
+      {fixedProjectId && project && (
+        <BulkCreateTasksModal
+          open={bulkCreateOpen}
+          project={project}
+          creatorNickname={creatorName}
+          showToast={showToast}
+          onClose={() => setBulkCreateOpen(false)}
+          onCreated={refreshTasksFromStore}
         />
       )}
 

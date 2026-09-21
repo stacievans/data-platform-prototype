@@ -43,6 +43,11 @@ export default function TreeTransfer({
   value = [],
   onChange,
   error = false,
+  leftHeader = '候选项目 / 任务',
+  searchPlaceholder = '搜索项目 / 任务名称',
+  selectedHeader = '已选任务',
+  emptyLeftHint = '暂无匹配任务',
+  emptyRightHint = '请从左侧添加任务',
 }) {
   const [search, setSearch] = useState('')
   const [leftChecked, setLeftChecked] = useState(() => new Set())
@@ -204,21 +209,21 @@ export default function TreeTransfer({
   return (
     <div className={`flex gap-3 ${error ? 'rounded-md ring-1 ring-red-400' : ''}`}>
       <div className={PANEL_CLS}>
-        <div className={HEADER_CLS}>候选项目 / 任务</div>
+        <div className={HEADER_CLS}>{leftHeader}</div>
         <div className="shrink-0 border-b border-gray-100 p-2">
           <div className="relative">
             <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索项目 / 任务名称"
+              placeholder={searchPlaceholder}
               className="h-8 w-full rounded-md border border-gray-300 bg-white pl-8 pr-3 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
         </div>
         <div className="overflow-y-auto" style={listScrollStyle}>
           {leftGroups.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">暂无匹配任务</div>
+            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">{emptyLeftHint}</div>
           ) : (
             <>
               {leftSelectableTasks.length > 0 && (
@@ -333,11 +338,11 @@ export default function TreeTransfer({
 
       <div className={PANEL_CLS}>
         <div className={HEADER_CLS}>
-          已选任务（总计 {value.length} 条）
+          {selectedHeader}（总计 {value.length} 条）
         </div>
         <div className="overflow-y-auto" style={listScrollStyle}>
           {rightGroups.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">请从左侧添加任务</div>
+            <div className="flex h-full items-center justify-center p-2 text-sm text-gray-400">{emptyRightHint}</div>
           ) : (
             <>
               <CheckboxListSelectAllRow

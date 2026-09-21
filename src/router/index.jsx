@@ -5,6 +5,7 @@ import Dashboard from '../pages/Dashboard'
 import ProjectList from '../pages/Project'
 import ProjectDetail from '../pages/Project/Detail'
 import SamplingBatchDetail from '../pages/Project/SamplingBatchDetail'
+import BatchTaskDetail from '../pages/Project/BatchTaskDetail'
 import TaskDetail from '../pages/Task/Detail'
 import SelfDataset from '../pages/Dataset/Self'
 import SelfDatasetDetail from '../pages/Dataset/SelfDetail'
@@ -26,7 +27,7 @@ import BackflowTriggersPage from '../pages/Backflow/Triggers'
 
 function ProjectSamplingRedirect() {
   const { id } = useParams()
-  return <Navigate to={`/collection/project/${id}?tab=sampling`} replace />
+  return <Navigate to={`/collection/project/${id}?tab=batchTasks`} replace />
 }
 
 const router = createBrowserRouter([
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'collection/project', element: <ProjectList /> },
       { path: 'collection/project/:projectId/sampling/:batchId', element: <SamplingBatchDetail /> },
+      { path: 'collection/project/:projectId/batch-task/:batchTaskId', element: <BatchTaskDetail /> },
       { path: 'collection/project/:id/sampling', element: <ProjectSamplingRedirect /> },
       { path: 'collection/project/:id', element: <ProjectDetail /> },
       { path: 'collection/task/:id', element: <TaskDetail /> },

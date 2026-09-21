@@ -1,3 +1,4 @@
+import { getEntryById, updateEntry } from '../mock/entries'
 import { nowDateTime } from './formatDateTime'
 import {
   deriveProcessStatuses,
@@ -311,4 +312,96 @@ export function filterEntriesByBatchScope(entries, processKey, statusKey) {
 
 export function isBatchTargetDisabled(sourceProcess, sourceStatus, targetProcess, targetStatus) {
   return sourceProcess === targetProcess && sourceStatus === targetStatus
+}
+
+/** 批量流转检索：数据范围二级联动 */
+export const FLOW_DATA_SCOPE_TREE = [
+  { process: 'qc', label: '质检工序', statuses: ['待处理', '处理中', '已驳回'] },
+  { process: 'review', label: '标注工序', statuses: ['待处理', '处理中'] },
+  { process: 'accept', label: '验收工序', statuses: ['待处理', '处理中', '已通过', '已驳回'] },
+]
+
+/** 批量流转二级抽屉：先选工序再选状态 */
+export const BATCH_FLOW_TARGET_BY_PROCESS = {
+  qc: [
+    {
+      targetStatus: 'pending',
+      statusLabel: '待处理',
+      hint: '质检待处理、标注未开始、验收未开始',
+    },
+  ],
+  review: [
+    {
+      targetStatus: 'pending',
+      statusLabel: '待处理',
+      hint: '质检通过、标注待处理、验收未开始',
+    },
+    {
+      targetStatus: 'rejected',
+      statusLabel: '已驳回',
+      hint: '质检通过、标注驳回、验收未开始',
+    },
+  ],
+  accept: [
+    {
+      targetStatus: 'pending',
+      statusLabel: '待处理',
+      hint: '质检通过、标注通过、验收待处理',
+    },
+    {
+      targetStatus: 'passed',
+      statusLabel: '已通过',
+      hint: '质检通过、标注通过、验收通过',
+    },
+    {
+      targetStatus: 'rejected',
+      statusLabel: '已驳回',
+      hint: '质检通过、标注通过、验收已驳回',
+    },
+  ],
+}
+
+export const BATCH_FLOW_TARGET_PROCESS_OPTIONS = [
+  { key: 'qc', label: '质检' },
+  { key: 'review', label: '标注' },
+  { key: 'accept', label: '验收' },
+]
+
+const SCOPE_LABEL_TO_STATUS = {
+  待处理: 'pending',
+  处理中: 'processing',
+  已驳回: 'rejected',
+  已通过: 'passed',
+}
+
+export function scopeLabelToStatusKey(scopeLabel) {
+  return SCOPE_LABEL_TO_STATUS[scopeLabel] ?? null
+}
+
+export function applyBatchFlowTransfer(entryIds, {
+  targetProcess,
+  targetStatus,
+  sourceProcess,
+  sourceStatus,
+  operator,
+  getTask,
+}) {
+  let count = 0
+  entryIds.forEach((id) => {
+    const entry = getEntryById(id)
+    if (!entry) return
+    const patch = buildBatchTransferPatch(entry, {
+      targetProcess,
+      targetStatus,
+      sourceProcess,
+      sourceStatus,
+      operator,
+      task: getTask?.(entry),
+    })
+    if (patch) {
+      updateEntry(id, patch)
+      count += 1
+    }
+  })
+  return count
 }

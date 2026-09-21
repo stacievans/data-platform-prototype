@@ -35,6 +35,11 @@ import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { CollectDeviceCell } from '../../utils/deviceDisplay'
 import { dtCol, formatDateTime } from '../../utils/formatDateTime'
+import {
+  COLOR_ENCODING_FILTER_OPTIONS,
+  formatEntryColorEncoding,
+  matchColorEncodingFilter,
+} from '../../utils/colorEncoding'
 
 const TABS = [
   { key: 'overview', label: '数据概览' },
@@ -199,6 +204,7 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   const [qProject, setQProject] = useState('全部')
   const [qTask, setQTask] = useState('全部')
   const [qFormat, setQFormat] = useState('全部')
+  const [qColorEncoding, setQColorEncoding] = useState('全部')
   const [filters, setFilters] = useState({})
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [convertRangeType, setConvertRangeType] = useState(null)
@@ -216,11 +222,12 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
   )
 
   const filtered = useMemo(() => {
-    const { project, task, format } = filters
+    const { project, task, format, colorEncoding } = filters
     return allEntries.filter((e) => {
       if (project && project !== '全部' && e.projectName !== project) return false
       if (task && task !== '全部' && e.taskName !== task) return false
       if (format && format !== '全部' && e.format !== format) return false
+      if (!matchColorEncodingFilter(e, colorEncoding ?? '全部')) return false
       return true
     })
   }, [allEntries, filters])
@@ -247,11 +254,17 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     })
   }
 
-  const applyFilters = () => setFilters({ project: qProject, task: qTask, format: qFormat })
+  const applyFilters = () => setFilters({
+    project: qProject,
+    task: qTask,
+    format: qFormat,
+    colorEncoding: qColorEncoding,
+  })
   const resetFilters = () => {
     setQProject('全部')
     setQTask('全部')
     setQFormat('全部')
+    setQColorEncoding('全部')
     setFilters({})
   }
 
@@ -323,6 +336,13 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
     { title: '文件大小', dataIndex: 'size' },
     { title: '时长', dataIndex: 'duration' },
     { title: '数据格式', dataIndex: 'format', render: (v) => <Badge color="cyan">{v}</Badge> },
+    {
+      title: '色彩编码',
+      key: 'colorEncoding',
+      render: (_, row) => (
+        <span className="font-mono text-xs text-gray-700">{formatEntryColorEncoding(row)}</span>
+      ),
+    },
     {
       title: '设备类型',
       dataIndex: 'deviceTypeName',
@@ -410,6 +430,16 @@ function EntriesTab({ dataset, onConversionStart, onRemoveEntry }) {
           <label className={LBL}>数据格式</label>
           <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
             {['全部', ...DATA_FORMATS].map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <div className={FILTER_FIELD}>
+          <label className={LBL}>色彩编码</label>
+          <select
+            value={qColorEncoding}
+            onChange={(e) => setQColorEncoding(e.target.value)}
+            className={`${INPUT_CLS} cursor-pointer`}
+          >
+            {COLOR_ENCODING_FILTER_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
           </select>
         </div>
       </FilterBar>

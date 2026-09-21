@@ -4,6 +4,8 @@ import ListPageCard, { ListPageFilter } from '../../components/common/ListPageCa
 import Button from '../../components/common/Button'
 import { PermButton } from '../../components/common/PermissionAction'
 import { IconPlus } from '../../components/common/Icons'
+import TagListIoActions from './TagListIoActions'
+import { buildSceneTypeTreeExport, importSceneTypeTreeExport } from '../../utils/tagLibraryImportExport'
 import { useToast } from '../../components/common/Toast'
 import { useCurrentNickname } from '../../context/AuthContext'
 import { boundEditTip } from '../../utils/taskBindingTips'
@@ -386,7 +388,16 @@ export default function SceneTypePanel() {
           <Button onClick={() => { setNameQuery(''); setValueQuery(''); setAppliedName(''); setAppliedValue('') }}>重置</Button>
           <Button variant="primary" onClick={() => { setAppliedName(nameQuery); setAppliedValue(valueQuery) }}>查询</Button>
         </div>
-        <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
+        <div className="flex shrink-0 items-center gap-2">
+          <TagListIoActions
+            showToast={showToast}
+            exportFilename="scene-type-tags.json"
+            buildExport={() => buildSceneTypeTreeExport(tree)}
+            runImport={(payload, name) => importSceneTypeTreeExport(payload, name)}
+            onImported={() => setTree([...getSceneTypeTree()])}
+          />
+          <PermButton permission="tag.create" variant="primary" icon={<IconPlus />} onClick={openCreate}>新建</PermButton>
+        </div>
       </div>
       </ListPageFilter>
 

@@ -28,7 +28,7 @@ export default function SamplingBatchDetail() {
       <div className="rounded-lg border border-gray-100 bg-white py-20 text-center text-gray-400">
         抽检批次不存在
         <div className="mt-4">
-          <Button onClick={() => navigate(`/collection/project/${projectId}?tab=sampling`)}>
+          <Button onClick={() => navigate(`/collection/project/${projectId}?tab=batchTasks`)}>
             返回验收管理
           </Button>
         </div>

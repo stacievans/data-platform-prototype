@@ -44,6 +44,22 @@ function MinusCircleButton({ onClick, title }) {
   )
 }
 
+function PlusCircleButton({ onClick, title }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-blue-600 transition-colors hover:bg-blue-50"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v8M8 12h8" strokeLinecap="round" />
+      </svg>
+    </button>
+  )
+}
+
 const emptyChild = () => ({
   id: `child-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   name: '',
@@ -150,6 +166,19 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
     setErrs((e) => ({ ...e, children: e.children.filter((_, i) => i !== ci) }))
   }
 
+  const insertChildAfter = (ci) => {
+    setForm((f) => {
+      const children = [...f.children]
+      children.splice(ci + 1, 0, emptyChild())
+      return { ...f, children }
+    })
+    setErrs((e) => {
+      const children = [...e.children]
+      children.splice(ci + 1, 0, emptyChildErrors())
+      return { ...e, children }
+    })
+  }
+
   const handleOk = () => {
     const { valid, errors } = validateForm(form)
     if (!valid) {
@@ -222,7 +251,7 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
           <div className="mb-3 text-sm font-medium text-gray-700">子标签</div>
           {form.children.length > 0 && (
             <div className="space-y-3">
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem] gap-2 px-0.5">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5.5rem] gap-2 px-0.5">
                 <span className="text-xs text-gray-600">
                   <span className="text-red-500">*</span> 名称
                 </span>
@@ -235,7 +264,7 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
               {form.children.map((child, ci) => (
                 <div
                   key={child.id}
-                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem] items-start gap-2 rounded-lg bg-gray-50 p-3"
+                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5.5rem] items-start gap-2 rounded-lg bg-gray-50 p-3"
                 >
                   <input
                     value={child.name}
@@ -249,7 +278,8 @@ export default function AuditReviewTagModal({ open, group, onCancel, onOk }) {
                     placeholder="请输入值"
                     className={inputCls(errs.children[ci]?.value)}
                   />
-                  <div className="flex h-8 items-center justify-end">
+                  <div className="flex h-8 items-center justify-end gap-0.5">
+                    <PlusCircleButton onClick={() => insertChildAfter(ci)} title="在下方插入子标签" />
                     <MinusCircleButton onClick={() => removeChild(ci)} title="删除子标签" />
                   </div>
                 </div>

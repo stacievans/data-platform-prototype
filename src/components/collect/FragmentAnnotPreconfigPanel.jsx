@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { IconTrash } from '../common/Icons'
+import { IconPlus, IconTrash } from '../common/Icons'
 import {
   FRAGMENT_INPUT_TYPES,
   emptyCustomFragmentType,
@@ -44,6 +44,12 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
     })
   }
 
+  const insertOptionAfter = (index) => {
+    const options = [...(attribute.options ?? [])]
+    options.splice(index + 1, 0, emptyFragmentOption())
+    onChange({ ...attribute, options })
+  }
+
   const toggleDefault = (index, checked) => {
     if (attribute.inputType === 'single') {
       onChange({
@@ -61,7 +67,7 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
   return (
     <div className="mt-2 rounded-md border border-gray-100 bg-gray-50/80 p-2.5">
       <p className="mb-2 text-xs font-medium text-gray-500">属性选项</p>
-      <div className="mb-1 grid grid-cols-[1fr_1fr_88px_28px] gap-2 px-0.5 text-xs text-gray-400">
+      <div className="mb-1 grid grid-cols-[1fr_1fr_88px_56px] gap-2 px-0.5 text-xs text-gray-400">
         <span>名称</span>
         <span>值</span>
         <span className="text-center">设为默认值</span>
@@ -69,7 +75,7 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
       </div>
       <div className="space-y-2">
         {(attribute.options ?? []).map((opt, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_88px_28px] items-center gap-2">
+          <div key={i} className="grid grid-cols-[1fr_1fr_88px_56px] items-center gap-2">
             <input
               readOnly={locked}
               disabled={locked}
@@ -96,19 +102,29 @@ function AttributeOptionsEditor({ attribute, locked, onChange }) {
               />
             </div>
             {!locked ? (
-              <button
-                type="button"
-                title="删除选项"
-                onClick={() => onChange({
-                  ...attribute,
-                  options: attribute.options.filter((_, idx) => idx !== i),
-                })}
-                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-red-500 hover:bg-red-50"
-              >
-                <IconTrash />
-              </button>
+              <div className="flex items-center justify-end gap-0.5">
+                <button
+                  type="button"
+                  title="在下方插入选项"
+                  onClick={() => insertOptionAfter(i)}
+                  className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-blue-600 hover:bg-blue-50"
+                >
+                  <IconPlus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  title="删除选项"
+                  onClick={() => onChange({
+                    ...attribute,
+                    options: attribute.options.filter((_, idx) => idx !== i),
+                  })}
+                  className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-red-500 hover:bg-red-50"
+                >
+                  <IconTrash />
+                </button>
+              </div>
             ) : (
-              <span className="h-7 w-7" />
+              <span className="h-7 w-14" />
             )}
           </div>
         ))}

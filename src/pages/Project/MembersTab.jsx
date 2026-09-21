@@ -28,6 +28,7 @@ import {
   getTaskAnnotators,
   getTaskAcceptors,
 } from '../../mock/tasks'
+import { getBatchTasksByProjectId, syncMemberBatchAssignments } from '../../mock/batchTasks'
 import { dtCol, nowDateTime, formatDateTime } from '../../utils/formatDateTime'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 
@@ -77,6 +78,10 @@ function formatPeopleCell(task, role) {
 
 function getAssignmentStatus(task) {
   return hasCollector(task) && hasReviewer(task) && hasAcceptor(task) ? '已完成' : '未完成'
+}
+
+function isBatchMemberRole(role) {
+  return role === ROLE_REVIEWER || role === ROLE_ACCEPTOR
 }
 
 function memberTaskCount(member) {
@@ -413,6 +418,7 @@ function TaskCheckboxList({
   selectedIds,
   onChange,
   searchPlaceholder = '搜索任务名称或ID',
+  emptyLabel = '暂无任务',
 }) {
   const [q, setQ] = useState('')
 
@@ -445,7 +451,7 @@ function TaskCheckboxList({
   }
 
   if (tasks.length === 0) {
-    return <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">暂无任务</p>
+    return <p className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-400">{emptyLabel}</p>
   }
 
   return (
@@ -524,6 +530,26 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
   const [assignErrors, setAssignErrors] = useState({})
   const [errors, setErrors] = useState({})
   const [addErrors, setAddErrors] = useState({})
+  const [batchTick, setBatchTick] = useState(0)
+
+  const refreshBatchTasks = () => setBatchTick((t) => t + 1)
+
+  const projectBatchTasksForTransfer = useMemo(
+    () => getBatchTasksByProjectId(projectId).map((b) => ({
+      id: b.id,
+      name: b.name,
+      projectId: b.projectId,
+    })),
+    [projectId, batchTick],
+  )
+
+  const batchTreeTransferCopy = {
+    leftHeader: '候选项目 / 批次任务',
+    searchPlaceholder: '搜索项目 / 批次任务名称',
+    selectedHeader: '已选批次任务',
+    emptyLeftHint: '暂无匹配批次任务',
+    emptyRightHint: '请从左侧添加批次任务',
+  }
 
   const commitMembers = (next) => {
     setMembers((list) => pruneEmptyMembers(typeof next === 'function' ? next(list) : next))
@@ -857,6 +883,23 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     const { role, taskIds } = pendingAdd
     const usernames = pendingAdd.usernames ?? [pendingAdd.username]
 
+    if (isBatchMemberRole(role)) {
+      let nextMembers = membersDraft
+      for (let i = startIndex; i < usernames.length; i += 1) {
+        const username = usernames[i]
+        const user = findUserByUsername(username)
+        syncMemberBatchAssignments(projectId, username, role, taskIds)
+        nextMembers = upsertMemberAssignment(nextMembers, {
+          uid: user?.uid ?? '',
+          username,
+          role,
+          taskIds,
+        })
+      }
+      refreshBatchTasks()
+      return { nextMembers, nextTasks: tasksDraft }
+    }
+
     let nextMembers = membersDraft
     let nextTasks = tasksDraft
 
@@ -929,6 +972,21 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     const role = configTaskMember.role
     const { taskIds } = configTaskForm
     const username = configTaskMember.username
+
+    if (isBatchMemberRole(role)) {
+      syncMemberBatchAssignments(projectId, username, role, taskIds)
+      refreshBatchTasks()
+      commitMembers((list) =>
+        pruneEmptyMembers(
+          list.map((m) =>
+            m.id === configTaskMember.id ? { ...m, taskIds: [...taskIds] } : m,
+          ),
+        ),
+      )
+      setConfigTaskMember(null)
+      return
+    }
+
     const affectedIds = new Set([...(configTaskMember.taskIds ?? []), ...taskIds])
 
     const nextTasks = projectTasks.map((t) => {
@@ -1070,14 +1128,28 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
           配置任务
           <span className="text-red-500">*</span>
         </label>
-        <TaskCheckboxList
-          tasks={projectTasks}
-          selectedIds={addForm.taskIds}
-          onChange={(ids) => {
-            setAddForm((f) => ({ ...f, taskIds: ids }))
-            setAddErrors((er) => ({ ...er, taskIds: false }))
-          }}
-        />
+        {isBatchMemberRole(addForm.role) ? (
+          <TreeTransfer
+            projects={configTaskProjects}
+            tasks={projectBatchTasksForTransfer}
+            value={addForm.taskIds}
+            onChange={(ids) => {
+              setAddForm((f) => ({ ...f, taskIds: ids }))
+              setAddErrors((er) => ({ ...er, taskIds: false }))
+            }}
+            error={addErrors.taskIds}
+            {...batchTreeTransferCopy}
+          />
+        ) : (
+          <TaskCheckboxList
+            tasks={projectTasks}
+            selectedIds={addForm.taskIds}
+            onChange={(ids) => {
+              setAddForm((f) => ({ ...f, taskIds: ids }))
+              setAddErrors((er) => ({ ...er, taskIds: false }))
+            }}
+          />
+        )}
         {addErrors.taskIds && <p className="mt-1 text-xs text-red-500">请填写此项</p>}
       </div>
     </div>
@@ -1127,6 +1199,8 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
     </div>
   )
 
+  const taskCountColumnTitle = memberTab === ROLE_COLLECTOR ? '采集任务数' : '批次任务数'
+
   const columns = [
     {
       title: '用户ID',
@@ -1139,7 +1213,7 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
       render: (v) => <span className="font-medium text-gray-800">{v}</span>,
     },
     {
-      title: '负责任务数',
+      title: taskCountColumnTitle,
       dataIndex: 'taskIds',
       render: (ids) => (
         <span className="tabular-nums text-gray-800">{memberTaskCount({ taskIds: ids })}</span>
@@ -1337,17 +1411,20 @@ export default function MembersTab({ projectId, projectTasks, onTasksChange, onV
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                配置任务
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">配置任务</label>
               <TreeTransfer
                 key={configTaskMember.id}
                 projects={configTaskProjects}
-                tasks={projectTasks}
+                tasks={
+                  isBatchMemberRole(configTaskMember.role)
+                    ? projectBatchTasksForTransfer
+                    : projectTasks
+                }
                 value={configTaskForm.taskIds}
                 onChange={(taskIds) => {
                   setConfigTaskForm((f) => ({ ...f, taskIds }))
                 }}
+                {...(isBatchMemberRole(configTaskMember.role) ? batchTreeTransferCopy : {})}
               />
               <p className="mt-1.5 text-xs text-gray-400">无任务时，自动将该成员从项目成员列表中移除</p>
             </div>

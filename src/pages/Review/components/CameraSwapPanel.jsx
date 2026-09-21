@@ -1,28 +1,23 @@
 import { useState } from 'react'
 import PlayheadOverlay from './PlayheadOverlay'
 import CameraMock from './CameraMock'
-
-const VIEW_LABELS = {
-  head: '头部 · 主视角',
-  chest: '胸部',
-  leftWrist: '左腕',
-  rightWrist: '右腕',
-}
+import { formatCameraLabelWithEncoding } from '../../../utils/colorEncoding'
 
 const DEFAULT_THUMBS = ['chest', 'leftWrist', 'rightWrist']
 
-function CameraThumb({ view, playPct, onSwap, className = '' }) {
+function CameraThumb({ view, playPct, onSwap, entry, className = '' }) {
+  const label = formatCameraLabelWithEncoding(entry, view)
   return (
     <PlayheadOverlay
       playPct={playPct}
-      label={VIEW_LABELS[view]}
+      label={label}
       showPlayhead={false}
       className={`group min-h-0 ${className}`}
     >
       <button
         type="button"
         className="relative h-full w-full cursor-pointer border-0 bg-transparent p-0"
-        aria-label={`${VIEW_LABELS[view]}，点击切换主画面`}
+        aria-label={`${label}，点击切换主画面`}
         onClick={onSwap}
       >
         <CameraMock view={view} />
@@ -37,7 +32,7 @@ function CameraThumb({ view, playPct, onSwap, className = '' }) {
 /**
  * @param {'stack'|'side'} variant — stack：主画面上 + 小图横排（布局 B）；side：主画面左 + 小图竖排（布局 A）
  */
-export default function CameraSwapPanel({ playPct, variant = 'stack' }) {
+export default function CameraSwapPanel({ playPct, variant = 'stack', entry = null }) {
   const [mainView, setMainView] = useState('head')
   const [thumbViews, setThumbViews] = useState(DEFAULT_THUMBS)
 
@@ -46,10 +41,12 @@ export default function CameraSwapPanel({ playPct, variant = 'stack' }) {
     setThumbViews((prev) => prev.map((v) => (v === clicked ? mainView : v)))
   }
 
+  const mainLabel = formatCameraLabelWithEncoding(entry, mainView)
+
   const mainPanel = (
     <PlayheadOverlay
       playPct={playPct}
-      label={VIEW_LABELS[mainView]}
+      label={mainLabel}
       showPlayhead={false}
       className={
         variant === 'stack'
@@ -66,6 +63,7 @@ export default function CameraSwapPanel({ playPct, variant = 'stack' }) {
       key={view}
       view={view}
       playPct={playPct}
+      entry={entry}
       onSwap={() => swapWithMain(view)}
       className={variant === 'stack' ? 'min-w-0 flex-1' : 'min-h-0 flex-1'}
     />

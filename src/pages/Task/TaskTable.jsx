@@ -10,7 +10,13 @@ import { IconCopy } from '../../components/common/Icons'
 import { LIST_PAGE_SIZE } from '../../hooks/usePagination'
 import { dtCol } from '../../utils/formatDateTime'
 import CreateTaskModal from './CreateTaskModal'
+import PreAnnotationImportModal from './PreAnnotationImportModal'
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal'
+import DetailNavButton from '../../components/common/DetailNavButton'
+import {
+  canImportPreAnnotation,
+  taskHasPreAnnotationImportFailures,
+} from '../../utils/preAnnotationImport'
 
 const ACTION_BAR_CLS = 'inline-flex flex-nowrap items-center justify-center gap-1.5'
 
@@ -45,17 +51,6 @@ function TooltipWrap({ label, children }) {
     </span>
   )
 }
-
-/* 操作列「查看详情」蓝色实心小按钮 */
-const ViewBtn = ({ onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="shrink-0 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white transition hover:bg-blue-700"
-  >
-    查看详情
-  </button>
-)
 
 function DuplicateBtn({ onClick }) {
   const { can } = useAuth()
@@ -140,11 +135,55 @@ function ActionBar({ children }) {
 /* ══════════════════════════════════════════
    TaskTable
 ══════════════════════════════════════════ */
+function ImportPreAnnotationAction({ task, project, showToast }) {
+  const { user } = useAuth()
+  const allowed = canImportPreAnnotation(user, project)
+  const [open, setOpen] = useState(false)
+  const retryFailedOnly = task ? taskHasPreAnnotationImportFailures(task.id) : false
+
+  if (!project || !task) return null
+
+  const btn = (
+    <button
+      type="button"
+      disabled={!allowed}
+      onClick={() => allowed && setOpen(true)}
+      className={`shrink-0 px-1 text-sm ${
+        allowed
+          ? 'cursor-pointer text-blue-600 hover:text-blue-500'
+          : 'cursor-not-allowed text-gray-300'
+      }`}
+    >
+      导入
+    </button>
+  )
+
+  return (
+    <>
+      {allowed ? (
+        <TooltipWrap label="预标注结果导入">{btn}</TooltipWrap>
+      ) : (
+        <TooltipWrap label="仅组织管理员或创建该项目的平台运营可导入">{btn}</TooltipWrap>
+      )}
+      {open && (
+        <PreAnnotationImportModal
+          open
+          task={task}
+          retryFailedOnly={retryFailedOnly}
+          showToast={showToast}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  )
+}
+
 export default function TaskTable({
   data,
   embedded = false,
   showProjectColumn = false,
   pageResetKey,
+  project = null,
   onDeleteClick,
   onStatusChange,
   onEditSave,
@@ -213,7 +252,8 @@ export default function TaskTable({
       return (
         <ActionBar>
           <DuplicateBtn onClick={() => onCopy?.(row)} />
-          <ViewBtn onClick={goView} />
+          <DetailNavButton onClick={goView} />
+          <ImportPreAnnotationAction task={row} project={project} showToast={showToast} />
           <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
           <LinkAction permission="collection.task.edit" warn onClick={() => setConfirm({ open: true, type: 'archive', task: row })}>归档</LinkAction>
         </ActionBar>
@@ -224,7 +264,7 @@ export default function TaskTable({
     return (
       <ActionBar>
         <DuplicateBtn onClick={() => onCopy?.(row)} />
-        <ViewBtn onClick={goView} />
+        <DetailNavButton onClick={goView} />
         <ExportMenu onExport={(type) => showToast(type === 'label' ? '正在导出标签…' : '正在导出质检报告…')} />
         {onDeleteClick && (
           <LinkAction permission="collection.task.delete" danger onClick={() => onDeleteClick(row)}>删除</LinkAction>

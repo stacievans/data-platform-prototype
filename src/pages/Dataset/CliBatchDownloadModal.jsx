@@ -1,7 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from '../../components/common/Modal'
 import Button from '../../components/common/Button'
 import { IconCopy } from '../../components/common/Icons'
+import { CheckboxListSelectAllRow } from '../../components/common/CheckboxList'
+
+export const CLI_DOWNLOAD_FILE_OPTIONS = ['h5', '质检结果', '标注结果']
+
+const FILE_TYPE_CLI_MAP = {
+  h5: 'h5',
+  质检结果: 'qc-json',
+  标注结果: 'label-json',
+}
+
+const LBL = 'mb-1 block text-xs text-gray-500'
+const SELECT_CLS = 'h-8 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+const CHECKBOX_CLS = 'h-4 w-4 shrink-0 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500'
 
 function toNumericTaskId(entry) {
   const n = parseInt(String(entry?.taskId ?? '').replace(/\D/g, ''), 10) || 197
@@ -13,9 +26,13 @@ function toNumericItemId(entry) {
   return String(342860000000000000 + base * 10000001).slice(0, 18)
 }
 
-export function buildCliBatchCommands(selectedEntries, platform = 'unix') {
+export function buildCliBatchCommands(selectedEntries, platform = 'unix', downloadFiles = ['h5']) {
   const taskId = toNumericTaskId(selectedEntries[0])
   const itemIds = selectedEntries.map(toNumericItemId).join(',')
+  const fileTypes = (downloadFiles?.length ? downloadFiles : ['h5'])
+    .map((f) => FILE_TYPE_CLI_MAP[f])
+    .filter(Boolean)
+    .join(',')
   const install = platform === 'unix'
     ? 'curl -fsSL https://file.ai2robo.com/data-collect-cli/install.sh | bash'
     : 'irm https://file.ai2robo.com/data-collect-cli/install.ps1 | iex'
@@ -23,7 +40,7 @@ export function buildCliBatchCommands(selectedEntries, platform = 'unix') {
   const outputDir = platform === 'unix'
     ? '~/Downloads/ABC-Data'
     : '$env:USERPROFILE\\Downloads\\ABC-Data'
-  const download = `data-collector-cli download --download-type item --task-id ${taskId} --item-id ${itemIds} --output-dir ${outputDir}`
+  const download = `data-collector-cli download --download-type item --task-id ${taskId} --item-id ${itemIds} --file-types ${fileTypes} --output-dir ${outputDir}`
   return { install, login, download, all: `${install}\n\n${login}\n\n${download}` }
 }
 
@@ -90,6 +107,81 @@ function CliCodeBlock({ code }) {
   )
 }
 
+function DownloadFileMultiSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const options = CLI_DOWNLOAD_FILE_OPTIONS
+  const allSelected = value.length === options.length
+  const someSelected = value.length > 0 && !allSelected
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const display = value.join('、')
+
+  const toggle = (name) => {
+    if (value.includes(name)) {
+      if (value.length <= 1) return
+      onChange(value.filter((v) => v !== name))
+      return
+    }
+    onChange([...value, name])
+  }
+
+  const toggleAll = () => {
+    onChange(allSelected ? ['h5'] : [...options])
+  }
+
+  return (
+    <div ref={ref} className="relative min-w-[220px] flex-1">
+      <label className={LBL}>下载文件</label>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`${SELECT_CLS} !h-auto flex min-h-8 cursor-pointer items-center justify-between gap-2 py-1.5 text-left`}
+      >
+        <span className="whitespace-normal leading-snug">{display}</span>
+        <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="max-h-52 overflow-y-auto">
+            <CheckboxListSelectAllRow
+              checked={allSelected}
+              indeterminate={someSelected}
+              onToggle={toggleAll}
+              selectedCount={value.length}
+              totalCount={options.length}
+            />
+            {options.map((name) => (
+              <label
+                key={name}
+                className="flex cursor-pointer items-center gap-2 border-b border-gray-50 px-3 py-2 last:border-0 hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={value.includes(name)}
+                  onChange={() => toggle(name)}
+                  className={CHECKBOX_CLS}
+                />
+                <span className="truncate text-sm text-gray-700">{name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StepSection({ title, hint, extra, children }) {
   return (
     <section className="space-y-2.5">
@@ -105,11 +197,16 @@ function StepSection({ title, hint, extra, children }) {
 
 export default function CliBatchDownloadModal({ open, selectedEntries, onClose }) {
   const [platform, setPlatform] = useState('unix')
+  const [downloadFiles, setDownloadFiles] = useState(['h5'])
   const [allCopied, setAllCopied] = useState(false)
 
+  useEffect(() => {
+    if (open) setDownloadFiles(['h5'])
+  }, [open])
+
   const commands = useMemo(
-    () => buildCliBatchCommands(selectedEntries, platform),
-    [selectedEntries, platform],
+    () => buildCliBatchCommands(selectedEntries, platform, downloadFiles),
+    [selectedEntries, platform, downloadFiles],
   )
 
   const handleCopyAll = async () => {
@@ -146,6 +243,8 @@ export default function CliBatchDownloadModal({ open, selectedEntries, onClose }
           已选择 {selectedEntries.length} 个条目
         </span>
       </div>
+
+      <DownloadFileMultiSelect value={downloadFiles} onChange={setDownloadFiles} />
 
       <StepSection
         title={(
