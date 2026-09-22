@@ -12,9 +12,17 @@ export default function Table({
   bodyRowHeight = 48,
   getRowClassName,
   embedded = false,
+  externalPage,
+  externalPageSize,
+  onPageChange,
+  onPageSizeChange,
 }) {
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(initialPageSize ?? LIST_PAGE_SIZE)
+  const [pageInner, setPageInner] = useState(1)
+  const [pageSizeInner, setPageSizeInner] = useState(initialPageSize ?? LIST_PAGE_SIZE)
+  const page = externalPage != null ? externalPage : pageInner
+  const pageSize = externalPageSize != null ? externalPageSize : pageSizeInner
+  const setPage = onPageChange ? onPageChange : setPageInner
+  const setPageSize = onPageSizeChange ? onPageSizeChange : setPageSizeInner
   const scrollable = scrollVisibleRows != null && scrollVisibleRows > 0
   const paginated = initialPageSize != null
   const total = dataSource.length

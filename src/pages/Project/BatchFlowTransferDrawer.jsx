@@ -202,6 +202,8 @@ export default function BatchFlowTransferDrawer({
   const [targetProcess, setTargetProcess] = useState(null)
   const [targetStatus, setTargetStatus] = useState(null)
   const [flowEntry, setFlowEntry] = useState(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   const resetForm = useCallback(() => {
     setDataScope(EMPTY_SCOPE)
@@ -215,6 +217,7 @@ export default function BatchFlowTransferDrawer({
     setSecondaryOpen(false)
     setTargetProcess(null)
     setTargetStatus(null)
+    setPage(1)
   }, [])
 
   useEffect(() => {
@@ -249,9 +252,15 @@ export default function BatchFlowTransferDrawer({
     setQueryResults(list)
     setQueried(true)
     setSelectedIds(new Set())
+    setPage(1)
   }, [colorEncoding, dataScope, entries, getTask, qEntryId, qFileName, showToast])
 
-  const allSelected = queryResults.length > 0 && queryResults.every((e) => selectedIds.has(e.id))
+  const totalPages = Math.max(1, Math.ceil(queryResults.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const currentPageRows = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE
+    return queryResults.slice(start, start + PAGE_SIZE)
+  }, [queryResults, safePage])
 
   const toggleRow = (id) => {
     setSelectedIds((prev) => {
@@ -262,9 +271,22 @@ export default function BatchFlowTransferDrawer({
     })
   }
 
-  const toggleAll = () => {
-    if (allSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(queryResults.map((e) => e.id)))
+  const selectThisPage = () => {
+    const ids = currentPageRows.map((e) => e.id)
+    const allIn = ids.length > 0 && ids.every((id) => selectedIds.has(id))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allIn) ids.forEach((id) => next.delete(id))
+      else ids.forEach((id) => next.add(id))
+      return next
+    })
+  }
+
+  const selectAllResults = () => {
+    const ids = queryResults.map((e) => e.id)
+    const allIn = ids.length > 0 && ids.every((id) => selectedIds.has(id))
+    if (allIn) setSelectedIds(new Set())
+    else setSelectedIds(new Set(ids))
   }
 
   const selectedEntries = useMemo(
@@ -320,15 +342,7 @@ export default function BatchFlowTransferDrawer({
   const columns = useMemo(() => [
     {
       key: 'select',
-      title: (
-        <input
-          type="checkbox"
-          checked={allSelected}
-          onChange={toggleAll}
-          className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          aria-label="全选"
-        />
-      ),
+      title: '',
       width: 48,
       render: (_, row) => (
         <input
@@ -407,7 +421,7 @@ export default function BatchFlowTransferDrawer({
       key: 'flow',
       render: (_, row) => <FlowRecordButton onClick={() => setFlowEntry(row)} />,
     },
-  ], [allSelected, getTask, selectedIds])
+  ], [getTask, selectedIds])
 
   return (
     <>
@@ -472,7 +486,32 @@ export default function BatchFlowTransferDrawer({
 
           {queried ? (
             <>
-              <Table embedded columns={columns} dataSource={queryResults} pageSize={10} />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectThisPage}
+                  disabled={currentPageRows.length === 0}
+                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-600 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  本页全选
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAllResults}
+                  disabled={queryResults.length === 0}
+                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-600 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  选择所有
+                </button>
+              </div>
+              <Table
+                embedded
+                columns={columns}
+                dataSource={queryResults}
+                pageSize={PAGE_SIZE}
+                externalPage={safePage}
+                onPageChange={setPage}
+              />
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                 <span className="text-sm text-gray-500">
                   共 {queryResults.length} 条
