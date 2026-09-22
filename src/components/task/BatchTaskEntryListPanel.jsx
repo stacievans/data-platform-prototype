@@ -64,6 +64,17 @@ export default function BatchTaskEntryListPanel({ batchTask, onBatchUpdated }) {
     showToast('条目已从批次移除')
   }, [batchTask.id, onBatchUpdated, showToast])
 
+  const handleBatchEntriesDelete = useCallback((ids) => {
+    let count = 0
+    ids.forEach((id) => {
+      removeEntryFromBatchTask(batchTask.id, id)
+      count += 1
+    })
+    onBatchUpdated?.()
+    setRefreshKey((k) => k + 1)
+    showToast(`已将 ${count} 条条目从批次移除`)
+  }, [batchTask.id, onBatchUpdated, showToast])
+
   return (
     <>
       {ToastNode}
@@ -73,17 +84,18 @@ export default function BatchTaskEntryListPanel({ batchTask, onBatchUpdated }) {
         getProjectId={getProjectId}
         listTitle="条目列表"
         filterPreset="batchTask"
-        hideSelectColumn
         hideDeviceColumns
         hideDownload
         hideToolbarActions
         showTaskColumn
         showBatchFlowTransfer
+        canBatchDelete
         processTab={processTab}
         onProcessTabChange={setProcessTab}
         onOpenBatchFlowTransfer={() => setFlowDrawerOpen(true)}
         onClaimAndOpen={handleClaimAndOpen}
         onBatchEntryDelete={handleBatchEntryDelete}
+        onBatchEntriesDelete={handleBatchEntriesDelete}
         onDelete={() => {}}
       />
 

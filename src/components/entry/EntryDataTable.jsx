@@ -549,6 +549,8 @@ export default function EntryDataTable({
   onClaimAndOpen,
   showBatchFlowTransfer = false,
   onOpenBatchFlowTransfer,
+  canBatchDelete = false,
+  onBatchEntriesDelete,
   processTab: processTabProp,
   onProcessTabChange,
 }) {
@@ -578,6 +580,7 @@ export default function EntryDataTable({
   const [batchOpTarget, setBatchOpTarget] = useState(null)
   const [reQcTagsOpen, setReQcTagsOpen] = useState(false)
   const [cliBatchDownloadOpen, setCliBatchDownloadOpen] = useState(false)
+  const [batchDeleteIds, setBatchDeleteIds] = useState(null)
   const { ToastNode, show: showToast } = useToast()
 
   const statusClickHandlers = useMemo(() => ({
@@ -786,6 +789,14 @@ export default function EntryDataTable({
     setDeleteTarget(null)
   }
 
+  const confirmBatchDelete = () => {
+    if (onBatchEntriesDelete && batchDeleteIds?.length) {
+      onBatchEntriesDelete(batchDeleteIds)
+      setSelectedIds(new Set())
+    }
+    setBatchDeleteIds(null)
+  }
+
   const entryPageResetKey = useMemo(
     () => `${processTab}:${subStatus}:${JSON.stringify(filters)}:${entries.length}`,
     [processTab, subStatus, filters, entries.length],
@@ -983,6 +994,27 @@ export default function EntryDataTable({
                   />
                 </div>
                 <div className={FILTER_FIELD}>
+                  <label className={LBL}>质检状态</label>
+                  <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>标注状态</label>
+                  <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className={FILTER_FIELD}>
+                  <label className={LBL}>验收状态</label>
+                  <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
+                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+              {filtersExpanded && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <div className={FILTER_FIELD}>
                   <label className={LBL}>数据格式</label>
                   <select value={qFormat} onChange={(e) => setQFormat(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
                     {FORMAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -1024,26 +1056,17 @@ export default function EntryDataTable({
                     searchable
                   />
                 </div>
-                <div className={FILTER_FIELD}>
-                  <label className={LBL}>质检状态</label>
-                  <select value={qQcStatus} onChange={(e) => setQQcStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-                <div className={FILTER_FIELD}>
-                  <label className={LBL}>标注状态</label>
-                  <select value={qReviewStatus} onChange={(e) => setQReviewStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-                <div className={FILTER_FIELD}>
-                  <label className={LBL}>验收状态</label>
-                  <select value={qAcceptStatus} onChange={(e) => setQAcceptStatus(e.target.value)} className={`${INPUT_CLS} cursor-pointer`}>
-                    {FORM_PROCESS_STATUS_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
               </div>
+              )}
               <div className={FILTER_ACTIONS}>
+                <button
+                  type="button"
+                  onClick={() => setFiltersExpanded((v) => !v)}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+                >
+                  {filtersExpanded ? '收起筛选' : '展开筛选'}
+                  <IconChevronDown className={`transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+                </button>
                 <Button onClick={resetFilters}>重置</Button>
                 <Button variant="primary" icon={<IconSearch />} onClick={applyFilters}>查询</Button>
               </div>
@@ -1192,8 +1215,17 @@ export default function EntryDataTable({
 
       <ListPageToolbar>
         <h2 className="text-base font-semibold text-gray-800">{listTitle}</h2>
-        {(showBatchFlowTransfer || !hideToolbarActions || onBatchAcceptPass || onBatchAcceptReset) && (
+        {(canBatchDelete || showBatchFlowTransfer || !hideToolbarActions || onBatchAcceptPass || onBatchAcceptReset) && (
           <div className="flex flex-wrap gap-2">
+            {canBatchDelete && (
+              <Button
+                variant="danger"
+                disabled={!hasSelection}
+                onClick={() => setBatchDeleteIds([...selectedIds])}
+              >
+                批量删除 {hasSelection ? `(${selectedIds.size})` : ''}
+              </Button>
+            )}
             {showBatchFlowTransfer && (
               <Button variant="primary" onClick={() => onOpenBatchFlowTransfer?.(processTab)}>
                 批量流转
@@ -1241,6 +1273,13 @@ export default function EntryDataTable({
         open={!hideDelete && !!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+
+      <DeleteConfirmModal
+        open={!!batchDeleteIds}
+        message={`确认将所选 ${batchDeleteIds?.length ?? 0} 条条目从批次中移除吗？此操作不可撤销。`}
+        onCancel={() => setBatchDeleteIds(null)}
+        onConfirm={confirmBatchDelete}
       />
 
       <QcDetailModal open={!!qcTarget} entry={qcTarget} projectId={qcProjectId} onClose={() => setQcTarget(null)} />

@@ -20,7 +20,7 @@ export function deriveProcessStatuses(entryOrStatus) {
       base = { qc: 'passed', review: 'pending', accept: 'none' }
       break
     case '标注不通过':
-      base = { qc: 'passed', review: 'rejected', accept: 'pending' }
+      base = { qc: 'passed', review: 'rejected', accept: 'none' }
       break
     case '已标注':
       base = { qc: 'passed', review: 'passed', accept: 'pending' }
