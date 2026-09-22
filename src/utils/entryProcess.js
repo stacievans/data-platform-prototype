@@ -47,7 +47,7 @@ export function deriveProcessStatuses(entryOrStatus) {
 
 export const PROCESS_STATUS_LABEL = {
   pending: '待处理',
-  processing: '进行中',
+  processing: '处理中',
   passed: '已通过',
   rejected: '已驳回',
   none: '—',
@@ -214,12 +214,12 @@ export const PROCESS_TABS = [
 export const PROCESS_SUB_STATUS_OPTIONS = [
   { key: 'all', label: '全部' },
   { key: 'pending', label: '待处理' },
-  { key: 'processing', label: '进行中' },
+  { key: 'processing', label: '处理中' },
   { key: 'passed', label: '已通过' },
   { key: 'rejected', label: '已驳回' },
 ]
 
-export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '进行中', '已通过', '已驳回']
+export const FORM_PROCESS_STATUS_OPTIONS = ['全部', '待处理', '处理中', '已通过', '已驳回']
 
 export function getProcessFieldKey(tab) {
   if (tab === 'qc') return 'qc'
@@ -231,7 +231,7 @@ export function getProcessFieldKey(tab) {
 export function formLabelToStatus(label) {
   const map = {
     待处理: 'pending',
-    进行中: 'processing',
+    处理中: 'processing',
     已通过: 'passed',
     已驳回: 'rejected',
   }

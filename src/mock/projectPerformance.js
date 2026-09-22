@@ -103,9 +103,22 @@ const PROJECT_STATS = {
   },
 }
 
-export function getProjectPerformanceStats(projectId, batchTaskId = null) {
-  if (batchTaskId) {
-    return BATCH_PERF[batchTaskId] ?? EMPTY_STATS
+export function getProjectPerformanceStats(projectId, batchTaskIds = null) {
+  if (batchTaskIds) {
+    const ids = Array.isArray(batchTaskIds) ? batchTaskIds : [batchTaskIds]
+    if (ids.length === 0) return PROJECT_STATS[projectId] ?? EMPTY_STATS
+    if (ids.length === 1) return BATCH_PERF[ids[0]] ?? EMPTY_STATS
+    // 合并多个批次的数据
+    const merged = { collect: [], review: [], accept: [] }
+    ids.forEach((id) => {
+      const stats = BATCH_PERF[id]
+      if (stats) {
+        merged.collect = merged.collect.concat(stats.collect)
+        merged.review = merged.review.concat(stats.review)
+        merged.accept = merged.accept.concat(stats.accept)
+      }
+    })
+    return merged
   }
   return PROJECT_STATS[projectId] ?? EMPTY_STATS
 }

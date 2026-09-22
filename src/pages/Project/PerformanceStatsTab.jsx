@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Button from '../../components/common/Button'
-import ListPageCard from '../../components/common/ListPageCard'
+import ListPageCard, { ListPageFilter, ListPageToolbar } from '../../components/common/ListPageCard'
 import ListPaginator from '../../components/common/ListPaginator'
+import FilterMultiSelect from '../../components/common/FilterMultiSelect'
 import { IconDownload } from '../../components/common/Icons'
 import { getBatchTasksByProjectId } from '../../mock/batchTasks'
 import {
@@ -10,16 +11,12 @@ import {
 } from '../../mock/projectPerformance'
 
 const PAGE_SIZE = 10
-const ROW_LABEL_CLS = 'shrink-0 text-sm text-gray-500'
 
 const PERFORMANCE_PROCESS_TABS = [
   { key: 'collect', label: '采集' },
   { key: 'review', label: '标注' },
   { key: 'accept', label: '验收' },
 ]
-
-const INPUT_CLS =
-  'h-9 min-w-[200px] rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
 
 function ProcessTabBar({ activeKey, onChange }) {
   return (
@@ -219,26 +216,45 @@ const TABLE_BY_PROCESS = {
 
 export default function PerformanceStatsTab({ projectId }) {
   const [processTab, setProcessTab] = useState('collect')
-  const [batchId, setBatchId] = useState('')
+  const [selectedBatchIds, setSelectedBatchIds] = useState([])
+  const [appliedBatchIds, setAppliedBatchIds] = useState([])
 
   const batches = useMemo(
     () => getBatchTasksByProjectId(projectId).filter((b) => !b.deleted),
     [projectId],
   )
 
+  const batchOptions = useMemo(
+    () => batches.map((b) => ({ id: b.id, name: `${b.name}（${b.id}）` })),
+    [batches],
+  )
+
+  // 使用 appliedBatchIds 查询数据（点击查询后才更新）
   const stats = useMemo(
-    () => getProjectPerformanceStats(projectId, batchId || null),
-    [projectId, batchId],
+    () => getProjectPerformanceStats(projectId, appliedBatchIds.length > 0 ? appliedBatchIds : null),
+    [projectId, appliedBatchIds],
   )
 
   const activeTable = TABLE_BY_PROCESS[processTab] ?? TABLE_BY_PROCESS.collect
   const activeRows = stats[activeTable.rowsKey] ?? []
 
   const scopeLabel = useMemo(() => {
-    if (!batchId) return '项目整体'
-    const batch = batches.find((b) => b.id === batchId)
-    return batch ? `${batch.name}(${batch.id})` : '任务批次'
-  }, [batchId, batches])
+    if (appliedBatchIds.length === 0) return '项目整体'
+    if (appliedBatchIds.length === 1) {
+      const batch = batches.find((b) => b.id === appliedBatchIds[0])
+      return batch ? `${batch.name}(${batch.id})` : '任务批次'
+    }
+    return `已选 ${appliedBatchIds.length} 个批次`
+  }, [appliedBatchIds, batches])
+
+  const handleQuery = () => {
+    setAppliedBatchIds([...selectedBatchIds])
+  }
+
+  const handleReset = () => {
+    setSelectedBatchIds([])
+    setAppliedBatchIds([])
+  }
 
   const handleExport = () => {
     downloadPerformanceCsv({
@@ -254,39 +270,44 @@ export default function PerformanceStatsTab({ projectId }) {
 
   return (
     <ListPageCard>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={ROW_LABEL_CLS}>工序</span>
+      <ListPageToolbar>
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-sm text-gray-500">工序</span>
           <ProcessTabBar activeKey={processTab} onChange={setProcessTab} />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">任务批次</span>
-            <select
-              value={batchId}
-              onChange={(e) => setBatchId(e.target.value)}
-              className={`${INPUT_CLS} cursor-pointer`}
-            >
-              <option value="">全部</option>
-              {batches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}（{b.id}）</option>
-              ))}
-            </select>
+      </ListPageToolbar>
+
+      <ListPageFilter>
+        <div className="flex items-end gap-3">
+          <div className="w-72">
+            <FilterMultiSelect
+              label="任务批次"
+              options={batchOptions}
+              value={selectedBatchIds}
+              onChange={setSelectedBatchIds}
+              placeholder="请选择任务批次"
+              searchable
+              getOptionLabel={(o) => o.name}
+              getOptionValue={(o) => o.id}
+            />
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button onClick={handleReset}>重置</Button>
+            <Button variant="primary" onClick={handleQuery}>查询</Button>
+          </div>
+          <div className="flex-1" />
           <Button icon={<IconDownload />} onClick={handleExport}>
             导出 CSV
           </Button>
         </div>
-      </div>
+      </ListPageFilter>
 
-      <div className="px-4 py-5">
-        <StatsTable
-          key={processTab}
-          columns={activeTable.columns}
-          rows={activeRows}
-          numericKeys={activeTable.numericKeys}
-        />
-      </div>
+      <StatsTable
+        key={processTab}
+        columns={activeTable.columns}
+        rows={activeRows}
+        numericKeys={activeTable.numericKeys}
+      />
     </ListPageCard>
   )
 }

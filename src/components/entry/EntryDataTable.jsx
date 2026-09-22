@@ -39,7 +39,7 @@ import {
   formatEntryColorEncoding,
 } from '../../utils/colorEncoding'
 import CliBatchDownloadModal from '../../pages/Dataset/CliBatchDownloadModal'
-import { FilterMultiSelect } from '../../pages/Project/AddBatchTaskDataModal'
+import FilterMultiSelect from '../common/FilterMultiSelect'
 import { filterBatchTaskEntries } from '../../utils/batchTaskEntryOps'
 
 const LBL = 'mb-1 block text-xs text-gray-500'

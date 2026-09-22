@@ -15,7 +15,7 @@ export const BATCH_PROCESS_TABS = [
 
 export const BATCH_SOURCE_STATUS_OPTIONS = [
   { key: 'pending', label: '待处理' },
-  { key: 'processing', label: '进行中' },
+  { key: 'processing', label: '处理中' },
   { key: 'passed', label: '已通过' },
   { key: 'rejected', label: '已驳回' },
 ]

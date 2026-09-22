@@ -302,6 +302,8 @@ export function bulkCreateBatchTasksFromCollectionTasks({
   collectionTasks,
   reviewers = [],
   acceptors = [],
+  reviewClaimLimit = null,
+  acceptClaimLimit = null,
   creator,
 }) {
   const created = []
@@ -323,6 +325,8 @@ export function bulkCreateBatchTasksFromCollectionTasks({
       status: '进行中',
       reviewers: [...reviewers],
       acceptors: [...acceptors],
+      reviewClaimLimit,
+      acceptClaimLimit,
     })
     created.push(row)
   })

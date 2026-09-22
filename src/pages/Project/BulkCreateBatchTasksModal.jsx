@@ -111,6 +111,49 @@ function RoleMultiDropdown({ label, options, value, onChange, placeholder }) {
   )
 }
 
+function ClaimLimitInput({ label, value, onChange, error }) {
+  return (
+    <div className="flex-1 min-w-[200px]">
+      <label className={LBL}>
+        <span className="inline-flex items-center gap-1">
+          {label}
+          <span
+            className="group relative inline-flex cursor-help text-gray-400"
+            title="单个用户领题数量限制，达到限制后需完成进行中的题后才可领取新题"
+          >
+            <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="10" cy="10" r="8" />
+              <path d="M10 9.5v5" />
+              <circle cx="10" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+        </span>
+      </label>
+      <input
+        type="number"
+        min={1}
+        max={9999}
+        value={value ?? ''}
+        placeholder="无限制"
+        onChange={(e) => {
+          const v = e.target.value
+          if (v === '') {
+            onChange(null)
+            return
+          }
+          const n = parseInt(v, 10)
+          if (Number.isNaN(n) || n < 1) onChange(null)
+          else if (n > 9999) onChange(9999)
+          else onChange(n)
+        }}
+        className={`h-9 w-full rounded-md border bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 ${
+          error ? 'border-red-300' : 'border-gray-200'
+        }`}
+      />
+    </div>
+  )
+}
+
 export default function BulkCreateBatchTasksModal({
   open,
   projectId,
@@ -124,6 +167,8 @@ export default function BulkCreateBatchTasksModal({
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [reviewers, setReviewers] = useState([])
   const [acceptors, setAcceptors] = useState([])
+  const [reviewClaimLimit, setReviewClaimLimit] = useState(null)
+  const [acceptClaimLimit, setAcceptClaimLimit] = useState(null)
   const [taskError, setTaskError] = useState(false)
 
   const reviewerOptions = useMemo(() => listOrgNicknamesByRole(ROLE_REVIEWER), [])
@@ -145,6 +190,8 @@ export default function BulkCreateBatchTasksModal({
     setSelectedIds(new Set())
     setReviewers([])
     setAcceptors([])
+    setReviewClaimLimit(null)
+    setAcceptClaimLimit(null)
     setTaskError(false)
   }, [open, projectId])
 
@@ -201,6 +248,8 @@ export default function BulkCreateBatchTasksModal({
       collectionTasks: picked,
       reviewers,
       acceptors,
+      reviewClaimLimit,
+      acceptClaimLimit,
       creator: creatorNickname,
     })
     onCreated?.(created.length)
@@ -275,12 +324,25 @@ export default function BulkCreateBatchTasksModal({
             onChange={setReviewers}
             placeholder="请选择标注员"
           />
+          <ClaimLimitInput
+            label="领题限制"
+            value={reviewClaimLimit}
+            onChange={setReviewClaimLimit}
+          />
+        </div>
+        <div className="my-4 h-px bg-gray-200" />
+        <div className="relative flex flex-wrap gap-4">
           <RoleMultiDropdown
             label="验收员"
             options={acceptorOptions}
             value={acceptors}
             onChange={setAcceptors}
             placeholder="请选择验收员"
+          />
+          <ClaimLimitInput
+            label="领题限制"
+            value={acceptClaimLimit}
+            onChange={setAcceptClaimLimit}
           />
         </div>
       </div>

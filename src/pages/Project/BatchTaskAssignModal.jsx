@@ -3,6 +3,7 @@ import Button from '../../components/common/Button'
 import Drawer from '../../components/common/Drawer'
 import { CHECKBOX_LIST_CLS, IndeterminateCheckbox } from '../../components/common/CheckboxList'
 import { IconSearch } from '../../components/common/Icons'
+import ListPaginator from '../../components/common/ListPaginator'
 import { updateBatchTaskAssignment } from '../../mock/batchTasks'
 import { listOrgUsersByRole } from '../../utils/orgUsers'
 
@@ -59,10 +60,13 @@ function AssigneePickerDrawer({
 }) {
   const [q, setQ] = useState('')
   const [selected, setSelected] = useState(() => new Set())
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   useEffect(() => {
     if (!open) return
     setQ('')
+    setPage(1)
     setSelected(new Set(initialSelected.map((u) => u.username)))
   }, [open, initialSelected, title])
 
@@ -71,6 +75,14 @@ function AssigneePickerDrawer({
     if (!kw) return users
     return users.filter((u) => u.username.toLowerCase().includes(kw))
   }, [users, q])
+
+  useEffect(() => {
+    setPage(1)
+  }, [q])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const toggle = (username) => {
     setSelected((prev) => {
@@ -116,7 +128,7 @@ function AssigneePickerDrawer({
       )}
     >
       <div className="-mx-6 -my-5 flex min-h-[min(480px,65vh)] flex-col">
-        <div className="flex shrink-0 justify-end px-6 py-3">
+        <div className="flex shrink-0 justify-start px-6 py-3">
           <div className="relative w-1/2 min-w-[160px]">
             <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
@@ -127,7 +139,7 @@ function AssigneePickerDrawer({
             />
           </div>
         </div>
-        <div className="mx-6 min-h-0 flex-1 overflow-hidden rounded-md border border-gray-200">
+        <div className="mx-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200">
           <div className="grid grid-cols-[36px_1fr_1fr] items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
             <IndeterminateCheckbox
               checked={allVisible}
@@ -137,11 +149,11 @@ function AssigneePickerDrawer({
             <span>用户名</span>
             <span>昵称</span>
           </div>
-          <div className="max-h-[min(52vh,480px)] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {filtered.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-gray-400">无匹配用户</p>
             ) : (
-              filtered.map((u) => (
+              paged.map((u) => (
                 <label
                   key={u.username}
                   className="grid grid-cols-[36px_1fr_1fr] items-center gap-2 border-b border-gray-50 px-3 py-2.5 last:border-0 hover:bg-gray-50"
@@ -158,6 +170,13 @@ function AssigneePickerDrawer({
               ))
             )}
           </div>
+          <ListPaginator
+            total={filtered.length}
+            page={safePage}
+            pageSize={PAGE_SIZE}
+            onPageChange={(p) => setPage(p)}
+            onPageSizeChange={undefined}
+          />
         </div>
       </div>
     </Drawer>
